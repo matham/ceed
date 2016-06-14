@@ -1,0 +1,62 @@
+version: 1.0.{build}
+environment:
+  access_token:
+    secure: H8F1UMqC4QixM9NbnHewuineXTu860e3WhkpgMzui6xQmCv2qyXd4BDonVrrW5Iv
+  matrix:
+  - PYVER: 27
+    BITTNESS: 32
+  - PYVER: 34
+    BITTNESS: 32
+  - PYVER: 27
+    BITTNESS: 64
+  - PYVER: 34
+    BITTNESS: 64
+build_script:
+- ps: >-
+    iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/matham/packaging/master/check_error.ps1'))
+
+    cd "$env:APPVEYOR_BUILD_FOLDER"
+
+    $env:PYTHONPATH = "$env:APPVEYOR_BUILD_FOLDER;$env:PYTHONPATH"
+
+    if ($env:BITTNESS -eq "64") {
+      $PYTHON_ROOT = "C:\Python$env:PYVER-x64"
+    } else {
+      $PYTHON_ROOT = "C:\Python$env:PYVER"
+    }
+
+    $env:PATH = "$PYTHON_ROOT;$PYTHON_ROOT\Scripts;$env:PATH;C:\Program Files\7-Zip"
+
+    python -c "import sys;print('Python version is {}'.format(sys.version))"
+
+    Check-Error
+
+    python -m pip install --upgrade pip wheel nose setuptools
+
+    Check-Error
+
+    python -m pip install docutils pygments pypiwin32 kivy.deps.sdl2 kivy.deps.glew kivy
+
+    Check-Error
+
+    python -m pip install https://github.com/matham/cplcom/archive/master.zip
+
+    Check-Error
+
+    python -m pip install -e .
+
+    Check-Error
+
+test_script:
+- ps: >-
+    iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/matham/packaging/master/check_error.ps1'))
+
+    python -c "from ceed.main import CeedApp"
+
+    Check-Error
+
+on_success:
+- ps: >-
+    if ($env:BITTNESS -eq "64" -and $env:PYVER -eq "27") {
+        iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/matham/packaging/master/cpl_appveyor_gh_docs.ps1'))
+    }
