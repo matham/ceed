@@ -3,8 +3,9 @@
 from functools import partial
 
 import ceed
+import kivy
 from ceed.main import CeedApp
-from cplcom.moa.config import create_doc_listener, write_config_attrs_rst
+from cplcom.config import create_doc_listener, write_config_attrs_rst
 
 extensions = [
     'sphinx.ext.autodoc',

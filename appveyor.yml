@@ -31,15 +31,33 @@ build_script:
 
     Check-Error
 
+    $env:USE_SDL2 = 1
+
+    python -c "with open(r'$PYTHON_ROOT\Lib\distutils\distutils.cfg', 'wb') as fh: fh.write(b'[build]\ncompiler = mingw32\n')"
+
+    Check-Error
+
     python -m pip install --upgrade pip wheel nose setuptools
 
     Check-Error
 
-    python -m pip install docutils pygments pypiwin32 kivy.deps.sdl2 kivy.deps.glew kivy
+    pip install -i https://pypi.anaconda.org/carlkl/simple mingwpy
 
     Check-Error
 
-    python -m pip install https://github.com/matham/cplcom/archive/master.zip
+    pip install mock pypiwin32 https://github.com/pyinstaller/pyinstaller/archive/develop.zip cython pygments docutils nose kivy.deps.glew_dev kivy.deps.glew kivy.deps.sdl2_dev kivy.deps.sdl2
+
+    Check-Error
+
+    python -m pip install https://github.com/kivy/kivy/archive/master.zip
+
+    Check-Error
+
+    python -m pip install pyflycap2 ffpyplayer https://github.com/matham/cplcom/archive/master.zip
+
+    Check-Error
+
+    garden install filebrowser --kivy
 
     Check-Error
 
@@ -47,14 +65,28 @@ build_script:
 
     Check-Error
 
+    mkdir deploy
+
+    Check-Error
+
+    if ($env:BITTNESS -eq "64" -and $env:PYVER -eq "34") {
+      python setup.py sdist -d "deploy"
+      Check-Error
+    }
+
 test_script:
 - ps: >-
     iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/matham/packaging/master/check_error.ps1'))
+
+    $env:KIVY_DOC_INCLUDE = 1
 
     python -c "from ceed.main import CeedApp"
 
     Check-Error
 
+artifacts:
+- path: deploy\*
+  name: wheels
 on_success:
 - ps: >-
     if ($env:BITTNESS -eq "64" -and $env:PYVER -eq "27") {
