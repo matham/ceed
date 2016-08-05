@@ -15,8 +15,11 @@ from kivy.resources import resource_add_path
 from kivy.uix.behaviors.knspace import knspace
 from kivy.garden.filebrowser import FileBrowser
 from kivy.lang import Builder
+from kivy.core.window import Window
+from kivy.clock import Clock
 
 import ceed
+from ceed.player import CeedPlayer
 import ceed.function.plugin
 import ceed.shape
 
@@ -27,12 +30,15 @@ class CeedApp(CPLComApp):
     '''The app which runs the GUI.
     '''
 
+    player = None
+
     @classmethod
     def get_config_classes(cls):
         d = super(CeedApp, cls).get_config_classes()
         return d
 
     def __init__(self, **kwargs):
+        self.player = CeedPlayer()
         super(CeedApp, self).__init__(**kwargs)
         settings = self.app_settings = populate_dump_config(
             self.ensure_config_file(self.json_config_path),
@@ -42,7 +48,8 @@ class CeedApp(CPLComApp):
             setattr(self, k, v)
 
     def build(self):
-        # Builder.load_file(join(dirname(__file__), 'record.kv'))
+        Builder.load_file(join(dirname(__file__), 'player.kv'))
+        Builder.load_file(join(dirname(__file__), 'shape', 'shape.kv'))
         return super(CeedApp, self).build()
 
     def on_start(self):
@@ -56,10 +63,13 @@ class CeedApp(CPLComApp):
             ceed.__version__))
 
     def check_close(self):
+        if CeedPlayer.is_player_active():
+            self._close_message = 'Cannot close while active.'
+            return False
         return True
 
 def _cleanup():
-    pass
+    CeedPlayer.exit_players()
 
 run_app = partial(run_cpl_app, CeedApp, _cleanup)
 '''The function that starts the GUI and the entry point for

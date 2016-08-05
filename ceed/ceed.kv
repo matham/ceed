@@ -1,0 +1,27 @@
+
+<ErrorTab@ErrorIndicatorBase+TabbedPanelItem>
+
+<MainView@FocusBehavior+BoxLayout>:
+    orientation: 'vertical'
+    TabbedPanel:
+        do_default_tab: False
+        tab_width: None
+        TabbedPanelItem:
+            text: 'Display'
+            Display
+        ErrorTab:
+            knsname: 'error_indicator'
+            size_hint_x: None
+            width: self.height
+            on_parent:
+                app.error_indicator = self
+                self._container = error_container
+            BoxLayout:
+                orientation: 'vertical'
+                Label:
+                    size_hint_y: None
+                    padding: '15dp', '15dp'
+                    height: self.texture_size[1]
+                    text: 'Error log'
+                ErrorLogContainer:
+                    id: error_container

@@ -74,16 +74,6 @@ build_script:
       Check-Error
     }
 
-test_script:
-- ps: >-
-    iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/matham/packaging/master/check_error.ps1'))
-
-    $env:KIVY_DOC_INCLUDE = 1
-
-    python -c "from ceed.main import CeedApp"
-
-    Check-Error
-
 artifacts:
 - path: deploy\*
   name: wheels
