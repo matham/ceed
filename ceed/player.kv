@@ -178,6 +178,7 @@
         size: self.minimum_size
         orientation: 'lr-tb'
         VideoControl
+        PaintBar
     BoxLayout:
         orientation: 'horizontal'
         canvas:
@@ -189,7 +190,9 @@
             auto_bring_to_front: False
             available_size: self.parent.size
             size_hint: None, None
-            size: self.image_size
+            size: self.image_size if self.image_size[0] and self.image_size[1] else self.parent.size
+            CeedPainter:
+                knsname: 'painter'
     StackLayout:  # --------------------- SIDE -------------------
         size_hint: None, None
         size: self.minimum_size

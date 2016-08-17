@@ -61,6 +61,16 @@ build_script:
 
     Check-Error
 
+    garden install collider --kivy
+
+    Check-Error
+
+    cd $PYTHON_ROOT\Lib\site-packages\kivy\garden\collider
+
+    python setup.py build_ext --inplace
+
+    cd "$env:APPVEYOR_BUILD_FOLDER"
+
     python -m pip install -e .
 
     Check-Error

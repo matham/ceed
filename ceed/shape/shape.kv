@@ -1,0 +1,71 @@
+#:import knspace kivy.uix.behaviors.knspace.knspace
+
+<CeedPainter>:
+    size_hint: None, None
+    size: self.parent.size if self.parent else self.size
+
+
+<PaintBar@BoxLayout>:
+    spacing: '9dp'
+    size_hint: None, None
+    size: self.minimum_width, '45dp'
+    ToggleButton:
+        group: 'paint'
+        text: 'Circle'
+        size_hint_x: None
+        padding_x: '5dp'
+        width: self.texture_size[0]
+        allow_no_selection: False
+        on_state: if self.state == 'down': knspace.painter.draw_mode = 'circle'
+    ToggleButton:
+        group: 'paint'
+        text: 'Ellipse'
+        size_hint_x: None
+        padding_x: '5dp'
+        width: self.texture_size[0]
+        allow_no_selection: False
+        on_state: if self.state == 'down': knspace.painter.draw_mode = 'ellipse'
+    ToggleButton:
+        group: 'paint'
+        text: 'Free'
+        size_hint_x: None
+        padding_x: '5dp'
+        width: self.texture_size[0]
+        allow_no_selection: False
+        state: 'down'
+        on_state: if self.state == 'down': knspace.painter.draw_mode = 'freeform'
+    ToggleButton:
+        group: 'paint'
+        text: 'Poly'
+        size_hint_x: None
+        padding_x: '5dp'
+        width: self.texture_size[0]
+        allow_no_selection: False
+        on_state: if self.state == 'down': knspace.painter.draw_mode = 'polygon'
+    ToggleButton:
+        group: 'paint'
+        text: 'Bezier'
+        size_hint_x: None
+        padding_x: '5dp'
+        width: self.texture_size[0]
+        allow_no_selection: False
+        on_state: if self.state == 'down': knspace.painter.draw_mode = 'bezier'
+    ToggleButton:
+        text: 'Select'
+        size_hint_x: None
+        padding_x: '5dp'
+        width: self.texture_size[0]
+        on_state: knspace.painter.select = self.state == 'down'
+    ToggleButton:
+        text: 'Lock'
+        size_hint_x: None
+        padding_x: '5dp'
+        width: self.texture_size[0]
+        on_state: knspace.painter.locked = self.state == 'down'
+    ToggleButton:
+        text: 'Add'
+        size_hint_x: None
+        padding_x: '5dp'
+        width: self.texture_size[0]
+        state: 'down'
+        on_state: knspace.painter.add_selection = self.state == 'down'

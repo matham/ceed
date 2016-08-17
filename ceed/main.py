@@ -22,6 +22,7 @@ import ceed
 from ceed.player import CeedPlayer
 import ceed.function.plugin
 import ceed.shape
+import ceed.shape
 
 __all__ = ('CeedApp', 'run_app')
 
