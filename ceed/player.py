@@ -204,7 +204,12 @@ class CeedPlayer(KNSpaceBehavior, EventDispatcher):
             pt.record_fname_count = ff.record_fname_count = count
 
     def set_filename_widget(self, text_wid, path, selection, filename, is_dir=True):
-        assert len(selection) == 1
+        if not selection:
+            if exists(join(path, filename)):
+                selection = [filename]
+            else:
+                return
+
         f = abspath(join(path, selection[0]))
         if is_dir and not isdir(f):
             f = dirname(f)

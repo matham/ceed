@@ -17,6 +17,12 @@
     scroll_type: ['bars']
     bar_width: 10
     auto_width: False
+    canvas.before:
+        Color:
+            rgb: .7, .2, .9
+        Rectangle:
+            size: self.size
+            pos: self.pos
     GridLayout:
         on_parent: root.container = self
         cols: 1
@@ -191,7 +197,10 @@
             available_size: self.parent.size
             size_hint: None, None
             size: self.image_size if self.image_size[0] and self.image_size[1] else self.parent.size
+            do_translation: painter.locked and not painter.select
+            do_scale: painter.locked and not painter.select
             CeedPainter:
+                id: painter
                 knsname: 'painter'
     StackLayout:  # --------------------- SIDE -------------------
         size_hint: None, None
