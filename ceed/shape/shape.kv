@@ -1,6 +1,7 @@
 #:import knspace kivy.uix.behaviors.knspace.knspace
 
 <CeedPainter>:
+    knsname: 'painter'
     size_hint: None, None
     size: self.parent.size if self.parent else self.size
 
@@ -15,7 +16,6 @@
         size_hint_x: None
         padding_x: '5dp'
         width: self.texture_size[0]
-        allow_no_selection: select.state == 'down'
         on_state: knspace.painter.draw_mode = 'circle' if self.state == 'down' else 'none'
     ToggleButton:
         group: 'paint'
@@ -23,7 +23,6 @@
         size_hint_x: None
         padding_x: '5dp'
         width: self.texture_size[0]
-        allow_no_selection: select.state == 'down'
         on_state: knspace.painter.draw_mode = 'ellipse' if self.state == 'down' else 'none'
     ToggleButton:
         group: 'paint'
@@ -32,7 +31,6 @@
         padding_x: '5dp'
         width: self.texture_size[0]
         state: 'down'
-        allow_no_selection: select.state == 'down'
         on_state: knspace.painter.draw_mode = 'freeform' if self.state == 'down' else 'none'
     ToggleButton:
         group: 'paint'
@@ -40,7 +38,6 @@
         size_hint_x: None
         padding_x: '5dp'
         width: self.texture_size[0]
-        allow_no_selection: select.state == 'down'
         on_state: knspace.painter.draw_mode = 'polygon' if self.state == 'down' else 'none'
     ToggleButton:
         group: 'paint'
@@ -48,7 +45,6 @@
         size_hint_x: None
         padding_x: '5dp'
         width: self.texture_size[0]
-        allow_no_selection: select.state == 'down'
         on_state: knspace.painter.draw_mode = 'bezier' if self.state == 'down' else 'none'
     ToggleButton:
         id: select
@@ -58,6 +54,7 @@
         width: self.texture_size[0]
         on_state: knspace.painter.select = self.state == 'down'
     ToggleButton:
+        id: lock
         text: 'Lock'
         size_hint_x: None
         padding_x: '5dp'
@@ -68,17 +65,115 @@
         size_hint_x: None
         padding_x: '5dp'
         width: self.texture_size[0]
-        state: 'down'
-        on_state: knspace.painter.add_selection = self.state == 'down'
+        on_state:
+            knspace.shapes.touch_multiselect = knspace.painter.multiselect = self.state == 'down'
     Button:
         text: 'Copy'
         size_hint_x: None
         padding_x: '5dp'
         width: self.texture_size[0]
+        disabled: lock.state == 'down'
         on_release: knspace.painter.duplicate_selected_shapes()
     Button:
         text: 'Del'
         size_hint_x: None
         padding_x: '5dp'
         width: self.texture_size[0]
+        disabled: lock.state == 'down'
         on_release: knspace.painter.delete_shapes()
+    ToggleButton:
+        text: 'Show'
+        size_hint_x: None
+        padding_x: '5dp'
+        width: self.texture_size[0]
+        on_state: knspace.painter.show_label = self.state == 'down'
+
+
+<KNBoxLayout@WidgetList+BoxLayout>
+
+<ShapeObjects@BoxLayout>:
+    size_hint_x: None
+    width: self.minimum_width
+    orientation: 'horizontal'
+    ScrollView:
+        size_hint_x: None
+        width: shapes.width
+        bar_width: '10dp'
+        ShapeList:
+            id: shapes
+            knsname: 'shapes'
+            orientation: 'vertical'
+            size_hint: None, None
+            size: self.minimum_size
+            multiselect: True
+    ScrollView:
+        size_hint_x: None
+        width: objects.width
+        bar_width: '10dp'
+        KNBoxLayout:
+            id: objects
+            knsname: 'objects'
+            orientation: 'vertical'
+            size_hint: None, None
+            size: self.minimum_size
+    ScrollView:
+        size_hint_x: None
+        width: funcs.width
+        bar_width: '10dp'
+        KNBoxLayout:
+            id: funcs
+            knsname: 'funcs'
+            orientation: 'vertical'
+            spacing: '5dp'
+            size_hint: None, None
+            size: self.minimum_size
+
+
+<WidgetShape>:
+    size_hint: None, None
+    size: self.minimum_size
+    orientation: 'vertical'
+    more: more.__self__
+    show_more: expand.is_open
+    ShapeDisplayRoot:
+        id: btn
+        size_hint: None, None
+        size: self.minimum_size
+        orientation: 'horizontal'
+        ExpandWidget:
+            id: expand
+            is_selected: root.selected
+            odd: bool(int(root.index) % 2)
+        Label:
+            text: root.name
+            size_hint: None, None
+            padding: '10dp', '10dp'
+            size: self.texture_size
+    BoxLayout:
+        id: more
+        size_hint: None, None
+        height: self.minimum_height
+        width: '100dp'
+        orientation: 'vertical'
+        TextInput:
+            size_hint_y: None
+            height: self.minimum_height
+            multiline: False
+            text: root.name
+            on_focus: if not self.focus: root._name = self.text
+        BoxLayout:
+            size_hint_y: None
+            height: x.minimum_height
+            TextInput:
+                id: x
+                multiline: False
+                input_filter: 'int'
+                text: str(int(root.centroid_x))
+                on_focus: if not self.focus: root._update_centroid(x=int(x.text))
+            TextInput:
+                id: y
+                multiline: False
+                input_filter: 'int'
+                text: str(int(root.centroid_y))
+                on_focus: if not self.focus: root._update_centroid(y=int(y.text))
+

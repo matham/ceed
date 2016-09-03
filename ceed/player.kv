@@ -2,6 +2,7 @@
 #:import dp kivy.metrics.dp
 #:import partial functools.partial
 #:import knspace kivy.uix.behaviors.knspace.knspace
+#:import Matrix kivy.graphics.transformation.Matrix
 
 <PaddedSpinnerOption@SpinnerOption>:
     padding_x: '10dp'
@@ -194,15 +195,11 @@
             knsname: 'central_display'
             do_rotation: False
             auto_bring_to_front: False
-            available_size: self.parent.size
-            size_hint: None, None
-            size: self.image_size if self.image_size[0] and self.image_size[1] else self.parent.size
+            available_size: self.size
             do_translation: painter.locked and not painter.select
             do_scale: painter.locked and not painter.select
+            on_size: self.transform = Matrix()
             CeedPainter:
                 id: painter
                 knsname: 'painter'
-    StackLayout:  # --------------------- SIDE -------------------
-        size_hint: None, None
-        size: self.minimum_size
-        orientation: 'tb-lr'
+        ShapeObjects
