@@ -176,30 +176,3 @@
         width: self.height / 4.
         source: 'more-vert.png' if self.state == 'normal' else 'more-vert_down.png'
         on_release: self.more_widget.open(root)
-
-
-<Display@BoxLayout>:
-    orientation: 'vertical'
-    StackLayout:  # --------------------- TOP --------------------
-        size_hint: None, None
-        size: self.minimum_size
-        orientation: 'lr-tb'
-        VideoControl
-        PaintBar
-    BoxLayout:
-        orientation: 'horizontal'
-        canvas:
-            Color:
-                rgba: 1, 1, 1, 1
-        BufferImage:
-            knsname: 'central_display'
-            do_rotation: False
-            auto_bring_to_front: False
-            available_size: self.size
-            do_translation: painter.locked and not painter.select
-            do_scale: painter.locked and not painter.select
-            on_size: self.transform = Matrix()
-            CeedPainter:
-                id: painter
-                knsname: 'painter'
-        ShapeObjects

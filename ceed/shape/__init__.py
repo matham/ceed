@@ -5,19 +5,20 @@ from kivy.uix.behaviors.togglebutton import ToggleButtonBehavior
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
 from kivy.properties import BooleanProperty, NumericProperty, StringProperty, \
-    ObjectProperty
+    ObjectProperty, DictProperty, ListProperty
 from kivy.core.window import Window
 from kivy.factory import Factory
 
 from cplcom.painter import PaintCanvas, PaintCircle, PaintEllipse, \
     PaintPolygon, PaintBezier
 
-from ceed.utils import WidgetList
+from ceed.utils import WidgetList, ShowMoreSelection, BoxSelector, \
+    ShowMoreBehavior, fix_name
 
 
 class CeedPainter(KNSpaceBehavior, PaintCanvas):
 
-    shape_map = OrderedDict()
+    shape_map = DictProperty({})
 
     show_label = BooleanProperty(False)
 
@@ -25,29 +26,25 @@ class CeedPainter(KNSpaceBehavior, PaintCanvas):
 
     def __init__(self, **kwargs):
         super(CeedPainter, self).__init__(**kwargs)
-        self.shape_map = OrderedDict()
         self.pos_label = Factory.XYSizedLabel()
 
     def add_shape(self, shape, **kwargs):
         if not super(CeedPainter, self).add_shape(shape, **kwargs):
             return False
 
-        shape_map = self.shape_map
-        widget = shape_map[shape] = WidgetShape(
-            index='{}'.format(len(shape_map)))
-        widget.connect_shape(shape, self)
+        shape.name = fix_name(
+            shape.name, knspace.shapes.names, knspace.shape_groups.names)
+        self.shape_map[shape] = WidgetShape(shape=shape, painter=self)
+        knspace.shapes._update_names()
         return True
 
     def remove_shape(self, shape):
         if not super(CeedPainter, self).remove_shape(shape):
             return False
 
-        shape_map = self.shape_map
-        widget = shape_map.pop(shape)
-        widget.disconnect_shape()
-
-        for i, widget in enumerate(shape_map.values()):
-            widget.index = '{}'.format(i)
+        self.shape_map.pop(shape).remove()
+        knspace.shapes._update_names()
+        knspace.shape_groups.remove_shape_from_groups(shape)
         return True
 
     def select_shape(self, shape):
@@ -84,65 +81,240 @@ class CeedPainter(KNSpaceBehavior, PaintCanvas):
         else:
             self.pos_label.text = ''
 
+    def get_state(self):
+        return self.save_shapes(), knspace.shape_groups.get_state()
 
-class ShapeList(WidgetList, BoxLayout):
+    def set_state(self, state):
+        shapes, groups = state
+        self.restore_shapes(shapes)
+        shape_map = {s.name: s for s in self.shapes}
+        knspace.shape_groups.set_state(groups, shape_map)
+
+
+class ShapeGroupList(ShowMoreSelection, WidgetList, BoxLayout):
+
+    names = ListProperty([])
+
+    recurse_select = True
+
+    def add_group(self):
+        group = WidgetShapeGroup()
+        self.add_widget(group)
+        self._update_names()
+        return group
+
+    def remove_group(self, group):
+        self.deselect_node(group)
+        self.remove_widget(group)
+        self._update_names()
+
+    def add_selected_shapes(self):
+        if not self.selected_nodes:
+            group = self.add_group()
+            for shape in self.knspace.painter.selected_shapes:
+                group.add_shape(shape)
+            return
+
+        node = self.selected_nodes[-1]
+        if isinstance(node, ShapeGroupItem):
+            node = node.group
+
+        for shape in self.knspace.painter.selected_shapes:
+            node.add_shape(shape)
+
+    def remove_shape_from_groups(self, shape):
+        for group in self.children:
+            if shape in group.shapes:
+                group.remove_shape(shape=shape)
+
+    def deselect_shape_everywhere(self, shape):
+        for group in self.children:
+            for widget in group.shape_widgets:
+                if widget.selected and widget.shape is shape:
+                    self.deselect_node(widget)
+
+    def count_shape_selection(self, shape):
+        count = 0
+        for group in self.children:
+            for widget in group.shape_widgets:
+                if widget.selected and widget.shape is shape:
+                    count += 1
+        return count
+
+    def _change_group_name(self, group, name):
+        if group.name == name:
+            return name
+        name = fix_name(name, knspace.shapes.names, self.names)
+        group.name = name
+        self._update_names()
+        return name
+
+    def _update_names(self, *largs):
+        self.names = [group.name for group in reversed(self.children)]
+
+    def select_node(self, shape_widget):
+        if not super(ShapeGroupList, self).select_node(shape_widget):
+            return False
+
+        if isinstance(shape_widget, WidgetShapeGroup):
+            for s in shape_widget.shape_widgets:
+                self.select_node(s)
+        else:
+            knspace.painter.select_shape(shape_widget.shape)
+        return True
+
+    def deselect_node(self, shape_widget, keep_all=False):
+        if not super(ShapeGroupList, self).deselect_node(shape_widget):
+            return False
+
+        if isinstance(shape_widget, WidgetShapeGroup):
+            if not keep_all:
+                for s in shape_widget.shape_widgets:
+                    self.deselect_node(s)
+        else:
+            if not self.count_shape_selection(shape_widget.shape):
+                knspace.painter.deselect_shape(shape_widget.shape)
+            if shape_widget.group.selected:
+                self.deselect_node(shape_widget.group, keep_all=True)
+        return True
+
+    def get_selectable_nodes(self):
+        nodes = []
+        for child in reversed(self.children):
+            nodes.append(child)
+            if child.show_more:
+                for c in reversed(child.shape_widgets):
+                    nodes.append(c)
+        return nodes
+
+    def get_state(self):
+        return [group.get_state() for group in reversed(self.children)]
+
+    def set_state(self, state, shape_name_map):
+        for group_state in state:
+            group = self.add_group()
+            group.set_state(group_state, shape_name_map)
+
+
+class WidgetShapeGroup(ShowMoreBehavior, BoxLayout):
+
+    _name_count = 0
+
+    selected = BooleanProperty(False)
+
+    name = StringProperty('')
+
+    shapes = []
+
+    def __init__(self, **kwargs):
+        if 'name' not in kwargs:
+            kwargs['name'] = 'G{}'.format(WidgetShapeGroup._name_count)
+            WidgetShapeGroup._name_count += 1
+        super(WidgetShapeGroup, self).__init__(**kwargs)
+        self.shapes = []
+        self.name = fix_name(
+            self.name, knspace.shapes.names, knspace.shape_groups.names)
+
+    @property
+    def shape_widgets(self):
+        return self.more.children[:-1]
+
+    def add_shape(self, shape):
+        if shape in self.shapes:
+            return
+
+        self.more.add_widget(ShapeGroupItem(shape=shape, group=self))
+        self.shapes.append(shape)
+
+    def remove_shape(self, shape=None, widget=None):
+        if widget is not None:
+            knspace.shape_groups.deselect_node(widget)
+            self.shapes.remove(widget.shape)
+            self.more.remove_widget(widget)
+        elif shape is not None:
+            for widget in self.shape_widgets:
+                if widget.shape == shape:
+                    knspace.shape_groups.deselect_node(widget)
+                    self.more.remove_widget(widget)
+                    self.shapes.remove(shape)
+                    return
+
+    def get_state(self):
+        return {'name': self.name, 'shapes': [s.name for s in self.shapes]}
+
+    def set_state(self, state, shape_name_map):
+        self.name = state['name']
+        for name in state['shapes']:
+            self.add_shape(shape_name_map[name])
+
+
+class ShapeGroupItem(BoxSelector):
+
+    selected = BooleanProperty(False)
+
+    shape = ObjectProperty(None, rebind=True)
+
+    group = ObjectProperty(None)
+
+    @property
+    def name(self):
+        return self.shape.name
+
+
+class ShapeList(ShowMoreSelection, WidgetList, BoxLayout):
+
+    names = ListProperty([])
 
     def select_node(self, node):
         if super(ShapeList, self).select_node(node):
             knspace.painter.select_shape(node.shape)
-            node.selected = True
             return True
         return False
 
     def deselect_node(self, node):
         if super(ShapeList, self).deselect_node(node):
-            knspace.painter.deselect_shape(node.shape)
-            node.selected = False
+            if knspace.painter.deselect_shape(node.shape):
+                knspace.shape_groups.deselect_shape_everywhere(node.shape)
             return True
         return False
 
+    def _change_shape_name(self, shape, name):
+        if shape.name == name:
+            return name
+        name = fix_name(name, knspace.shape_groups.names, self.names)
+        shape.name = name
+        self._update_names()
+        return name
 
-class WidgetShape(BoxLayout):
+    def _update_names(self, *largs):
+        self.names = [shape.name for shape in knspace.painter.shapes]
 
-    painter = None
 
-    shape = None
+class WidgetShape(ShowMoreBehavior, BoxLayout):
+
+    painter = ObjectProperty(None, rebind=True)
+
+    shape = ObjectProperty(None, rebind=True)
 
     label = None
 
     show_label = BooleanProperty(False)
 
-    index = StringProperty('0')
-
-    _name = StringProperty('')
-
-    name = StringProperty('')
-
-    show_more = BooleanProperty(False)
-
     centroid_x = NumericProperty(0)
 
     centroid_y = NumericProperty(0)
-
-    more = ObjectProperty(None)
 
     selected = BooleanProperty(False)
 
     def __init__(self, **kwargs):
         super(WidgetShape, self).__init__(**kwargs)
         self.fbind('show_label', self._show_label)
-        self.fbind('index', self._label_text)
-        self.fbind('_name', self._label_text)
-        self.fbind('show_more', self._show_more)
-        self.remove_widget(self.more)
+        self.shape.fbind('name', self._label_text)
 
-    def connect_shape(self, shape, painter):
-        self.painter = painter
-        self.shape = shape
+        knspace.shapes.add_widget(self)
 
         label = self.label = Label()
-        knspace.shapes.add_widget(self)
-        shape.fbind('on_update', self._shape_update)
+        self.shape.fbind('on_update', self._shape_update)
         label.fbind('size', self._shape_update)
 
         self._label_text()
@@ -150,13 +322,17 @@ class WidgetShape(BoxLayout):
         if self.show_label:
             self._show_label()
 
-    def disconnect_shape(self):
+    @property
+    def name(self):
+        return self.shape.name
+
+    def remove(self):
         self.shape.funbind('on_update', self._shape_update)
         knspace.shapes.remove_widget(self)
 
+        label = self.label
+        label.funbind('size', self._shape_update)
         if self.show_label:
-            label = self.label
-            label.funbind('size', self._shape_update)
             self.painter.remove_widget(label)
 
     def _show_label(self, *largs):
@@ -168,16 +344,14 @@ class WidgetShape(BoxLayout):
             self.painter.remove_widget(self.label)
 
     def _label_text(self, *largs):
-        name = self.name = self._name if self._name else self.index
+        knspace.shapes._update_names()
         if self.show_label:
-            self.label.text = name
+            self.label.text = self.shape.name
 
     def _show_more(self, *largs):
+        super(WidgetShape, self)._show_more(*largs)
         if self.show_more:
-            self.add_widget(self.more)
             self._shape_update()
-        else:
-            self.remove_widget(self.more)
 
     def _shape_update(self, *largs):
         if self.show_label or self.show_more:
@@ -190,14 +364,3 @@ class WidgetShape(BoxLayout):
         dy = 0 if y is None else y - y1
         if dx or dy:
             self.shape.translate(dpos=(dx, dy))
-
-
-class ShapeDisplayRoot(BoxLayout):
-
-    def on_touch_up(self, touch):
-        if super(ShapeDisplayRoot, self).on_touch_up(touch):
-            return True
-        if self.collide_point(*touch.pos):
-            knspace.shapes.select_with_touch(self.parent, touch)
-            return True
-        return False

@@ -1,4 +1,5 @@
 from itertools import chain, islice
+import re
 
 from kivy.uix.widget import Widget
 from kivy.uix.behaviors.compoundselection import CompoundSelectionBehavior
@@ -6,7 +7,10 @@ from kivy.uix.behaviors.knspace import KNSpaceBehavior
 from kivy.uix.behaviors.focus import FocusBehavior
 from kivy.properties import BooleanProperty, ObjectProperty
 from kivy.clock import Clock
+from kivy.uix.boxlayout import BoxLayout
 from kivy.factory import Factory
+
+_name_pat = re.compile('^(.+)-([0-9]+)$')
 
 
 class ExpandWidget(Widget):
@@ -32,6 +36,50 @@ class ExpandWidget(Widget):
         return super(ExpandWidget, self).on_touch_up(touch)
 
 
+class ShowMoreSelection(object):
+
+    def keyboard_on_key_down(self, window, keycode, text, modifiers):
+        if keycode[1] in ('right', 'left') and self.selected_nodes:
+            self.selected_nodes[-1].show_more = keycode[1] == 'right'
+            return True
+        return super(ShowMoreSelection, self).keyboard_on_key_down(
+            window, keycode, text, modifiers)
+
+
+class ShowMoreBehavior(object):
+
+    show_more = BooleanProperty(False)
+
+    more = ObjectProperty(None)
+
+    def __init__(self, **kwargs):
+        super(ShowMoreBehavior, self).__init__(**kwargs)
+        self.fbind('show_more', self._show_more)
+        self._show_more()
+
+    def _show_more(self, *largs):
+        if self.show_more:
+            self.add_widget(self.more)
+        else:
+            self.remove_widget(self.more)
+
+
+class BoxSelector(BoxLayout):
+
+    controller = ObjectProperty(None)
+
+    use_parent = BooleanProperty(True)
+
+    def on_touch_up(self, touch):
+        if super(BoxSelector, self).on_touch_up(touch):
+            return True
+        if self.collide_point(*touch.pos):
+            self.controller.select_with_touch(
+                self.parent if self.use_parent else self, touch)
+            return True
+        return False
+
+
 class WidgetList(KNSpaceBehavior, CompoundSelectionBehavior, FocusBehavior):
 
     child_name_attr_name = 'name'
@@ -55,6 +103,7 @@ class WidgetList(KNSpaceBehavior, CompoundSelectionBehavior, FocusBehavior):
         if node in self.selected_nodes:
             return False
         if super(WidgetList, self).select_node(node):
+            node.selected = True
             return True
         return False
 
@@ -62,6 +111,7 @@ class WidgetList(KNSpaceBehavior, CompoundSelectionBehavior, FocusBehavior):
         if node not in self.selected_nodes:
             return False
         if super(WidgetList, self).deselect_node(node):
+            node.selected = False
             return True
         return False
 
@@ -78,9 +128,9 @@ class WidgetList(KNSpaceBehavior, CompoundSelectionBehavior, FocusBehavior):
 
         if rev:
             last_node_idx = len(nodes) - 1 - last_node_idx
-            names = [getattr(n, name) for n in reversed(nodes)]
+            names = [n.name for n in reversed(nodes)]
         else:
-            names = [getattr(n, name) for n in nodes]
+            names = [n.name for n in nodes]
 
         try:
             i = names.index(key, last_node_idx + 1)
@@ -93,5 +143,22 @@ class WidgetList(KNSpaceBehavior, CompoundSelectionBehavior, FocusBehavior):
         if rev:
             i = len(nodes) - 1 - i
         return nodes[i], i
+
+
+def fix_name(name, *names):
+    if not any((name in n for n in names)):
+        return name
+
+    m = re.match(_name_pat, name)
+    i = 2
+    if m is not None:
+        name, i = m.groups()
+        i = int(i)
+
+    new_name = '{}-{}'.format(name, i)
+    while any((new_name in n for n in names)):
+        i += 1
+        new_name = '{}-{}'.format(name, i)
+    return new_name
 
 Factory.register(classname='WidgetList', cls=WidgetList)

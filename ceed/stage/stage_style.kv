@@ -1,0 +1,54 @@
+
+<StageListing@Splitter>:
+    size_hint_x: None
+    width: '100dp'
+    sizable_from: 'left'
+    strip_size: '5dp'
+    min_size: '15dp'
+    max_size: '400dp'
+    ScrollView:
+        bar_width: '10dp'
+        scroll_type: ['bars']
+        BoxLayout:
+            orientation: 'vertical'
+            size_hint_y: None
+            height: self.minimum_height
+            size_hint_min_x: self.minimum_width
+            BoxLayout:
+                orientation: 'horizontal'
+                size_hint_y: None
+                height: self.minimum_height
+                size_hint_min_x: self.minimum_width
+                Button:
+                    text: '+Par'
+                    size_hint: None, None
+                    size: self.texture_size
+                    padding: '10dp', '10dp'
+                Button:
+                    text: '+Ser'
+                    size_hint: None, None
+                    size: self.texture_size
+                    padding: '10dp', '10dp'
+                Button:
+                    text: '+Stage'
+                    size_hint: None, None
+                    size: self.texture_size
+                    padding: '10dp', '10dp'
+                Button:
+                    text: '+S'
+                    size_hint: None, None
+                    size: self.texture_size
+                    padding: '10dp', '10dp'
+                Button:
+                    text: '+F'
+                    size_hint: None, None
+                    size: self.texture_size
+                    padding: '10dp', '10dp'
+            StageList:
+                id: stages
+                knsname: 'stages'
+                orientation: 'vertical'
+                spacing: '5dp'
+                size_hint_y: None
+                height: self.minimum_height
+                size_hint_min_x: self.minimum_width

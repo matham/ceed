@@ -1,0 +1,123 @@
+<FuncListing@Splitter>:
+    size_hint_x: None
+    width: '100dp'
+    sizable_from: 'left'
+    strip_size: '5dp'
+    min_size: '15dp'
+    max_size: '400dp'
+    ScrollView:
+        bar_width: '10dp'
+        scroll_type: ['bars']
+        BoxLayout:
+            orientation: 'vertical'
+            size_hint_y: None
+            height: self.minimum_height
+            size_hint_min_x: self.minimum_width
+            BoxLayout:
+                orientation: 'horizontal'
+                size_hint_y: None
+                height: self.minimum_height
+                size_hint_min_x: self.minimum_width
+                AutoSizedSpinner:
+                    id: func_spin
+                    values: sorted(funcs.funcs.keys()) if funcs.funcs else []
+                    size_hint_y: None
+                    height: self.minimum_size[1]
+                    size_hint_min_x: self.minimum_size[0]
+                    text_autoupdate: True
+                    padding: '10dp', '10dp'
+                Button:
+                    text: '+'
+                    size_hint_x: None
+                    width: self.texture_size[0]
+                    padding_x: '10dp'
+                    on_release: funcs.add_func(func_spin.text)
+            FuncList:
+                id: funcs
+                knsname: 'funcs'
+                orientation: 'vertical'
+                spacing: '5dp'
+                size_hint_y: None
+                height: self.minimum_height
+                size_hint_min_x: self.minimum_width
+
+
+<FuncPropTextWidget>:
+    size_hint_y: None
+    height: self.minimum_height
+    multiline: False
+    on_focus: if not self.focus: self._update_attr(self.text)
+
+
+<FuncWidget>:
+    size_hint_y: None
+    height: self.minimum_height
+    size_hint_min_x: self.minimum_width
+    orientation: 'vertical'
+    more: more.__self__
+    show_more: expand.is_open
+    source_control: source_control
+    BoxSelector:
+        size_hint_y: None
+        height: self.minimum_height
+        size_hint_min_x: self.minimum_width
+        orientation: 'horizontal'
+        controller: knspace.funcs
+        ExpandWidget:
+            id: expand
+            is_selected: root.selected
+            odd: root.parent is not None and root.__self__ in root.parent.children and bool((len(root.parent.children) - root.parent.children.index(root.__self__)) % 2)
+        Label:
+            text: (root.func.source_func.name if root.func.source_func else root.func.name) if root.func else ''
+            size_hint_y: None
+            height: self.texture_size[1]
+            size_hint_min_x: self.texture_size[0]
+            padding: '10dp', '10dp'
+        ImageButton:
+            size_hint_x: None
+            width: self.height
+            source: 'delete.png' if self.state == 'normal' else 'delete_down.png'
+            on_release: root.remove_from_parent()
+    BoxLayout:
+        id: more
+        size_hint_y: None
+        height: self.minimum_height
+        size_hint_min_x: self.minimum_width
+        orientation: 'vertical'
+        Label:
+            padding: '5dp', '5dp'
+            size_hint_y: None
+            height: self.texture_size[1]
+            text_size: self.width, None
+            halign: 'center'
+            text: root.func.description if root.func else ''
+        BoxLayout:
+            id: source_control
+            orientation: 'horizontal'
+            size_hint_y: None
+            height: '30dp'
+            size_hint_min_x: self.minimum_width
+            ToggleButton:
+                text: 'Track'
+                state: 'down' if root.func and root.func.track_source else 'normal'
+                size_hint: None, None
+                size: self.texture_size
+                on_state:
+                    if root.func: root.func.track_source = self.state == 'down'
+                    if root.func: root.func.reload_from_source()
+            ImageButton:
+                size_hint_x: None
+                width: self.height
+                source: 'refresh.png' if self.state == 'normal' else 'refresh_down.png'
+                on_release: root.func.reload_from_source()
+
+
+<FuncWidgetGroup>:
+    func_container: func_container.__self__
+    BoxLayout:
+        id: func_container
+        spacing: '5dp'
+        size_hint_y: None
+        height: self.minimum_height
+        size_hint_min_x: self.minimum_width
+        orientation: 'vertical'

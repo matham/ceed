@@ -27,6 +27,39 @@
                     id: error_container
 
 
+<Display@BoxLayout>:
+    orientation: 'vertical'
+    StackLayout:  # --------------------- TOP --------------------
+        size_hint: None, None
+        size: self.minimum_size
+        orientation: 'lr-tb'
+        VideoControl
+        PaintBar
+    BoxLayout:
+        orientation: 'horizontal'
+        canvas:
+            Color:
+                rgba: 1, 1, 1, 1
+        BufferImage:
+            knsname: 'central_display'
+            do_rotation: False
+            auto_bring_to_front: False
+            available_size: self.size
+            do_translation: painter.locked and not painter.select
+            do_scale: painter.locked and not painter.select
+            on_size: self.transform = Matrix()
+            CeedPainter:
+                id: painter
+                knsname: 'painter'
+        BoxLayout:
+            size_hint_x: None
+            width: self.minimum_width
+            orientation: 'horizontal'
+            ShapeListing
+            StageListing
+            FuncListing
+
+
 <ExpandWidget>:
     is_selected: False
     odd: False
@@ -49,3 +82,16 @@
 <XYSizedLabel@Label>:
     size_hint: None, None
     size: self.texture_size
+
+<XSizedLabel@Label>:
+    size_hint_x: None
+    width: self.texture_size[0]
+
+<YSizedGridLayout@GridLayout>:
+    size_hint_y: None
+    height: self.minimum_height
+
+<XYSizedGridLayout@GridLayout>:
+    size_hint_y: None
+    height: self.minimum_height
+    size_hint_min_x: self.minimum_width

@@ -22,7 +22,8 @@ import ceed
 from ceed.player import CeedPlayer
 import ceed.function.plugin
 import ceed.shape
-import ceed.shape
+import ceed.function
+import ceed.stage
 import ceed.utils
 
 __all__ = ('CeedApp', 'run_app')
@@ -50,8 +51,11 @@ class CeedApp(CPLComApp):
             setattr(self, k, v)
 
     def build(self):
-        Builder.load_file(join(dirname(__file__), 'player.kv'))
-        Builder.load_file(join(dirname(__file__), 'shape', 'shape.kv'))
+        Builder.load_file(join(dirname(__file__), 'ceed_style.kv'))
+        Builder.load_file(join(dirname(__file__), 'player_style.kv'))
+        Builder.load_file(join(dirname(__file__), 'shape', 'shape_style.kv'))
+        Builder.load_file(join(dirname(__file__), 'function', 'func_style.kv'))
+        Builder.load_file(join(dirname(__file__), 'stage', 'stage_style.kv'))
         return super(CeedApp, self).build()
 
     def on_start(self):
