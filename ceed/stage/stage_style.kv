@@ -1,49 +1,89 @@
+#:import StageFactory ceed.stage.StageFactory
+#:import FunctionFactory ceed.function.FunctionFactory
 
 <StageListing@Splitter>:
     size_hint_x: None
-    width: '100dp'
+    width: '150dp'
     sizable_from: 'left'
     strip_size: '5dp'
     min_size: '15dp'
     max_size: '400dp'
-    ScrollView:
-        bar_width: '10dp'
-        scroll_type: ['bars']
-        BoxLayout:
-            orientation: 'vertical'
+    BoxLayout:
+        orientation: 'vertical'
+        ScrollView:
+            bar_width: '10dp'
+            scroll_type: ['bars']
             size_hint_y: None
-            height: self.minimum_height
-            size_hint_min_x: self.minimum_width
+            height: control_box.minimum_height
             BoxLayout:
-                orientation: 'horizontal'
+                id: control_box
+                orientation: 'vertical'
                 size_hint_y: None
                 height: self.minimum_height
                 size_hint_min_x: self.minimum_width
                 Button:
-                    text: '+Par'
-                    size_hint: None, None
-                    size: self.texture_size
-                    padding: '10dp', '10dp'
-                Button:
-                    text: '+Ser'
-                    size_hint: None, None
-                    size: self.texture_size
-                    padding: '10dp', '10dp'
-                Button:
                     text: '+Stage'
-                    size_hint: None, None
-                    size: self.texture_size
-                    padding: '10dp', '10dp'
-                Button:
-                    text: '+S'
-                    size_hint: None, None
-                    size: self.texture_size
-                    padding: '10dp', '10dp'
-                Button:
-                    text: '+F'
-                    size_hint: None, None
-                    size: self.texture_size
-                    padding: '10dp', '10dp'
+                    size_hint_y: None
+                    height: self.texture_size[1]
+                    padding: '10dp', '5dp'
+                    size_hint_min_x: self.texture_size[0]
+                    on_release: stages.add_stage()
+                BoxLayout:
+                    size_hint_y: None
+                    height: self.minimum_height
+                    size_hint_min_x: self.minimum_width
+                    Button:
+                        text: '+Groups'
+                        size_hint_y: None
+                        height: self.texture_size[1]
+                        padding: '10dp', '5dp'
+                        size_hint_min_x: self.texture_size[0]
+                        on_release: stages.add_selected_shape_groups()
+                    Button:
+                        text: '+Shapes'
+                        size_hint_y: None
+                        height: self.texture_size[1]
+                        padding: '10dp', '5dp'
+                        size_hint_min_x: self.texture_size[0]
+                        on_release: stages.add_selected_shapes()
+                BoxLayout:
+                    size_hint_y: None
+                    height: self.minimum_height
+                    size_hint_min_x: self.minimum_width
+                    AutoSizedSpinner:
+                        id: shape_spin
+                        values: sorted(list(knspace.painter.shape_names.keys()) + list(knspace.painter.shape_group_names.keys())) if knspace.painter and (knspace.painter.shape_names or knspace.painter.shape_group_names) else []
+                        size_hint_min_y: self.minimum_size[1]
+                        size_hint_min_x: self.minimum_size[0]
+                        text_autoupdate: True
+                        padding: '10dp', '5dp'
+                    Button:
+                        text: '+'
+                        size_hint: None, None
+                        size: self.texture_size
+                        padding: '10dp', '5dp'
+                        on_release: stages.add_shape_by_name(shape_spin.text)
+                BoxLayout:
+                    size_hint_y: None
+                    height: self.minimum_height
+                    size_hint_min_x: self.minimum_width
+                    AutoSizedSpinner:
+                        id: func_spin
+                        values: sorted(FunctionFactory.avail_funcs.keys()) if FunctionFactory.avail_funcs else []
+                        size_hint_y: None
+                        height: self.minimum_size[1]
+                        size_hint_min_x: self.minimum_size[0]
+                        text_autoupdate: True
+                        padding: '10dp', '5dp'
+                    Button:
+                        text: '+'
+                        size_hint_x: None
+                        width: self.texture_size[0]
+                        padding_x: '10dp'
+                        on_release: stages.add_func(func_spin.text)
+        ScrollView:
+            bar_width: '10dp'
+            scroll_type: ['bars']
             StageList:
                 id: stages
                 knsname: 'stages'
@@ -52,3 +92,164 @@
                 size_hint_y: None
                 height: self.minimum_height
                 size_hint_min_x: self.minimum_width
+                touch_deselect_last: True
+
+
+<StageObjContainer@ColorBackgroundBehavior+BoxLayout>
+
+<StageWidget>:
+    size_hint_y: None
+    height: self.minimum_height
+    size_hint_min_x: self.minimum_width
+    orientation: 'vertical'
+    more: more.__self__
+    settings: settings.__self__
+    show_more: expand.is_open
+    expand: expand
+    stage_widget: stage_widget
+    func_widget: func_widget
+    shape_widget: shape_widget
+    BoxSelector:
+        size_hint_y: None
+        height: self.minimum_height
+        size_hint_min_x: self.minimum_width
+        orientation: 'horizontal'
+        controller: knspace.stages
+        spacing: '5dp'
+        padding: '5dp'
+        ExpandWidget:
+            id: expand
+        Label:
+            text: root.stage.name if root.stage else ''
+            size_hint_y: None
+            height: self.texture_size[1]
+            size_hint_min_x: self.texture_size[0]
+            padding: '10dp', '5dp'
+        ImageButton:
+            size_hint_x: None
+            width: self.height
+            source: 'delete.png' if self.state == 'normal' else 'delete_down.png'
+            on_release: root.remove_from_parent()
+        ImageButton:
+            size_hint_x: None
+            width: self.height / 4.
+            source: 'more-vert.png' if self.state == 'normal' else 'more-vert_down.png'
+            on_release: settings.open(root)
+    DropDown:
+        id: settings
+        canvas.before:
+            Color:
+                rgba: .1875, .1875, .1875, 1
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        TextInput:
+            id: name_input
+            size_hint_y: None
+            height: self.minimum_height
+            multiline: False
+            text: root.stage.name if root.stage else ''
+            on_focus: if not self.focus: self.text = StageFactory._change_stage_name(root.stage, self.text)
+        BoxLayout:
+            size_hint_y: None
+            height: self.minimum_height
+            ToggleButton:
+                id: para_btn
+                size_hint_y: None
+                height: self.texture_size[0]
+                group: 'stage_order'
+                allow_no_selection: False
+                padding: '10dp', '5dp'
+                text: 'Parallel'
+                state: 'down' if root.stage and root.stage.order == 'parallel' else 'normal'
+                on_state: if self.state == 'down': root.stage.order = 'parallel'
+            ToggleButton:
+                group: 'stage_order'
+                allow_no_selection: False
+                padding: '10dp', '5dp'
+                text: 'Serial'
+                state: 'down' if root.stage and root.stage.order == 'serial' else 'normal'
+                on_state: if self.state == 'down': root.stage.order = 'serial'
+                state: 'down'
+        BoxLayout:
+            size_hint_y: None
+            height: self.minimum_height
+            ToggleButton:
+                size_hint_y: None
+                height: self.texture_size[0]
+                padding: '10dp', '5dp'
+                text: 'R'
+                state: 'down' if root.stage and root.stage.color_r else 'normal'
+                on_state: root.stage.color_r = self.state == 'down'
+            ToggleButton:
+                size_hint_y: None
+                height: self.texture_size[0]
+                padding: '10dp', '5dp'
+                text: 'G'
+                state: 'down' if root.stage and root.stage.color_g else 'normal'
+                on_state: root.stage.color_g = self.state == 'down'
+            ToggleButton:
+                size_hint_y: None
+                height: self.texture_size[0]
+                padding: '10dp', '5dp'
+                text: 'B'
+                state: 'down' if root.stage and root.stage.color_b else 'normal'
+                on_state: root.stage.color_b = self.state == 'down'
+
+    BoxLayout:
+        id: more
+        spacing: '5dp'
+        padding: '5dp'
+        size_hint_y: None
+        height: self.minimum_height
+        size_hint_min_x: self.minimum_width
+        orientation: 'vertical'
+        StageObjContainer:
+            id: stage_widget
+            spacing: '5dp'
+            padding: '6dp'
+            size_hint_y: None
+            height: self.minimum_height
+            size_hint_min_x: self.minimum_width
+            orientation: 'vertical'
+            source_obj: root
+        StageObjContainer:
+            id: func_widget
+            spacing: '5dp'
+            padding: '6dp'
+            size_hint_y: None
+            height: self.minimum_height
+            size_hint_min_x: self.minimum_width
+            orientation: 'vertical'
+            source_obj: root
+        StageObjContainer:
+            id: shape_widget
+            spacing: '5dp'
+            padding: '6dp'
+            size_hint_y: None
+            height: self.minimum_height
+            size_hint_min_x: self.minimum_width
+            orientation: 'vertical'
+            source_obj: root
+
+
+<StageShapeDisplay>:
+    size_hint_y: None
+    height: self.minimum_height
+    size_hint_min_x: self.minimum_width
+    orientation: 'horizontal'
+    spacing: '5dp'
+    padding: '5dp'
+    controller: knspace.stages
+    use_parent: False
+    Label:
+        text: root.stage_shape.name if root.stage_shape else ''
+        size_hint_y: None
+        height: self.texture_size[1]
+        size_hint_min_x: self.texture_size[0]
+        padding: '10dp', '5dp'
+    ImageButton:
+        size_hint_x: None
+        width: self.height
+        source: 'delete.png' if self.state == 'normal' else 'delete_down.png'
+        on_release: root.stage_shape.stage.remove_shape(root.stage_shape)

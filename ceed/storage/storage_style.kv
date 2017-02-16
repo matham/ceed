@@ -1,0 +1,112 @@
+#:import CeedData ceed.storage.controller.CeedData
+#:import Clock kivy.clock.Clock
+
+<DataBar@BoxLayout>:
+    spacing: '9dp'
+    size_hint: None, None
+    size: self.minimum_width, '35dp'
+    more: more.__self__
+    BoxLayout:
+        spacing: '9dp'
+        size_hint: None, None
+        size: self.minimum_size
+        id: box
+        on_parent: Clock.schedule_once(lambda *x: self.remove_widget(more.__self__))
+        Button:
+            text: 'Save'
+            size_hint: None, None
+            padding: '5dp', '5dp'
+            size: self.texture_size
+            on_release:
+                if CeedData.filename: CeedData.save()
+                if not CeedData.filename: app.filebrowser.target = CeedData.root_path
+                if not CeedData.filename: app.filebrowser.dirselect =  app.filebrowser.multiselect = False
+                if not CeedData.filename: app.filebrowser.callback = CeedData.get_filebrowser_callback(CeedData.save_as, True)
+                if not CeedData.filename: app.filebrowser.open()
+        Button:
+            text: 'More'
+            size_hint: None, None
+            padding: '5dp', '5dp'
+            size: self.texture_size
+            on_release: root.more.open(self.parent)
+        DropDown:
+            id: more
+            auto_width: True
+            canvas.before:
+                Color:
+                    rgb: .7, .2, .9
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
+            Button:
+                text: 'Save as'
+                size_hint: None, None
+                padding: '5dp', '5dp'
+                size: self.texture_size
+                on_release:
+                    app.filebrowser.target = CeedData.root_path
+                    app.filebrowser.dirselect =  app.filebrowser.multiselect = False
+                    app.filebrowser.callback = CeedData.get_filebrowser_callback(CeedData.save_as, True)
+                    app.filebrowser.open()
+            Button:
+                text: 'Create'
+                size_hint: None, None
+                padding: '5dp', '5dp'
+                size: self.texture_size
+                on_release:
+                    app.filebrowser.target = CeedData.root_path
+                    app.filebrowser.dirselect =  app.filebrowser.multiselect = False
+                    app.filebrowser.callback = CeedData.get_filebrowser_callback(CeedData.create_file, True, True)
+                    app.filebrowser.open()
+            Button:
+                text: 'Open'
+                size_hint: None, None
+                padding: '5dp', '5dp'
+                size: self.texture_size
+                on_release:
+                    app.filebrowser.target = CeedData.root_path
+                    app.filebrowser.dirselect =  app.filebrowser.multiselect = False
+                    app.filebrowser.callback = CeedData.get_filebrowser_callback(CeedData.open_file, check_unsaved=True)
+                    app.filebrowser.open()
+            Button:
+                text: 'Import'
+                size_hint: None, None
+                padding: '5dp', '5dp'
+                size: self.texture_size
+                on_release:
+                    app.filebrowser.target = CeedData.root_path
+                    app.filebrowser.dirselect =  app.filebrowser.multiselect = False
+                    app.filebrowser.callback = CeedData.get_filebrowser_callback(CeedData.import_file)
+                    app.filebrowser.open()
+            Button:
+                text: 'Close'
+                size_hint: None, None
+                padding: '5dp', '5dp'
+                size: self.texture_size
+                on_release: CeedData.ui_close()
+            Button:
+                text: 'Discard'
+                size_hint: None, None
+                padding: '5dp', '5dp'
+                size: self.texture_size
+                on_release: CeedData.discard_file()
+            Button:
+                text: 'Load JSON'
+                size_hint: None, None
+                padding: '5dp', '5dp'
+                size: self.texture_size
+                on_release:
+                    app.filebrowser.target = CeedData.root_path
+                    app.filebrowser.dirselect =  app.filebrowser.multiselect = False
+                    app.filebrowser.callback = CeedData.get_filebrowser_callback(CeedData.read_json_config)
+                    app.filebrowser.open()
+            Button:
+                text: 'Save JSON'
+                size_hint: None, None
+                padding: '5dp', '5dp'
+                size: self.texture_size
+                on_release:
+                    app.filebrowser.target = CeedData.root_path
+                    app.filebrowser.dirselect =  app.filebrowser.multiselect = False
+                    app.filebrowser.callback = CeedData.get_filebrowser_callback(CeedData.write_json_config, True)
+                    app.filebrowser.open()

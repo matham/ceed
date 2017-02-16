@@ -1,45 +1,51 @@
+#:import FunctionFactory ceed.function.FunctionFactory
+
 <FuncListing@Splitter>:
     size_hint_x: None
     width: '100dp'
     sizable_from: 'left'
     strip_size: '5dp'
     min_size: '15dp'
-    max_size: '400dp'
-    ScrollView:
-        bar_width: '10dp'
-        scroll_type: ['bars']
-        BoxLayout:
-            orientation: 'vertical'
+    max_size: dp(400) + max(funcs.minimum_width, control_box.minimum_width)
+    BoxLayout:
+        orientation: 'vertical'
+        ScrollView:
+            bar_width: '10dp'
+            scroll_type: ['bars']
             size_hint_y: None
-            height: self.minimum_height
-            size_hint_min_x: self.minimum_width
+            height: control_box.minimum_height
             BoxLayout:
+                id: control_box
                 orientation: 'horizontal'
                 size_hint_y: None
                 height: self.minimum_height
                 size_hint_min_x: self.minimum_width
                 AutoSizedSpinner:
                     id: func_spin
-                    values: sorted(funcs.funcs.keys()) if funcs.funcs else []
+                    values: sorted(FunctionFactory.avail_funcs.keys()) if FunctionFactory.avail_funcs else []
                     size_hint_y: None
                     height: self.minimum_size[1]
                     size_hint_min_x: self.minimum_size[0]
                     text_autoupdate: True
-                    padding: '10dp', '10dp'
+                    padding: '10dp', '5dp'
                 Button:
                     text: '+'
                     size_hint_x: None
                     width: self.texture_size[0]
                     padding_x: '10dp'
                     on_release: funcs.add_func(func_spin.text)
+        ScrollView:
+            bar_width: '10dp'
+            scroll_type: ['bars']
             FuncList:
                 id: funcs
                 knsname: 'funcs'
                 orientation: 'vertical'
-                spacing: '5dp'
+                spacing: '3dp'
                 size_hint_y: None
                 height: self.minimum_height
                 size_hint_min_x: self.minimum_width
+                touch_deselect_last: True
 
 
 <FuncPropTextWidget>:
@@ -55,68 +61,81 @@
     size_hint_min_x: self.minimum_width
     orientation: 'vertical'
     more: more.__self__
+    settings: settings.__self__
     show_more: expand.is_open
     source_control: source_control
+    expand: expand
     BoxSelector:
         size_hint_y: None
         height: self.minimum_height
         size_hint_min_x: self.minimum_width
         orientation: 'horizontal'
-        controller: knspace.funcs
+        controller: root.selection_controller
+        spacing: '5dp'
+        padding: '8dp'
         ExpandWidget:
             id: expand
-            is_selected: root.selected
-            odd: root.parent is not None and root.__self__ in root.parent.children and bool((len(root.parent.children) - root.parent.children.index(root.__self__)) % 2)
         Label:
             text: (root.func.source_func.name if root.func.source_func else root.func.name) if root.func else ''
             size_hint_y: None
             height: self.texture_size[1]
             size_hint_min_x: self.texture_size[0]
-            padding: '10dp', '10dp'
-        ImageButton:
-            size_hint_x: None
-            width: self.height
-            source: 'delete.png' if self.state == 'normal' else 'delete_down.png'
-            on_release: root.remove_from_parent()
-    BoxLayout:
-        id: more
-        size_hint_y: None
-        height: self.minimum_height
-        size_hint_min_x: self.minimum_width
-        orientation: 'vertical'
-        Label:
-            padding: '5dp', '5dp'
-            size_hint_y: None
-            height: self.texture_size[1]
-            text_size: self.width, None
-            halign: 'center'
-            text: root.func.description if root.func else ''
+            padding: '10dp', '5dp'
         BoxLayout:
             id: source_control
             orientation: 'horizontal'
-            size_hint_y: None
-            height: '30dp'
-            size_hint_min_x: self.minimum_width
-            ToggleButton:
-                text: 'Track'
+            size_hint_x: None
+            width: self.minimum_width
+            spacing: '5dp'
+            ImageToggleButton:
                 state: 'down' if root.func and root.func.track_source else 'normal'
-                size_hint: None, None
-                size: self.texture_size
+                size_hint_x: None
+                width: self.height
+                source: 'lock.png' if self.state == 'normal' else 'lock_down.png'
                 on_state:
                     if root.func: root.func.track_source = self.state == 'down'
-                    if root.func: root.func.reload_from_source()
+                    if root.func and root.func.track_source: root.func.reload_from_source()
             ImageButton:
                 size_hint_x: None
                 width: self.height
                 source: 'refresh.png' if self.state == 'normal' else 'refresh_down.png'
                 on_release: root.func.reload_from_source()
-
-
-<FuncWidgetGroup>:
-    func_container: func_container.__self__
+        ImageButton:
+            size_hint_x: None
+            width: self.height
+            source: 'delete.png' if self.state == 'normal' else 'delete_down.png'
+            on_release: root.remove_from_parent()
+        ImageButton:
+            size_hint_x: None
+            width: self.height / 4.
+            source: 'more-vert.png' if self.state == 'normal' else 'more-vert_down.png'
+            on_release: settings.open(root)
+    DropDown:
+        id: settings
+        canvas.before:
+            Color:
+                rgba: .1875, .1875, .1875, 1
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        BoxLayout:
+            size_hint_y: None
+            height: self.minimum_height
+            size_hint_min_x: self.minimum_width
+            orientation: 'vertical'
+            spacing: '5dp'
+            padding: '5dp'
+            Label:
+                padding: '5dp', '5dp'
+                size_hint_y: None
+                height: self.texture_size[1]
+                text_size: self.width, None
+                halign: 'center'
+                text: root.func.description if root.func else ''
     BoxLayout:
-        id: func_container
+        id: more
         spacing: '5dp'
+        padding: '5dp'
         size_hint_y: None
         height: self.minimum_height
         size_hint_min_x: self.minimum_width

@@ -74,7 +74,7 @@
                 width: self.height
                 source: 'browse.png' if self.state == 'normal' else 'browse_down.png'
                 on_release:
-                    app.filebrowser.target = record_path.text
+                    app.filebrowser.target = knspace.player.browse_path
                     app.filebrowser.dirselect = False
                     app.filebrowser.multiselect = False
                     app.filebrowser.callback = partial(knspace.player.set_filename_widget, record_path, is_dir=False)
@@ -95,7 +95,7 @@
                 width: self.height
                 source: 'browse.png' if self.state == 'normal' else 'browse_down.png'
                 on_release:
-                    app.filebrowser.target = path_dir.text
+                    app.filebrowser.target = knspace.player.browse_path
                     app.filebrowser.dirselect = True
                     app.filebrowser.multiselect = False
                     app.filebrowser.callback = partial(knspace.player.set_filename_widget, path_dir)
@@ -126,7 +126,7 @@
 
 <VideoControl@BoxLayout>
     size_hint: None, None
-    size: self.minimum_width, '45dp'
+    size: self.minimum_width, '35dp'
     spacing: '12dp'
     ImageToggleButton:
         id: play
@@ -137,12 +137,42 @@
         disabled: not knspace.player or knspace.player.pt_player_active and not knspace.player.pt_player_play
         on_state: knspace.player.play(live.state == 'down') if self.state == 'down' else knspace.player.stop()
     ImageToggleButton:
+        id: pause
+        knsname: 'gui_pause'
+        size_hint_x: None
+        width: self.height
+        source: 'pause.png' if self.state == 'normal' else 'play.png'
+        disabled: play.disabled or not knspace.player.ff_player_play
+        on_state: knspace.player.set_pause(self.state == 'down')
+    ImageToggleButton:
         knsname: 'gui_record'
         size_hint_x: None
         width: self.height
         source: 'record.png' if self.state == 'normal' else 'record_down.png'
         disabled: play.disabled or knspace.player.player_record_active and not knspace.player.player_record
         on_state: knspace.player.record() if self.state == 'down' else knspace.player.stop_recording()
+    ImageButton:
+        size_hint_x: None
+        width: self.height
+        source: 'save.png' if self.state == 'normal' else 'save_down.png'
+        last_image: None
+        on_press: self.last_image = knspace.player.last_image
+        on_release:
+            app.filebrowser.target = knspace.player.browse_path
+            app.filebrowser.dirselect = False
+            app.filebrowser.multiselect = False
+            app.filebrowser.callback = partial(knspace.player.save_screenshot, self.last_image)
+            if self.last_image: app.filebrowser.open()
+    ImageButton:
+        size_hint_x: None
+        width: self.height
+        source: 'load.png' if self.state == 'normal' else 'load_down.png'
+        on_release:
+            app.filebrowser.target = knspace.player.browse_path
+            app.filebrowser.dirselect = False
+            app.filebrowser.multiselect = False
+            app.filebrowser.callback = knspace.player.load_screenshot
+            app.filebrowser.open()
     KNToggleButton:
         id: live
         knsname: 'gui_live_cam'

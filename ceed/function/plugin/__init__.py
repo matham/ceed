@@ -6,7 +6,7 @@ from math import exp
 
 from kivy.properties import NumericProperty
 
-from ceed.function import CeedFunc, FunctionFactory
+from ceed.function import CeedFunc, FunctionFactory, FuncDoneException
 
 
 def import_plugins():
@@ -27,15 +27,17 @@ class ConstFunc(CeedFunc):
         super(ConstFunc, self).__init__(**kwargs)
 
     def __call__(self, t):
+        if self.check_done(t):
+            raise FuncDoneException
         return self.a
 
-    def get_gui_controls(self, attrs={}):
-        d = super(ConstFunc, self).get_gui_controls(attrs)
+    def get_gui_props(self, attrs={}):
+        d = super(ConstFunc, self).get_gui_props(attrs)
         d ['a'] = None
         return d
 
-    def _copy_state(self, state={}, *largs, **kwargs):
-        d = super(ConstFunc, self)._copy_state(state, *largs, **kwargs)
+    def _copy_state(self, *largs, **kwargs):
+        d = super(ConstFunc, self)._copy_state(*largs, **kwargs)
         d['a'] = self.a
         return d
 
@@ -48,20 +50,23 @@ class LinearFunc(CeedFunc):
 
     def __init__(self, **kwargs):
         kwargs.setdefault('name', 'Linear')
-        kwargs.setdefault('description', 'y(t) = mt + b')
+        kwargs.setdefault('description', 'y(t) = m(t + t0) + b')
         super(LinearFunc, self).__init__(**kwargs)
 
     def __call__(self, t):
-        return self.m * (t - self.t0) + self.b
+        if self.check_done(t):
+            raise FuncDoneException
+        t = (t - self._t0_global + self.t0) / self.timebase
+        return self.m * t + self.b
 
-    def get_gui_controls(self, attrs={}):
-        d = super(LinearFunc, self).get_gui_controls(attrs)
+    def get_gui_props(self, attrs={}):
+        d = super(LinearFunc, self).get_gui_props(attrs)
         d ['m'] = None
         d ['b'] = None
         return d
 
-    def _copy_state(self, state={}, *largs, **kwargs):
-        d = super(LinearFunc, self)._copy_state(state, *largs, **kwargs)
+    def _copy_state(self, *largs, **kwargs):
+        d = super(LinearFunc, self)._copy_state(*largs, **kwargs)
         d['m'] = self.m
         d['b'] = self.b
         return d
@@ -79,23 +84,26 @@ class ExponantialFunc(CeedFunc):
 
     def __init__(self, **kwargs):
         kwargs.setdefault('name', 'Exp')
-        kwargs.setdefault('description', 'y(t) = Ae-t/tau1 + Be-t/tau2')
+        kwargs.setdefault('description',
+                          'y(t) = Ae-(t + t0)/tau1 + Be-(t + t0)/tau2')
         super(ExponantialFunc, self).__init__(**kwargs)
 
     def __call__(self, t):
-        return self.A * exp((t - self.t0) / self.tau1) + \
-            self.B * exp((t - self.t0) / self.tau2)
+        if self.check_done(t):
+            raise FuncDoneException
+        t = (t - self._t0_global + self.t0) / self.timebase
+        return self.A * exp(t / self.tau1) + self.B * exp(t / self.tau2)
 
-    def get_gui_controls(self, attrs={}):
-        d = super(ExponantialFunc, self).get_gui_controls(attrs)
+    def get_gui_props(self, attrs={}):
+        d = super(ExponantialFunc, self).get_gui_props(attrs)
         d ['A'] = None
         d ['B'] = None
         d ['tau1'] = None
         d ['tau2'] = None
         return d
 
-    def _copy_state(self, state={}, *largs, **kwargs):
-        d = super(ExponantialFunc, self)._copy_state(state, *largs, **kwargs)
+    def _copy_state(self, *largs, **kwargs):
+        d = super(ExponantialFunc, self)._copy_state(*largs, **kwargs)
         d['A'] = self.A
         d['B'] = self.B
         d['tau1'] = self.tau1

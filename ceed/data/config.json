@@ -1,5 +1,40 @@
 {
     "app": {
         "inspect": true
+    },
+    "data": {
+        "backup_interval": 5.0,
+        "root_path": "G:\\Home"
+    },
+    "player": {
+        "browse_path": "G:\\Home"
+    },
+    "serializer": {
+        "clock_idx": 0,
+        "count_indices": [4,5],
+        "counter_bit_width": 16,
+        "projector_to_aquisition_map": {
+            "0": 0,
+            "1": 1,
+            "2": 2,
+            "3": 3,
+            "4": 4,
+            "5": 5
+        },
+        "short_count_indices": [1,2,3]
+    },
+    "view": {
+        "cam_offset_x": 8.81721249047959,
+        "cam_offset_y": 119.54836252856097,
+        "cam_rotation": 0.0930125473728367,
+        "cam_scale": 0.46915522596175363,
+        "frame_rate": 60.0,
+        "fullscreen": true,
+        "output_count": true,
+        "preview": false,
+        "screen_height": 1080,
+        "screen_offset_x": 1920,
+        "screen_width": 1920,
+        "use_software_frame_rate": true
     }
 }

@@ -14,105 +14,58 @@ from kivy.factory import Factory
 from kivy.compat import string_types
 
 from ceed.utils import WidgetList, ShowMoreSelection, ShowMoreBehavior, \
-    fix_name
-from ceed.function import FunctionFactory, CeedFunc, FuncGroup
+    fix_name, ColorBackgroundBehavior
+from ceed.function import FunctionFactory, FuncGroup
 
 
 class FuncList(ShowMoreSelection, WidgetList, BoxLayout):
 
-    funcs = DictProperty({})
-
-    editable_func_list = []
-
-    def __init__(self, **kwargs):
-        super(FuncList, self).__init__(**kwargs)
-        self.editable_func_list = []
-        funcs = self.funcs
-        for cls in FunctionFactory.get_classes():
-            f = cls()
-            funcs[f.name] = f
-
-    def save_funcs(self, id_map=None):
-        if id_map is None:
-            id_map = {}
-        CeedFunc.get_id_map(self.editable_func_list, id_map)
-
-        states = [f._copy_state() for f in self.editable_func_list]
-        return states, id_map
-
-    def recover_funcs(self, funcs, id_map):
-        funcs = [CeedFunc.recover_func(state) for state in funcs]
-        CeedFunc.set_source_from_id(funcs, id_map)
-        for f in funcs:
-            self._add_func(f)
-        return funcs
-
     def add_func(self, name):
         parent = None
+        after = None
         if self.selected_nodes:
             widget = self.selected_nodes[0]
             if isinstance(widget, FuncWidgetGroup):
                 parent = widget.func
             else:
-                parent = widget.func.parent_func
+                after = widget.func
+                parent = after.parent_func
 
-        src_func = self.funcs[name]
+        src_func = FunctionFactory.avail_funcs[name]
         if parent:
             if not parent.parent_in_other_children(src_func):
-                func = deepcopy(src_func)
-                parent.add_func(func)
-                parent.display.add_widget_func(func)
+                parent.add_func(deepcopy(src_func), after=after)
         else:
-            self._add_func(deepcopy(src_func))
-
-    def _add_func(self, func):
-        func.source_func = None
-        func.name = fix_name(func.name, self.funcs)
-
-        self.add_widget(func.display)
-        assert not func.source_func
-        func.fbind('name', self._track_func_name, func)
-        self.funcs[func.name] = func
-        self.editable_func_list.append(func)
-
-    def remove_func(self, func):
-        if func.display.selected:
-            self.deselect_node(func.display)
-        elif isinstance(func.display, FuncWidgetGroup):
-            c = func.display.selected_child()
-            if c is not None:
-                self.deselect_node(c.display)
-        self.remove_widget(func.display)
-        func.funbind('name', self._track_func_name, func)
-        del self.funcs[func.name]
-        self.editable_func_list.remove(func)
-
-    def _track_func_name(self, func, *largs):
-        for name, f in self.funcs.items():
-            if f is func:
-                if func.name == name:
-                    return
-
-                del self.funcs[name]
-                break
-        func.name = fix_name(func.name, self.funcs)
-        self.funcs[func.name] = func
+            FunctionFactory.add_func(deepcopy(src_func))
 
     def get_selectable_nodes(self):
-        return list(reversed([f.display for func in self.editable_func_list for
-                              f in func.get_children_funcs()]))
+        return list(reversed([
+            f.display for func in FunctionFactory.editable_func_list for
+            f in func.get_funcs()]))
 
 
-class FuncWidget(ShowMoreBehavior, BoxLayout):
+class FuncWidget(ShowMoreBehavior, ColorBackgroundBehavior, BoxLayout):
 
     func = ObjectProperty(None, rebind=True)
 
     selected = BooleanProperty(False)
 
-    def __init__(self, func, **kwargs):
+    selection_controller = ObjectProperty(None)
+
+    func_controller = ObjectProperty(None)
+
+    display_parent = ObjectProperty(None)
+
+    def __init__(self, **kwargs):
+        kwargs.setdefault('func_controller', FunctionFactory)
+        kwargs.setdefault('display_parent', knspace.funcs)
+        kwargs.setdefault('selection_controller', knspace.funcs)
+
         super(FuncWidget, self).__init__(**kwargs)
-        self.func = func
         self._display_properties()
+        self.settings.parent.remove_widget(self.settings)
+        if not isinstance(self, FuncWidgetGroup):
+            self.expand.parent.remove_widget(self.expand)
 
     @property
     def name(self):
@@ -123,8 +76,8 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
         '''
         func = self.func
         items = func.get_gui_elements()
-        kwargs = func.get_gui_controls()
-        add = self.more.add_widget
+        kwargs = func.get_gui_props()
+        add = self.settings.add_widget
 
         input_types = {'int': 'int', 'float': 'float', int: 'int',
                         float: 'float', 'str': 'str', str: 'str'}
@@ -133,8 +86,11 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
 
         assert 'name' in kwargs
         if not func.source_func:
-            add(FuncNamePropTextWidget(func=func, prop_name='name'))
-            s = self.ids['source_control']
+            w = FuncNamePropTextWidget(func=func, prop_name='name')
+            add(w)
+            if func.parent_func:
+                w.disabled = True
+            s = self.ids.source_control
             s.parent.remove_widget(s)
         del kwargs['name']
 
@@ -171,48 +127,65 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
         for item in items:
             add(item)
 
+    def link_container(self):
+        parent = self.func.parent_func
+        if not parent:
+            return
+        if parent.display.func_controller is self.func_controller:
+            return
+        func_controller = parent.display.func_controller
+        display_parent = parent.display.display_parent
+        selection_controller = parent.display.selection_controller
+        for func in self.func.get_funcs():
+            func.display.func_controller = func_controller
+            func.display.display_parent = display_parent
+            func.display.selection_controller = selection_controller
+
     def remove_from_parent(self):
         if self.func.parent_func:
             self.func.parent_func.remove_func(self.func)
         else:
-            knspace.funcs.remove_func(self.func)
+            self.func_controller.remove_func(self.func)
+
+    def show_func(self):
+        if self.parent:
+            return
+        parent = self.func.parent_func
+        if parent:
+            i = len(parent.funcs) - parent.funcs.index(self.func) - 1
+            parent.display.more.add_widget(self, index=i)
+            self.link_container()
+        else:
+            self.display_parent.add_widget(self)
+
+    def hide_func(self):
+        if self.selected:
+            self.display_parent.deselect_node(self)
+        elif isinstance(self, FuncWidgetGroup):
+            c = self.selected_child()
+            if c is not None:
+                self.display_parent.deselect_node(c.display)
+
+        if self.parent:
+            self.parent.remove_widget(self)
 
 
 class FuncWidgetGroup(FuncWidget):
 
-    func_container = ObjectProperty(None)
-
-    def __init__(self, **kwargs):
-        super(FuncWidgetGroup, self).__init__(**kwargs)
-        self.remove_widget(self.func_container)
-        add = self.add_widget_func
-        for func in self.func.funcs:
-            add(func)
-
     def _show_more(self, *largs):
         super(FuncWidgetGroup, self)._show_more()
-        if self.show_more:
-            self.add_widget(self.func_container)
-        else:
+        if not self.show_more:
             c = self.selected_child()
             if c is not None:
-                knspace.funcs.deselect_node(c.display)
-            self.remove_widget(self.func_container)
+                self.display_parent.deselect_node(c.display)
 
-    def add_widget_func(self, func):
-        self.func_container.add_widget(func.display)
-
-    def remove_widget_func(self, widget):
-        if widget.selected:
-            knspace.funcs.deselect_node(widget)
-        elif isinstance(widge, FuncWidgetGroup):
-            c = widget.selected_child()
-            if c is not None:
-                knspace.funcs.deselect_node(c.display)
-        self.func_container.remove_widget(widget)
+    def show_func(self):
+        super(FuncWidgetGroup, self).show_func()
+        for f in self.func.funcs:
+            f.display.show_func()
 
     def selected_child(self):
-        children = self.func.get_children_funcs()
+        children = self.func.get_funcs()
         next(children)
         for child in children:
             if child.display.selected:
@@ -257,4 +230,4 @@ class FuncNamePropTextWidget(FuncPropTextWidget):
             return
 
         if text != self.func.name:
-            self.func.name = fix_name(text, knspace.funcs.funcs)
+            self.func.name = fix_name(text, FunctionFactory.avail_funcs)

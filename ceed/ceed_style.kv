@@ -30,27 +30,19 @@
 <Display@BoxLayout>:
     orientation: 'vertical'
     StackLayout:  # --------------------- TOP --------------------
-        size_hint: None, None
-        size: self.minimum_size
+        size_hint_y: None
+        height: self.minimum_height
         orientation: 'lr-tb'
         VideoControl
         PaintBar
+        ControlBar
+        DataBar
     BoxLayout:
         orientation: 'horizontal'
         canvas:
             Color:
                 rgba: 1, 1, 1, 1
-        BufferImage:
-            knsname: 'central_display'
-            do_rotation: False
-            auto_bring_to_front: False
-            available_size: self.size
-            do_translation: painter.locked and not painter.select
-            do_scale: painter.locked and not painter.select
-            on_size: self.transform = Matrix()
-            CeedPainter:
-                id: painter
-                knsname: 'painter'
+        ControlDisplay
         BoxLayout:
             size_hint_x: None
             width: self.minimum_width
@@ -60,23 +52,27 @@
             FuncListing
 
 
+<BoxSelector>:
+    canvas.before:
+        Color:
+            a: .3 if (self.parent.selected if self.use_parent and self.parent else self.selected) else 0
+        Rectangle:
+            pos: [self.x + self.padding[0], self.y + self.padding[3]]
+            size: [self.width - self.padding[0] - self.padding[2], self.height - self.padding[1] - self.padding[3]]
+        Color:
+            rgba: 1, 1, 1, 1
+
+
 <ExpandWidget>:
-    is_selected: False
-    odd: False
     size_hint_x: None
     width: 16
     canvas.before:
-        Color:
-            rgba: [.3, .3, .3, 1.] if self.is_selected else [1., 1., 1., .0] if self.odd else [0.5, 0.5, 0.5, 0.1]
-        Rectangle:
-            pos: [self.parent.x, self.y] if self.parent else [0, 0]
-            size: [self.parent.width, self.height] if self.parent else [1, 1]
         Color:
             rgba: 1, 1, 1, 1
         Rectangle:
             source: 'atlas://data/images/defaulttheme/tree_%s' % ('opened' if self.is_open else 'closed')
             size: 16, 16
-            pos: 0, self.center_y - 8
+            pos: self.x, self.center_y - 8
 
 
 <XYSizedLabel@Label>:

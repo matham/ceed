@@ -1,16 +1,14 @@
 #:import knspace kivy.uix.behaviors.knspace.knspace
 #:import FunctionFactory ceed.function.FunctionFactory
-
-<CeedPainter>:
-    knsname: 'painter'
-    size_hint: None, None
-    size: self.parent.size if self.parent else self.size
+#:import get_color_from_hex kivy.utils.get_color_from_hex
+#:import StageFactory ceed.stage.StageFactory
+#:import StageFactory ceed.view.controller.StageFactory
 
 
 <PaintBar@BoxLayout>:
     spacing: '9dp'
     size_hint: None, None
-    size: self.minimum_width, '45dp'
+    size: self.minimum_width, '35dp'
     ToggleButton:
         group: 'paint'
         text: 'Circle'
@@ -53,21 +51,25 @@
         size_hint_x: None
         padding_x: '5dp'
         width: self.texture_size[0]
-        on_state: knspace.painter.select = self.state == 'down'
+        on_state:
+            knspace.painter.select = self.state == 'down'
+            if self.state == 'down': move_cam.state = 'normal'
     ToggleButton:
         id: lock
         text: 'Lock'
         size_hint_x: None
         padding_x: '5dp'
         width: self.texture_size[0]
-        on_state: knspace.painter.locked = self.state == 'down'
+        on_state:
+            knspace.painter.locked = self.state == 'down'
+            if self.state == 'normal': move_cam.state = 'normal'
     ToggleButton:
         text: 'Add'
         size_hint_x: None
         padding_x: '5dp'
         width: self.texture_size[0]
         on_state:
-            knspace.shapes.touch_multiselect = knspace.painter.multiselect = self.state == 'down'
+            knspace.shape_groups.touch_multiselect = knspace.shapes.touch_multiselect = knspace.painter.multiselect = self.state == 'down'
     Button:
         text: 'Copy'
         size_hint_x: None
@@ -87,70 +89,89 @@
         padding_x: '5dp'
         width: self.texture_size[0]
         on_state: knspace.painter.show_label = self.state == 'down'
+    ToggleButton:
+        text: 'Cam'
+        id: move_cam
+        size_hint_x: None
+        padding_x: '5dp'
+        width: self.texture_size[0]
+        on_state:
+            if self.state == 'down': lock.state = 'down'
+            if self.state == 'down': select.state = 'normal'
+            knspace.painter.move_cam = self.state == 'down'
 
 
 <ShapeListing@Splitter>:
     size_hint_x: None
-    width: '100dp'
+    width: '150dp'
     sizable_from: 'left'
     strip_size: '5dp'
     min_size: '15dp'
     max_size: '400dp'
-    ScrollView:
-        bar_width: '10dp'
-        scroll_type: ['bars']
+    BoxLayout:
+        orientation: 'vertical'
         BoxLayout:
             orientation: 'vertical'
-            size_hint_min_x: self.minimum_width
             size_hint_y: None
             height: self.minimum_height
+            ScrollView:
+                bar_width: '10dp'
+                scroll_type: ['bars']
+                size_hint_y: None
+                height: control_box.minimum_height
+                BoxLayout:
+                    id: control_box
+                    orientation: 'horizontal'
+                    size_hint_y: None
+                    height: self.minimum_height
+                    size_hint_min_x: self.minimum_width
+                    Button:
+                        text: '+Selection'
+                        size_hint: None, None
+                        size: self.texture_size
+                        padding: '10dp', '5dp'
+                        on_release: shape_groups.add_selected_shapes()
+                    Button:
+                        text: '+Group'
+                        size_hint: None, None
+                        size: self.texture_size
+                        padding: '10dp', '5dp'
+                        on_release: knspace.painter.add_group()
             Splitter:
                 size_hint_min_x: self.minimum_width
                 sizable_from: 'bottom'
                 strip_size: '5dp'
                 size_hint_y: None
                 min_size: 0
-                max_size: self.minimum_height + dp(100)
-                height: '100dp'
-                BoxLayout:
-                    orientation: 'vertical'
-                    size_hint_min_y: self.minimum_height
-                    size_hint_min_x: self.minimum_width
-                    BoxLayout:
-                        orientation: 'horizontal'
-                        size_hint_y: None
-                        height: self.minimum_height
-                        size_hint_min_x: self.minimum_width
-                        Button:
-                            text: '+Selection'
-                            size_hint_y: None
-                            height: self.texture_size[1]
-                            size_hint_min_x: self.texture_size[0]
-                            padding: '10dp', '10dp'
-                            on_release: shape_groups.add_selected_shapes()
-                        Button:
-                            text: '+Group'
-                            size_hint_y: None
-                            height: self.texture_size[1]
-                            size_hint_min_x: self.texture_size[0]
-                            padding: '10dp', '10dp'
-                            on_release: shape_groups.add_group()
+                max_size: root.height
+                height: '50dp'
+                ScrollView:
+                    bar_width: '10dp'
+                    scroll_type: ['bars']
                     ShapeGroupList:
                         id: shape_groups
                         knsname: 'shape_groups'
                         orientation: 'vertical'
-                        size_hint_min_y: self.minimum_height
+                        spacing: '3dp'
+                        size_hint_y: None
+                        height: self.minimum_height
                         size_hint_min_x: self.minimum_width
                         multiselect: True
                         nodes_order_reversed: False
+                        touch_deselect_last: True
+        ScrollView:
+            bar_width: '10dp'
+            scroll_type: ['bars']
             ShapeList:
                 id: shapes
                 knsname: 'shapes'
                 orientation: 'vertical'
+                spacing: '3dp'
                 size_hint_y: None
                 height: self.minimum_height
                 size_hint_min_x: self.minimum_width
                 multiselect: True
+                touch_deselect_last: True
 
 
 <WidgetShape>:
@@ -160,6 +181,8 @@
     orientation: 'vertical'
     more: more.__self__
     show_more: expand.is_open
+    spacing: '5dp'
+    padding: '5dp'
     BoxSelector:
         size_hint_y: None
         height: self.minimum_height
@@ -168,12 +191,10 @@
         controller: knspace.shapes
         ExpandWidget:
             id: expand
-            is_selected: root.selected
-            odd: root.parent is not None and root.__self__ in root.parent.children and bool((len(root.parent.children) - root.parent.children.index(root.__self__)) % 2)
         Label:
             text: root.shape.name if root.shape else ''
             size_hint_y: None
-            padding: '10dp', '10dp'
+            padding: '10dp', '5dp'
             height: self.texture_size[1]
             size_hint_min_x: self.texture_size[0]
         ImageButton:
@@ -181,18 +202,26 @@
             width: self.height
             source: 'delete.png' if self.state == 'normal' else 'delete_down.png'
             on_release: knspace.painter.remove_shape(root.shape)
+        ImageToggleButton:
+            size_hint_x: None
+            width: self.height
+            source: 'lock.png' if self.state == 'normal' else 'lock_down.png'
+            state: 'down' if root.shape and root.shape.locked else 'normal'
+            on_state: root.painter.lock_shape(root.shape) if self.state == 'down' else root.painter.unlock_shape(root.shape)
     BoxLayout:
         id: more
         size_hint_y: None
         height: self.minimum_height
         size_hint_min_x: self.minimum_width
         orientation: 'vertical'
+        spacing: '5dp'
+        padding: '5dp'
         TextInput:
             size_hint_y: None
             height: self.minimum_height
             multiline: False
             text: root.shape.name if root.shape else ''
-            on_focus: if not self.focus: self.text = knspace.shapes._change_shape_name(root.shape, self.text)
+            on_focus: if not self.focus: self.text = root.painter._change_shape_name(root.shape, self.text)
         BoxLayout:
             size_hint_y: None
             height: x.minimum_height
@@ -217,6 +246,8 @@
     orientation: 'vertical'
     more: more.__self__
     show_more: expand.is_open
+    spacing: '5dp'
+    padding: '5dp'
     BoxSelector:
         size_hint_y: None
         height: self.minimum_height
@@ -225,19 +256,17 @@
         controller: knspace.shape_groups
         ExpandWidget:
             id: expand
-            is_selected: root.selected
-            odd: root.parent is not None and root.__self__ in root.parent.children and bool((len(root.parent.children) - root.parent.children.index(root.__self__)) % 2)
         Label:
-            text: root.name
+            text: root.group.name if root.group else ''
             size_hint_y: None
-            padding: '10dp', '10dp'
+            padding: '10dp', '5dp'
             height: self.texture_size[1]
             size_hint_min_x: self.texture_size[0]
         ImageButton:
             size_hint_x: None
             width: self.height
             source: 'delete.png' if self.state == 'normal' else 'delete_down.png'
-            on_release: knspace.shape_groups.remove_group(root.__self__)
+            on_release: knspace.painter.remove_group(root.group)
     BoxLayout:
         id: more
         size_hint_y: None
@@ -248,8 +277,8 @@
             size_hint_y: None
             height: self.minimum_height
             multiline: False
-            text: root.name
-            on_focus: if not self.focus: self.text = knspace.shape_groups._change_group_name(root.__self__, self.text)
+            text: root.group.name if root.group else ''
+            on_focus: if not self.focus: self.text = knspace.painter._change_shape_name(root.group, self.text)
 
 
 <ShapeGroupItem>:
@@ -259,23 +288,16 @@
     orientation: 'horizontal'
     controller: knspace.shape_groups
     use_parent: False
-    odd: root.parent is not None and root.__self__ in root.parent.children and bool((len(root.parent.children) - root.parent.children.index(root.__self__)) % 2)
-    canvas.before:
-        Color:
-            rgba: [.3, .3, .3, 1.] if self.selected else [1., 1., 1., .0] if self.odd else [0.5, 0.5, 0.5, 0.1]
-        Rectangle:
-            pos: self.pos
-            size: self.size
-        Color:
-            rgba: 1, 1, 1, 1
+    spacing: '5dp'
+    padding: '5dp'
     Label:
         text: root.shape.name if root.shape is not None else ''
         size_hint_y: None
-        padding: '10dp', '10dp'
+        padding: '10dp', '5dp'
         height: self.texture_size[1]
         size_hint_min_x: self.texture_size[0]
     ImageButton:
         size_hint_x: None
         width: self.height
         source: 'delete.png' if self.state == 'normal' else 'delete_down.png'
-        on_release: root.group.remove_shape(widget=root.__self__)
+        on_release: root.group.group.remove_shape(root.shape)

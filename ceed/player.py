@@ -6,8 +6,9 @@ Plays and records media.
 
 from os.path import abspath, isdir, dirname, join, exists
 import psutil
+from ffpyplayer.pic import ImageLoader
 
-from cplcom.player import PTGrayPlayer, FFmpegPlayer, VideoMetadata
+from cplcom.player import PTGrayPlayer, FFmpegPlayer, VideoMetadata, Player
 from cplcom.utils import pretty_space, pretty_time
 
 from kivy.event import EventDispatcher
@@ -16,6 +17,7 @@ from kivy.properties import BooleanProperty, NumericProperty, StringProperty
 from kivy.clock import Clock
 from kivy.uix.dropdown import DropDown
 from kivy.compat import clock
+from kivy.app import App
 
 
 class CeedPlayer(object):
@@ -25,6 +27,7 @@ class CeedPlayer(object):
         img = self.last_image
         if widget is not None and img is not None:
             widget.update_img(img[0])
+            knspace.player.last_image = img[0]
 
 
 class CeedPTGrayPlayer(CeedPlayer, PTGrayPlayer):
@@ -36,6 +39,8 @@ class CeedFFmpegPlayer(CeedPlayer, FFmpegPlayer):
 
 
 class CeedPlayer(KNSpaceBehavior, EventDispatcher):
+
+    __settings_attrs__ = ('browse_path', )
 
     player_singleton = None
 
@@ -54,6 +59,11 @@ class CeedPlayer(KNSpaceBehavior, EventDispatcher):
     stopping to play).
     '''
 
+    ff_player_play = BooleanProperty(False)
+    '''True when ff player is actually playing (excluding when starting or
+    stopping to play).
+    '''
+
     player_record_active = BooleanProperty(False)
     '''True when either player is starting, recording, or stopping recording.
     '''
@@ -63,11 +73,15 @@ class CeedPlayer(KNSpaceBehavior, EventDispatcher):
     stopping to record).
     '''
 
+    browse_path = StringProperty('')
+
     last_record_filename = ''
 
     disk_used_percent = NumericProperty(0)
 
     play_status = StringProperty('')
+
+    last_image = None
 
     def __init__(self, **kwargs):
         super(CeedPlayer, self).__init__(**kwargs)
@@ -107,6 +121,11 @@ class CeedPlayer(KNSpaceBehavior, EventDispatcher):
 
         pt_player.fbind('play_state', player_active)
         pt_player.fbind('config_active', player_active)
+
+        def player_active_ff(*largs):
+            self.ff_player_play = self.ff_player.play_state == 'playing'
+
+        self.ff_player.fbind('play_state', player_active_ff)
 
         def pt_config(key, *largs):
             if key == 'ips':
@@ -214,6 +233,42 @@ class CeedPlayer(KNSpaceBehavior, EventDispatcher):
         if is_dir and not isdir(f):
             f = dirname(f)
         text_wid.text = f
+        self.browse_path = path
+
+    def load_screenshot(self, path, selection, filename):
+        if not isdir(path) or not filename:
+            raise Exception('Invalid path or filename')
+
+        self.browse_path = path
+        fname = join(path, filename)
+        images = [m for m in ImageLoader(fname)]
+
+        if not images:
+            raise Exception('Could not find image in {}'.format(fname))
+        img = images[0][0]
+
+        knspace.central_display.update_img(img)
+        self.last_image = img
+
+    def save_screenshot(self, img, path, selection, filename):
+        if not isdir(path) or not filename:
+            raise Exception('Invalid path or filename')
+        self.browse_path = path
+        fname = join(path, filename)
+
+        if exists(fname):
+            def yesno_callback(overwrite):
+                if not overwrite:
+                    return
+                Player.save_image(fname, img)
+
+            yesno = App.get_running_app().yesno_prompt
+            yesno.msg = ('"{}" already exists, would you like to '
+                         'overwrite it?'.format(fname))
+            yesno.callback = yesno_callback
+            yesno.open()
+        else:
+            Player.save_image(fname, img)
 
     def handle_fname(self, fname, count, source='fname'):
         n = count.text
@@ -240,6 +295,11 @@ class CeedPlayer(KNSpaceBehavior, EventDispatcher):
         if self.player.record_state == 'none':
             self.player.record()
             self.last_record_filename = self.player.record_filename
+
+    def set_pause(self, state):
+        if self.player is self.ff_player and \
+                self.player.play_state == 'playing':
+            self.player.play_paused = state
 
     def stop(self):
         if not self.player:
@@ -287,9 +347,3 @@ class CeedPlayer(KNSpaceBehavior, EventDispatcher):
 
     def save_config(self):
         pass
-
-
-class BlankDropDown(DropDown):
-
-    def __init__(self, **kwargs):
-        super(BlankDropDown, self).__init__(container=None, **kwargs)

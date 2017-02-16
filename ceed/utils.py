@@ -5,12 +5,21 @@ from kivy.uix.widget import Widget
 from kivy.uix.behaviors.compoundselection import CompoundSelectionBehavior
 from kivy.uix.behaviors.knspace import KNSpaceBehavior
 from kivy.uix.behaviors.focus import FocusBehavior
-from kivy.properties import BooleanProperty, ObjectProperty
+from kivy.properties import BooleanProperty, ObjectProperty, StringProperty
 from kivy.clock import Clock
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.dropdown import DropDown
 from kivy.factory import Factory
+from kivy.lang import Builder
+from kivy.utils import get_color_from_hex
 
 _name_pat = re.compile('^(.+)-([0-9]+)$')
+
+
+class BlankDropDown(DropDown):
+
+    def __init__(self, **kwargs):
+        super(BlankDropDown, self).__init__(container=None, **kwargs)
 
 
 class ExpandWidget(Widget):
@@ -58,6 +67,9 @@ class ShowMoreBehavior(object):
         self._show_more()
 
     def _show_more(self, *largs):
+        if not self.more:
+            return
+
         if self.show_more:
             self.add_widget(self.more)
         else:
@@ -73,6 +85,8 @@ class BoxSelector(BoxLayout):
     def on_touch_up(self, touch):
         if super(BoxSelector, self).on_touch_up(touch):
             return True
+        if touch.grab_current is not None:
+            return False
         if self.collide_point(*touch.pos):
             self.controller.select_with_touch(
                 self.parent if self.use_parent else self, touch)
@@ -161,4 +175,40 @@ def fix_name(name, *names):
         new_name = '{}-{}'.format(name, i)
     return new_name
 
+
+class ColorBackgroundBehavior(object):
+
+    odd = BooleanProperty(False)
+
+    odd_color = StringProperty('277553')
+
+    even_color = StringProperty('AA5939')
+
+    widget_color = ObjectProperty(get_color_from_hex('AA5939'))
+
+    source_obj = ObjectProperty(None, rebind=True)
+
+
+Builder.load_string('''
+<ColorBackgroundBehavior>:
+    odd: root.parent is not None and self.__self__ in root.parent.children and bool((len(self.parent.children) - self.parent.children.index(self.__self__)) % 2)
+    widget_color: get_color_from_hex(self.odd_color if self.odd else self.even_color)
+    canvas.before:
+        Color:
+            rgb: 1, 1, 1
+        BorderImage:
+            source: 'atlas://data/images/defaulttheme/textinput_disabled'
+            pos: self.pos
+            size: self.size
+            border: 4, 4, 4, 4
+        Color:
+            rgb: self.widget_color if self.source_obj is None else self.source_obj.widget_color
+        Rectangle:
+            size: self.width - 8, self.height - 8
+            pos: self.x + 4, self.y + 4
+        Color:
+            rgb: 1, 1, 1
+''')
+
 Factory.register(classname='WidgetList', cls=WidgetList)
+Factory.register(classname='ColorBackgroundBehavior', cls=ColorBackgroundBehavior)
