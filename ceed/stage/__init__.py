@@ -236,13 +236,15 @@ class CeedStage(EventDispatcher):
     def _apply_state(self, state={}, clone=False, old_id_map=None):
         stages = state.pop('stages', [])
         functions = state.pop('functions', [])
-        shapes = state.pop('shapes', [])
+        shapes_state = state.pop('shapes', [])
 
         for k, v in state.items():
             setattr(self, k, v)
 
         for data in stages:
             s = CeedStage()
+            if self._display:
+                s.display
             s._apply_state(data, clone=True)
             self.add_stage(s)
 
@@ -252,7 +254,7 @@ class CeedStage(EventDispatcher):
 
         shapes = get_painter().shape_names
         groups = get_painter().shape_group_names
-        for name in shapes:
+        for name in shapes_state:
             if name in shapes:
                 self.add_shape(shapes[name])
             elif name in groups:

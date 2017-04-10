@@ -68,8 +68,10 @@ class CeedPaintCanvasBehavior(KNSpaceBehavior, PaintCanvasBehavior):
         group.deselect(keep_shapes=True)
         if group._display:
             group.display.hide_widget()
+
         self.dispatch('on_remove_group', group)
         del self.shape_group_names[group.name]
+        self.groups.remove(group)
         self.dispatch('on_changed')
 
     def remove_all_groups(self):

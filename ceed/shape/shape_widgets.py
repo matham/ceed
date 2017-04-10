@@ -9,6 +9,7 @@ from kivy.properties import BooleanProperty, NumericProperty, StringProperty, \
 from kivy.core.window import Window
 from kivy.uix.widget import Widget
 from kivy.factory import Factory
+from kivy.clock import Clock
 
 from cplcom.painter import PaintCanvasBehavior, PaintCircle, PaintEllipse, \
     PaintPolygon, PaintBezier
@@ -69,6 +70,8 @@ class ShapeGroupList(ShowMoreSelection, WidgetList, BoxLayout):
 
         if isinstance(shape_widget, WidgetShapeGroup):
             shape_widget.group.select(clear_others=True)
+            self._anchor = self
+            self._last_selected_node = self
         else:
             shape_widget.group.group.select_shape(shape_widget.shape)
         return True
@@ -93,7 +96,7 @@ class ShapeGroupList(ShowMoreSelection, WidgetList, BoxLayout):
         return nodes
 
 
-class WidgetShapeGroup(ShowMoreBehavior, ColorBackgroundBehavior, BoxLayout):
+class WidgetShapeGroup(ShowMoreBehavior, BoxLayout):
 
     selected = BooleanProperty(False)
 
@@ -141,7 +144,7 @@ class WidgetShapeGroup(ShowMoreBehavior, ColorBackgroundBehavior, BoxLayout):
                 return
 
 
-class ShapeGroupItem(ColorBackgroundBehavior, BoxSelector):
+class ShapeGroupItem(BoxSelector):
 
     selected = BooleanProperty(False)
 
@@ -169,7 +172,7 @@ class ShapeList(ShowMoreSelection, WidgetList, BoxLayout):
         return False
 
 
-class WidgetShape(ShowMoreBehavior, ColorBackgroundBehavior, BoxLayout):
+class WidgetShape(ShowMoreBehavior, BoxLayout):
 
     painter = ObjectProperty(None, rebind=True)
 
@@ -183,19 +186,26 @@ class WidgetShape(ShowMoreBehavior, ColorBackgroundBehavior, BoxLayout):
 
     centroid_y = NumericProperty(0)
 
+    area = NumericProperty(0)
+
     selected = BooleanProperty(False)
+
+    _shape_update_trigger = None
 
     def __init__(self, **kwargs):
         super(WidgetShape, self).__init__(**kwargs)
+        self.show_label = self.painter.show_label
         self.fbind('show_label', self._show_label)
         self.shape.fbind('name', self._label_text)
 
         label = self.label = Label()
-        self.shape.fbind('on_update', self._shape_update)
-        label.fbind('size', self._shape_update)
+        trigger = Clock.create_trigger(self._shape_update, 0)
+        f = self._shape_update_trigger = lambda *largs: trigger() and False
+        self.shape.fbind('on_update', f)
+        label.fbind('size', f)
+        f()
 
         self._label_text()
-        self._shape_update()
         if self.show_label:
             self._show_label()
 
@@ -207,11 +217,11 @@ class WidgetShape(ShowMoreBehavior, ColorBackgroundBehavior, BoxLayout):
         knspace.shapes.add_widget(self)
 
     def hide_widget(self):
-        self.shape.funbind('on_update', self._shape_update)
+        self.shape.funbind('on_update', self._shape_update_trigger)
         knspace.shapes.remove_widget(self)
 
         label = self.label
-        label.funbind('size', self._shape_update)
+        label.funbind('size', self._shape_update_trigger)
         if self.show_label:
             self.painter.remove_widget(label)
 
@@ -224,7 +234,7 @@ class WidgetShape(ShowMoreBehavior, ColorBackgroundBehavior, BoxLayout):
     def _show_label(self, *largs):
         if self.show_label:
             self.painter.add_widget(self.label)
-            self._shape_update()
+            self._shape_update_trigger()
             self._label_text()
         else:
             self.painter.remove_widget(self.label)
@@ -236,12 +246,14 @@ class WidgetShape(ShowMoreBehavior, ColorBackgroundBehavior, BoxLayout):
     def _show_more(self, *largs):
         super(WidgetShape, self)._show_more(*largs)
         if self.show_more:
-            self._shape_update()
+            self._shape_update_trigger()
 
     def _shape_update(self, *largs):
-        if self.show_label or self.show_more:
-            self.centroid_x, self.centroid_y = self.label.center = \
-                tuple(map(round, self.shape.centroid))
+        self.centroid_x, self.centroid_y = tuple(
+            map(round, self.shape.centroid))
+        self.area = round(self.shape.area)
+        if self.show_label:
+            self.label.center = self.shape.centroid
 
     def _update_centroid(self, x=None, y=None):
         x1, y1 = map(round, self.shape.centroid)
@@ -249,3 +261,6 @@ class WidgetShape(ShowMoreBehavior, ColorBackgroundBehavior, BoxLayout):
         dy = 0 if y is None else y - y1
         if dx or dy:
             self.shape.translate(dpos=(dx, dy))
+
+    def _update_area(self, area):
+        self.shape.set_area(area)

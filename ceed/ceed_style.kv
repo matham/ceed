@@ -1,85 +1,101 @@
 
-<ErrorTab@ErrorIndicatorBase+TabbedPanelItem>
+# <ErrorTab@ErrorIndicatorBase+TabbedPanelItem>
+#
+# <MainView@FocusBehavior+BoxLayout>:
+#     orientation: 'vertical'
+#     TabbedPanel:
+#         do_default_tab: False
+#         tab_width: None
+#         TabbedPanelItem:
+#             text: 'Display'
+#             Display
+#         ErrorTab:
+#             knsname: 'error_indicator'
+#             size_hint_x: None
+#             width: self.height
+#             on_parent:
+#                 app.error_indicator = self
+#                 self._container = error_container
+#             BoxLayout:
+#                 orientation: 'vertical'
+#                 Label:
+#                     size_hint_y: None
+#                     padding: '15dp', '15dp'
+#                     height: self.texture_size[1]
+#                     text: 'Error log'
+#                 ErrorLogContainer:
+#                     id: error_container
 
-<MainView@FocusBehavior+BoxLayout>:
+
+<MainView@BoxLayout>:
     orientation: 'vertical'
-    TabbedPanel:
-        do_default_tab: False
-        tab_width: None
-        TabbedPanelItem:
-            text: 'Display'
-            Display
-        ErrorTab:
-            knsname: 'error_indicator'
-            size_hint_x: None
-            width: self.height
-            on_parent:
-                app.error_indicator = self
-                self._container = error_container
-            BoxLayout:
-                orientation: 'vertical'
-                Label:
-                    size_hint_y: None
-                    padding: '15dp', '15dp'
-                    height: self.texture_size[1]
-                    text: 'Error log'
-                ErrorLogContainer:
-                    id: error_container
-
-
-<Display@BoxLayout>:
-    orientation: 'vertical'
+    canvas:
+        Color:
+            rgba: app.theme.primary
+        Rectangle:
+            pos: self.pos
+            size: self.size
     StackLayout:  # --------------------- TOP --------------------
         size_hint_y: None
         height: self.minimum_height
         orientation: 'lr-tb'
         VideoControl
+            id: video
+        FlatDivider:
+            size_hint_y: None
+            height: video.height
+            color: app.theme.divider
         PaintBar
+        FlatDivider:
+            size_hint_y: None
+            height: video.height
+            color: app.theme.divider
         ControlBar
+        FlatDivider:
+            size_hint_y: None
+            height: video.height
+            color: app.theme.divider
         DataBar
+        FlatDivider:
+            size_hint_y: None
+            height: video.height
+            color: app.theme.divider
+        FlatErrorIndicatorPopup:
+            scale_down_color: True
+            source: 'flat_alert.png'
+            flat_color: app.theme.accent
+            size_hint_y: None
+            height: video.height
+            on_parent: app.error_indicator = self
     BoxLayout:
         orientation: 'horizontal'
         canvas:
             Color:
-                rgba: 1, 1, 1, 1
+                rgba: app.theme.primary_text
+            Rectangle:
+                pos: self.pos
+                size: self.size
         ControlDisplay
         BoxLayout:
             size_hint_x: None
             width: self.minimum_width
             orientation: 'horizontal'
+            spacing: '5dp'
             ShapeListing
             StageListing
             FuncListing
 
 
-<BoxSelector>:
-    canvas.before:
-        Color:
-            a: .3 if (self.parent.selected if self.use_parent and self.parent else self.selected) else 0
-        Rectangle:
-            pos: [self.x + self.padding[0], self.y + self.padding[3]]
-            size: [self.width - self.padding[0] - self.padding[2], self.height - self.padding[1] - self.padding[3]]
-        Color:
-            rgba: 1, 1, 1, 1
-
-
 <ExpandWidget>:
-    size_hint_x: None
-    width: 16
-    canvas.before:
-        Color:
-            rgba: 1, 1, 1, 1
-        Rectangle:
-            source: 'atlas://data/images/defaulttheme/tree_%s' % ('opened' if self.is_open else 'closed')
-            size: 16, 16
-            pos: self.x, self.center_y - 8
+    color: app.theme.accent
+    source: 'flat_arrow_right.png' if not self.is_open else 'flat_arrow_down.png'
 
 
 <XYSizedLabel@Label>:
     size_hint: None, None
     size: self.texture_size
 
-<XSizedLabel@Label>:
+<FlatXSizedLabel@FlatLabel>:
     size_hint_x: None
     width: self.texture_size[0]
 

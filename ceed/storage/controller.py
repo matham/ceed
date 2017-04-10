@@ -335,12 +335,7 @@ class CeedDataBase(EventDispatcher):
             data[prop.name] = json_loads(prop.values[0].value)
         return data
 
-    def write_fluorescent_image(self, block, img=None):
-        if not img:
-            if not hasattr(knspace, 'player') or not knspace.player.last_image:
-                raise Exception('No image to write')
-            img = knspace.player.last_image
-
+    def write_fluorescent_image(self, block, img):
         group = block.create_group('fluorescent_image', 'image')
 
         config = block.metadata.create_section(
@@ -415,7 +410,8 @@ class CeedDataBase(EventDispatcher):
 
         block.metadata = sec
 
-        self.write_fluorescent_image(block)
+        if hasattr(knspace, 'player') and knspace.player.last_image:
+            self.write_fluorescent_image(block, knspace.player.last_image)
 
         shapes = {}
         for shape in get_painter().shapes:

@@ -3,158 +3,166 @@
 #:import partial functools.partial
 #:import knspace kivy.uix.behaviors.knspace.knspace
 #:import Matrix kivy.graphics.transformation.Matrix
+#:import get_color_from_hex kivy.utils.get_color_from_hex
 
-<PaddedSpinnerOption@SpinnerOption>:
-    padding_x: '10dp'
-    size_hint_x: None
-    width: self.texture_size[0]
-
-
-<VideoConfig@BlankDropDown>:
-    size_hint: None, None
-    width: min(grid.width, self.parent.width / 2. if self.parent else grid.width)
-    height: min(grid.height, self.parent.height / 2. if self.parent else grid.height)
-    do_scroll: True, True
-    scroll_type: ['bars']
-    bar_width: 10
-    auto_width: False
-    canvas.before:
-        Color:
-            rgb: .7, .2, .9
-        Rectangle:
-            size: self.size
-            pos: self.pos
-    GridLayout:
-        on_parent: root.container = self
-        cols: 1
+<VideoConfig@FlatDropDown>:
+    flat_color: app.theme.primary_text
+    flat_border_color: app.theme.divider
+    do_scroll: False, False
+    FlatSplitter:
         size_hint: None, None
-        size: self.minimum_size
-        id: grid
-        GridLayout:
-            rows: 1
-            padding: '5dp',
-            spacing: ['5dp']
-            size_hint: None, None
-            size: self.minimum_width, '55dp'
-            disabled: not knspace.player or knspace.player.pt_player_active
-            ImageButton:
-                size_hint_x: None
-                width: self.height
-                source: 'settings.png' if self.state == 'normal' else 'settings_down.png'
-                on_release: knspace.player.reconfig_pt_cams()
-            ImageButton:
-                size_hint_x: None
-                width: self.height
-                source: 'refresh.png' if self.state == 'normal' else 'refresh_down.png'
-                on_release: knspace.player.refresh_pt_cams()
-            KNSpinner:
-                knsname: 'pt_serial'
-                id: pt_serial
-                size_hint_x: None
-                padding_x: '10dp'
-                width: max(self.minimum_size[0], 25)
-                on_text: knspace.player.set_pt_serial(self.text)
-                option_cls: 'PaddedSpinnerOption'
-            KNSpinner:
-                knsname: 'pt_ip'
-                id: pt_ip
-                size_hint_x: None
-                padding_x: '10dp'
-                width: max(self.minimum_size[0], 25)
-                on_text: knspace.player.set_pt_ip(self.text)
-                option_cls: 'PaddedSpinnerOption'
-        GridLayout:
-            size_hint: 1, None
+        height: self.minimum_height
+        min_size: self.minimum_width
+        sizable_from: 'right'
+        flat_color: app.theme.accent
+        BoxLayout:
+            orientation: 'vertical'
+            size_hint_y: None
             height: self.minimum_height
-            spacing: ['5dp']
-            rows: 1
-            disabled: not knspace.player or knspace.player.pt_player_active
-            ImageButton:
-                size_hint_x: None
-                width: self.height
-                source: 'browse.png' if self.state == 'normal' else 'browse_down.png'
-                on_release:
-                    app.filebrowser.target = knspace.player.browse_path
-                    app.filebrowser.dirselect = False
-                    app.filebrowser.multiselect = False
-                    app.filebrowser.callback = partial(knspace.player.set_filename_widget, record_path, is_dir=False)
-                    app.filebrowser.open()
-            KNSizedTextInput:
-                id: record_path
-                hint_text: 'Recorded filename'
-                knsname: 'record_path'
-                on_text: knspace.player.set_ff_play_filename(self.text)
-        GridLayout:
-            size_hint: 1, None
-            height: self.minimum_height
-            spacing: ['5dp']
-            rows: 1
-            disabled: not knspace.player or knspace.player.player_record_active
-            ImageButton:
-                size_hint_x: None
-                width: self.height
-                source: 'browse.png' if self.state == 'normal' else 'browse_down.png'
-                on_release:
-                    app.filebrowser.target = knspace.player.browse_path
-                    app.filebrowser.dirselect = True
-                    app.filebrowser.multiselect = False
-                    app.filebrowser.callback = partial(knspace.player.set_filename_widget, path_dir)
-                    app.filebrowser.open()
-            KNSizedTextInput:
-                id: path_dir
-                hint_text: 'Directory'
-                knsname: 'path_dir'
-                on_text: knspace.player.update_record_path(directory=self.text)
-            KNSizedTextInput:
-                hint_text: 'Filename'
-                id: path_fname
-                knsname: 'path_fname'
-                fmt_text: ''
-                orig_text: ''
-                on_focus: knspace.player.handle_fname(path_fname, path_count)
-                on_orig_text: knspace.player.update_record_path(fname=self.orig_text)
-            KNSizedTextInput:
-                id: path_count
-                knsname: 'path_count'
-                input_filter: 'int'
-                size_hint_x: None
-                width: '40dp'
-                hint_text: 'n'
-                on_text:
-                    knspace.player.handle_fname(path_fname, path_count, 'count')
-                    knspace.player.update_record_path(count=self.text)
+            size_hint_min_x: self.minimum_width
+            padding: '5dp'
+            spacing: '5dp'
+            GridLayout:
+                rows: 1
+                size_hint: None, None
+                size: self.minimum_width, '34dp'
+                padding: '5dp'
+                spacing: '5dp'
+                disabled: not knspace.player or knspace.player.pt_player_active
+                FlatImageButton:
+                    scale_down_color: True
+                    source: 'flat_settings.png'
+                    flat_color: app.theme.accent
+                    on_release: knspace.player.reconfig_pt_cams()
+                FlatImageButton:
+                    scale_down_color: True
+                    source: 'flat_refresh.png'
+                    flat_color: app.theme.accent
+                    on_release: knspace.player.refresh_pt_cams()
+                FlatSpinner:
+                    knsname: 'pt_serial'
+                    id: pt_serial
+                    size_hint_x: None
+                    width: self.minimum_width
+                    on_text: knspace.player.set_pt_serial(self.text)
+                    flat_color: app.theme.text_primary
+                    flat_menu_color: app.theme.accent
+                    flat_drop_background_color: app.theme.primary_text
+                    flat_drop_text_color: app.theme.text_primary
+                    flat_border_color: app.theme.divider
+                FlatSpinner:
+                    knsname: 'pt_ip'
+                    id: pt_ip
+                    size_hint_x: None
+                    width: self.minimum_width
+                    on_text: knspace.player.set_pt_ip(self.text)
+                    flat_color: app.theme.text_primary
+                    flat_menu_color: app.theme.accent
+                    flat_drop_background_color: app.theme.primary_text
+                    flat_drop_text_color: app.theme.text_primary
+                    flat_border_color: app.theme.divider
+            GridLayout:
+                size_hint: 1, None
+                height: self.minimum_height
+                spacing: ['5dp']
+                rows: 1
+                disabled: not knspace.player or knspace.player.pt_player_active
+                FlatImageButton:
+                    scale_down_color: True
+                    source: 'flat_folder.png'
+                    flat_color: app.theme.accent
+                    on_release:
+                        app.filebrowser.target = knspace.player.browse_path
+                        app.filebrowser.dirselect = False
+                        app.filebrowser.multiselect = False
+                        app.filebrowser.callback = partial(knspace.player.set_filename_widget, record_path, is_dir=False)
+                        app.filebrowser.open()
+                FlatSizedTextInput:
+                    id: record_path
+                    background_color: root.flat_color
+                    hint_text: 'Recorded filename'
+                    knsname: 'record_path'
+                    on_text: knspace.player.set_ff_play_filename(self.text)
+            GridLayout:
+                size_hint: 1, None
+                height: self.minimum_height
+                spacing: ['5dp']
+                rows: 1
+                disabled: not knspace.player or knspace.player.player_record_active
+                FlatImageButton:
+                    scale_down_color: True
+                    source: 'flat_folder.png'
+                    flat_color: app.theme.accent
+                    on_release:
+                        app.filebrowser.target = knspace.player.browse_path
+                        app.filebrowser.dirselect = True
+                        app.filebrowser.multiselect = False
+                        app.filebrowser.callback = partial(knspace.player.set_filename_widget, path_dir)
+                        app.filebrowser.open()
+                FlatSizedTextInput:
+                    id: path_dir
+                    hint_text: 'Directory'
+                    knsname: 'path_dir'
+                    background_color: root.flat_color
+                    on_text: knspace.player.update_record_path(directory=self.text)
+                FlatSizedTextInput:
+                    hint_text: 'Filename'
+                    id: path_fname
+                    knsname: 'path_fname'
+                    fmt_text: ''
+                    orig_text: ''
+                    background_color: root.flat_color
+                    on_focus: knspace.player.handle_fname(path_fname, path_count)
+                    on_orig_text: knspace.player.update_record_path(fname=self.orig_text)
+                FlatSizedTextInput:
+                    id: path_count
+                    knsname: 'path_count'
+                    input_filter: 'int'
+                    size_hint_x: None
+                    width: '40dp'
+                    hint_text: 'n'
+                    background_color: root.flat_color
+                    on_text:
+                        knspace.player.handle_fname(path_fname, path_count, 'count')
+                        knspace.player.update_record_path(count=self.text)
 
 <VideoControl@BoxLayout>
     size_hint: None, None
-    size: self.minimum_width, '35dp'
-    spacing: '12dp'
-    ImageToggleButton:
+    size: self.minimum_width, '34dp'
+    padding: '5dp'
+    spacing: '5dp'
+    FlatImageToggleButton:
         id: play
         knsname: 'gui_play'
-        size_hint_x: None
-        width: self.height
-        source: 'play.png' if self.state == 'normal' else 'pause.png'
+        source: 'flat_play.png' if self.state == 'normal' else 'flat_stop.png'
+        hover_text: '[b]play[/b] video' if self.state == 'normal' else '[b]stop[/b] video'
+        flat_color: app.theme.accent
         disabled: not knspace.player or knspace.player.pt_player_active and not knspace.player.pt_player_play
-        on_state: knspace.player.play(live.state == 'down') if self.state == 'down' else knspace.player.stop()
-    ImageToggleButton:
+        on_state:
+            knspace.player.play(live.state == 'down') if self.state == 'down' else knspace.player.stop()
+            pause.state = 'normal'
+    FlatImageToggleButton:
         id: pause
         knsname: 'gui_pause'
-        size_hint_x: None
-        width: self.height
-        source: 'pause.png' if self.state == 'normal' else 'play.png'
+        source: 'flat_pause.png' if self.state == 'normal' else 'flat_resume.png'
+        hover_text: 'pause' if self.state == 'normal' else '[b]pause[/b]'
+        flat_color: app.theme.accent
         disabled: play.disabled or not knspace.player.ff_player_play
         on_state: knspace.player.set_pause(self.state == 'down')
-    ImageToggleButton:
+    FlatImageToggleButton:
         knsname: 'gui_record'
-        size_hint_x: None
-        width: self.height
-        source: 'record.png' if self.state == 'normal' else 'record_down.png'
+        source: 'flat_record.png' if self.state == 'normal' else 'flat_stop.png'
+        hover_text: 'record' if self.state == 'normal' else '[b]record[/b]'
+        flat_color: app.theme.accent
         disabled: play.disabled or knspace.player.player_record_active and not knspace.player.player_record
         on_state: knspace.player.record() if self.state == 'down' else knspace.player.stop_recording()
-    ImageButton:
-        size_hint_x: None
-        width: self.height
-        source: 'save.png' if self.state == 'normal' else 'save_down.png'
+    FlatDivider:
+        color: app.theme.divider
+    FlatImageButton:
+        scale_down_color: True
+        source: 'flat_screenshot_save.png'
+        hover_text: 'save screenshot'
+        flat_color: app.theme.accent
         last_image: None
         on_press: self.last_image = knspace.player.last_image
         on_release:
@@ -163,23 +171,25 @@
             app.filebrowser.multiselect = False
             app.filebrowser.callback = partial(knspace.player.save_screenshot, self.last_image)
             if self.last_image: app.filebrowser.open()
-    ImageButton:
-        size_hint_x: None
-        width: self.height
-        source: 'load.png' if self.state == 'normal' else 'load_down.png'
+    FlatImageButton:
+        scale_down_color: True
+        source: 'flat_screenshot_load.png'
+        hover_text: 'load screenshot'
+        flat_color: app.theme.accent
         on_release:
             app.filebrowser.target = knspace.player.browse_path
             app.filebrowser.dirselect = False
             app.filebrowser.multiselect = False
             app.filebrowser.callback = knspace.player.load_screenshot
             app.filebrowser.open()
-    KNToggleButton:
+    FlatDivider:
+        color: app.theme.divider
+    FlatImageToggleButton:
         id: live
         knsname: 'gui_live_cam'
-        size_hint_x: None
-        width: self.texture_size[0]
-        padding_x: '10dp'
-        text: 'Live'
+        source: 'flat_not_live.png' if self.state == 'normal' else 'flat_live.png'
+        hover_text: 'video [b]file[/b]' if self.state == 'normal' else '[b]live[/b] video'
+        flat_color: app.theme.accent
         state: 'down'
         disabled: not knspace.player or knspace.player.pt_player_active
     Widget:
@@ -187,7 +197,7 @@
         width: self.height
         canvas:
             Color:
-                rgb: (1, 0, 0) if knspace.player.disk_used_percent >= .75 else (0, 1, 0)
+                rgb: (1., 0, 0) if knspace.player.disk_used_percent >= .75 else app.theme.accent
             Ellipse:
                 pos: self.pos
                 size: self.size
@@ -200,9 +210,9 @@
         width: self.texture_size[0]
         markup: True
         padding_x: '5dp'
-    ImageButton:
+    FlatImageButton:
         on_parent: self.more_widget = Factory.VideoConfig()
-        size_hint_x: None
-        width: self.height / 4.
-        source: 'more-vert.png' if self.state == 'normal' else 'more-vert_down.png'
+        scale_down_color: True
+        source: 'flat_dots_vertical.png'
+        flat_color: app.theme.accent
         on_release: self.more_widget.open(root)

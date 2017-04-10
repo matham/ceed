@@ -5,6 +5,7 @@ from kivy.uix.widget import Widget
 from kivy.uix.behaviors.compoundselection import CompoundSelectionBehavior
 from kivy.uix.behaviors.knspace import KNSpaceBehavior
 from kivy.uix.behaviors.focus import FocusBehavior
+from kivy.event import EventDispatcher
 from kivy.properties import BooleanProperty, ObjectProperty, StringProperty
 from kivy.clock import Clock
 from kivy.uix.boxlayout import BoxLayout
@@ -16,13 +17,13 @@ from kivy.utils import get_color_from_hex
 _name_pat = re.compile('^(.+)-([0-9]+)$')
 
 
-class BlankDropDown(DropDown):
+class EmptyDropDown(DropDown):
 
     def __init__(self, **kwargs):
-        super(BlankDropDown, self).__init__(container=None, **kwargs)
+        super(EmptyDropDown, self).__init__(container=None, **kwargs)
 
 
-class ExpandWidget(Widget):
+class ExpandWidget(Factory.IconSizedBehavior, Factory.Image):
 
     is_open = BooleanProperty(False)
 
@@ -47,9 +48,13 @@ class ExpandWidget(Widget):
 
 class ShowMoreSelection(object):
 
+    exapnd_prop = StringProperty('show_more')
+
     def keyboard_on_key_down(self, window, keycode, text, modifiers):
         if keycode[1] in ('right', 'left') and self.selected_nodes:
-            self.selected_nodes[-1].show_more = keycode[1] == 'right'
+            setattr(
+                self.selected_nodes[-1], self.exapnd_prop,
+                keycode[1] == 'right')
             return True
         return super(ShowMoreSelection, self).keyboard_on_key_down(
             window, keycode, text, modifiers)
@@ -70,28 +75,34 @@ class ShowMoreBehavior(object):
         if not self.more:
             return
 
-        if self.show_more:
+        if self.show_more and self.more not in self.children:
             self.add_widget(self.more)
-        else:
+        elif not self.show_more and self.more in self.children:
             self.remove_widget(self.more)
 
 
-class BoxSelector(BoxLayout):
+class TouchSelectBehavior(object):
 
     controller = ObjectProperty(None)
 
     use_parent = BooleanProperty(True)
 
+    selectee = ObjectProperty(None)
+
     def on_touch_up(self, touch):
-        if super(BoxSelector, self).on_touch_up(touch):
+        if super(TouchSelectBehavior, self).on_touch_up(touch):
             return True
         if touch.grab_current is not None:
             return False
         if self.collide_point(*touch.pos):
-            self.controller.select_with_touch(
-                self.parent if self.use_parent else self, touch)
+            s = self.selectee or (self.parent if self.use_parent else self)
+            self.controller.select_with_touch(s, touch)
             return True
         return False
+
+
+class BoxSelector(TouchSelectBehavior, BoxLayout):
+    pass
 
 
 class WidgetList(KNSpaceBehavior, CompoundSelectionBehavior, FocusBehavior):
@@ -188,7 +199,6 @@ class ColorBackgroundBehavior(object):
 
     source_obj = ObjectProperty(None, rebind=True)
 
-
 Builder.load_string('''
 <ColorBackgroundBehavior>:
     odd: root.parent is not None and self.__self__ in root.parent.children and bool((len(self.parent.children) - self.parent.children.index(self.__self__)) % 2)
@@ -210,5 +220,8 @@ Builder.load_string('''
             rgb: 1, 1, 1
 ''')
 
+Factory.register(classname='ShowMoreSelection', cls=ShowMoreSelection)
+Factory.register(classname='ShowMoreBehavior', cls=ShowMoreBehavior)
+Factory.register(classname='TouchSelectBehavior', cls=TouchSelectBehavior)
 Factory.register(classname='WidgetList', cls=WidgetList)
 Factory.register(classname='ColorBackgroundBehavior', cls=ColorBackgroundBehavior)

@@ -4,14 +4,15 @@ import re
 
 from kivy.uix.behaviors.knspace import KNSpaceBehavior, knspace
 from kivy.uix.behaviors.togglebutton import ToggleButtonBehavior
-from kivy.uix.textinput import TextInput
 from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.label import Label
 from kivy.properties import BooleanProperty, NumericProperty, StringProperty, \
     ObjectProperty, ListProperty, DictProperty
 from kivy.core.window import Window
 from kivy.factory import Factory
 from kivy.compat import string_types
+from kivy.app import App
+
+from cplcom.graphics import FlatTextInput
 
 from ceed.utils import WidgetList, ShowMoreSelection, ShowMoreBehavior, \
     fix_name, ColorBackgroundBehavior
@@ -44,7 +45,7 @@ class FuncList(ShowMoreSelection, WidgetList, BoxLayout):
             f in func.get_funcs()]))
 
 
-class FuncWidget(ShowMoreBehavior, ColorBackgroundBehavior, BoxLayout):
+class FuncWidget(ShowMoreBehavior, BoxLayout):
 
     func = ObjectProperty(None, rebind=True)
 
@@ -63,7 +64,7 @@ class FuncWidget(ShowMoreBehavior, ColorBackgroundBehavior, BoxLayout):
 
         super(FuncWidget, self).__init__(**kwargs)
         self._display_properties()
-        self.settings.parent.remove_widget(self.settings)
+        self.settings_root.parent.remove_widget(self.settings_root)
         if not isinstance(self, FuncWidgetGroup):
             self.expand.parent.remove_widget(self.expand)
 
@@ -115,10 +116,11 @@ class FuncWidget(ShowMoreBehavior, ColorBackgroundBehavior, BoxLayout):
 
         if props:
             grid = Factory.XYSizedGridLayout(cols=2)
-            label = Factory.XSizedLabel
+            label = Factory.FlatXSizedLabel
+            color = App.get_running_app().theme.text_primary
             for fmt, keys in sorted(props.items(), key=lambda x: x[0]):
                 for key in sorted(keys):
-                    grid.add_widget(label(text=key, padding_x='10dp'))
+                    grid.add_widget(label(text=key, padding_x='10dp', flat_color=color))
                     grid.add_widget(FuncPropTextWidget(
                         func=func, prop_name=key,
                         input_filter=input_filter[fmt]))
@@ -193,7 +195,7 @@ class FuncWidgetGroup(FuncWidget):
         return None
 
 
-class FuncPropTextWidget(TextInput):
+class FuncPropTextWidget(FlatTextInput):
 
     func = None
 

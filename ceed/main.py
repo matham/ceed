@@ -13,6 +13,7 @@ from os.path import join, dirname, isdir
 
 from cplcom.app import CPLComApp, run_app as run_cpl_app
 from cplcom.config import populate_dump_config
+from cplcom.graphics import HighightButtonBehavior
 
 from kivy.properties import ObjectProperty, NumericProperty, BooleanProperty
 from kivy.resources import resource_add_path
@@ -72,7 +73,7 @@ class CeedApp(CPLComApp):
         Builder.load_file(join(base, 'shape', 'shape_style.kv'))
         Builder.load_file(join(base, 'function', 'func_style.kv'))
         Builder.load_file(join(base, 'stage', 'stage_style.kv'))
-        Builder.load_file(join(base, 'view', 'control_style.kv'))
+        Builder.load_file(join(base, 'view', 'view_style.kv'))
         Builder.load_file(join(base, 'storage', 'storage_style.kv'))
         return super(CeedApp, self).build()
 
@@ -80,6 +81,8 @@ class CeedApp(CPLComApp):
         knspace.painter.show_widgets = True
         FunctionFactory.show_widgets = True
         StageFactory.show_widgets = True
+
+        HighightButtonBehavior.init_class()
 
         CeedData.create_file('')
 
@@ -106,7 +109,7 @@ class CeedApp(CPLComApp):
         Window.set_title('Ceed v{}, CPL lab{}{}'.format(
             ceed.__version__, star, filename))
 
-    def changed_callback(self, *largs):
+    def changed_callback(self, *largs, **kwargs):
         CeedData.config_changed = True
 
     def check_close(self):

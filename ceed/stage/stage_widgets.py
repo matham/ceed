@@ -91,7 +91,7 @@ class StageList(ShowMoreSelection, WidgetList, BoxLayout):
                 for d in stage.display.get_visible_children()]
 
 
-class StageWidget(ShowMoreBehavior, ColorBackgroundBehavior, BoxLayout):
+class StageWidget(ShowMoreBehavior, BoxLayout):
 
     stage = ObjectProperty(None, rebind=True)
 
@@ -105,7 +105,7 @@ class StageWidget(ShowMoreBehavior, ColorBackgroundBehavior, BoxLayout):
 
     def __init__(self, **kwargs):
         super(StageWidget, self).__init__(**kwargs)
-        self.settings.parent.remove_widget(self.settings)
+        self.settings_root.parent.remove_widget(self.settings_root)
 
     @property
     def name(self):
@@ -156,7 +156,7 @@ class StageWidget(ShowMoreBehavior, ColorBackgroundBehavior, BoxLayout):
             yield shape.display
 
 
-class StageShapeDisplay(ColorBackgroundBehavior, BoxSelector):
+class StageShapeDisplay(BoxSelector):
 
     stage_shape = ObjectProperty(None, rebind=True)
 

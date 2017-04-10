@@ -8,7 +8,8 @@ except ImportError:
     from queue import Empty
 
 from kivy.event import EventDispatcher
-from kivy.properties import NumericProperty, StringProperty, BooleanProperty
+from kivy.properties import NumericProperty, StringProperty, BooleanProperty, \
+    ObjectProperty
 from kivy.clock import Clock
 from kivy.compat import clock
 from kivy.graphics import Color, Point
@@ -299,7 +300,7 @@ def view_process_enter(*largs):
 
 class ControllerSideViewControllerBase(ViewControllerBase):
 
-    view_process = None
+    view_process = ObjectProperty(None, allownone=True)
 
     def request_stage_start(self, stage_name):
         CeedData.prepare_experiment(stage_name)
@@ -319,6 +320,11 @@ class ControllerSideViewControllerBase(ViewControllerBase):
             self.stage_active = False
         elif self.view_process:
             self.queue_view_read.put_nowait(('end_stage', None))
+
+    def end_stage(self):
+        val = super(ControllerSideViewControllerBase, self).end_stage()
+        self.stage_active = False
+        return val
 
     def request_fullscreen(self, state):
         self.fullscreen = state
