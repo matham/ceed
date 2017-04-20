@@ -19,6 +19,7 @@ from kivy.uix.behaviors.knspace import knspace, KNSpaceBehavior
 from kivy.uix.widget import Widget
 from kivy.garden.filebrowser import FileBrowser
 from kivy.lang import Builder
+from kivy.graphics.opengl import glEnable, GL_DITHER, glDisable
 from kivy.logger import Logger
 from kivy.clock import Clock
 
@@ -58,6 +59,7 @@ class CeedViewApp(KNSpaceBehavior, App):
         return Builder.load_string(kv)
 
     def on_start(self):
+        glDisable(GL_DITHER)
         Window.clearcolor = (0, 0, 0, 1)
         Window.minimize()
 

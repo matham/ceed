@@ -27,6 +27,8 @@
 #                     id: error_container
 
 
+<PinnedGraph@KNSpaceBehavior+BoxLayout>
+
 <MainView@BoxLayout>:
     orientation: 'vertical'
     canvas:
@@ -67,6 +69,16 @@
             size_hint_y: None
             height: video.height
             on_parent: app.error_indicator = self
+    PinnedGraph:
+        knsname: 'pinned_graph'
+        size_hint_y: None
+        height: self.minimum_height
+        canvas:
+            Color:
+                rgba: app.theme.primary_text
+            Rectangle:
+                pos: self.pos
+                size: self.size
     BoxLayout:
         orientation: 'horizontal'
         canvas:
@@ -95,6 +107,20 @@
     size_hint: None, None
     size: self.texture_size
 
+<FlatXYSizedLabel@FlatLabel>:
+    size_hint: None, None
+    size: self.texture_size
+
+<FlatXMinYSizedLabel@FlatLabel>:
+    size_hint_x: None
+    width: self.texture_size[0]
+    size_hint_min_y: self.texture_size[1]
+
+<FlatMinXYSizedLabel@FlatLabel>:
+    size_hint_y: None
+    height: self.texture_size[1]
+    size_hint_min_x: self.texture_size[0]
+
 <FlatXSizedLabel@FlatLabel>:
     size_hint_x: None
     width: self.texture_size[0]
@@ -107,3 +133,10 @@
     size_hint_y: None
     height: self.minimum_height
     size_hint_min_x: self.minimum_width
+
+<CeedYesNoPrompt@YesNoPrompt>:
+    flat_color: app.theme.primary_text
+    flat_border_color: app.theme.divider
+    text_flat_color: app.theme.text_primary
+    btn_flat_background_color_down: app.theme.primary
+    btn_flat_background_color_normal: app.theme.primary_light

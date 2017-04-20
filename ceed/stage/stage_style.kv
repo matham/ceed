@@ -1,5 +1,7 @@
+#:import knspace kivy.uix.behaviors.knspace.knspace
 #:import StageFactory ceed.stage.StageFactory
 #:import FunctionFactory ceed.function.FunctionFactory
+#:import get_color_from_hex kivy.utils.get_color_from_hex
 
 <StageListing@FlatSplitter>:
     size_hint_x: None
@@ -189,12 +191,6 @@
                     size_hint_y: None
                     height: '34dp'
                     spacing: '5dp'
-                    IconSwitchBehavior:
-                        source_down: 'flat_parallel.png'
-                        source_normal: 'flat_dots_horizontal.png'
-                        flat_color: app.theme.accent
-                        state: 'down' if root.stage and root.stage.order == 'parallel' else 'normal'
-                        on_state: root.stage.order = 'parallel' if self.state == 'down' else 'serial'
                     FlatToggleButton:
                         text: 'R'
                         state: 'down' if root.stage and root.stage.color_r else 'normal'
@@ -216,7 +212,77 @@
                         scale_down_color: True
                         flat_color: app.theme.text_primary
                         flat_background_color: app.theme.primary_light if self.state == 'normal' else app.theme.primary
-
+                GridLayout:
+                    size_hint_y: None
+                    height: self.minimum_height
+                    size_hint_min_x: self.minimum_width
+                    padding: '5dp'
+                    spacing: '5dp'
+                    cols: 2
+                    FlatLabel:
+                        size_hint: None, None
+                        size: self.texture_size
+                        text: 'Stage order'
+                        flat_color: app.theme.text_primary
+                    BoxLayout:
+                        spacing: '5dp'
+                        size_hint_y: None
+                        height: self.minimum_height
+                        size_hint_min_x: self.minimum_width
+                        FlatToggleButton:
+                            size_hint_y: None
+                            height: self.texture_size[1]
+                            size_hint_min_x: self.texture_size[0]
+                            padding: '5dp', '5dp'
+                            text: 'Serial'
+                            state: 'down' if root.stage and root.stage.order == 'serial' else 'normal'
+                            on_state: root.stage.order = 'serial' if self.state == 'down' else 'parallel'
+                            scale_down_color: True
+                            flat_color: app.theme.text_primary
+                            flat_background_color: app.theme.primary_light if self.state == 'normal' else app.theme.primary
+                        FlatToggleButton:
+                            size_hint_y: None
+                            height: self.texture_size[1]
+                            size_hint_min_x: self.texture_size[0]
+                            padding: '5dp', '5dp'
+                            text: 'Parallel'
+                            state: 'down' if root.stage and root.stage.order == 'parallel' else 'normal'
+                            on_state: root.stage.order = 'parallel' if self.state == 'down' else 'serial'
+                            scale_down_color: True
+                            flat_color: app.theme.text_primary
+                            flat_background_color: app.theme.primary_light if self.state == 'normal' else app.theme.primary
+                    FlatLabel:
+                        size_hint: None, None
+                        size: self.texture_size
+                        text: 'End on'
+                        flat_color: app.theme.text_primary
+                    BoxLayout:
+                        spacing: '5dp'
+                        size_hint_y: None
+                        height: self.minimum_height
+                        size_hint_min_x: self.minimum_width
+                        FlatToggleButton:
+                            size_hint_y: None
+                            height: self.texture_size[1]
+                            size_hint_min_x: self.texture_size[0]
+                            padding: '5dp', '5dp'
+                            text: 'All'
+                            state: 'down' if root.stage and root.stage.complete_on == 'all' else 'normal'
+                            on_state: root.stage.complete_on = 'all' if self.state == 'down' else 'any'
+                            scale_down_color: True
+                            flat_color: app.theme.text_primary
+                            flat_background_color: app.theme.primary_light if self.state == 'normal' else app.theme.primary
+                        FlatToggleButton:
+                            size_hint_y: None
+                            height: self.texture_size[1]
+                            size_hint_min_x: self.texture_size[0]
+                            padding: '5dp', '5dp'
+                            text: 'Any'
+                            state: 'down' if root.stage and root.stage.complete_on == 'any' else 'normal'
+                            on_state: root.stage.complete_on = 'any' if self.state == 'down' else 'all'
+                            scale_down_color: True
+                            flat_color: app.theme.text_primary
+                            flat_background_color: app.theme.primary_light if self.state == 'normal' else app.theme.primary
     BoxLayout:
         id: more
         spacing: '5dp'
@@ -296,3 +362,163 @@
         source: 'flat_delete.png'
         flat_color: app.theme.accent
         on_release: root.stage_shape.stage.remove_shape(root.stage_shape)
+
+
+<ShapeGraphSelector@FlatToggleButton>:
+    controller: None
+    size_hint: None, None
+    size: self.texture_size
+    padding: '5dp', '5dp'
+    scale_down_color: True
+    flat_color: app.theme.text_primary
+    flat_background_color: app.theme.primary_light if self.state == 'normal' else app.theme.primary
+    on_release: self.controller._shapes_displayed_update_trigger()
+
+<ShapeGraphSelectorAll@FlatButton>:
+    controller: None
+    size_hint: None, None
+    size: self.texture_size
+    padding: '5dp', '5dp'
+    scale_down_color: True
+    flat_color: app.theme.text_primary
+    flat_background_color: app.theme.primary_light if self.state == 'normal' else app.theme.primary
+    on_release: self.controller.apply_selection_all(self.text.lower())
+
+
+<GraphSelectionBox@FlatSplitter>:
+    max_size: root_selection_box.minimum_width + dp(40)
+    min_size: '20dp'
+    sizable_from: 'right'
+    flat_color: app.theme.accent
+    controller: None
+    shape_selection_widget: shape_selection_widget
+    ScrollView:
+        bar_width: '10dp'
+        scroll_type: ['bars']
+        BoxLayout:
+            id: root_selection_box
+            orientation: 'vertical'
+            size_hint_min_y: self.minimum_height
+            size_hint_x: None
+            width: self.minimum_width
+            spacing: '5dp'
+            ScrollView:
+                size_hint_min_x: shape_selection_widget.minimum_width
+                do_scroll_x: False
+                bar_width: '10dp'
+                scroll_type: ['bars']
+                GridLayout:
+                    id: shape_selection_widget
+                    cols: 4
+                    size_hint_y: None
+                    height: self.minimum_height
+                    spacing: '5dp'
+            GridLayout:
+                cols: 4
+                spacing: '5dp'
+                size_hint_y: None
+                height: self.minimum_height
+                size_hint_min_x: self.minimum_width
+                Widget
+                ShapeGraphSelectorAll:
+                    controller: root.controller
+                    text: 'R'
+                ShapeGraphSelectorAll:
+                    controller: root.controller
+                    text: 'G'
+                ShapeGraphSelectorAll:
+                    controller: root.controller
+                    text: 'B'
+
+<StageGraph>:
+    size_hint_min_x: self.minimum_width
+    size_hint_y: None
+    min_size: self.minimum_height
+    on_min_size: self.height = max(self.height, self.min_size)
+    sizable_from: 'bottom'
+    flat_color: app.theme.accent
+    shape_selection_widget: shape_selection_box.shape_selection_widget
+    graph: graph
+    graph_labels: graph_labels
+    unpinned_parent: None
+    unpinned_root: None
+    BoxLayout:
+        id: root_box
+        size_hint_min: self.minimum_size
+        spacing: '5dp'
+        padding: '5dp'
+        GraphSelectionBox:
+            id: shape_selection_box
+            controller: root
+        BoxLayout:
+            size_hint_min: self.minimum_size
+            orientation: 'vertical'
+            ScrollView:
+                size_hint_min_x: graph_box.minimum_width
+                bar_width: '10dp'
+                scroll_type: ['bars']
+                BoxLayout:
+                    id: graph_box
+                    size_hint_min_x: self.minimum_width
+                    size_hint_y: None
+                    height: max(self.minimum_height, root.n_plots_displayed * root.shape_height + (root.n_plots_displayed - 1) * root.shape_spacing)
+                    BoxLayout:
+                        id: graph_labels
+                        orientation: 'vertical'
+                        size_hint_x: None
+                        width: self.minimum_width
+                        size_hint_min_y: self.minimum_height
+                    Widget:
+                        id: graph
+                        size_hint_min_x: '50dp'
+                        on_center: root._plot_pos_update_trigger()
+            BoxLayout:
+                size_hint: None, None
+                size: self.minimum_width, '34dp'
+                padding: '5dp'
+                spacing: '5dp'
+                FlatSpinner:
+                    id: stage_spinner
+                    values: sorted(StageFactory.stage_names.keys()) if StageFactory.stage_names else []
+                    text_autoupdate: True
+                    size_hint_x: None
+                    width: self.minimum_width
+                    flat_color: app.theme.text_primary
+                    flat_menu_color: app.theme.accent
+                    flat_drop_background_color: app.theme.primary_text
+                    flat_drop_text_color: app.theme.text_primary
+                    flat_border_color: app.theme.divider
+                FlatSizedTextInput:
+                    id: rate
+                    size_hint_x: None
+                    width: '40dp'
+                    text: '30.'
+                    hint_text: 'rate'
+                    background_color: root.flat_color
+                    input_filter: 'float'
+                FlatImageButton:
+                    source: 'flat_refresh.png'
+                    flat_color: app.theme.accent
+                    on_release: if stage_spinner.text: root.refresh_graph(stage_spinner.text, float(rate.text))
+                    hover_text: 'refresh'
+                FlatImageToggleButton:
+                    source: 'flat_pin.png' if self.state == 'normal' else 'flat_pin_off.png'
+                    flat_color: app.theme.accent
+                    on_release: root.set_pin(self.state == 'down')
+                    hover_text: 'refresh'
+
+<StageGraphPopup@FlatModalView>:
+    flat_color: app.theme.primary_text
+    flat_border_color: app.theme.divider
+    size_hint: None, None
+    size: splitter.size
+    FlatSplitter:
+        id: splitter
+        size_hint: None, None
+        height: self.minimum_height
+        min_size: self.minimum_width
+        sizable_from: 'right'
+        flat_color: app.theme.accent
+        StageGraph:
+            unpinned_parent: splitter
+            unpinned_root: root

@@ -2,6 +2,7 @@ from multiprocessing import Process, Queue
 import os
 import sys
 import traceback
+from collections import defaultdict
 try:
     from Queue import Empty
 except ImportError:
@@ -12,7 +13,8 @@ from kivy.properties import NumericProperty, StringProperty, BooleanProperty, \
     ObjectProperty
 from kivy.clock import Clock
 from kivy.compat import clock
-from kivy.graphics import Color, Point
+from kivy.graphics import Color, Point, Fbo, Rectangle
+from kivy.graphics.texture import Texture
 from kivy.app import App
 from kivy.uix.behaviors.knspace import knspace
 
@@ -26,6 +28,12 @@ from ceed.storage.controller import DataSerializer, CeedData
 if ceed.has_gui_control or ceed.is_view_inst:
     from kivy.core.window import Window
 
+try:
+    from pypixxlib import _libdpx as libdpx
+    from pypixxlib.propixx import PROPixx
+except ImportError:
+    libdpx = PROPixx = None
+
 
 class ViewControllerBase(EventDispatcher):
 
@@ -33,7 +41,7 @@ class ViewControllerBase(EventDispatcher):
         'screen_width', 'screen_height', 'frame_rate',
         'use_software_frame_rate', 'cam_scale', 'cam_offset_x', 'cam_offset_y',
         'cam_rotation', 'output_count', 'screen_offset_x', 'preview',
-        'fullscreen')
+        'fullscreen', 'video_mode', 'LED_mode')
 
     screen_width = NumericProperty(1920)
 
@@ -65,13 +73,31 @@ class ViewControllerBase(EventDispatcher):
 
     gpu_fps = NumericProperty(0)
 
+    propixx_lib = BooleanProperty(False)
+
+    video_modes = ['RGB', 'RB3D', 'RGB240', 'RGB180', 'QUAD4X', 'QUAD12X',
+                   'GREY3X']
+
+    led_modes = {'RGB': 0, 'GB': 1, 'RB': 2, 'B': 3, 'RG': 4, 'G': 5, 'R': 6,
+                 'none': 7}
+
+    video_mode = StringProperty('RGB')
+
+    LED_mode = StringProperty('RGB')
+
+    do_quad_mode = False
+    '''If quad mode, we just quadruple the window size.
+    '''
+
     _original_fps = Clock._max_fps
 
     canvas_name = 'view_controller'
 
     current_canvas = None
 
-    shape_views = {}
+    shape_views = []
+
+    quad_fbos = []
 
     tick_event = None
 
@@ -87,7 +113,7 @@ class ViewControllerBase(EventDispatcher):
 
     serializer = None
 
-    serializer_color = None
+    serializer_tex = None
 
     queue_view_read = None
 
@@ -99,6 +125,9 @@ class ViewControllerBase(EventDispatcher):
         super(ViewControllerBase, self).__init__(**kwargs)
         for name in ViewControllerBase.__settings_attrs__:
             self.fbind(name, self.dispatch, 'on_changed')
+        self.propixx_lib = libdpx is not None
+        self.quad_fbos = []
+        self.shape_views = []
 
     def on_changed(self, *largs):
         pass
@@ -116,6 +145,62 @@ class ViewControllerBase(EventDispatcher):
     def request_process_data(self, data_type, data):
         pass
 
+    def add_graphics(self, canvas):
+        StageFactory.remove_shapes_gl_color_instructions(
+            canvas, self.canvas_name)
+        self.shape_views = []
+
+        corners = ((0, 1), (1, 1), (0, 0), (1, 0))
+        w, h = self.screen_width, self.screen_height
+
+        if self.do_quad_mode:
+            if not self.quad_fbos:
+                for (x, y) in corners:
+                    with canvas:
+                        fbo = Fbo(size=(w, h), group=self.canvas_name)
+                        Rectangle(
+                            pos=(x * w, y * h), size=(w, h),
+                            texture=fbo.texture, group=self.canvas_name)
+                        self.quad_fbos.append(fbo)
+
+            for fbo in self.quad_fbos:
+                instructs = StageFactory.get_shapes_gl_color_instructions(
+                    fbo, self.canvas_name)
+                self.shape_views.append(instructs)
+        else:
+            self.shape_views = [StageFactory.get_shapes_gl_color_instructions(
+                canvas, self.canvas_name)]
+
+        if self.output_count and not self.serializer_tex:
+            with canvas:
+                Color(0, 0, 0, 1, group=self.canvas_name)
+                tex = self.serializer_tex = Texture.create(size=(1, 1))
+                tex.mag_filter = 'nearest'
+                tex.min_filter = 'nearest'
+                Rectangle(texture=tex, pos=(0, h - 1), size=(1, 1),
+                          group=self.canvas_name)
+
+    def get_all_shape_values(self, stage_name, frame_rate):
+        tick = StageFactory.tick_stage(stage_name)
+        frame_rate = float(frame_rate)
+
+        obj_values = defaultdict(list)
+        count = 0
+        while True:
+            count += 1
+
+            try:
+                tick.next()
+                shape_values = tick.send(count / frame_rate)
+            except StageDoneException:
+                break
+
+            values = StageFactory.fill_shape_gl_color_values(
+                None, shape_values)
+            for name, r, g, b, a in values:
+                obj_values[name].append((r, g, b, a))
+        return obj_values
+
     def start_stage(self, stage_name, canvas):
         if self.tick_event:
             raise TypeError('Cannot start new stage while stage is active')
@@ -125,8 +210,6 @@ class ViewControllerBase(EventDispatcher):
         Window.fbind('on_flip', self.flip_callback)
 
         self.current_canvas = canvas
-        self.shape_views = StageFactory.get_shapes_gl_color_instructions(
-            canvas, self.canvas_name)
         self.tick_func = StageFactory.tick_stage(stage_name)
 
         self._flip_stats['last_call_t'] = self._cpu_stats['last_call_t'] = \
@@ -135,10 +218,8 @@ class ViewControllerBase(EventDispatcher):
         if self.output_count:
             kwargs = App.get_running_app().app_settings['serializer']
             self.serializer = DataSerializer(**kwargs).get_bits(-1)
-            with canvas:
-                self.serializer_color = Color(
-                    0, 0, 0, 1, group=self.canvas_name)
-                Point(points=[0, 0], pointsize=.5, group=self.canvas_name)
+
+        self.add_graphics(canvas)
 
     def end_stage(self):
         if not self.tick_event:
@@ -151,12 +232,13 @@ class ViewControllerBase(EventDispatcher):
             self.current_canvas, self.canvas_name)
 
         self.tick_func = self.tick_event = self.current_canvas = None
-        self.shape_views = {}
+        self.shape_views = []
         self.count = 0
         self._cpu_stats['count'] = 0
         del self._flip_stats['dt'][:]
 
-        self.serializer_color = self.serializer = None
+        self.serializer_tex = None
+        self.serializer = None
 
     def tick_callback(self, *largs):
         t = clock()
@@ -176,31 +258,42 @@ class ViewControllerBase(EventDispatcher):
 
         stats['last_call_t'] = t
 
-        shape_views = self.shape_views
         tick = self.tick_func
-        self.count += 1
+        if self.video_mode == 'QUAD4X':
+            projections = [None, ] * 4
+            views = self.shape_views
+        elif self.video_mode == 'QUAD12X':
+            projections = (['r', ] * 4) + (['g', ] * 4) + (['b', ] * 4)
+            views = [view for _ in range(4) for view in self.shape_views]
+        else:
+            projections = [None, ]
+            views = self.shape_views
 
-        try:
-            tick.next()
-            shape_values = tick.send(self.count / self.frame_rate)
-        except StageDoneException:
-            self.end_stage()
-            return
-        except Exception:
-            self.end_stage()
-            raise
+        bits = None if self.serializer else 0
+        for shape_views, proj in zip(views, projections):
+            self.count += 1
 
-        bits = 0
-        if self.serializer:
-            self.serializer.next()
-            bits = self.serializer.send(self.count)
-            r, g, b = bits & 0xFF, (bits & 0xFF00) >> 8, \
-                (bits & 0xFF0000) >> 16
-            self.serializer_color.rgba = r / 255., g / 255., b / 255., 1.
+            try:
+                tick.next()
+                shape_values = tick.send(self.count / self.frame_rate)
+            except StageDoneException:
+                self.end_stage()
+                return
+            except Exception:
+                self.end_stage()
+                raise
 
-        values = StageFactory.fill_shape_gl_color_values(
-            shape_views, shape_values)
-        self.request_process_data('frame', (self.count, bits, values))
+            if self.serializer and bits is None:
+                self.serializer.next()
+                bits = self.serializer.send(self.count)
+                r, g, b = bits & 0xFF, (bits & 0xFF00) >> 8, \
+                    (bits & 0xFF0000) >> 16
+                self.serializer_tex.blit_buffer(
+                    bytearray([r, g, b]), colorfmt='rgb', bufferfmt='ubyte')
+
+            values = StageFactory.fill_shape_gl_color_values(
+                shape_views, shape_values, proj)
+            self.request_process_data('frame', (self.count, bits, values))
 
     def flip_callback(self, *largs):
         Window.on_flip()
@@ -241,6 +334,7 @@ class ViewSideViewControllerBase(ViewControllerBase):
             App.get_running_app().app_settings = app_settings
         for k, v in settings.items():
             setattr(self, k, v)
+        self.do_quad_mode = self.video_mode.startswith('QUAD')
         from ceed.view.main import run_app
         self.queue_view_read = read
         self.queue_view_write = write
@@ -289,7 +383,10 @@ class ViewSideViewControllerBase(ViewControllerBase):
     def prepare_view_window(self, *largs):
         if Window.fullscreen != self.fullscreen or not self.fullscreen:
             Window.maximize()
-            Window.size = self.screen_width, self.screen_height
+            if self.do_quad_mode:
+                Window.size = 2 * self.screen_width, 2 * self.screen_height
+            else:
+                Window.size = self.screen_width, self.screen_height
             Window.left = self.screen_offset_x
             Window.fullscreen = self.fullscreen
 
@@ -303,15 +400,21 @@ class ControllerSideViewControllerBase(ViewControllerBase):
     view_process = ObjectProperty(None, allownone=True)
 
     def request_stage_start(self, stage_name):
-        CeedData.prepare_experiment(stage_name)
+        if not stage_name:
+            raise ValueError('No stage specified')
+
         if self.preview:
+            CeedData.prepare_experiment(stage_name)
             self.start_stage(stage_name, knspace.painter.canvas)
             self.stage_active = True
         elif self.view_process:
+            CeedData.prepare_experiment(stage_name)
             self.queue_view_read.put_nowait(
                 ('config', json_dumps(CeedData.gather_config_data_dict())))
             self.queue_view_read.put_nowait(('start_stage', stage_name))
             self.stage_active = True
+        else:
+            raise Exception("No window to run experiment")
 
     def request_stage_end(self):
         if self.preview:
@@ -397,6 +500,25 @@ class ControllerSideViewControllerBase(ViewControllerBase):
             except Empty:
                 break
 
+    @app_error
+    def set_led_mode(self, mode):
+        if libdpx is None:
+            raise ImportError('Cannot open PROPixx library')
+        libdpx.DPxOpen()
+        libdpx.DPxSetPPxLedMask(self.led_modes[mode])
+        libdpx.DPxUpdateRegCache()
+        libdpx.DPxClose()
+        self.LED_mode = mode
+
+    @app_error
+    def set_video_mode(self, mode):
+        if PROPixx is None:
+            raise ImportError('Cannot open PROPixx library')
+        dev = PROPixx()
+        dev.setDlpSequencerProgram(mode)
+        dev.updateRegisterCache()
+        dev.close()
+        self.video_mode = mode
 
 def process_enter(*largs, **kwargs):
     ViewController.view_process_enter(*largs, **kwargs)

@@ -1,4 +1,5 @@
 #:import ViewController ceed.view.controller.ViewController
+#:import Factory kivy.factory.Factory
 
 <ControlDisplay@KNSpaceBehavior+ScrollView>
     knsname: 'control_display'
@@ -107,9 +108,76 @@
         on_release: ViewController.request_fullscreen(self.state == 'down')
         state: 'down' if ViewController.fullscreen else 'normal'
         hover_text: 'fullscreen' if self.state == 'normal' else '[b]fullscreen[/b]'
+    FlatImageButton:
+        on_parent: self.stage_graph = Factory.StageGraphPopup()
+        on_release: self.stage_graph.open()
+        source: 'flat_chart_line.png'
+        scale_down_color: True
+        flat_color: app.theme.accent
+        hover_text: 'show stage timeline'
     FlatLabel:
         flat_color: app.theme.text_primary
         text: '{:^ 3} / {:^ 3}'.format(int(round(ViewController.cpu_fps)), int(round(ViewController.gpu_fps)))
         size_hint_x: None
         padding_x: '5dp'
         width: self.texture_size[0]
+    FlatImageButton:
+        on_parent: self.more_widget = Factory.ViewConfig()
+        scale_down_color: True
+        source: 'flat_dots_vertical.png'
+        flat_color: app.theme.accent
+        on_release: self.more_widget.open(root)
+
+
+<ViewConfig@FlatDropDown>:
+    flat_color: app.theme.primary_text
+    flat_border_color: app.theme.divider
+    do_scroll: False, False
+    FlatSplitter:
+        size_hint: None, None
+        height: self.minimum_height
+        min_size: self.minimum_width
+        sizable_from: 'right'
+        flat_color: app.theme.accent
+        GridLayout:
+            orientation: 'vertical'
+            size_hint_y: None
+            height: self.minimum_height
+            size_hint_min_x: self.minimum_width
+            padding: '5dp'
+            spacing: '5dp'
+            cols: 2
+            FlatLabel:
+                size_hint: None, None
+                size: self.texture_size
+                text: 'Video mode'
+                flat_color: app.theme.text_primary
+            FlatSpinner:
+                disabled: not ViewController.propixx_lib
+                values: ViewController.video_modes
+                text: 'RGB'
+                on_text: ViewController.set_video_mode(self.text)
+                size_hint_x: None
+                width: self.minimum_width
+                flat_color: app.theme.text_primary
+                flat_menu_color: app.theme.accent
+                flat_drop_background_color: app.theme.primary_text
+                flat_drop_text_color: app.theme.text_primary
+                flat_border_color: app.theme.divider
+            FlatLabel:
+                size_hint: None, None
+                size: self.texture_size
+                text: 'LED mode (ON)'
+                flat_color: app.theme.text_primary
+            FlatSpinner:
+                disabled: not ViewController.propixx_lib
+                values: ViewController.led_modes.keys()
+                text: 'RGB'
+                on_text: ViewController.set_led_mode(self.text)
+                size_hint_x: None
+                width: self.minimum_width
+                flat_color: app.theme.text_primary
+                flat_menu_color: app.theme.accent
+                flat_drop_background_color: app.theme.primary_text
+                flat_drop_text_color: app.theme.text_primary
+                flat_border_color: app.theme.divider

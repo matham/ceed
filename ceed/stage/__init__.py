@@ -113,9 +113,8 @@ class StageFactoryBase(EventDispatcher):
 
             shape_values = []
             for name, colors in shapes.items():
-                if colors:
-                    shape_values.append((name, colors[:]))
-                    del colors[:]
+                shape_values.append((name, colors[:]))
+                del colors[:]
 
             yield shape_values
 
@@ -160,10 +159,12 @@ class StageFactoryBase(EventDispatcher):
             shape_views[shape.name] = instructions[0]
         return shape_views
 
-    def fill_shape_gl_color_values(self, shape_views, shape_values):
+    def fill_shape_gl_color_values(self, shape_views, shape_values,
+                                   projection=None):
         result = []
+
         for name, colors in shape_values:
-            r, g, b, a = 0., 0., 0., 1.
+            r = g = b = a = None
             for r2, g2, b2, a2 in colors:
                 if r2 is not None:
                     r = r2
@@ -173,18 +174,47 @@ class StageFactoryBase(EventDispatcher):
                     b = b2
                 if a2 is not None:
                     a = a2
-            r = min(max(r, 0.), 1.)
-            g = min(max(g, 0.), 1.)
-            b = min(max(b, 0.), 1.)
-            a = min(max(a, 0.), 1.)
 
-            color = shape_views[name]
-            color.rgba = r, g, b, a
-            result.append((name, r, g, b, a))
+            if r is not None:
+                r = min(max(r, 0.), 1.)
+            if g is not None:
+                g = min(max(g, 0.), 1.)
+            if b is not None:
+                b = min(max(b, 0.), 1.)
+            if a is not None:
+                a = min(max(a, 0.), 1.)
+
+            color = shape_views[name] if shape_views is not None else None
+            if r is None and b is None and g is None and a is None:
+                if color is not None:
+                    color.rgba = 0, 0, 0, 0
+                result.append((name, 0, 0, 0, 0))
+            elif projection:
+                if a is None:
+                    a = 1
+
+                vals = [v for v in (r, g, b) if v is not None]
+                if not vals:
+                    val = 0
+                else:
+                    val = sum(vals) / float(len(vals))
+
+                if color is not None:
+                    color.a = a
+                    setattr(color, projection, val)
+                result.append((name, val, val, val, a))
+            else:
+                r, g, b = r or 0, g or 0, b or 0
+                if a is None:
+                    a = 1
+                if color is not None:
+                    color.rgba = r, g, b, a
+                result.append((name, r, g, b, a))
         return result
 
     def remove_shapes_gl_color_instructions(self, canvas, name):
-        canvas.remove_group(name)
+        if canvas:
+            canvas.remove_group(name)
 
 
 class CeedStage(EventDispatcher):
@@ -192,6 +222,8 @@ class CeedStage(EventDispatcher):
     name = StringProperty('Stage')
 
     order = OptionProperty('serial', options=['serial', 'parallel'])
+
+    complete_on = OptionProperty('all', options=['all', 'any'])
 
     stages = ListProperty([])
 
@@ -224,7 +256,8 @@ class CeedStage(EventDispatcher):
 
     def _copy_state(self, state={}, recurse=True):
         d = {}
-        for name in ('order', 'name', 'color_r', 'color_g', 'color_b'):
+        for name in ('order', 'name', 'color_r', 'color_g', 'color_b',
+                     'complete_on'):
             d[name] = getattr(self, name)
 
         d['stages'] = [s._copy_state() for s in self.stages]
@@ -331,6 +364,7 @@ class CeedStage(EventDispatcher):
         stages = [s.tick_stage(shapes) for s in self.stages]
         funcs = self.tick_funcs()
         serial = self.order == 'serial'
+        end_on_first = self.complete_on == 'any' and not serial
         r, g, b = self.color_r, self.color_g, self.color_b
         a = self.color_a
         for tick_stage in stages[:]:
@@ -348,6 +382,8 @@ class CeedStage(EventDispatcher):
                         shapes[name].append(values)
                 except FuncDoneException:
                     funcs = None
+                    if end_on_first:
+                        del stages[:]
 
             for tick_stage in stages[:]:
                 try:
@@ -355,6 +391,10 @@ class CeedStage(EventDispatcher):
                     if serial:
                         break
                 except StageDoneException:
+                    if end_on_first:
+                        del stages[:]
+                        funcs = None
+                        break
                     stages.remove(tick_stage)
 
         raise StageDoneException

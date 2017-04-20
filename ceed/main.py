@@ -21,6 +21,8 @@ from kivy.uix.behaviors.knspace import knspace
 from kivy.garden.filebrowser import FileBrowser
 from kivy.lang import Builder
 from kivy.clock import Clock
+from kivy.factory import Factory
+
 import ceed.utils
 from ceed.player import CeedPlayer
 import ceed.function.plugin
@@ -75,6 +77,7 @@ class CeedApp(CPLComApp):
         Builder.load_file(join(base, 'stage', 'stage_style.kv'))
         Builder.load_file(join(base, 'view', 'view_style.kv'))
         Builder.load_file(join(base, 'storage', 'storage_style.kv'))
+        self.yesno_prompt = Factory.CeedYesNoPrompt()
         return super(CeedApp, self).build()
 
     def on_start(self):

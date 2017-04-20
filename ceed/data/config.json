@@ -24,17 +24,19 @@
         "short_count_indices": [1,2,3]
     },
     "view": {
-        "cam_offset_x": 8.81721249047959,
+        "LED_mode": "RGB",
+        "cam_offset_x": 8.817212490479589,
         "cam_offset_y": 119.54836252856097,
         "cam_rotation": 0.0930125473728367,
         "cam_scale": 0.46915522596175363,
         "frame_rate": 60.0,
-        "fullscreen": true,
+        "fullscreen": false,
         "output_count": true,
         "preview": false,
         "screen_height": 1080,
         "screen_offset_x": 1920,
         "screen_width": 1920,
-        "use_software_frame_rate": true
+        "use_software_frame_rate": true,
+        "video_mode": "RGB"
     }
 }
