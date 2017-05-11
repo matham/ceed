@@ -23,8 +23,8 @@ from kivy.lang import Builder
 from kivy.clock import Clock
 from kivy.factory import Factory
 
-import ceed.utils
-from ceed.player import CeedPlayer
+import ceed.graphics
+from ceed.player import CeedPlayer, CeedFFmpegPlayer, CeedPTGrayPlayer
 import ceed.function.plugin
 import ceed.shape
 import ceed.stage
@@ -58,8 +58,12 @@ class CeedApp(CPLComApp):
         d['data'] = CeedData
         d['serializer'] = DataSerializer
         d['player'] = CeedPlayer
+        d['point_gray_cam'] = CeedPTGrayPlayer
+        d['video_file_playback'] = CeedFFmpegPlayer
         if cls.get_running_app():
-            d['player'] = cls.get_running_app().player
+            p = d['player'] = cls.get_running_app().player
+            d['point_gray_cam'] = p.pt_player
+            d['video_file_playback'] = p.ff_player
         return d
 
     def __init__(self, **kwargs):
@@ -70,6 +74,7 @@ class CeedApp(CPLComApp):
 
     def build(self):
         base = dirname(__file__)
+        Builder.load_file(join(base, 'graphics', 'graphics.kv'))
         Builder.load_file(join(base, 'ceed_style.kv'))
         Builder.load_file(join(base, 'player_style.kv'))
         Builder.load_file(join(base, 'shape', 'shape_style.kv'))

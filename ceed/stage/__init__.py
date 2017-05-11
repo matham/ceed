@@ -316,6 +316,7 @@ class CeedStage(EventDispatcher):
             stage._display.hide_stage()
 
     def add_func(self, func, after=None):
+        i = None
         if after is None:
             self.functions.append(func)
         else:
@@ -323,7 +324,7 @@ class CeedStage(EventDispatcher):
             self.functions.insert(i + 1, func)
         if self._display:
             self._display.set_func_controller(func.display)
-            func.display.show_func()
+            func.display.show_func(i)
 
     def remove_func(self, func):
         self.functions.remove(func)

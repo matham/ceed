@@ -2,7 +2,7 @@
 import importlib
 from os import listdir
 from os.path import dirname, isfile
-from math import exp
+from math import exp, cos, pi
 
 from kivy.properties import NumericProperty
 
@@ -72,7 +72,7 @@ class LinearFunc(CeedFunc):
         return d
 
 
-class ExponantialFunc(CeedFunc):
+class ExponentialFunc(CeedFunc):
 
     A = NumericProperty(1.)
 
@@ -86,16 +86,16 @@ class ExponantialFunc(CeedFunc):
         kwargs.setdefault('name', 'Exp')
         kwargs.setdefault('description',
                           'y(t) = Ae-(t + t0)/tau1 + Be-(t + t0)/tau2')
-        super(ExponantialFunc, self).__init__(**kwargs)
+        super(ExponentialFunc, self).__init__(**kwargs)
 
     def __call__(self, t):
         if self.check_done(t):
             raise FuncDoneException
         t = (t - self._t0_global + self.t0) / self.timebase
-        return self.A * exp(t / self.tau1) + self.B * exp(t / self.tau2)
+        return self.A * exp(-t / self.tau1) + self.B * exp(-t / self.tau2)
 
     def get_gui_props(self, attrs={}):
-        d = super(ExponantialFunc, self).get_gui_props(attrs)
+        d = super(ExponentialFunc, self).get_gui_props(attrs)
         d ['A'] = None
         d ['B'] = None
         d ['tau1'] = None
@@ -103,14 +103,49 @@ class ExponantialFunc(CeedFunc):
         return d
 
     def _copy_state(self, *largs, **kwargs):
-        d = super(ExponantialFunc, self)._copy_state(*largs, **kwargs)
+        d = super(ExponentialFunc, self)._copy_state(*largs, **kwargs)
         d['A'] = self.A
         d['B'] = self.B
         d['tau1'] = self.tau1
         d['tau2'] = self.tau2
         return d
 
+
+class CosFunc(CeedFunc):
+
+    f = NumericProperty(1.)
+
+    A = NumericProperty(1.)
+
+    th0 = NumericProperty(0.)
+
+    def __init__(self, **kwargs):
+        kwargs.setdefault('name', 'Cos')
+        kwargs.setdefault('description', 'y(t) = Acos(2pi*f*t + th0*pi/180)')
+        super(CosFunc, self).__init__(**kwargs)
+
+    def __call__(self, t):
+        if self.check_done(t):
+            raise FuncDoneException
+        t = (t - self._t0_global + self.t0) / self.timebase
+        return self.A * cos(2 * pi * self.f * t + self.th0 * pi / 180.)
+
+    def get_gui_props(self, attrs={}):
+        d = super(CosFunc, self).get_gui_props(attrs)
+        d ['f'] = None
+        d ['A'] = None
+        d ['th0'] = None
+        return d
+
+    def _copy_state(self, *largs, **kwargs):
+        d = super(CosFunc, self)._copy_state(*largs, **kwargs)
+        d['f'] = self.f
+        d['A'] = self.A
+        d['th0'] = self.th0
+        return d
+
 FunctionFactory.register(ConstFunc)
 FunctionFactory.register(LinearFunc)
-FunctionFactory.register(ExponantialFunc)
+FunctionFactory.register(ExponentialFunc)
+FunctionFactory.register(CosFunc)
 import_plugins()

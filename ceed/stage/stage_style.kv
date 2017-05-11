@@ -2,6 +2,7 @@
 #:import StageFactory ceed.stage.StageFactory
 #:import FunctionFactory ceed.function.FunctionFactory
 #:import get_color_from_hex kivy.utils.get_color_from_hex
+#:import ceil math.ceil
 
 <StageListing@FlatSplitter>:
     size_hint_x: None
@@ -387,11 +388,13 @@
 
 <GraphSelectionBox@FlatSplitter>:
     max_size: root_selection_box.minimum_width + dp(40)
+    size_hint_x: None
     min_size: '20dp'
     sizable_from: 'right'
     flat_color: app.theme.accent
     controller: None
     shape_selection_widget: shape_selection_widget
+    size_hint_max_y: root_selection_box.minimum_height + shape_selection_widget.height
     ScrollView:
         bar_width: '10dp'
         scroll_type: ['bars']
@@ -402,11 +405,14 @@
             size_hint_x: None
             width: self.minimum_width
             spacing: '5dp'
+            Widget
             ScrollView:
                 size_hint_min_x: shape_selection_widget.minimum_width
                 do_scroll_x: False
                 bar_width: '10dp'
                 scroll_type: ['bars']
+                size_hint_y: None
+                height: shape_selection_widget.minimum_height
                 GridLayout:
                     id: shape_selection_widget
                     cols: 4
@@ -435,6 +441,7 @@
     size_hint_y: None
     min_size: self.minimum_height
     on_min_size: self.height = max(self.height, self.min_size)
+    max_size: max(graph_root.size_hint_max_y, shape_selection_box.size_hint_max_y) + dp(40)
     sizable_from: 'bottom'
     flat_color: app.theme.accent
     shape_selection_widget: shape_selection_box.shape_selection_widget
@@ -451,8 +458,59 @@
             id: shape_selection_box
             controller: root
         BoxLayout:
+            id: graph_root
             size_hint_min: self.minimum_size
             orientation: 'vertical'
+            spacing: '10dp'
+            size_hint_max_y: self.minimum_height + graph_box.height
+            BoxLayout:
+                orientation: 'horizontal'
+                size_hint_min_x: self.minimum_width
+                size_hint_y: None
+                height: self.minimum_height
+                spacing: '5dp'
+                padding: ['10dp', 0]
+                Widget:
+                    size_hint_y: None
+                    height: '40dp'
+                    TimeSliceSelection:
+                        size: graph_ticks_big.view_size
+                        x: self.parent.x + graph_ticks_big.view_pos[0]
+                        y: self.parent.y + graph_ticks_big.view_pos[1]
+                        min: root.xmin
+                        max: root.xmax
+                        low_val: root.view_xmin
+                        high_val: root.view_xmax
+                        on_low_val: root.view_xmin = self.low_val
+                        on_high_val: root.view_xmax = self.high_val
+                    Graph:
+                        id: graph_ticks_big
+                        size: self.parent.size
+                        pos: self.parent.pos
+                        xmin: root.xmin
+                        xmax: root.xmax
+                        x_ticks_major: ceil((self.xmax - self.xmin) / 5.)
+                        x_grid_label: True
+                        draw_border: False
+                        _with_stencilbuffer: False
+                        label_options: {'color': (0, 0, 0, 1)}
+                FlatSizedTextInput:
+                    size_hint_x: None
+                    width: '50dp'
+                    background_color: root.flat_color
+                    input_filter: 'float'
+                    on_text_validate: root.view_xmin = float(self.text)
+                    text: '{:.1f}'.format(root.view_xmin)
+                FlatSizedTextInput:
+                    size_hint_x: None
+                    width: '50dp'
+                    background_color: root.flat_color
+                    input_filter: 'float'
+                    on_text_validate: root.view_xmax = float(self.text)
+                    text: '{:.1f}'.format(root.view_xmax)
+            FlatDivider:
+                orientation: 'horizontal'
+                color: app.theme.primary_light
             ScrollView:
                 size_hint_min_x: graph_box.minimum_width
                 bar_width: '10dp'
@@ -461,7 +519,9 @@
                     id: graph_box
                     size_hint_min_x: self.minimum_width
                     size_hint_y: None
-                    height: max(self.minimum_height, root.n_plots_displayed * root.shape_height + (root.n_plots_displayed - 1) * root.shape_spacing)
+                    height: max(max(self.minimum_height, root.n_plots_displayed * root.shape_height + (root.n_plots_displayed - 1) * root.shape_spacing), dp(20))
+                    spacing: graph_ticks.view_pos[0]
+                    padding: [0, 0, graph_ticks.width - graph_ticks.view_pos[0] - graph_ticks.view_size[0], 0]
                     BoxLayout:
                         id: graph_labels
                         orientation: 'vertical'
@@ -472,6 +532,25 @@
                         id: graph
                         size_hint_min_x: '50dp'
                         on_center: root._plot_pos_update_trigger()
+            Widget:
+                size_hint_y: None
+                height: '35dp'
+                Graph:
+                    id: graph_ticks
+                    height: '35dp'
+                    y: self.parent.y
+                    width: graph_box.width - graph_labels.width
+                    right: self.center and self.parent.right
+                    xmin: root.view_xmin
+                    xmax: root.view_xmax
+                    x_ticks_major: ceil((self.xmax - self.xmin) / 5.)
+                    x_grid_label: True
+                    draw_border: False
+                    _with_stencilbuffer: False
+                    label_options: {'color': (0, 0, 0, 1)}
+            FlatDivider:
+                orientation: 'horizontal'
+                color: app.theme.primary_light
             BoxLayout:
                 size_hint: None, None
                 size: self.minimum_width, '34dp'

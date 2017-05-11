@@ -14,8 +14,9 @@ from kivy.clock import Clock
 from cplcom.painter import PaintCanvasBehavior, PaintCircle, PaintEllipse, \
     PaintPolygon, PaintBezier
 
-from ceed.utils import WidgetList, ShowMoreSelection, BoxSelector, \
-    ShowMoreBehavior, fix_name, ColorBackgroundBehavior
+from ceed.utils import fix_name
+from ceed.graphics import WidgetList, ShowMoreSelection, BoxSelector, \
+    ShowMoreBehavior, ColorBackgroundBehavior
 from ceed.shape import CeedPaintCanvasBehavior
 
 

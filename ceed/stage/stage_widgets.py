@@ -1,6 +1,6 @@
 from copy import deepcopy
-import matplotlib
-matplotlib.use('module://kivy.garden.matplotlib.backend_kivy')
+from scipy.signal import decimate
+import numpy as np
 
 from kivy.uix.behaviors.knspace import KNSpaceBehavior, knspace
 from kivy.uix.behaviors.togglebutton import ToggleButtonBehavior
@@ -15,10 +15,11 @@ from kivy.garden.graph import MeshLinePlot
 from kivy.metrics import dp
 from kivy.app import App
 from kivy.utils import get_color_from_hex
-from kivy.graphics import Rectangle, Color
+from kivy.graphics import Rectangle, Color, Line
 
-from ceed.utils import WidgetList, ShowMoreSelection, BoxSelector, \
-    ShowMoreBehavior, fix_name, ColorBackgroundBehavior
+from ceed.utils import fix_name
+from ceed.graphics import WidgetList, ShowMoreSelection, BoxSelector, \
+    ShowMoreBehavior, ColorBackgroundBehavior
 from ceed.stage import StageFactory, CeedStage
 from ceed.function.func_widgets import FuncWidget, FuncWidgetGroup, \
     FunctionFactory
@@ -238,7 +239,7 @@ class ShapePlot(object):
             flat_color=app.theme.text_primary)
 
     def update_plot_instructions(self):
-        added = False
+        changed = False
         vals = self.color_values
         rate = self.frame_rate
         for i, chan in enumerate('rgb'):
@@ -249,25 +250,24 @@ class ShapePlot(object):
                 if not self.r_plot and not self.g_plot and not self.b_plot:
                     with self.graph_canvas:
                         c = Color(*get_color_from_hex('ebebeb'))
-                        r = Rectangle()
+                        r = Line()
                         self.background = [r, c]
 
                 color = [0, 0, 0, 1]
                 color[i] = 1
 
-                points = [(j * rate, c[i])
-                          for j, c in zip(range(len(vals)), vals)]
-
-                plot = MeshLinePlot(color=color, points=points)
+                plot = MeshLinePlot(color=color)
                 plot.params['ymin'] = 0
                 plot.params['ymax'] = 1
                 add = self.graph_canvas.add
                 for instr in plot.get_drawings():
                     add(instr)
+                plot.ask_draw()
 
                 setattr(self, plot_attr, plot)
-                added = True
+                changed = True
             elif not active and getattr(self, plot_attr):
+                changed = True
                 plot = getattr(self, plot_attr)
                 remove = self.graph_canvas.remove
 
@@ -279,8 +279,9 @@ class ShapePlot(object):
                 if not self.r_plot and not self.g_plot and not self.b_plot:
                     for instr in self.background:
                         remove(instr)
+                    self.background = []
 
-        return added
+        return changed
 
     def remove_plot(self):
         for chan in 'rgb':
@@ -293,7 +294,30 @@ class ShapePlot(object):
                     remove(instr)
                 setattr(self, plot_attr, None)
 
-    def update_pos(self, rect, xmin, xmax):
+    def update_plot_params(self, rect, xmin, xmax, start, end, time, factors):
+        plots = []
+        active = []
+        for plot in (self.r_plot, self.g_plot, self.b_plot):
+            active.append(bool(plot))
+            if plot:
+                plots.append(plot)
+
+        vals = self.color_values[start:end, :3][:, active]
+        for factor in factors:
+            vals = decimate(vals, factor, axis=0, zero_phase=True)
+
+        for i, plot in enumerate(plots):
+            params = plot.params
+            if params['xmin'] != xmin:
+                params['xmin'] = xmin
+            if params['xmax'] != xmax:
+                params['xmax'] = xmax
+
+            plot.points = [(time[j], vals[j, i]) for j in range(len(time))]
+
+        self.update_plot_sizing(rect)
+
+    def update_plot_sizing(self, rect):
         for plot in (self.r_plot, self.g_plot, self.b_plot):
             if not plot:
                 continue
@@ -301,13 +325,15 @@ class ShapePlot(object):
             params = plot.params
             if params['size'] != rect:
                 params['size'] = rect
-                rectangle = self.background[0]
-                rectangle.pos = rect[:2]
-                rectangle.size = rect[2] - rect[0], rect[3] - rect[1]
-            if params['xmin'] != xmin:
-                params['xmin'] = xmin
-            if params['xmax'] != xmax:
-                params['xmax'] = xmax
+                line = self.background[0]
+                x1, y1, x2, y2 = rect
+                line.points = [x1, y2, x1, y1, x2, y1]
+
+    def force_update(self):
+        for plot in (self.r_plot, self.g_plot, self.b_plot):
+            if not plot:
+                continue
+            plot.ask_draw()
 
 
 class StageGraph(Factory.FlatSplitter):
@@ -323,8 +349,16 @@ class StageGraph(Factory.FlatSplitter):
     shape_spacing = NumericProperty(dp(5))
 
     xmin = NumericProperty(0)
+    '''True min of the whole data set.
+    '''
 
     xmax = NumericProperty(1)
+    '''True max of the whole data set.
+    '''
+
+    view_xmin = NumericProperty(0)
+
+    view_xmax = NumericProperty(1)
 
     r_selected = OptionProperty('none', options=['all', 'none', 'some'])
 
@@ -332,22 +366,36 @@ class StageGraph(Factory.FlatSplitter):
 
     b_selected = OptionProperty('none', options=['all', 'none', 'some'])
 
+    time_points = []
+
+    frame_rate = 1.
+
     def __init__(self, **kwargs):
         super(StageGraph, self).__init__(**kwargs)
         self._shapes_displayed_update_trigger = Clock.create_trigger(
             self.sync_plots_shown)
+
         self._plot_pos_update_trigger = Clock.create_trigger(
             self.refresh_plot_pos)
         self.fbind('xmin', self._plot_pos_update_trigger)
         self.fbind('xmax', self._plot_pos_update_trigger)
+        self.fbind('view_xmin', self._plot_pos_update_trigger)
+        self.fbind('view_xmax', self._plot_pos_update_trigger)
+        self.fbind('shape_height', self._plot_pos_update_trigger)
+        self.fbind('shape_spacing', self._plot_pos_update_trigger)
+
+        self._plot_sizing_update_trigger = Clock.create_trigger(
+            self.refresh_plot_sizing)
 
     @property
     def sorted_plots(self):
         return sorted(self.plots.items(), key=lambda x: x[0])
 
     def refresh_graph(self, stage, frame_rate):
+        frame_rate = self.frame_rate = float(frame_rate)
         vals = self.plot_values = ViewController.get_all_shape_values(
             stage, frame_rate)
+        N = len(list(vals.values())[0]) if vals else 0
 
         plots = self.plots
         names = set(self.plot_values.keys())
@@ -364,8 +412,12 @@ class StageGraph(Factory.FlatSplitter):
                 plots[name] = ShapePlot(
                     name=name, graph_canvas=self.graph.canvas, graph=self)
                 changed = True
-            plots[name].color_values = vals[name]
+            plots[name].color_values = np.array(vals[name])
             plots[name].frame_rate = frame_rate
+
+        self.time_points = np.arange(N, dtype=np.float64) / float(frame_rate)
+        self.view_xmin = self.xmin = 0
+        self.view_xmax = self.xmax = N / frame_rate
 
         self._shapes_displayed_update_trigger()
 
@@ -378,22 +430,14 @@ class StageGraph(Factory.FlatSplitter):
                 add(plot.g_btn)
                 add(plot.b_btn)
 
-        if vals:
-            t = len(list(vals.values())[0]) * frame_rate
-            self.xmin = 0
-            self.xmax = t
-
     def sync_plots_shown(self, *largs):
         pos_changed = False
-        added = False
         n = len(self.plots)
         r = g = b = 0
         i = 0
         for _, plot in self.sorted_plots:
-            before = bool(plot.r_plot or plot.g_plot or plot.b_plot)
-            added = plot.update_plot_instructions() or added
-            after = bool(plot.r_plot or plot.g_plot or plot.b_plot)
-            pos_changed = pos_changed or before != after
+            # checks the button for whether the plots are shown
+            pos_changed = plot.update_plot_instructions() or pos_changed
 
             if plot.r_plot:
                 r += 1
@@ -402,17 +446,16 @@ class StageGraph(Factory.FlatSplitter):
             if plot.b_plot:
                 b += 1
 
-            if after:
+            if plot.r_plot or plot.g_plot or plot.b_plot:
                 i += 1
 
         self.n_plots_displayed = i
         self.r_selected = 'none' if not r else ('all' if n == r else 'some')
         self.g_selected = 'none' if not g else ('all' if n == g else 'some')
         self.b_selected = 'none' if not b else ('all' if n == b else 'some')
-        if added:
-            self._plot_pos_update_trigger()
 
         if pos_changed:
+            self._plot_pos_update_trigger()
             self.graph_labels.clear_widgets()
             add = self.graph_labels.add_widget
             for _, plot in self.sorted_plots:
@@ -430,15 +473,52 @@ class StageGraph(Factory.FlatSplitter):
     def refresh_plot_pos(self, *largs):
         spacing = self.shape_spacing
         plot_h = self.shape_height
-        xmin, xmax = self.xmin, self.xmax
+        xmin, xmax = self.view_xmin, self.view_xmax
         x, y = self.graph.pos
-        w, h = self.graph.size
+        w = self.graph.width
+        factors = []
+
+        s = max(0, int(np.ceil((xmin - self.xmin) * self.frame_rate)))
+        e = min(int(np.floor((xmax - self.xmin) * self.frame_rate)) + 1,
+                len(self.time_points))
+
+        time = self.time_points[s:e]
+        N = e - s
+
+        while N > 2048:
+            factor = np.floor(N / 2048.)
+            if factor <= 1.5:
+                break
+
+            factor = min(10, int(np.ceil(factor)))
+            factors.append(factor)
+            time = decimate(time, factor, zero_phase=True)
+            N = len(time)
 
         i = 0
         for _, plot in reversed(self.sorted_plots):
+            if not plot.r_plot and not plot.g_plot and not plot.b_plot:
+                continue
+
             rect = (x, y + i * (plot_h + spacing),
                     x + w, y + (i + 1) * plot_h + i * spacing)
-            plot.update_pos(rect, xmin, xmax)
+            plot.update_plot_params(rect, xmin, xmax, s, e, time, factors)
+            i += 1
+
+    def refresh_plot_sizing(self, *largs):
+        spacing = self.shape_spacing
+        plot_h = self.shape_height
+        x, y = self.graph.pos
+        w = self.graph.width
+
+        i = 0
+        for _, plot in reversed(self.sorted_plots):
+            if not plot.r_plot and not plot.g_plot and not plot.b_plot:
+                continue
+
+            rect = (x, y + i * (plot_h + spacing),
+                    x + w, y + (i + 1) * plot_h + i * spacing)
+            plot.update_plot_sizing(rect)
             i += 1
 
     def set_pin(self, state):

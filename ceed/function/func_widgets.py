@@ -14,8 +14,9 @@ from kivy.app import App
 
 from cplcom.graphics import FlatTextInput
 
-from ceed.utils import WidgetList, ShowMoreSelection, ShowMoreBehavior, \
-    fix_name, ColorBackgroundBehavior
+from ceed.utils import fix_name
+from ceed.graphics import WidgetList, ShowMoreSelection, ShowMoreBehavior, \
+    ColorBackgroundBehavior
 from ceed.function import FunctionFactory, FuncGroup
 
 
@@ -149,7 +150,7 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
         else:
             self.func_controller.remove_func(self.func)
 
-    def show_func(self):
+    def show_func(self, after_index=None):
         if self.parent:
             return
         parent = self.func.parent_func
@@ -157,6 +158,9 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
             i = len(parent.funcs) - parent.funcs.index(self.func) - 1
             parent.display.more.add_widget(self, index=i)
             self.link_container()
+        elif after_index is not None:
+            i = len(self.display_parent.children) - after_index - 1
+            self.display_parent.add_widget(self, index=i)
         else:
             self.display_parent.add_widget(self)
 

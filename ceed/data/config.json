@@ -4,10 +4,51 @@
     },
     "data": {
         "backup_interval": 5.0,
-        "root_path": "G:\\Home"
+        "root_path": "C:\\Users\\Matthew Einhorn\\Desktop"
     },
     "player": {
-        "browse_path": "G:\\Home"
+        "browse_path": "C:\\Users\\Matthew Einhorn\\Desktop"
+    },
+    "point_gray_cam": {
+        "cam_config_opts": {
+            "drop": true,
+            "fmt": "yuv422",
+            "height": 2048,
+            "horizontal": 1,
+            "max_resend_packets": 0,
+            "mode": 0,
+            "offset_x": 0,
+            "offset_y": 0,
+            "resend": false,
+            "resend_timeout": 0,
+            "vertical": 1,
+            "width": 2448
+        },
+        "cls": "",
+        "estimate_record_rate": true,
+        "ip": "169.254.111.239",
+        "metadata_play": [
+            "uyvy422",
+            2448,
+            2048,
+            30.0
+        ],
+        "metadata_play_used": [
+            "uyvy422",
+            2448,
+            2048,
+            30.0
+        ],
+        "metadata_record": [
+            "",
+            0,
+            0,
+            0
+        ],
+        "record_directory": "C:\\Users\\Matthew Einhorn",
+        "record_fname": "video{}.avi",
+        "record_fname_count": "1",
+        "serial": 16048428
     },
     "serializer": {
         "clock_idx": 0,
@@ -23,12 +64,42 @@
         },
         "short_count_indices": [1,2,3]
     },
+    "video_file_playback": {
+        "cls": "",
+        "dshow_opt": "",
+        "dshow_true_filename": "",
+        "estimate_record_rate": false,
+        "file_fmt": "",
+        "icodec": "",
+        "metadata_play": [
+            "",
+            0,
+            0,
+            0
+        ],
+        "metadata_play_used": [
+            "rgb24",
+            2448,
+            2048,
+            8.021663279890243
+        ],
+        "metadata_record": [
+            "",
+            0,
+            0,
+            0
+        ],
+        "play_filename": "C:\\Users\\Matthew Einhorn\\video0.avi",
+        "record_directory": "C:\\Users\\Matthew Einhorn",
+        "record_fname": "video{}.avi",
+        "record_fname_count": "1"
+    },
     "view": {
         "LED_mode": "RGB",
-        "cam_offset_x": 8.817212490479589,
-        "cam_offset_y": 119.54836252856097,
-        "cam_rotation": 0.0930125473728367,
-        "cam_scale": 0.46915522596175363,
+        "cam_offset_x": 17.061327666357645,
+        "cam_offset_y": 30.717842494244923,
+        "cam_rotation": 359.52775444118,
+        "cam_scale": 0.4234746045221668,
         "frame_rate": 60.0,
         "fullscreen": false,
         "output_count": true,

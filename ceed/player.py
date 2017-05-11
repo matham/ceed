@@ -87,7 +87,8 @@ class CeedPlayer(KNSpaceBehavior, EventDispatcher):
         super(CeedPlayer, self).__init__(**kwargs)
         CeedPlayer.player_singleton = self
         self.knsname = 'player'
-        self.pt_player = CeedPTGrayPlayer()
+        pt = self.pt_player = CeedPTGrayPlayer()
+        pt.estimate_record_rate = True
         self.ff_player = CeedFFmpegPlayer()
         Clock.schedule_once(self.bind_players)
         Clock.schedule_interval(self.update_cycle, 0.1)
@@ -308,7 +309,7 @@ class CeedPlayer(KNSpaceBehavior, EventDispatcher):
             self.player.stop()
 
         if self.last_record_filename:
-            knspace.record_path = self.last_record_filename
+            knspace.record_path.text = self.last_record_filename
         self.player = None
 
     def stop_recording(self):

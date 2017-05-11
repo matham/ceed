@@ -129,7 +129,7 @@ class FuncBase(EventDispatcher):
 
     icon = StringProperty('')
 
-    duration = NumericProperty(-1)
+    duration = NumericProperty(0)
     '''-1 means go on forever.
     '''
 
