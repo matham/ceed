@@ -1,3 +1,3 @@
-.. automodule:: ceed
+.. automodule:: ceed.stage
    :members:
    :show-inheritance:

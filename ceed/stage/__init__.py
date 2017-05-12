@@ -1,4 +1,5 @@
 import numpy as np
+import os
 
 from kivy.properties import OptionProperty, ListProperty, ObjectProperty, \
     StringProperty, NumericProperty, DictProperty, BooleanProperty
@@ -448,4 +449,5 @@ StageFactory = StageFactoryBase()
 def _bind_remove(*largs):
     get_painter().fbind('on_remove_shape', StageFactory.remove_shape_from_all)
     get_painter().fbind('on_remove_group', StageFactory.remove_shape_from_all)
-Clock.schedule_once(_bind_remove, 0)
+if not os.environ.get('KIVY_DOC_INCLUDE', None):
+    Clock.schedule_once(_bind_remove, 0)

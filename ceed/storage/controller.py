@@ -2,6 +2,7 @@ import json
 import nixio as nix
 from os.path import exists, basename, splitext, split, join, isdir
 from os import remove
+import os
 from tempfile import NamedTemporaryFile
 from shutil import copy2
 from math import ceil
@@ -55,7 +56,8 @@ class CeedDataBase(EventDispatcher):
 
     def __init__(self, **kwargs):
         super(CeedDataBase, self).__init__(**kwargs)
-        Clock.schedule_interval(self.backup_file, self.backup_interval)
+        if not os.environ.get('KIVY_DOC_INCLUDE', None):
+            Clock.schedule_interval(self.backup_file, self.backup_interval)
 
     @staticmethod
     def gather_config_data_dict():

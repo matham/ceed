@@ -89,7 +89,8 @@ class ViewControllerBase(EventDispatcher):
     '''If quad mode, we just quadruple the window size.
     '''
 
-    _original_fps = Clock._max_fps
+    _original_fps = Clock._max_fps if not os.environ.get(
+        'KIVY_DOC_INCLUDE', None) else 0
 
     canvas_name = 'view_controller'
 

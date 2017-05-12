@@ -1,3 +1,10 @@
+'''Shapes
+======================
+
+Defines the shapes which are intensity-varying durign experiments.
+
+'''
+
 from collections import OrderedDict
 
 from kivy.uix.behaviors.knspace import KNSpaceBehavior, knspace

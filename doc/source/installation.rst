@@ -11,6 +11,9 @@ Dependencies
     * `CPLCom <https://matham.github.io/cplcom/installation.html>`_
     * `FFPyPlayer <https://matham.github.io/ffpyplayer/installation.html>`_
     * `PyFlyCap2 <https://matham.github.io/pyflycap2/installation.html>`_
+    * `kivy.garden.filebrowser`
+    * `kivy.garden.graph`
+    * `kivy.garden.collider`
 
 Ceed
 -------

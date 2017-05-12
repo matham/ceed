@@ -45,7 +45,7 @@ build_script:
 
     Check-Error
 
-    pip install mock pypiwin32 https://github.com/pyinstaller/pyinstaller/archive/develop.zip cython pygments docutils nose kivy.deps.glew_dev kivy.deps.glew kivy.deps.sdl2_dev kivy.deps.sdl2
+    pip install mock pypiwin32 psutil six https://github.com/pyinstaller/pyinstaller/archive/develop.zip cython pygments docutils nose kivy.deps.glew_dev kivy.deps.glew kivy.deps.sdl2_dev kivy.deps.sdl2
 
     Check-Error
 
@@ -58,6 +58,10 @@ build_script:
     Check-Error
 
     garden install filebrowser --kivy
+
+    Check-Error
+
+    garden install graph --kivy
 
     Check-Error
 

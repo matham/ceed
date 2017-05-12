@@ -1,3 +1,3 @@
-.. automodule:: ceed
+.. automodule:: ceed.storage
    :members:
    :show-inheritance:

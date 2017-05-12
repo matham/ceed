@@ -1,3 +1,10 @@
+'''Functions
+=========================
+
+Defines the functions used with shapes to create time-varying intensities
+of the shapes during an experiment.
+'''
+
 from copy import deepcopy
 from collections import OrderedDict
 
@@ -9,12 +16,23 @@ from kivy.factory import Factory
 
 from ceed.utils import fix_name
 
+__all__ = ('FuncDoneException', 'FunctionFactoryBase', 'FuncBase', 'CeedFunc',
+           'FuncGroup', 'FunctionFactory')
+
 
 class FuncDoneException(Exception):
+    '''Raised when the :class:`FuncBase` is called with a time value outside
+    its valid time interval.
+    '''
     pass
 
 
 class FunctionFactoryBase(EventDispatcher):
+    '''Function factory used to created :class:`FuncBase` instances.
+
+    A global store of the defined function classes. Plugins register functions
+    with an instance of this class to make it available to the user.
+    '''
 
     __events__ = ('on_changed', )
 
@@ -122,6 +140,10 @@ class FunctionFactoryBase(EventDispatcher):
 
 
 class FuncBase(EventDispatcher):
+    '''The base class for all functions.
+
+    Plugins inherit from this class to create new functions.
+    '''
 
     name = StringProperty('Abstract')
 
@@ -336,6 +358,8 @@ class FuncBase(EventDispatcher):
 
 
 class CeedFunc(FuncBase):
+    '''A more concerete function implementation.
+    '''
 
     t0 = NumericProperty(0)
 
@@ -362,6 +386,8 @@ class CeedFunc(FuncBase):
 
 
 class FuncGroup(FuncBase):
+    '''Function that is composed of sequence of sub-functions.
+    '''
 
     funcs = []
 
@@ -474,5 +500,7 @@ class FuncGroup(FuncBase):
                 yield f
 
 FunctionFactory = FunctionFactoryBase()
+'''The global function factory instancewhere functions are registered.
+'''
 FunctionFactory.register(FuncGroup)
 from ceed.function.plugin import import_plugins
