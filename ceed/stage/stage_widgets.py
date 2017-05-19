@@ -38,7 +38,7 @@ class StageList(ShowMoreSelection, WidgetList, BoxLayout):
         if not self.selected_nodes:
             return
 
-        src_func = FunctionFactory.avail_funcs[name]
+        src_func = FunctionFactory.funcs_inst[name]
         widget = self.selected_nodes[0]
         if isinstance(widget, StageWidget):
             parent = widget.stage

@@ -203,7 +203,7 @@ class CeedShape(object):
             return True
         return False
 
-    def get_state(self, state={}):
+    def get_state(self, state=None):
         d = super(CeedShape, self).get_state(state)
         d['cls'] = self.__class__.__name__[9:].lower()
         return d

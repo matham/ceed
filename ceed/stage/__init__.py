@@ -43,7 +43,7 @@ class StageFactoryBase(EventDispatcher):
                 for f in s.functions:
                     CeedFunc.fill_id_map(f, id_map)
 
-        states = [s._copy_state() for s in self.stages]
+        states = [s.get_state() for s in self.stages]
         return states, id_map
 
     def recover_stages(self, stages, id_to_func_map=None, old_id_map=None):
@@ -51,7 +51,7 @@ class StageFactoryBase(EventDispatcher):
             stage = CeedStage()
             if self.show_widgets:
                 stage.display
-            stage._apply_state(state, clone=True, old_id_map=old_id_map)
+            stage.apply_state(state, clone=True, old_id_map=old_id_map)
             self.add_stage(stage)
 
         id_to_func_map = {} if id_to_func_map is None else id_to_func_map
@@ -248,26 +248,30 @@ class CeedStage(EventDispatcher):
 
     def __init__(self, **kwargs):
         super(CeedStage, self).__init__(**kwargs)
-        for name in self._copy_state():
+        for name in self.get_state():
             self.fbind(name, self.dispatch, 'on_changed')
         self.fbind('on_changed', StageFactory.dispatch, 'on_changed')
 
     def on_changed(self, *largs):
         pass
 
-    def _copy_state(self, state={}, recurse=True):
+    def get_state(self, state=None, recurse=True):
         d = {}
         for name in ('order', 'name', 'color_r', 'color_g', 'color_b',
                      'complete_on'):
             d[name] = getattr(self, name)
 
-        d['stages'] = [s._copy_state() for s in self.stages]
-        d['functions'] = [f._copy_state() for f in self.functions]
+        d['stages'] = [s.get_state() for s in self.stages]
+        d['functions'] = [f.get_state() for f in self.functions]
         d['shapes'] = [s.name for s in self.shapes]
-        d.update(state)
-        return d
 
-    def _apply_state(self, state={}, clone=False, old_id_map=None):
+        if state is None:
+            state = d
+        else:
+            state.update(d)
+        return state
+
+    def apply_state(self, state={}, clone=False, old_id_map=None):
         stages = state.pop('stages', [])
         functions = state.pop('functions', [])
         shapes_state = state.pop('shapes', [])
@@ -279,7 +283,7 @@ class CeedStage(EventDispatcher):
             s = CeedStage()
             if self._display:
                 s.display
-            s._apply_state(data, clone=True)
+            s.apply_state(data, clone=True)
             self.add_stage(s)
 
         for data in functions:

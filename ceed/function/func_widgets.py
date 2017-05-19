@@ -1,3 +1,8 @@
+'''Function Widgets
+=======================
+
+Defines the GUI components used with :mod:`ceed.function`.
+'''
 from collections import defaultdict
 from copy import deepcopy
 import re
@@ -19,10 +24,19 @@ from ceed.graphics import WidgetList, ShowMoreSelection, ShowMoreBehavior, \
     ColorBackgroundBehavior
 from ceed.function import FunctionFactory, FuncGroup
 
+__all__ = ('FuncList', 'FuncWidget', 'FuncWidgetGroup', 'FuncPropTextWidget',
+           'FuncNamePropTextWidget')
+
 
 class FuncList(ShowMoreSelection, WidgetList, BoxLayout):
+    '''Widgets that shows the list of available functions and allows for the
+    creation of new functions.
+    '''
 
     def add_func(self, name):
+        '''Adds a copy of the the function with the given ``name`` to the
+        available functions or to a function group.
+        '''
         parent = None
         after = None
         if self.selected_nodes:
@@ -33,7 +47,7 @@ class FuncList(ShowMoreSelection, WidgetList, BoxLayout):
                 after = widget.func
                 parent = after.parent_func
 
-        src_func = FunctionFactory.avail_funcs[name]
+        src_func = FunctionFactory.funcs_inst[name]
         if parent:
             if not parent.parent_in_other_children(src_func):
                 parent.add_func(deepcopy(src_func), after=after)
@@ -42,21 +56,44 @@ class FuncList(ShowMoreSelection, WidgetList, BoxLayout):
 
     def get_selectable_nodes(self):
         return list(reversed([
-            f.display for func in FunctionFactory.editable_func_list for
+            f.display for func in FunctionFactory.funcs_user for
             f in func.get_funcs()]))
 
 
 class FuncWidget(ShowMoreBehavior, BoxLayout):
+    '''The widget associated with :class:`ceed.function.CeedFunc`.
+
+    It contains all the configuration options of the function.
+
+    The class is resued anywehere a function is shown in the GUI, including
+    in stages.
+    '''
 
     func = ObjectProperty(None, rebind=True)
+    '''The :class:`ceed.function.BaseFunc` instance associated with this
+    widget.
+    '''
 
     selected = BooleanProperty(False)
+    '''Whether the function is selected in the GUI.
+    '''
 
     selection_controller = ObjectProperty(None)
+    '''The container that gets called to select the widget when the user
+    selects it with a touch. E.g. :class:`FuncList` in the function listing
+    case.
+    '''
 
     func_controller = ObjectProperty(None)
+    '''The controller to which the function is added or removed from.
+    This is e.g. :attr:`ceed.function.FunctionFactory` in the function list
+    case or the stage to which the function is attached.
+    '''
 
     display_parent = ObjectProperty(None)
+    '''The widget container to which the widget is added or removed when
+    displayed.
+    '''
 
     def __init__(self, **kwargs):
         kwargs.setdefault('func_controller', FunctionFactory)
@@ -64,17 +101,21 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
         kwargs.setdefault('selection_controller', knspace.funcs)
 
         super(FuncWidget, self).__init__(**kwargs)
-        self._display_properties()
+        self.display_properties()
         self.settings_root.parent.remove_widget(self.settings_root)
         if not isinstance(self, FuncWidgetGroup):
             self.expand.parent.remove_widget(self.expand)
 
     @property
     def name(self):
+        '''The :attr:`ceed.function.FuncBase.name` of the function.
+        '''
         return self.func.name
 
-    def _display_properties(self):
-        '''Name is special.
+    def display_properties(self):
+        '''Constructs the configuration option widgets for the function using
+        :meth:`ceed.function.FuncBase.get_gui_elements` and
+        :meth:`ceed.function.FuncBase.get_gui_props`.
         '''
         func = self.func
         items = func.get_gui_elements()
@@ -131,6 +172,10 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
             add(item)
 
     def link_container(self):
+        '''Fills in the values of :attr:`selection_controller`,
+        :attr:`func_controller`, and :attr:`display_parent` of all the
+        functions and sub-functions of this function.
+        '''
         parent = self.func.parent_func
         if not parent:
             return
@@ -145,12 +190,17 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
             func.display.selection_controller = selection_controller
 
     def remove_from_parent(self):
+        '''Removes the function from the its parent or controller if
+        it has no parent.
+        '''
         if self.func.parent_func:
             self.func.parent_func.remove_func(self.func)
         else:
             self.func_controller.remove_func(self.func)
 
     def show_func(self, after_index=None):
+        '''Shows the function's widget in its widget container.
+        '''
         if self.parent:
             return
         parent = self.func.parent_func
@@ -165,6 +215,8 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
             self.display_parent.add_widget(self)
 
     def hide_func(self):
+        '''Removes the function's widget from its widget container.
+        '''
         if self.selected:
             self.display_parent.deselect_node(self)
         elif isinstance(self, FuncWidgetGroup):
@@ -177,8 +229,12 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
 
 
 class FuncWidgetGroup(FuncWidget):
+    '''The widget associated with :class:`ceed.function.FuncGroup`.
+    '''
 
     def _show_more(self, *largs):
+        '''Displays the additional configuration options in the GUI.
+        '''
         super(FuncWidgetGroup, self)._show_more()
         if not self.show_more:
             c = self.selected_child()
@@ -191,6 +247,9 @@ class FuncWidgetGroup(FuncWidget):
             f.display.show_func()
 
     def selected_child(self):
+        '''Returns the child or sub-child etc. :class:`ceed.function.FuncBase`
+        that is selected in the GUI or None.
+        '''
         children = self.func.get_funcs()
         next(children)
         for child in children:
@@ -200,10 +259,17 @@ class FuncWidgetGroup(FuncWidget):
 
 
 class FuncPropTextWidget(FlatTextInput):
+    '''The widget used to edit a specific configuration option of a
+    :class:`ceed.function.FuncBase`.
+    '''
 
     func = None
+    '''The :class:`ceed.function.FuncBase` instance it's associated with.
+    '''
 
     prop_name = ''
+    '''The name of the property of :attr:`func` that this widget edits.
+    '''
 
     def __init__(self, func=None, prop_name=None, **kwargs):
         super(FuncPropTextWidget, self).__init__(**kwargs)
@@ -215,9 +281,13 @@ class FuncPropTextWidget(FlatTextInput):
         self._update_text()
 
     def _update_text(self, *largs):
+        '''Updates the GUI from the function.
+        '''
         self.text = '{}'.format(getattr(self.func, self.prop_name))
 
     def _update_attr(self, text):
+        '''Updates the function property from the GUI.
+        '''
         if not text:
             self._update_text()
             return
@@ -229,6 +299,9 @@ class FuncPropTextWidget(FlatTextInput):
 
 
 class FuncNamePropTextWidget(FuncPropTextWidget):
+    '''The widget used to edit the :attr:`ceed.function.FuncBase.name` of a
+    :class:`ceed.function.FuncBase`.
+    '''
 
     def _update_attr(self, text):
         if not text:
@@ -236,4 +309,4 @@ class FuncNamePropTextWidget(FuncPropTextWidget):
             return
 
         if text != self.func.name:
-            self.func.name = fix_name(text, FunctionFactory.avail_funcs)
+            self.func.name = fix_name(text, FunctionFactory.funcs_inst)

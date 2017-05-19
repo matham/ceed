@@ -34,6 +34,7 @@ html_theme_options = {
 intersphinx_mapping = {
     'pyflycap2': ('https://matham.github.io/pyflycap2/', None),
     'ffpyplayer': ('https://matham.github.io/ffpyplayer/', None),
+    'kivy': ('https://kivy.org/docs/', None),
     'cplcom': ('https://matham.github.io/cplcom/', None)
 }
 

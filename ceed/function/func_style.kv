@@ -24,7 +24,7 @@
                 spacing: '5dp'
                 FlatSpinner:
                     id: func_spin
-                    values: sorted(FunctionFactory.avail_funcs.keys()) if FunctionFactory.avail_funcs else []
+                    values: sorted(FunctionFactory.funcs_inst.keys()) if FunctionFactory.funcs_inst else []
                     text_autoupdate: True
                     size_hint_min_x: self.minimum_width
                     flat_color: app.theme.text_primary
