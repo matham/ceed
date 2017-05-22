@@ -8,7 +8,7 @@ When :mod:`ceed.function` is imported, it automatically calls
 with an underscore in ``ceed/function/plugin``.
 
 Files in ``ceed/function/plugin`` that want to define new function classes
-should regsiter the classes with the function factory
+should register the classes with the function factory
 :attr:`ceed.function.FunctionFactory` using
 :meth:`~ceed.function.FunctionFactoryBase.register`. See this ``__init__.py``
 file for examples.
@@ -103,7 +103,7 @@ class LinearFunc(CeedFunc):
 
 
 class ExponentialFunc(CeedFunc):
-    '''Defines a double expotential function.
+    '''Defines a double exponential function.
 
     The function is defined as ``y(t) = Ae-t/tau1 + Be-t/tau2``, where
     ``t = (t_in - t_start + t_offset) / timebase``.
@@ -119,8 +119,9 @@ class ExponentialFunc(CeedFunc):
 
     def __init__(self, **kwargs):
         kwargs.setdefault('name', 'Exp')
-        kwargs.setdefault('description',
-                          'y(t) = Ae-(t + t_offset)/tau1 + Be-(t + t_offset)/tau2')
+        kwargs.setdefault(
+            'description',
+            'y(t) = Ae-(t + t_offset)/tau1 + Be-(t + t_offset)/tau2')
         super(ExponentialFunc, self).__init__(**kwargs)
 
     def __call__(self, t):

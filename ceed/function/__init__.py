@@ -24,8 +24,9 @@ line 134, in __call__
          raise FuncDoneException
      FuncDoneException
 
-Functions registered with :attr:`FunctionFactory` are available to the user in
-the GUI.
+Function classes registered with :attr:`FunctionFactory` are available to the
+user in the GUI. Similarly, customized function instances can be registered
+with :meth:`FunctionFactoryBase.add_function`.
 '''
 
 from copy import deepcopy
@@ -54,13 +55,13 @@ class FunctionFactoryBase(EventDispatcher):
     '''A global store of the defined :class:`FuncBase` classes and customized
     instances.
 
-    Plugins register function classses with an instance of this class
+    Plugins register function classes with an instance of this class
     (:attr:`FunctionFactory`) using :meth:`register` to make it available to
     the user in the GUI.
 
     Similarly, function instances that has been customized with values or
     function groups customized with children functions in the GUI are also
-    stored here with :meth:`add_func` making it availible for duplication or
+    stored here with :meth:`add_func` making it available for duplication or
     usage elsewhere.
 
     To get a function class registered with :meth:`register`, e.g.
@@ -106,7 +107,7 @@ class FunctionFactoryBase(EventDispatcher):
     __events__ = ('on_changed', )
 
     funcs_cls = {}
-    '''Dict whose keys are the class names of the function clases registered
+    '''Dict whose keys are the class names of the function classes registered
     with :meth:`register` and whose values are the corresponding classes.
     '''
 
@@ -348,7 +349,7 @@ class FuncBase(EventDispatcher):
     the value of the function there. Every function subtracts :attr:`t_start`
     from the time value so that effectively the function returns values
     in the domain of ``[0, duration)``. :attr:`t_start` exists so that
-    functions can be stepped trhough successively using a global increasing
+    functions can be stepped through successively using a global increasing
     clock, e.g. during an experiment.
 
     Similarly, functions devide the time by :attr:`timebase` before it's used.
@@ -424,7 +425,7 @@ class FuncBase(EventDispatcher):
     '''
 
     func_id = NumericProperty(0)
-    '''Unique to each function instance and uniqely defines this function.
+    '''Unique to each function instance and uniquely defines this function.
     It is automatically assigned.
     '''
 
@@ -441,7 +442,7 @@ class FuncBase(EventDispatcher):
     '''
 
     timebase = 1.
-    '''The amount by which to devide the time. See the class description.
+    '''The amount by which to divide the time. See the class description.
     '''
 
     t_start = 0
@@ -514,7 +515,7 @@ class FuncBase(EventDispatcher):
         return attrs
 
     def get_gui_elements(self, items=None):
-        '''Returns widget intsances that should be displayed to the user along
+        '''Returns widget instances that should be displayed to the user along
         with this function's editable properties of :meth:`get_gui_props`.
 
         These widgets are displayed along with other config
@@ -528,7 +529,7 @@ class FuncBase(EventDispatcher):
 
         :returns:
 
-            A list that contains all widget instancess to be displayed.
+            A list that contains all widget instances to be displayed.
 
         E.g.::
 
@@ -559,7 +560,7 @@ class FuncBase(EventDispatcher):
 
         :returns:
 
-            A dict with all the confugration data.
+            A dict with all the configuration data.
 
         E.g.::
 
@@ -625,7 +626,7 @@ class FuncBase(EventDispatcher):
         :Params:
 
             `state`: dict
-                The dict to use to reconstuct the function as returned by
+                The dict to use to reconstruct the function as returned by
                 :meth:`get_state`.
             `clone`: bool
                 If True will copy all the state, otherwise it doesn't
@@ -757,7 +758,7 @@ class FuncBase(EventDispatcher):
     @staticmethod
     def fill_id_map(func, ids):
         '''Converts the object instance <=> object source relationships to a
-        id <=> id relationship of those objects nd returns it in a dict.
+        id <=> id relationship of those objects and returns it in a dict.
         '''
         for f in func.get_funcs():
             ids[f.func_id] = \
@@ -1048,7 +1049,7 @@ line 934, in __call__
                 yield f
 
 FunctionFactory = FunctionFactoryBase()
-'''The global function factory instancewhere functions are registered.
+'''The global function factory instance where functions are registered.
 '''
 FunctionFactory.register(FuncGroup)
 from ceed.function.plugin import import_plugins

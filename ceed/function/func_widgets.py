@@ -65,7 +65,7 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
 
     It contains all the configuration options of the function.
 
-    The class is resued anywehere a function is shown in the GUI, including
+    The class is reused anywhere a function is shown in the GUI, including
     in stages.
     '''
 
