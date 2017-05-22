@@ -338,7 +338,7 @@ class CeedPaintPolygon(CeedShape, PaintPolygon):
 class CeedPaintBezier(CeedShape, PaintBezier):
     pass
 
-CeedPaintCanvasBehavior.cls_map = {
+CeedPaintCanvasBehavior.shape_cls_map = {
     'circle': CeedPaintCircle, 'ellipse': CeedPaintEllipse,
     'polygon': CeedPaintPolygon, 'freeform': CeedPaintPolygon,
     'bezier': CeedPaintBezier
