@@ -1,3 +1,8 @@
+'''Shape Widgets
+=======================
+
+Defines the GUI components used with :mod:`ceed.shape`.
+'''
 from collections import OrderedDict
 
 from kivy.uix.behaviors.knspace import KNSpaceBehavior, knspace
@@ -19,18 +24,31 @@ from ceed.graphics import WidgetList, ShowMoreSelection, BoxSelector, \
     ShowMoreBehavior, ColorBackgroundBehavior
 from ceed.shape import CeedPaintCanvasBehavior
 
+__all__ = (
+    'CeedPainter', 'ShapeGroupList', 'WidgetShapeGroup', 'ShapeGroupItem',
+    'ShapeList', 'WidgetShape')
+
 
 class CeedPainter(CeedPaintCanvasBehavior, Widget):
+    '''The shapes controller used when the GUI is present. It is the
+    paint widget itself in this case. See :func:`ceed.shape.get_painter`.
+    '''
 
     show_label = BooleanProperty(False)
+    '''If True, a label showing the current mouse position is displayed.
+    '''
 
     pos_label = None
+    '''The label instance that shows the mouse position.
+    '''
 
     def __init__(self, **kwargs):
         super(CeedPainter, self).__init__(**kwargs)
         self.pos_label = Factory.XYSizedLabel()
 
     def on_show_label(self, *largs):
+        '''Shows/hides the :attr:`pos_label` label.
+        '''
         state = self.show_label
         for shape in self.shapes:
             shape.display.show_label = state
@@ -54,8 +72,13 @@ class CeedPainter(CeedPaintCanvasBehavior, Widget):
 
 
 class ShapeGroupList(ShowMoreSelection, WidgetList, BoxLayout):
+    '''Widget that shows the list of all the groups.
+    '''
 
     def add_selected_shapes(self):
+        '''Selects in :class:`CeedPainter` the shapes that are the children
+        of the group currently selected in the widget list.
+        '''
         group = None
         if self.selected_nodes:
             node = self.selected_nodes[-1]
@@ -70,7 +93,7 @@ class ShapeGroupList(ShowMoreSelection, WidgetList, BoxLayout):
             return False
 
         if isinstance(shape_widget, WidgetShapeGroup):
-            shape_widget.group.select(clear_others=True)
+            shape_widget.group.select()
             self._anchor = self
             self._last_selected_node = self
         else:
@@ -98,47 +121,76 @@ class ShapeGroupList(ShowMoreSelection, WidgetList, BoxLayout):
 
 
 class WidgetShapeGroup(ShowMoreBehavior, BoxLayout):
+    '''The widget displayed for a :class:`ceed.shape.CeedShapeGroup` instance.
+    '''
 
     selected = BooleanProperty(False)
+    '''If the group is :attr:`ceed.shape.CeedShapeGroup.selected`.
+    '''
 
     group = ObjectProperty(None, rebind=True)
+    '''The :class:`ceed.shape.CeedShapeGroup` this widget represents.
+    '''
 
     @property
     def name(self):
+        '''The :attr:`ceed.shape.CeedShapeGroup.name` of the group.
+        '''
         return self.group.name
 
     def show_widget(self):
+        '''Displays this widget group.
+        '''
         knspace.shape_groups.add_widget(self)
 
     def hide_widget(self):
+        '''Hides this widget group.
+        '''
         knspace.shape_groups.remove_widget(self)
 
     def select_widget(self):
+        '''Selects the group.
+        '''
         knspace.shape_groups.select_node(self)
 
     def deselect_widget(self):
+        '''Deselects the group.
+        '''
         knspace.shape_groups.deselect_node(self)
 
     @property
     def shape_widgets(self):
+        '''Returns the :class:`ShapeGroupItem` instances representing the
+        shapes in this group.
+        '''
         return self.more.children[:-1]
 
     def add_shape(self, shape):
+        '''Adds and displays a :class:`ShapeGroupItem` widget representing the
+        :class:`ceed.shape.CeedShape` to this group's widget.
+        '''
         self.more.add_widget(ShapeGroupItem(shape=shape, group=self))
 
     def remove_shape(self, shape):
+        '''Hides the :class:`ShapeGroupItem` associated with the
+        :class:`ceed.shape.CeedShape` from this groups widget.
+        '''
         for widget in self.shape_widgets:
             if widget.shape is shape:
                 self.more.remove_widget(widget)
                 return
 
     def select_shape_widget(self, shape):
+        '''Selects the :class:`ceed.shape.CeedShape` from within this group.
+        '''
         for widget in self.shape_widgets:
             if widget.shape is shape:
                 knspace.shape_groups.select_node(widget)
                 return
 
     def deselect_shape_widget(self, shape):
+        '''Deselects the :class:`ceed.shape.CeedShape` from within this group.
+        '''
         for widget in self.shape_widgets:
             if widget.shape is shape:
                 knspace.shape_groups.deselect_node(widget)
@@ -146,19 +198,32 @@ class WidgetShapeGroup(ShowMoreBehavior, BoxLayout):
 
 
 class ShapeGroupItem(BoxSelector):
+    '''The shape's widget displayed in the :class:`WidgetShapeGroup` widget
+    tree for a shape in that group.
+    '''
 
     selected = BooleanProperty(False)
+    '''Whether this shape is selected in the group.
+    '''
 
     shape = ObjectProperty(None, rebind=True)
+    '''The :class:`ceed.shape.CeedShape` to which this widget belongs.
+    '''
 
     group = ObjectProperty(None)
+    '''The :class:`ceed.shape.CeedShapeGroup` to which this shape belongs.
+    '''
 
     @property
     def name(self):
+        '''The :attr:`cplcom.painter.PaintShape.name` of the shape.
+        '''
         return self.shape.name
 
 
 class ShapeList(ShowMoreSelection, WidgetList, BoxLayout):
+    '''Widget that shows the list of all the shapes.
+    '''
 
     def select_node(self, node):
         if super(ShapeList, self).select_node(node):
@@ -174,22 +239,42 @@ class ShapeList(ShowMoreSelection, WidgetList, BoxLayout):
 
 
 class WidgetShape(ShowMoreBehavior, BoxLayout):
+    '''The widget displayed for and associated with a
+    :class:`ceed.shape.CeedShape` instance.
+    '''
 
     painter = ObjectProperty(None, rebind=True)
+    '''The :class:`CeedPainter` this shape belongs to.
+    '''
 
     shape = ObjectProperty(None, rebind=True)
+    '''The :class:`ceed.shape.CeedShape` instance associated with the widget.
+    '''
 
     label = None
+    '''The label widget that displays the name of the shape in the center
+    of the shape in the drawing area.
+    '''
 
     show_label = BooleanProperty(False)
+    '''Whether :attr:`label` is currently displayed.
+    '''
 
     centroid_x = NumericProperty(0)
+    '''The x center of the shape (e.g. the x-center of the polygon).
+    '''
 
     centroid_y = NumericProperty(0)
+    '''The y center of the shape (e.g. the y-center of the polygon).
+    '''
 
     area = NumericProperty(0)
+    '''The area in the shape (e.g. the area of the polygon).
+    '''
 
     selected = BooleanProperty(False)
+    '''Whether the shape is :attr:`cplcom.painter.PaintShape.selected`.
+    '''
 
     _shape_update_trigger = None
 
@@ -212,12 +297,18 @@ class WidgetShape(ShowMoreBehavior, BoxLayout):
 
     @property
     def name(self):
+        '''The :attr:`cplcom.painter.PaintShape.name` of the shape.
+        '''
         return self.shape.name
 
     def show_widget(self):
+        '''Displays this widget in the list of shape widgets.
+        '''
         knspace.shapes.add_widget(self)
 
     def hide_widget(self):
+        '''Hides this widget from the list of shape widgets.
+        '''
         self.shape.funbind('on_update', self._shape_update_trigger)
         knspace.shapes.remove_widget(self)
 
@@ -227,12 +318,19 @@ class WidgetShape(ShowMoreBehavior, BoxLayout):
             self.painter.remove_widget(label)
 
     def select_widget(self):
+        '''Selects the shape of this widget.
+        '''
         knspace.shapes.select_node(self)
 
     def deselect_widget(self):
+        '''Deselects the shape of this widget.
+        '''
         knspace.shapes.deselect_node(self)
 
     def _show_label(self, *largs):
+        '''Displays/hides the label in the shapes center containing the name of
+        shape.
+        '''
         if self.show_label:
             self.painter.add_widget(self.label)
             self._shape_update_trigger()
@@ -241,15 +339,21 @@ class WidgetShape(ShowMoreBehavior, BoxLayout):
             self.painter.remove_widget(self.label)
 
     def _label_text(self, *largs):
+        '''Updates the :attr:`label` with the current name of the shape.
+        '''
         if self.show_label:
             self.label.text = self.shape.name
 
     def _show_more(self, *largs):
+        '''Shows the settings
+        '''
         super(WidgetShape, self)._show_more(*largs)
         if self.show_more:
             self._shape_update_trigger()
 
     def _shape_update(self, *largs):
+        '''Update the centroids and area when the shape is changed.
+        '''
         self.centroid_x, self.centroid_y = tuple(
             map(round, self.shape.centroid))
         self.area = round(self.shape.area)
@@ -257,6 +361,8 @@ class WidgetShape(ShowMoreBehavior, BoxLayout):
             self.label.center = self.shape.centroid
 
     def _update_centroid(self, x=None, y=None):
+        '''Sets the centroid from the GUI.
+        '''
         x1, y1 = map(round, self.shape.centroid)
         dx = 0 if x is None else x - x1
         dy = 0 if y is None else y - y1
@@ -264,4 +370,6 @@ class WidgetShape(ShowMoreBehavior, BoxLayout):
             self.shape.translate(dpos=(dx, dy))
 
     def _update_area(self, area):
+        '''Sets the area from the GUI.
+        '''
         self.shape.set_area(area)
