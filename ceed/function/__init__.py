@@ -616,8 +616,8 @@ class FuncBase(EventDispatcher):
         return state
 
     def apply_state(self, state={}, clone=False, old_id_map=None):
-        '''Takes the state of function saved with :meth:`get_state` and applies
-        it to this function. it also creates and children function e.g.
+        '''Takes the state of the function saved with :meth:`get_state` and
+        applies it to this function. it also creates any children function e.g.
         in the case of a :class:`FuncGroup`.
 
         It is called internally and should not be used directly. Use

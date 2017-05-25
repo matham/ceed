@@ -1,3 +1,8 @@
+'''Stage widgets
+===================
+
+Defines the GUI components used with :mod:`ceed.stage`.
+'''
 from copy import deepcopy
 from scipy.signal import decimate
 import numpy as np
@@ -26,14 +31,28 @@ from ceed.function.func_widgets import FuncWidget, FuncWidgetGroup, \
 from ceed.view.controller import ViewController
 from ceed.shape import get_painter
 
+__all__ = ('StageList', 'StageWidget', 'StageShapeDisplay', 'ShapePlot',
+           'StageGraph')
+
 
 class StageList(ShowMoreSelection, WidgetList, BoxLayout):
+    '''Widget that shows the list of all the stages.
+    '''
 
     def __init__(self, **kwargs):
         super(StageList, self).__init__(**kwargs)
         self.nodes_order_reversed = False
 
     def add_func(self, name):
+        '''Adds a copy of the function to the stage at the currently selected
+        stage.
+
+        :Params:
+
+            `name`: str
+                The name of the function instance from the
+                :attr:`ceed.function.FunctionFactory` to use.
+        '''
         after = None
         if not self.selected_nodes:
             return
@@ -58,6 +77,9 @@ class StageList(ShowMoreSelection, WidgetList, BoxLayout):
         parent.add_func(deepcopy(src_func), after=after)
 
     def get_selected_shape_stage(self):
+        '''Returns the :class:`ceed.stage.CeedStage` instance a currently
+        selected in the GUI.
+        '''
         if self.selected_nodes:
             widget = self.selected_nodes[0]
             if isinstance(widget, StageWidget):
@@ -66,6 +88,15 @@ class StageList(ShowMoreSelection, WidgetList, BoxLayout):
                 return widget.stage_shape.stage
 
     def add_shapes(self, shapes):
+        '''Adds the shapes to the currently selected
+        :class:`ceed.stage.CeedStage`.
+
+        :Params:
+
+            `shapes`: iterable
+                A list of :class:`ceed.shape.CeedShape` or
+                :class:`ceed.shape.CeedShapeGroup` instances to add.
+        '''
         stage = self.get_selected_shape_stage()
         if not stage:
             return
@@ -73,18 +104,32 @@ class StageList(ShowMoreSelection, WidgetList, BoxLayout):
             stage.add_shape(shape)
 
     def add_selected_shapes(self):
+        '''Adds the currently selected :class:`ceed.shape.CeedShape` instances
+        to the currently selected :class:`ceed.stage.CeedStage`.
+        '''
         self.add_shapes(knspace.painter.selected_shapes)
 
     def add_selected_shape_groups(self):
+        '''Adds the currently selected :class:`ceed.shape.CeedShapeGroup`
+        instances to the currently selected :class:`ceed.stage.CeedStage`.
+        '''
         self.add_shapes(knspace.painter.selected_groups)
 
     def add_shape_by_name(self, name):
+        '''Adds the :class:`ceed.shape.CeedShape` or
+        :class:`ceed.shape.CeedShapeGroup` with name ``name`` to the currently
+        selected :class:`ceed.stage.CeedStage`.
+        '''
         if name in knspace.painter.shape_names:
             self.add_shapes([knspace.painter.shape_names[name]])
         elif name in knspace.painter.shape_group_names:
             self.add_shapes([knspace.painter.shape_group_names[name]])
 
     def add_stage(self):
+        '''Adds a new :class:`ceed.stage.CeedStage` instance to the currently
+        selected :class:`ceed.stage.CeedStage` instance or to the root list
+        (:attr:`ceed.stage.StageFactory`).
+        '''
         parent = None
         if self.selected_nodes:
             widget = self.selected_nodes[0]
@@ -102,16 +147,30 @@ class StageList(ShowMoreSelection, WidgetList, BoxLayout):
 
 
 class StageWidget(ShowMoreBehavior, BoxLayout):
+    '''The widget displayed for an :class:`ceed.stage.CeedStage` instance.
+    '''
 
     stage = ObjectProperty(None, rebind=True)
+    '''The :class:`ceed.stage.CeedStage` instance attached to the widget.
+    '''
 
     selected = BooleanProperty(False)
 
     stage_widget = ObjectProperty(None)
+    '''The internal widget container to which children
+    :class:`StageWidget` widget instances are added.
+    '''
 
     func_widget = ObjectProperty(None)
+    '''The internal widget container to which children
+    :class:`ceed.func_widgets.FuncWidget` or
+    :class:`ceed.func_widgets.FuncWidgetGroup` widget instances are added.
+    '''
 
     shape_widget = ObjectProperty(None)
+    '''The internal widget container to which children
+    :class:`StageShapeDisplay` widget instances are added.
+    '''
 
     def __init__(self, **kwargs):
         super(StageWidget, self).__init__(**kwargs)
@@ -119,21 +178,35 @@ class StageWidget(ShowMoreBehavior, BoxLayout):
 
     @property
     def name(self):
+        '''The :attr:`ceed.stage.CeedStage.name` of the stage.
+        '''
         return self.stage.name
 
     def set_func_controller(self, func_widget):
+        '''Sets the controller attributes for the
+        :class:`ceed.func_widgets.FuncWidget` and
+        :class:`ceed.func_widgets.FuncWidgetGroup` widgets for all the
+        function children of the ``func_widget`` instance (which is
+        also a :class:`ceed.func_widgets.FuncWidget` or
+        :class:`ceed.func_widgets.FuncWidgetGroup`).
+        '''
         for func in func_widget.func.get_funcs():
             func.display.func_controller = self.stage
             func.display.display_parent = self.func_widget
             func.display.selection_controller = knspace.stages
 
     def remove_from_parent(self):
+        '''Removes the stage from the parent stage or from the global
+        :attr:`ceed.stage.StageFactory` if it doesn't have a parent.
+        '''
         if self.stage.parent_stage:
             self.stage.parent_stage.remove_stage(self.stage)
         else:
             StageFactory.remove_stage(self.stage)
 
     def show_stage(self):
+        '''Adds the stage's widget in the GUI.
+        '''
         parent = self.stage.parent_stage
         if parent:
             i = len(parent.stages) - parent.stages.index(self.stage) - 1
@@ -144,6 +217,8 @@ class StageWidget(ShowMoreBehavior, BoxLayout):
             knspace.stages.add_widget(self)
 
     def hide_stage(self):
+        '''Removes the stage's widget in the GUI.
+        '''
         for child in self.get_visible_children():
             if child.selected:
                 knspace.stages.deselect_node(child)
@@ -167,21 +242,31 @@ class StageWidget(ShowMoreBehavior, BoxLayout):
 
 
 class StageShapeDisplay(BoxSelector):
+    '''The widget used for the :class:`ceed.stage.StageShape`.
+    '''
 
     stage_shape = ObjectProperty(None, rebind=True)
+    '''The :class:`ceed.stage.StageShape` instance that this widget displays.
+    '''
 
     selected = BooleanProperty(False)
 
     @property
     def name(self):
+        '''The :attr:`ceed.stage.StageShape.name` of the shape or shape group.
+        '''
         return self.stage_shape.name
 
     def show_widget(self):
+        '''Adds the shapes's widget in the GUI.
+        '''
         stage = self.stage_shape.stage
         i = len(stage.shapes) - stage.shapes.index(self.stage_shape) - 1
         stage.display.shape_widget.add_widget(self, index=i)
 
     def hide_widget(self):
+        '''Removes the shapes's widget from the GUI.
+        '''
         if self.selected:
             knspace.stages.deselect_node(self)
 
@@ -190,40 +275,74 @@ class StageShapeDisplay(BoxSelector):
 
 
 class ShapePlot(object):
+    '''A plot that displays the time-intensity series of a shape in r, g, b
+    seperately.
+    '''
 
     r_plot = None
+    '''The :class:`MeshLinePlot` used by the red color.
+    '''
 
     g_plot = None
+    '''The :class:`MeshLinePlot` used by the green color.
+    '''
 
     b_plot = None
+    '''The :class:`MeshLinePlot` used by the blue color.
+    '''
 
     r_btn = None
+    '''The button in the GUI that controls whether the red color is displayed.
+    '''
 
     g_btn = None
+    '''The button in the GUI that controls whether the green color is
+    displayed.
+    '''
 
     b_btn = None
+    '''The button in the GUI that controls whether the blue color is displayed.
+    '''
 
     selection_label = None
+    '''The label that shows the plot name next to the color selection.
+    '''
 
     plot_label = None
+    '''The label used on the plot to label the plot.
+    '''
 
     name = ''
+    '''The name of the shape displayed by this plot.
+    '''
 
     color_values = None
+    '''A Tx4 numpy array with the values r, g, b, a for all time points.
+    '''
 
     graph_canvas = None
+    '''The canvas to which the plot graphics instructions are added.
+    '''
 
     frame_rate = 30.
+    '''The sampling rate used to sample the plot across time.
+    '''
 
     graph = None
+    '''The :class:`StageGraph` that displays this p;ot.
+    '''
 
     background = []
+    '''A list that contains the color graphics instructions used to color
+    the back of each plot.
+    '''
 
     def __init__(self, name='', graph_canvas=None, graph=None, **kwargs):
         super(ShapePlot, self).__init__(**kwargs)
         self.name = name
         self.graph = graph
         self.graph_canvas = graph_canvas
+        self.background = []
         b = self.r_btn = Factory.ShapeGraphSelector(controller=graph, text='R')
         b.controller = graph
         b = self.g_btn = Factory.ShapeGraphSelector(controller=graph, text='G')
@@ -239,6 +358,9 @@ class ShapePlot(object):
             flat_color=app.theme.text_primary)
 
     def update_plot_instructions(self):
+        '''Updates the graphics instructions when the plot is shown/hidden.
+        Returns True when the plot was shown/hidden and False otherwise.
+        '''
         changed = False
         vals = self.color_values
         rate = self.frame_rate
@@ -284,6 +406,8 @@ class ShapePlot(object):
         return changed
 
     def remove_plot(self):
+        '''Removes the r, g, b plots from the graph and hides them.
+        '''
         for chan in 'rgb':
             plot_attr = '{}_plot'.format(chan)
             plot = getattr(self, plot_attr)
@@ -295,6 +419,33 @@ class ShapePlot(object):
                 setattr(self, plot_attr, None)
 
     def update_plot_params(self, rect, xmin, xmax, start, end, time, factors):
+        '''Updates the paraeters of the plot, e.g. the time range displayed
+        etc.
+
+        :Params:
+
+            `rect`: 4-tuple
+                ``(x1, y1, x2, y2)``, where ``x1``, ``y1``, is the position
+                of the lower-left corner of the screen area that displays the
+                plot and ``x2``, ``y2`` is the upper-right position.
+            `xmin`: float
+                Similar to :attr:`StageGraph.xmin`.
+            `xmax`: float
+                Similar to :attr:`StageGraph.xmax`.
+            `start`: int
+                The index in time in :attr:`color_values` from where to display
+                the data.
+            `end`: int
+                The index in time in :attr:`color_values` until where to
+                display the data.
+            `time`: numpy array
+                A numpy array with the time values of the for the data to be
+                displayed.
+            `factors`: list of ints
+                A list of successive factors by which :attr:`color_values`
+                needs to be decimated so that it'll match ``time``. We
+                down-sample when the data is too large.
+        '''
         plots = []
         active = []
         for plot in (self.r_plot, self.g_plot, self.b_plot):
@@ -318,6 +469,15 @@ class ShapePlot(object):
         self.update_plot_sizing(rect)
 
     def update_plot_sizing(self, rect):
+        '''Updates only the physical position of the plot on screen.
+
+        :Params:
+
+            `rect`: 4-tuple
+                ``(x1, y1, x2, y2)``, where ``x1``, ``y1``, is the position
+                of the lower-left corner of the screen area that displays the
+                plot and ``x2``, ``y2`` is the upper-right position.
+        '''
         for plot in (self.r_plot, self.g_plot, self.b_plot):
             if not plot:
                 continue
@@ -330,6 +490,8 @@ class ShapePlot(object):
                 line.points = [x1, y2, x1, y1, x2, y1]
 
     def force_update(self):
+        '''Simply forces a re-draw of the plot using the last settings.
+        '''
         for plot in (self.r_plot, self.g_plot, self.b_plot):
             if not plot:
                 continue
@@ -337,38 +499,76 @@ class ShapePlot(object):
 
 
 class StageGraph(Factory.FlatSplitter):
+    '''Displays a time-intensity plot for all the shapes of a
+    :class:`ceed.stage.CeedStage`.
+    '''
 
     plot_values = ObjectProperty(None)
+    '''The computed intensity values for the shapes for all times as returned
+    by :meth:`ceed.view.controller.ViewControllerBase.get_all_shape_values`.
+    '''
 
     plots = DictProperty({})
+    '''A dict whose keys are the name of shapes and whose values are the
+    :class:`ShapePlot` instances visualizing the shape.
+    '''
 
     n_plots_displayed = NumericProperty(0)
+    '''The number of :class:`ShapePlot` currently displayed. Read-only.
+    '''
 
     shape_height = NumericProperty(dp(40))
+    '''The height of each plot.
+    '''
 
     shape_spacing = NumericProperty(dp(5))
+    '''The spacing between plots.
+    '''
 
     xmin = NumericProperty(0)
-    '''True min of the whole data set.
+    '''The min time of the whole data set. This is the start time of the data.
     '''
 
     xmax = NumericProperty(1)
-    '''True max of the whole data set.
+    '''The max time of the whole data set. This is the end time of the data.
     '''
 
     view_xmin = NumericProperty(0)
+    '''The visible start time of the graph being displayed.
+    '''
 
     view_xmax = NumericProperty(1)
+    '''The visible end time of the graph being displayed.
+    '''
 
     r_selected = OptionProperty('none', options=['all', 'none', 'some'])
+    '''Which of the shape's plots is currently shown for the red color.
+
+    Can be one of ``'all'``, ``'none'`` ``'some'``.
+    '''
 
     g_selected = OptionProperty('none', options=['all', 'none', 'some'])
+    '''Which of the shape's plots is currently shown for the green color.
+
+    Can be one of ``'all'``, ``'none'`` ``'some'``.
+    '''
 
     b_selected = OptionProperty('none', options=['all', 'none', 'some'])
+    '''Which of the shape's plots is currently shown for the blue color.
+
+    Can be one of ``'all'``, ``'none'`` ``'some'``.
+    '''
 
     time_points = []
+    '''The list of time points for which the shapes have an intensity value.
+    It's in the range of (:attr:`xmin`, :attr:`xmax`). It is automatically set
+    by :meth:`refresh_graph`.
+    '''
 
     frame_rate = 1.
+    '''The sampling rate used to sample the shape intensity values from the
+    functions in time. It is automatically set by :meth:`refresh_graph`.
+    '''
 
     def __init__(self, **kwargs):
         super(StageGraph, self).__init__(**kwargs)
@@ -389,9 +589,23 @@ class StageGraph(Factory.FlatSplitter):
 
     @property
     def sorted_plots(self):
+        '''A list of tuples of the key, value pairs of :attr:`plots` sorted
+        by shape (plot) name.
+        '''
         return sorted(self.plots.items(), key=lambda x: x[0])
 
     def refresh_graph(self, stage, frame_rate):
+        '''Re-samples the intensity values for the shapes from the stage.
+
+        :Params:
+
+            `stage`: :class:`ceed.stage.CeedStage`
+                The stage from which to sample the shape intensity values.
+            `frame_rate`: float
+                The sampling rate used to sample the shape intensity values
+                from the functions in time.
+
+        '''
         frame_rate = self.frame_rate = float(frame_rate)
         vals = self.plot_values = ViewController.get_all_shape_values(
             stage, frame_rate)
@@ -431,6 +645,9 @@ class StageGraph(Factory.FlatSplitter):
                 add(plot.b_btn)
 
     def sync_plots_shown(self, *largs):
+        '''Checks which plots were selected/deselected in the GUI and
+        shows/hides the corresponding plots.
+        '''
         pos_changed = False
         n = len(self.plots)
         r = g = b = 0
@@ -463,6 +680,16 @@ class StageGraph(Factory.FlatSplitter):
                     add(plot.plot_label)
 
     def apply_selection_all(self, channel):
+        '''Hides or shows all the plots for a color ``channel``, e.g. red,
+        depending on the state of the corresponding :attr:``r_selected.
+
+        It cycles between selecting all and derselecting all of that channel.
+
+        :params:
+
+            `channel`: str
+                One of ``'r'``,  ``'g'``, or  ``'b'``.
+        '''
         btn_attr = '{}_btn'.format(channel)
         state = getattr(self, '{}_selected'.format(channel))
         down = state == 'none' or state == 'some'
@@ -471,6 +698,9 @@ class StageGraph(Factory.FlatSplitter):
         self._shapes_displayed_update_trigger()
 
     def refresh_plot_pos(self, *largs):
+        '''Called when any of the plot parameters, e.g. :attr:`xmax` or
+        :attr:`view_xmax`, changes and the plots needs to be updated.
+        '''
         spacing = self.shape_spacing
         plot_h = self.shape_height
         xmin, xmax = self.view_xmin, self.view_xmax
@@ -506,6 +736,9 @@ class StageGraph(Factory.FlatSplitter):
             i += 1
 
     def refresh_plot_sizing(self, *largs):
+        '''Called when the physical position of the graph needs to be updated
+        but none of the parameters of the graph has changed.
+        '''
         spacing = self.shape_spacing
         plot_h = self.shape_height
         x, y = self.graph.pos
@@ -522,6 +755,15 @@ class StageGraph(Factory.FlatSplitter):
             i += 1
 
     def set_pin(self, state):
+        '''Switches between the graph being displayed as a pop-up and as
+        inlined in the app.
+
+        :Params:
+
+            `state`: bool
+                When True, the graph will be displayed inlined in the app.
+                When False it is displayed as pop-up.
+        '''
         self.parent.remove_widget(self)
         if state:
             knspace.pinned_graph.add_widget(self)

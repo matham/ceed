@@ -8,12 +8,14 @@ Dependencies
 -------------
 
     * Python 2.7, 3.3+
+    * numpy (`pip install numpy`)
+    * nixio (`pip install nixio`)
     * `CPLCom <https://matham.github.io/cplcom/installation.html>`_
     * `FFPyPlayer <https://matham.github.io/ffpyplayer/installation.html>`_
     * `PyFlyCap2 <https://matham.github.io/pyflycap2/installation.html>`_
-    * `kivy.garden.filebrowser`
-    * `kivy.garden.graph`
-    * `kivy.garden.collider`
+    * `kivy.garden.filebrowser` (`garden install filebrowser -- kivy`)
+    * `kivy.garden.graph` (`garden install graph -- kivy`)
+    * `kivy.garden.collider` (`garden install collider -- kivy`)
 
 Ceed
 -------
