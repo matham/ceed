@@ -1,3 +1,10 @@
+'''View Controller
+======================
+
+Displays the preview or live pixel output of the experiment.
+:attr:`ViewController` is the controller that plays the output to the projector
+or in the main GUI when previewing. See :class:`ViewControllerBase`.
+'''
 from multiprocessing import Process, Queue
 import os
 import sys
@@ -34,8 +41,41 @@ try:
 except ImportError:
     libdpx = PROPixx = None
 
+__all__ = (
+    'ViewControllerBase', 'ViewController', 'ViewSideViewControllerBase',
+    'view_process_enter', 'ControllerSideViewControllerBase', 'process_enter')
+
 
 class ViewControllerBase(EventDispatcher):
+    '''A base class for visualizing the output of a :mod:`ceed.stage` on the
+    projector or to preview it in the main GUI.
+
+    The usage of ceed is to run a GUI in which stages, shapes, and functions
+    are designed. Subsequently, the stage is played on the projector or
+    previewed in the main GUI and displays shapes varying with intensity as
+    time progresses, as designed.
+
+    When the stage is played as a preview in the main GUI, all the code is
+    executed within the main process. In this case the controller is a
+    :class:`ControllerSideViewControllerBase` instance.
+
+    When the stage is played for real, it is played in a second process in
+    a second window which can also be displayed on the projector window. In
+    this case, the controller is a
+    :class:`ViewSideViewControllerBase` instance. Also, data is constantly
+    sent between the two processes, specifically, the second process is
+    initialized with the data to be displayed at the start. Once the playing
+    starts, the client continuously sends data back to the main GUI for
+    processing and storage.
+
+    This class controls all aspects of how the data is presented, e.g. whether
+    the window is full screen, the various modes, etc.
+
+    :Events:
+
+        `on_changed`:
+            Triggered whenever a configuration option of the class is changed.
+    '''
 
     __settings_attrs__ = (
         'screen_width', 'screen_height', 'frame_rate',
@@ -44,81 +84,176 @@ class ViewControllerBase(EventDispatcher):
         'fullscreen', 'video_mode', 'LED_mode')
 
     screen_width = NumericProperty(1920)
+    '''The screen width on which the data is played. This is the full-screen
+    size.
+    '''
 
     screen_height = NumericProperty(1080)
+    '''The screen height on which the data is played. This is the full-screen
+    size.
+    '''
 
     screen_offset_x = NumericProperty(0)
+    '''When there are multiple monitors, the window on which the data is played
+    is controlled by the position of the screen. E.g. to set it on the right
+    screen of two screens, each 1920 pixel wide and with the main screen being
+    on the left. Then the :attr:`screen_offset_x` should be set to ``1920``.
+    '''
 
-    frame_rate = NumericProperty(60.)
+    frame_rate = NumericProperty(120.)
+    '''The frame rate at which the data is played. This should match the
+    currently selected monitor's play rate.
+    '''
 
     use_software_frame_rate = BooleanProperty(True)
+    '''Depending on the GPU, the software is unable to render faster than the
+    GPU refresh rate. In that case, :attr:`frame_rate`, should match the value
+    that the GPU is playing at and this should be False.
+
+    If the GPU isn't forcing a frame rate. Then this should be True and
+    :attr:`frame_rate` should be the desired frame rate.
+
+    One can tell whether the GPU is forcing a frame rate by setting
+    :attr:`frame_rate` to a large value and setting
+    :attr:`use_software_frame_rate` to False and seeing what the resultant
+    frame rate is. If it isn't capped at some value, e.g. 120Hz, it means that
+    the GPU isn't forcing it.
+    '''
 
     cam_scale = NumericProperty(1.)
+    '''The scaling factor of the background image.
+    '''
 
     cam_offset_x = NumericProperty(0)
+    '''The x offset of the background image.
+    '''
 
     cam_offset_y = NumericProperty(0)
+    '''The y offset of the background image.
+    '''
 
     cam_rotation = NumericProperty(0)
+    '''The rotation angle of the background image.
+    '''
 
     output_count = BooleanProperty(True)
+    '''Whether the corner pixel is used to output frame information on the
+    PROPixx controller IO pot. If True,
+    :class:`ceed.storage.controller.DataSerializer` is used to set the 24 bits
+    of the corner pixel.
+    '''
 
     preview = BooleanProperty(True)
+    '''When run, if True, the data is played in the main GUI. When False,
+    the data id played on the second window.
+    '''
 
     fullscreen = BooleanProperty(False)
+    '''Whether the second window should run in fullscreen mode. In fullscreen
+    mode the window has no borders.
+    '''
 
     stage_active = BooleanProperty(False)
+    '''True when a stage is playing. Read-only.
+    '''
 
     cpu_fps = NumericProperty(0)
+    '''The estimated CPU frames-per-second of the window playing the data.
+    '''
 
     gpu_fps = NumericProperty(0)
+    '''The estimated GPU frames-per-second of the window playing the data.
+    '''
 
     propixx_lib = BooleanProperty(False)
+    '''True when the propixx python library is available. Read-only.
+    '''
 
     video_modes = ['RGB', 'RB3D', 'RGB240', 'RGB180', 'QUAD4X', 'QUAD12X',
                    'GREY3X']
+    '''The video modes that the PROPixx projector can be set to.
+    '''
 
     led_modes = {'RGB': 0, 'GB': 1, 'RB': 2, 'B': 3, 'RG': 4, 'G': 5, 'R': 6,
                  'none': 7}
+    '''The color modes the PROPixx projector can be set to. It determines which
+    of the RGB LEDs are turned OFF.
+    '''
 
     video_mode = StringProperty('RGB')
+    '''The current video mode from the :attr:`video_modes`.
+    '''
 
     LED_mode = StringProperty('RGB')
+    '''The current LED mode from the :attr:`led_modes`.
+    '''
 
     do_quad_mode = False
-    '''If quad mode, we just quadruple the window size.
+    '''Whether the video mode is a quad mode. Read-only.
     '''
 
     _original_fps = Clock._max_fps if not os.environ.get(
         'KIVY_DOC_INCLUDE', None) else 0
+    '''Original kivy clock fps, so we can set it back.
+    '''
 
     canvas_name = 'view_controller'
+    '''Name used to add graphics instructions to the kivy canvas for easy
+    removal later by name.
+    '''
 
     current_canvas = None
+    '''The last canvas used on which the shapes graphics and color instructions
+    was added.
+    '''
 
     shape_views = []
+    '''List of kivy graphics instructions added to the :attr:`current_canvas`.
+    '''
 
     quad_fbos = []
+    '''When we are in :attr:`do_quad_mode`, we use fbos for the 4 screen
+    rectangles. It's stored here.
+    '''
 
     tick_event = None
+    '''The kivy clock event that updates the colors on every frame.
+    '''
 
     tick_func = None
+    '''The iterator that updates the colors on every frame.
+    '''
 
     count = 0
+    '''The current frame count.
+    '''
 
     _cpu_stats = {'last_call_t': 0, 'count': 0, 'tstart': 0}
 
     _flip_stats = {'last_call_t': 0, 'dt': []}
 
     flip_fps = 0
+    '''The GPU fps.
+    '''
 
     serializer = None
+    '''The :class:`ceed.storage.controller.DataSerializer` instance that
+    generates the corner pixel value.
+    '''
 
     serializer_tex = None
+    '''The kivy texture that displays the corner pixel value.
+    '''
 
     queue_view_read = None
+    '''The queue used by the view side to receive messages from the main GUI
+    controller side.
+    '''
 
     queue_view_write = None
+    '''The queue used by the view side to write messages to the main GUI
+    controller side.
+    '''
 
     __events__ = ('on_changed', )
 
@@ -524,6 +659,15 @@ class ControllerSideViewControllerBase(ViewControllerBase):
 def process_enter(*largs, **kwargs):
     ViewController.view_process_enter(*largs, **kwargs)
 
+ViewController = None
+'''The controller that plays or directs that the experimental projector output
+be played on the client.
+
+When running from the main GUI, :attr:`ViewController`
+is an :class:`ControllerSideViewControllerBase` instance. When this code is
+run in the second process that runs the projector side code,
+:attr:`ViewController` is an :class:`ViewSideViewControllerBase` instance.
+'''
 if ceed.is_view_inst:
     ViewController = ViewSideViewControllerBase()
 else:

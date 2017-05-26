@@ -20,7 +20,7 @@ from kivy.compat import clock
 from kivy.app import App
 
 
-class CeedPlayer(object):
+class CeedPlayerBase(object):
 
     def display_frame(self, *largs):
         widget = knspace.central_display
@@ -30,11 +30,11 @@ class CeedPlayer(object):
             knspace.player.last_image = img[0]
 
 
-class CeedPTGrayPlayer(CeedPlayer, PTGrayPlayer):
+class CeedPTGrayPlayer(CeedPlayerBase, PTGrayPlayer):
     pass
 
 
-class CeedFFmpegPlayer(CeedPlayer, FFmpegPlayer):
+class CeedFFmpegPlayer(CeedPlayerBase, FFmpegPlayer):
     pass
 
 

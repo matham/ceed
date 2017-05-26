@@ -9,6 +9,7 @@ Dependencies
 
     * Python 2.7, 3.3+
     * numpy (`pip install numpy`)
+    * scipy (`pip install scipy`)
     * nixio (`pip install nixio`)
     * `CPLCom <https://matham.github.io/cplcom/installation.html>`_
     * `FFPyPlayer <https://matham.github.io/ffpyplayer/installation.html>`_

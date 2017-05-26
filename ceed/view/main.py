@@ -1,7 +1,8 @@
 '''Ceed View App
 =====================
 
-The module that runs the view GUI.
+The module that runs the :mod:`ceed.view` GUI for displaying the pixels on the
+projector. This is run in a seperate process than the main server side GUI.
 '''
 import os
 os.environ['SDL_VIDEO_MINIMIZE_ON_FOCUS_LOSS'] = '0'

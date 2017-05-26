@@ -1,3 +1,6 @@
+'''Graphcs
+==================
+'''
 from itertools import chain, islice
 
 from kivy.uix.widget import Widget
