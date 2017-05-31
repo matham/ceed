@@ -11,6 +11,7 @@ Dependencies
     * numpy (`pip install numpy`)
     * scipy (`pip install scipy`)
     * nixio (`pip install nixio`)
+    * psutil (`pip install psutil`)
     * `CPLCom <https://matham.github.io/cplcom/installation.html>`_
     * `FFPyPlayer <https://matham.github.io/ffpyplayer/installation.html>`_
     * `PyFlyCap2 <https://matham.github.io/pyflycap2/installation.html>`_
