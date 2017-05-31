@@ -441,7 +441,7 @@
     size_hint_y: None
     min_size: self.minimum_height
     on_min_size: self.height = max(self.height, self.min_size)
-    max_size: max(graph_root.size_hint_max_y, shape_selection_box.size_hint_max_y) + dp(40)
+    max_size: max(graph_root.size_hint_max_y or 0, shape_selection_box.size_hint_max_y) + dp(40)
     sizable_from: 'bottom'
     flat_color: app.theme.accent
     shape_selection_widget: shape_selection_box.shape_selection_widget

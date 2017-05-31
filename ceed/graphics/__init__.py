@@ -17,12 +17,6 @@ from kivy.lang import Builder
 from kivy.utils import get_color_from_hex
 
 
-class EmptyDropDown(DropDown):
-
-    def __init__(self, **kwargs):
-        super(EmptyDropDown, self).__init__(container=None, **kwargs)
-
-
 class ExpandWidget(Factory.IconSizedBehavior, Factory.Image):
 
     is_open = BooleanProperty(False)

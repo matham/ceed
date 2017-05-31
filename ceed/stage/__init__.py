@@ -273,7 +273,7 @@ class StageFactoryBase(EventDispatcher):
         stage = self.stage_names[stage_name]
         shapes = {s.name: [] for s in get_painter().shapes}
         tick_stage = stage.tick_stage(shapes)
-        tick_stage.next()
+        next(tick_stage)
         while True:
             t = yield
             tick_stage.send(t)
@@ -766,7 +766,7 @@ class CeedStage(EventDispatcher):
             >>> # get dict of shapes using the painter controller
             >>> shapes = {s.name: [] for s in get_painter().shapes}
             >>> tick_stage = stage.tick_stage(shapes)  # create iterator
-            >>> tick_stage.next()
+            >>> next(tick_stage)
             >>> for t in [0, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1.]:
             >>>     try:
             >>>         tick_stage.send(t)  # update
@@ -798,13 +798,13 @@ class CeedStage(EventDispatcher):
         r, g, b = self.color_r, self.color_g, self.color_b
         a = self.color_a
         for tick_stage in stages[:]:
-            tick_stage.next()
+            next(tick_stage)
 
         while funcs is not None or stages:
             t = yield
             if funcs is not None:
                 try:
-                    funcs.next()
+                    next(funcs)
                     val = funcs.send(t)
                     values = (val if r else None, val if g else None,
                               val if b else None, a)
@@ -839,7 +839,7 @@ class CeedStage(EventDispatcher):
             >>> func = self.tick_funcs()
             >>> for t in [0, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1.]:
             >>>     try:
-            >>>         funcs.next()
+            >>>         next(funcs)
             >>>         val = funcs.send(t)
             >>>         print(val)
             >>>     except FuncDoneException:

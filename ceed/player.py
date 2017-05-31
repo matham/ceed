@@ -134,7 +134,8 @@ class CeedPlayer(KNSpaceBehavior, EventDispatcher):
             elif key == 'ip':
                 knspace.pt_ip.text = self.pt_player.ip
             elif key == 'serials':
-                knspace.pt_serial.values = map(str, self.pt_player.serials)
+                knspace.pt_serial.values = list(
+                    map(str, self.pt_player.serials))
             elif key == 'serial':
                 knspace.pt_serial.text = '{}'.format(self.pt_player.serial)
 
@@ -191,7 +192,7 @@ class CeedPlayer(KNSpaceBehavior, EventDispatcher):
         player_active()
         knspace.pt_ip.values = self.pt_player.ips
         knspace.pt_ip.text = self.pt_player.ip
-        knspace.pt_serial.values = map(str, self.pt_player.serials)
+        knspace.pt_serial.values = list(map(str, self.pt_player.serials))
         knspace.pt_serial.text = '{}'.format(self.pt_player.serial)
         record_paths()
         player_record()

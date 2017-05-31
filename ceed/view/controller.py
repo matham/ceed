@@ -5,7 +5,7 @@ Displays the preview or live pixel output of the experiment.
 :attr:`ViewController` is the controller that plays the output to the projector
 or in the main GUI when previewing. See :class:`ViewControllerBase`.
 '''
-from multiprocessing import Process, Queue
+import multiprocessing as mp
 import os
 import sys
 import traceback
@@ -326,7 +326,7 @@ class ViewControllerBase(EventDispatcher):
             count += 1
 
             try:
-                tick.next()
+                next(tick)
                 shape_values = tick.send(count / frame_rate)
             except StageDoneException:
                 break
@@ -410,7 +410,7 @@ class ViewControllerBase(EventDispatcher):
             self.count += 1
 
             try:
-                tick.next()
+                next(tick)
                 shape_values = tick.send(self.count / self.frame_rate)
             except StageDoneException:
                 self.end_stage()
@@ -420,7 +420,7 @@ class ViewControllerBase(EventDispatcher):
                 raise
 
             if self.serializer and bits is None:
-                self.serializer.next()
+                next(self.serializer)
                 bits = self.serializer.send(self.count)
                 r, g, b = bits & 0xFF, (bits & 0xFF00) >> 8, \
                     (bits & 0xFF0000) >> 16
@@ -489,7 +489,7 @@ class ViewSideViewControllerBase(ViewControllerBase):
         if exc_info is not None:
             exc_info = ''.join(traceback.format_exception(*exc_info))
         self.queue_view_write.put_nowait(
-            ('exception', json_dumps(exception, exc_info)))
+            ('exception', json_dumps((str(exception), exc_info))))
 
     @app_error
     def view_read(self, *largs):
@@ -587,10 +587,11 @@ class ControllerSideViewControllerBase(ViewControllerBase):
 
         settings = {name: getattr(self, name)
                     for name in ViewControllerBase.__settings_attrs__}
-        r = self.queue_view_read = Queue()
-        w = self.queue_view_write = Queue()
+        ctx = mp.get_context('spawn')
+        r = self.queue_view_read = ctx.Queue()
+        w = self.queue_view_write = ctx.Queue()
         os.environ['CEED_IS_VIEW'] = '1'
-        self.view_process = process = Process(
+        self.view_process = process = ctx.Process(
             target=view_process_enter,
             args=(r, w, settings, App.get_running_app().app_settings))
         process.start()

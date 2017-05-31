@@ -197,12 +197,12 @@ class FunctionFactoryBase(EventDispatcher):
     def get_names(self):
         '''Returns the names of all :meth:`register` classes.
         '''
-        return self.funcs_cls.keys()
+        return list(self.funcs_cls.keys())
 
     def get_classes(self):
         '''Returns the classes registered with :meth:`register`.
         '''
-        return self.funcs_cls.values()
+        return list(self.funcs_cls.values())
 
     def save_funcs(self, id_map=None):
         '''Dumps all the config data from all the :attr:`funcs_user` so that

@@ -23,6 +23,7 @@ from kivy.lang import Builder
 from kivy.graphics.opengl import glEnable, GL_DITHER, glDisable
 from kivy.logger import Logger
 from kivy.clock import Clock
+from kivy.compat import string_types
 
 import ceed
 from ceed.view.controller import ViewController
@@ -86,7 +87,7 @@ class CeedViewApp(KNSpaceBehavior, App):
             `obj`: object
                 If not None, the object that caused the exception.
         '''
-        if isinstance(exc_info, basestring):
+        if isinstance(exc_info, string_types):
             self.get_logger().error(exception)
             self.get_logger().error(exc_info)
         else:
