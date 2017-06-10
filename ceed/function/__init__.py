@@ -31,10 +31,11 @@ with :meth:`FunctionFactoryBase.add_function`.
 
 from copy import deepcopy
 from collections import OrderedDict
+from fractions import Fraction
 
 from kivy.event import EventDispatcher
 from kivy.properties import StringProperty, NumericProperty, BooleanProperty, \
-    ObjectProperty, DictProperty
+    ObjectProperty, DictProperty, AliasProperty
 from kivy.logger import Logger
 from kivy.factory import Factory
 
@@ -104,6 +105,8 @@ class FunctionFactoryBase(EventDispatcher):
             triggers its ``on_changed`` event.
     '''
 
+    __settings_attrs__ = ('timebase_numerator', 'timebase_denominator')
+
     __events__ = ('on_changed', )
 
     funcs_cls = {}
@@ -137,6 +140,43 @@ class FunctionFactoryBase(EventDispatcher):
     '''Whether the function should call the associated widgets functions to
     display it. This is set to ``True`` only if the code is executed from
     the GUI.
+    '''
+
+    timebase_numerator = NumericProperty(1)
+    '''The numerator of the default timebase. See :attr:`timebase`.
+    '''
+
+    timebase_denominator = NumericProperty(1)
+    '''The denominator of the default timebase. See :attr:`timebase`.
+    '''
+
+    def _get_timebase(self):
+        num = self.timebase_numerator
+        if isinstance(num, float) and num.is_integer():
+            num = int(num)
+        denom = self.timebase_denominator
+        if isinstance(denom, float) and denom.is_integer():
+            denom = int(denom)
+
+        if isinstance(num, int) and isinstance(denom, int):
+            return Fraction(num, denom)
+        else:
+            return self.timebase_numerator / float(self.timebase_denominator)
+
+    timebase = AliasProperty(
+        _get_timebase, None, cache=True,
+        bind=('timebase_numerator', 'timebase_denominator'))
+    '''The default (read-only) timebase scale factor as computed by
+    :attr:`timebase_numerator` / :attr:`timebase_denominator`. It returns
+    either a float or a Fraction instance when the numerator and
+    denominator are ints.
+
+    The timebase is the scaling factor by which some function properties that
+    relate to time, e.g. :attr:`FuncBase.duration`, are multiplied to convert
+    from timebase units to time.
+
+    This is the default timebase that is used when :attr:`FuncBase.timebase`
+    is -1, otherwise each function uses its :attr:`FuncBase.timebase`.
     '''
 
     def __init__(self, **kwargs):
@@ -337,13 +377,14 @@ class FunctionFactoryBase(EventDispatcher):
 class FuncBase(EventDispatcher):
     '''The base class for all functions.
 
-    Plugins functions inherit from this class to create new functions.
+    Plugin functions inherit from this class to create new functions.
     To use, the new function classes need to be registered with
     :meth:`FunctionFactoryBase.register`.
 
     Function usage is as follows, a function is initialized to a particular
-    :attr:`t_start` with :meth:`init_func` before it can be used. This sets
-    the interval where it's valid to ``[t_start, t_start + duration)``.
+    :attr:`t_start`, in seconds, with :meth:`init_func` before it can be used.
+    This sets the interval where it's valid to
+    ``[t_start, t_start + duration)``.
 
     When the function is called with a time point in that interval it'll return
     the value of the function there. Every function subtracts :attr:`t_start`
@@ -352,10 +393,15 @@ class FuncBase(EventDispatcher):
     functions can be stepped through successively using a global increasing
     clock, e.g. during an experiment.
 
-    Similarly, functions devide the time by :attr:`timebase` before it's used.
-    This allows time to be specified e.g. in microsecond integers for accuracy
-    purposes. In this case, time will be in microseconds and :attr:`timebase`
-    will be ``1000000.0``.
+    Similarly, functions multiply some time related properties by
+    :attr:`timebase` before it's used as those are given in :attr:`timebase`
+    units. This allows properties to be specified e.g. in microsecond integers
+    for accuracy
+    purposes. In that case time will be in microseconds and :attr:`timebase`
+    will be ``1 / 1000000``. It especially allows for precision when comparing
+    times because we can target specific video frames by e.g. setting
+    the timebase to the frame rate, then we can alternate the functions
+    intensity on each frame.
 
     When called, the function will check if it's outside the interval
     using :meth:`check_done`, which if it is done, will increment the
@@ -388,6 +434,8 @@ class FuncBase(EventDispatcher):
     duration = NumericProperty(0)
     '''How long, after the start of the function the function is valid.
     -1 means go on forever. See class for more details.
+
+    It is in timebase units.
     '''
 
     loop = NumericProperty(1)
@@ -441,12 +489,52 @@ class FuncBase(EventDispatcher):
     between different functions.
     '''
 
-    timebase = 1.
-    '''The amount by which to divide the time. See the class description.
+    timebase_numerator = NumericProperty(-1)
+    '''The numerator of the timebase. See :attr:`timebase`.
+    '''
+
+    timebase_denominator = NumericProperty(1)
+    '''The denominator of the timebase. See :attr:`timebase`.
+    '''
+
+    def _get_timebase(self):
+        num = self.timebase_numerator
+        if isinstance(num, float) and num.is_integer():
+            num = int(num)
+        denom = self.timebase_denominator
+        if isinstance(denom, float) and denom.is_integer():
+            denom = int(denom)
+
+        if isinstance(num, int) and isinstance(denom, int):
+            return Fraction(num, denom)
+        else:
+            return self.timebase_numerator / float(self.timebase_denominator)
+
+    timebase = AliasProperty(
+        _get_timebase, None, cache=True,
+        bind=('timebase_numerator', 'timebase_denominator'))
+    '''The (read-only) timebase scale factor as computed by
+    :attr:`timebase_numerator` / :attr:`timebase_denominator`. It returns
+    either a float or a Fraction instance when the numerator and
+    denominator are ints.
+
+    The timebase is the scaling factor by which some function properties that
+    relate to time, e.g. :attr:`duration`, are multiplied to convert from
+    timebase units to time.
+
+    By default :attr:`timebase_numerator` is -1 and
+    :attr:`timebase_denominator` is 1 which makes :attr:`timebase` -1
+    indicating that the timebase used is given by
+    :attr:`FunctionFactoryBase.timebase`. When :attr:`timebase` is not -1 this
+    :attr:`timebase` is used instead.
+
+    :meth:`get_timebase` returns the actual timebase used.
+
+    See the class description for its usage.
     '''
 
     t_start = 0
-    '''The time offset subtracted from function time. See the class
+    '''The time offset subtracted from function time (in secs). See the class
     description.
     '''
 
@@ -469,6 +557,19 @@ class FuncBase(EventDispatcher):
 
     def __call__(self, t):
         raise NotImplementedError
+
+    def get_timebase(self):
+        '''Returns the function's timebase.
+
+        If :attr:`timebase_numerator` is -1 it returns the timebase of its
+        :attr:`parent_func` with :meth:`get_timebase` if it has a parent.
+        Otherwise, it returns :attr:`FunctionFactoryBase.timebase`.
+        '''
+        if self.timebase_numerator == -1:
+            if self.parent_func:
+                return self.parent_func.get_timebase()
+            return FunctionFactory.timebase
+        return self.timebase
 
     def on_changed(self, *largs, **kwargs):
         pass
@@ -512,7 +613,38 @@ class FuncBase(EventDispatcher):
             attrs = {}
         attrs['name'] = None
         attrs['loop'] = None
+        attrs['timebase_numerator'] = None
+        attrs['timebase_denominator'] = None
         return attrs
+
+    def get_prop_pretty_name(self, trans=None):
+        '''Called internally by the GUI to get a translation dictionary which
+        converts property names as used in :meth:`get_state` into nicer
+        property names used to display the properties to the user.
+
+        :Params:
+
+            `trans`: dict
+                The dict to update with the translation names to be displayed.
+                If None, the default, a dict is created and returned.
+
+        :returns:
+
+            A dict that contains all properties whose names should be changed
+            when displayed. Keys in the dict are the names as returned by
+            :meth:`get_state`, the values are the names that should be
+            displayed instead. If a property is not included it's property
+            name is used.
+
+        E.g.::
+
+            >>>
+        '''
+        if trans is None:
+            trans = {}
+        trans['timebase_numerator'] = 'TB num'
+        trans['timebase_denominator'] = 'TB denom'
+        return trans
 
     def get_gui_elements(self, items=None):
         '''Returns widget instances that should be displayed to the user along
@@ -608,7 +740,9 @@ class FuncBase(EventDispatcher):
         d = {
             'name': self.name, 'cls': self.__class__.__name__,
             'track_source': self.track_source, 'func_id': self.func_id,
-            'loop': self.loop}
+            'loop': self.loop,
+            'timebase_numerator': self.timebase_numerator,
+            'timebase_denominator': self.timebase_denominator}
         if state is None:
             state = d
         else:
@@ -823,7 +957,7 @@ class FuncBase(EventDispatcher):
         :Params:
 
             `t_start`: float
-                The current time of the global time conter. :attr:`t_start`
+                The current time in seconds in global time. :attr:`t_start`
                 will be set to this value.
             `loop`: bool
                 If it's the first iteration of the loop it should be False,
@@ -835,14 +969,14 @@ class FuncBase(EventDispatcher):
 
     def done_condition(self, t):
         '''Returns whether the function has passed its valid interval for
-        time ``t``.
+        time ``t`` in seconds.
         '''
         return False
 
     def check_done(self, t):
         '''Checks whether the function is outside its valid interval with
-        :meth:`done_condition` for time ``t`` and whether it has completed all
-        the loop iterations.
+        :meth:`done_condition` for time ``t`` in seconds and whether it has
+        completed all the loop iterations.
 
         If the iteration is done, it proceeds to the next iteration. It returns
         True only if the last iteration has completed.
@@ -861,18 +995,20 @@ class CeedFunc(FuncBase):
     '''
 
     t_offset = NumericProperty(0)
-    '''The amount of time to add the function when computing the result.
+    '''The amount of time in seconds to add the function when computing the
+    result.
 
     All functions that inherit from this class must add this time. E.g. the
     :class:`~ceed.function.plugin.LinearFunc` defines its function as
-    ``y(t) = mt + b`` with time ``t = (t_in - t_start + t_offset) / timebase``.
+    ``y(t) = mt + b`` with time ``t = (t_in - t_start + t_offset)``.
     '''
 
     display_cls = 'FuncWidget'
 
     def done_condition(self, t):
         # timebase is factored out.
-        return self.duration >= 0 and t - self.t_start >= self.duration
+        return self.duration >= 0 and \
+            (t - self.t_start) / self.get_timebase() >= self.duration
 
     def get_gui_props(self, attrs=None):
         d = super(CeedFunc, self).get_gui_props(attrs)

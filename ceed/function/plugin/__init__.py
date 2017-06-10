@@ -71,7 +71,7 @@ class LinearFunc(CeedFunc):
     '''Defines a linearly increasing function.
 
     The function is defined as ``y(t) = mt + b``, where
-    ``t = (t_in - t_start + t_offset) / timebase``.
+    ``t = (t_in - t_start + t_offset)``.
     '''
 
     m = NumericProperty(1.)
@@ -86,7 +86,7 @@ class LinearFunc(CeedFunc):
     def __call__(self, t):
         if self.check_done(t):
             raise FuncDoneException
-        t = (t - self.t_start + self.t_offset) / self.timebase
+        t = t - self.t_start + self.t_offset
         return self.m * t + self.b
 
     def get_gui_props(self, attrs=None):
@@ -106,7 +106,7 @@ class ExponentialFunc(CeedFunc):
     '''Defines a double exponential function.
 
     The function is defined as ``y(t) = Ae-t/tau1 + Be-t/tau2``, where
-    ``t = (t_in - t_start + t_offset) / timebase``.
+    ``t = (t_in - t_start + t_offset)``.
     '''
 
     A = NumericProperty(1.)
@@ -127,7 +127,7 @@ class ExponentialFunc(CeedFunc):
     def __call__(self, t):
         if self.check_done(t):
             raise FuncDoneException
-        t = (t - self.t_start + self.t_offset) / self.timebase
+        t = t - self.t_start + self.t_offset
         return self.A * exp(-t / self.tau1) + self.B * exp(-t / self.tau2)
 
     def get_gui_props(self, attrs=None):
@@ -151,7 +151,7 @@ class CosFunc(CeedFunc):
     '''Defines a cosine function.
 
     The function is defined as ``y(t) = Acos(2pi*f*t + th0*pi/180)``, where
-    ``t = (t_in - t_start + t_offset) / timebase``.
+    ``t = (t_in - t_start + t_offset)``.
     '''
 
     f = NumericProperty(1.)
@@ -168,7 +168,7 @@ class CosFunc(CeedFunc):
     def __call__(self, t):
         if self.check_done(t):
             raise FuncDoneException
-        t = (t - self.t_start + self.t_offset) / self.timebase
+        t = t - self.t_start + self.t_offset
         return self.A * cos(2 * pi * self.f * t + self.th0 * pi / 180.)
 
     def get_gui_props(self, attrs=None):

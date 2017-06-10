@@ -120,6 +120,7 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
         func = self.func
         items = func.get_gui_elements()
         kwargs = func.get_gui_props()
+        pretty_names = func.get_prop_pretty_name()
         add = self.settings.add_widget
 
         input_types = {'int': 'int', 'float': 'float', int: 'int',
@@ -162,7 +163,9 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
             color = App.get_running_app().theme.text_primary
             for fmt, keys in sorted(props.items(), key=lambda x: x[0]):
                 for key in sorted(keys):
-                    grid.add_widget(label(text=key, padding_x='10dp', flat_color=color))
+                    grid.add_widget(
+                        label(text=pretty_names.get(key, key),
+                              padding_x='10dp', flat_color=color))
                     grid.add_widget(FuncPropTextWidget(
                         func=func, prop_name=key,
                         input_filter=input_filter[fmt]))
@@ -218,11 +221,11 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
         '''Removes the function's widget from its widget container.
         '''
         if self.selected:
-            self.display_parent.deselect_node(self)
+            self.selection_controller.deselect_node(self)
         elif isinstance(self, FuncWidgetGroup):
             c = self.selected_child()
             if c is not None:
-                self.display_parent.deselect_node(c.display)
+                self.selection_controller.deselect_node(c.display)
 
         if self.parent:
             self.parent.remove_widget(self)
@@ -239,10 +242,10 @@ class FuncWidgetGroup(FuncWidget):
         if not self.show_more:
             c = self.selected_child()
             if c is not None:
-                self.display_parent.deselect_node(c.display)
+                self.selection_controller.deselect_node(c.display)
 
-    def show_func(self):
-        super(FuncWidgetGroup, self).show_func()
+    def show_func(self, after_index=None):
+        super(FuncWidgetGroup, self).show_func(after_index=after_index)
         for f in self.func.funcs:
             f.display.show_func()
 
