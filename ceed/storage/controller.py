@@ -8,12 +8,13 @@ from os import remove
 import os
 from tempfile import NamedTemporaryFile
 from shutil import copy2
+from collections import defaultdict
 from math import ceil
 from threading import Thread, RLock
 try:
-    from Queue import Queue
+    from Queue import Queue, Empty
 except ImportError:
-    from queue import Queue
+    from queue import Queue, Empty
 import numpy as np
 from ffpyplayer.pic import Image
 
@@ -24,9 +25,11 @@ from kivy.app import App
 from kivy.clock import Clock
 from kivy.uix.behaviors.knspace import knspace
 from kivy.logger import Logger
+from kivy.compat import clock
 
 from cplcom.config import byteify
 from cplcom.utils import json_dumps, json_loads
+from cplcom.app import app_error
 
 from ceed.function import FunctionFactory, FuncBase
 from ceed.stage import StageFactory
@@ -374,31 +377,75 @@ class CeedDataBase(EventDispatcher):
             return
         allocated = allocated = (required >> 3) + 6 + required
 
+    @app_error
     def collect_experiment(self, block, shapes, frame_bits, frame_counter,
                            frame_time, frame_time_counter):
         queue = self.data_queue
         lock = self.data_lock
+
+        frame_count_buf = np.zeros((512, ), dtype=np.uint64)
+        bits_buf = np.zeros((512, ), dtype=np.uint32)
+        frame_i = 0  # counter
+
+        frame_vals_buf = {
+            name: np.zeros((512, 4), dtype=np.float16) for name in shapes}
+        frame_vals_i = {name: 0 for name in shapes}  # counter
+
+        flip_count_buf = np.zeros((512, ), dtype=np.uint64)
+        flip_t_buf = np.zeros((512, ), dtype=np.float64)
+        flip_i = 0  # counter
+
         while True:
             try:
                 msg, value = queue.get()
-                if msg == 'eof':
-                    break
-                elif msg == 'frame':
-                    count, bits, values = value
-                    lock.acquire()
-                    frame_counter.append(count)
-                    frame_bits.append(bits)
-                    for name, r, g, b, a in values:
-                        shapes[name].append([[r, g, b, a]])
-                    lock.release()
-                elif msg == 'frame_flip':
-                    count, t = value
-                    lock.acquire()
-                    frame_time.append(t)
-                    frame_time_counter.append(count)
-                    lock.release()
             except Empty:
                 continue
+            eof = msg == 'eof'
+
+            assert frame_i <= 512
+            if frame_i == 512 or eof:
+                lock.acquire()
+                try:
+                    frame_counter.append(frame_count_buf[:frame_i])
+                    frame_bits.append(bits_buf[:frame_i])
+                    frame_count_buf[:] = bits_buf[:] = 0
+
+                    for name, vals in frame_vals_buf.items():
+                        shapes[name].append(vals[:frame_vals_i[name], :])
+                        frame_vals_i[name] = vals[:] = 0
+                finally:
+                    lock.release()
+
+                frame_i = 0
+
+            assert flip_i <= 512
+            if flip_i == 512 or eof:
+                lock.acquire()
+                try:
+                    frame_time_counter.append(flip_count_buf[:flip_i])
+                    frame_time.append(flip_t_buf[:flip_i])
+                    flip_count_buf[:] = flip_t_buf[:] = 0
+                finally:
+                    lock.release()
+
+                flip_i = 0
+
+            if eof:
+                break
+            elif msg == 'frame':
+                count, bits, values = value
+                frame_count_buf[frame_i] = count
+                bits_buf[frame_i] = bits
+                frame_i += 1
+
+                for name, r, g, b, a in values:
+                    frame_vals_buf[name][frame_vals_i[name], :] = r, g, b, a
+                    frame_vals_i[name] += 1
+            elif msg == 'frame_flip':
+                count, t = value
+                flip_count_buf[flip_i] = count
+                flip_t_buf[flip_i] = t
+                flip_i += 1
 
     def prepare_experiment(self, stage_name):
         self.stop_experiment()

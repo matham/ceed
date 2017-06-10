@@ -8,6 +8,7 @@ or in the main GUI when previewing. See :class:`ViewControllerBase`.
 import multiprocessing as mp
 import os
 import sys
+from fractions import Fraction
 import traceback
 from collections import defaultdict
 try:
@@ -17,10 +18,11 @@ except ImportError:
 
 from kivy.event import EventDispatcher
 from kivy.properties import NumericProperty, StringProperty, BooleanProperty, \
-    ObjectProperty
+    ObjectProperty, OptionProperty, AliasProperty
 from kivy.clock import Clock
-from kivy.compat import clock
-from kivy.graphics import Color, Point, Fbo, Rectangle
+from kivy.compat import clock, PY2
+from kivy.graphics import Color, Point, Fbo, Rectangle, Scale, PushMatrix, \
+    PopMatrix, Translate
 from kivy.graphics.texture import Texture
 from kivy.app import App
 from kivy.uix.behaviors.knspace import knspace
@@ -31,6 +33,7 @@ from cplcom.utils import json_dumps, json_loads
 import ceed
 from ceed.stage import StageFactory, StageDoneException
 from ceed.storage.controller import DataSerializer, CeedData
+from ceed.function import FunctionFactory
 
 if ceed.has_gui_control or ceed.is_view_inst:
     from kivy.core.window import Window
@@ -81,7 +84,7 @@ class ViewControllerBase(EventDispatcher):
         'screen_width', 'screen_height', 'frame_rate',
         'use_software_frame_rate', 'cam_scale', 'cam_offset_x', 'cam_offset_y',
         'cam_rotation', 'output_count', 'screen_offset_x', 'preview',
-        'fullscreen', 'video_mode', 'LED_mode')
+        'fullscreen', 'video_mode', 'LED_mode', 'LED_mode_idle')
 
     screen_width = NumericProperty(1920)
     '''The screen width on which the data is played. This is the full-screen
@@ -102,10 +105,10 @@ class ViewControllerBase(EventDispatcher):
 
     frame_rate = NumericProperty(120.)
     '''The frame rate at which the data is played. This should match the
-    currently selected monitor's play rate.
+    currently selected monitor's refresh rate.
     '''
 
-    use_software_frame_rate = BooleanProperty(True)
+    use_software_frame_rate = BooleanProperty(False)
     '''Depending on the GPU, the software is unable to render faster than the
     GPU refresh rate. In that case, :attr:`frame_rate`, should match the value
     that the GPU is playing at and this should be False.
@@ -185,10 +188,20 @@ class ViewControllerBase(EventDispatcher):
     '''
 
     LED_mode = StringProperty('RGB')
-    '''The current LED mode from the :attr:`led_modes`.
+    '''The LED mode the projector is set to during the experiment.
+    Its value is from the :attr:`led_modes`.
     '''
 
-    do_quad_mode = False
+    LED_mode_idle = StringProperty('RGB')
+    '''The LED mode the projector is set to before/after the experiment.
+    Its value is from the :attr:`led_modes`.
+    '''
+
+    def _get_do_quad_mode(self):
+        return self.video_mode.startswith('QUAD')
+
+    do_quad_mode = AliasProperty(
+        _get_do_quad_mode, None, cache=True, bind=('video_mode', ))
     '''Whether the video mode is a quad mode. Read-only.
     '''
 
@@ -211,11 +224,6 @@ class ViewControllerBase(EventDispatcher):
     '''List of kivy graphics instructions added to the :attr:`current_canvas`.
     '''
 
-    quad_fbos = []
-    '''When we are in :attr:`do_quad_mode`, we use fbos for the 4 screen
-    rectangles. It's stored here.
-    '''
-
     tick_event = None
     '''The kivy clock event that updates the colors on every frame.
     '''
@@ -226,6 +234,22 @@ class ViewControllerBase(EventDispatcher):
 
     count = 0
     '''The current frame count.
+    '''
+
+    def _get_effective_rate(self):
+        if self.video_mode == 'QUAD4X':
+            return self.frame_rate * 4
+        elif self.video_mode == 'QUAD12X':
+            return self.frame_rate * 12
+        return self.frame_rate
+
+    effective_frame_rate = AliasProperty(
+        _get_effective_rate, None, cache=True,
+        bind=('video_mode', 'frame_rate'))
+    '''The actual frame rate at which the projector is updated. E.g. in
+    ``'QUAD4X'`` :attr:`video_mode` it is updated at 4 * 120Hz = 480Hz.
+
+    It is read only and automatically computed.
     '''
 
     _cpu_stats = {'last_call_t': 0, 'count': 0, 'tstart': 0}
@@ -262,7 +286,6 @@ class ViewControllerBase(EventDispatcher):
         for name in ViewControllerBase.__settings_attrs__:
             self.fbind(name, self.dispatch, 'on_changed')
         self.propixx_lib = libdpx is not None
-        self.quad_fbos = []
         self.shape_views = []
 
     def on_changed(self, *largs):
@@ -285,23 +308,26 @@ class ViewControllerBase(EventDispatcher):
         StageFactory.remove_shapes_gl_color_instructions(
             canvas, self.canvas_name)
         self.shape_views = []
-
-        corners = ((0, 1), (1, 1), (0, 0), (1, 0))
         w, h = self.screen_width, self.screen_height
 
+        with canvas:
+            Color(0, 0, 0, 1, group=self.canvas_name)
+            Rectangle(size=(w, h), group=self.canvas_name)
         if self.do_quad_mode:
-            if not self.quad_fbos:
-                for (x, y) in corners:
-                    with canvas:
-                        fbo = Fbo(size=(w, h), group=self.canvas_name)
-                        Rectangle(
-                            pos=(x * w, y * h), size=(w, h),
-                            texture=fbo.texture, group=self.canvas_name)
-                        self.quad_fbos.append(fbo)
+            half_w = w // 2
+            half_h = h // 2
 
-            for fbo in self.quad_fbos:
+            for (x, y) in ((0, 1), (1, 1), (0, 0), (1, 0)):
+                with canvas:
+                    PushMatrix(group=self.canvas_name)
+                    Translate(x * half_w, y * half_h, group=self.canvas_name)
+                    s = Scale(group=self.canvas_name)
+                    s.x = s.y = 0.5
+                    s.origin = 0, 0
                 instructs = StageFactory.get_shapes_gl_color_instructions(
-                    fbo, self.canvas_name)
+                    canvas, self.canvas_name)
+                with canvas:
+                    PopMatrix(group=self.canvas_name)
                 self.shape_views.append(instructs)
         else:
             self.shape_views = [StageFactory.get_shapes_gl_color_instructions(
@@ -317,8 +343,12 @@ class ViewControllerBase(EventDispatcher):
                           group=self.canvas_name)
 
     def get_all_shape_values(self, stage_name, frame_rate):
+        '''frame_rate is not :attr:`frame_rate` bur rather the rate at which we
+        sample the functions.
+        '''
         tick = StageFactory.tick_stage(stage_name)
-        frame_rate = float(frame_rate)
+        # the sampling rate at which we sample the functions
+        frame_rate = int(frame_rate)
 
         obj_values = defaultdict(list)
         count = 0
@@ -327,7 +357,7 @@ class ViewControllerBase(EventDispatcher):
 
             try:
                 next(tick)
-                shape_values = tick.send(count / frame_rate)
+                shape_values = tick.send(Fraction(count, frame_rate))
             except StageDoneException:
                 break
 
@@ -404,6 +434,7 @@ class ViewControllerBase(EventDispatcher):
         else:
             projections = [None, ]
             views = self.shape_views
+        effective_rate = int(self.effective_frame_rate)
 
         bits = None if self.serializer else 0
         for shape_views, proj in zip(views, projections):
@@ -411,7 +442,7 @@ class ViewControllerBase(EventDispatcher):
 
             try:
                 next(tick)
-                shape_values = tick.send(self.count / self.frame_rate)
+                shape_values = tick.send(Fraction(self.count, effective_rate))
             except StageDoneException:
                 self.end_stage()
                 return
@@ -465,12 +496,22 @@ class ViewSideViewControllerBase(ViewControllerBase):
     def request_process_data(self, data_type, data):
         self.queue_view_write.put_nowait((data_type, json_dumps(data)))
 
+    def send_keyboard_down(self, key, modifiers):
+        self.queue_view_write.put_nowait((
+            'key_down', json_dumps((key, modifiers))))
+
+    def send_keyboard_up(self, key):
+        self.queue_view_write.put_nowait((
+            'key_up', json_dumps((key, ))))
+
     def view_process_enter(self, read, write, settings, app_settings):
         def assign_settings(*largs):
-            App.get_running_app().app_settings = app_settings
+            app = App.get_running_app()
+            app.app_settings = app_settings
+            app.apply_json_config()
         for k, v in settings.items():
             setattr(self, k, v)
-        self.do_quad_mode = self.video_mode.startswith('QUAD')
+
         from ceed.view.main import run_app
         self.queue_view_read = read
         self.queue_view_write = write
@@ -534,24 +575,42 @@ def view_process_enter(*largs):
 class ControllerSideViewControllerBase(ViewControllerBase):
 
     view_process = ObjectProperty(None, allownone=True)
+    '''Process of the internal window that runs the experiment.
+    '''
 
+    _ctrl_down = False
+
+    selected_stage_name = ''
+    '''The name of the stage currently selected in the GUI. This will be the
+    one started.
+    '''
+
+    @app_error
     def request_stage_start(self, stage_name):
+        self.stage_active = True
         if not stage_name:
+            self.stage_active = False
             raise ValueError('No stage specified')
 
         if self.preview:
+            if libdpx is not None:
+                self.set_led_mode(self.LED_mode)
+
             CeedData.prepare_experiment(stage_name)
             self.start_stage(stage_name, knspace.painter.canvas)
-            self.stage_active = True
         elif self.view_process:
+            if libdpx is not None:
+                self.set_led_mode(self.LED_mode)
+
             CeedData.prepare_experiment(stage_name)
             self.queue_view_read.put_nowait(
                 ('config', json_dumps(CeedData.gather_config_data_dict())))
             self.queue_view_read.put_nowait(('start_stage', stage_name))
-            self.stage_active = True
         else:
+            self.stage_active = False
             raise Exception("No window to run experiment")
 
+    @app_error
     def request_stage_end(self):
         if self.preview:
             self.end_stage()
@@ -560,9 +619,13 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         elif self.view_process:
             self.queue_view_read.put_nowait(('end_stage', None))
 
+    @app_error
     def end_stage(self):
         val = super(ControllerSideViewControllerBase, self).end_stage()
         self.stage_active = False
+
+        if libdpx is not None:
+            self.set_led_mode(self.LED_mode_idle)
         return val
 
     def request_fullscreen(self, state):
@@ -587,7 +650,8 @@ class ControllerSideViewControllerBase(ViewControllerBase):
 
         settings = {name: getattr(self, name)
                     for name in ViewControllerBase.__settings_attrs__}
-        ctx = mp.get_context('spawn')
+
+        ctx = mp.get_context('spawn') if not PY2 else mp
         r = self.queue_view_read = ctx.Queue()
         w = self.queue_view_write = ctx.Queue()
         os.environ['CEED_IS_VIEW'] = '1'
@@ -612,6 +676,23 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         self.view_process = self.queue_view_read = self.queue_view_write = None
         Clock.unschedule(self.controller_read)
 
+    def handle_key_press(self, key, modifiers=[], down=True):
+        if key in ('ctrl', 'lctrl', 'rctrl'):
+            self._ctrl_down = down
+        if not self._ctrl_down or down:
+            return
+
+        if key == 'z':
+            if self.stage_active:
+                self.request_stage_end()
+            self.stop_process()
+        elif key == 'c' and self.stage_active:
+            self.request_stage_end()
+        elif key == 's':
+            self.request_stage_start(self.selected_stage_name)
+        elif key == 'f':
+            self.request_fullscreen(not self.fullscreen)
+
     def controller_read(self, *largs):
         write = self.queue_view_read
         read = self.queue_view_write
@@ -634,6 +715,12 @@ class ControllerSideViewControllerBase(ViewControllerBase):
                 elif msg == 'end_stage':
                     CeedData.stop_experiment()
                     self.stage_active = False
+                elif msg == 'key_down':
+                    key, modifiers = json_loads(value)
+                    self.handle_key_press(key, modifiers)
+                elif msg == 'key_up':
+                    key, = json_loads(value)
+                    self.handle_key_press(key, down=False)
             except Empty:
                 break
 
@@ -645,17 +732,16 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         libdpx.DPxSetPPxLedMask(self.led_modes[mode])
         libdpx.DPxUpdateRegCache()
         libdpx.DPxClose()
-        self.LED_mode = mode
 
     @app_error
     def set_video_mode(self, mode):
+        self.video_mode = mode
         if PROPixx is None:
             raise ImportError('Cannot open PROPixx library')
         dev = PROPixx()
         dev.setDlpSequencerProgram(mode)
         dev.updateRegisterCache()
         dev.close()
-        self.video_mode = mode
 
 def process_enter(*largs, **kwargs):
     ViewController.view_process_enter(*largs, **kwargs)

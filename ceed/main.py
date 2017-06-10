@@ -31,6 +31,7 @@ import ceed.stage
 import ceed.function.func_widgets
 import ceed.stage.stage_widgets
 import ceed.shape.shape_widgets
+import ceed.view.view_widgets
 
 from ceed.function import FunctionFactory
 from ceed.stage import StageFactory
@@ -60,6 +61,7 @@ class CeedApp(CPLComApp):
         d['player'] = CeedPlayer
         d['point_gray_cam'] = CeedPTGrayPlayer
         d['video_file_playback'] = CeedFFmpegPlayer
+        d['function'] = FunctionFactory
         if cls.get_running_app():
             p = d['player'] = cls.get_running_app().player
             d['point_gray_cam'] = p.pt_player
@@ -103,6 +105,11 @@ class CeedApp(CPLComApp):
         CeedData.fbind('filename', self.set_tittle)
         CeedData.fbind('config_changed', self.set_tittle)
         CeedData.fbind('has_unsaved', self.set_tittle)
+
+        try:
+            ViewController.set_led_mode(ViewController.LED_mode_idle)
+        except ImportError:
+            pass
 
     def set_tittle(self, *largs):
         ''' Sets the title of the window using the currently running

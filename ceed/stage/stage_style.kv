@@ -192,27 +192,18 @@
                     size_hint_y: None
                     height: '34dp'
                     spacing: '5dp'
-                    FlatToggleButton:
+                    LightThemedToggleButton:
                         text: 'R'
                         state: 'down' if root.stage and root.stage.color_r else 'normal'
                         on_state: root.stage.color_r = self.state == 'down'
-                        scale_down_color: True
-                        flat_color: app.theme.text_primary
-                        flat_background_color: app.theme.primary_light if self.state == 'normal' else app.theme.primary
-                    FlatToggleButton:
+                    LightThemedToggleButton:
                         text: 'G'
                         state: 'down' if root.stage and root.stage.color_g else 'normal'
                         on_state: root.stage.color_g = self.state == 'down'
-                        scale_down_color: True
-                        flat_color: app.theme.text_primary
-                        flat_background_color: app.theme.primary_light if self.state == 'normal' else app.theme.primary
-                    FlatToggleButton:
+                    LightThemedToggleButton:
                         text: 'B'
                         state: 'down' if root.stage and root.stage.color_b else 'normal'
                         on_state: root.stage.color_b = self.state == 'down'
-                        scale_down_color: True
-                        flat_color: app.theme.text_primary
-                        flat_background_color: app.theme.primary_light if self.state == 'normal' else app.theme.primary
                 GridLayout:
                     size_hint_y: None
                     height: self.minimum_height
@@ -230,7 +221,7 @@
                         size_hint_y: None
                         height: self.minimum_height
                         size_hint_min_x: self.minimum_width
-                        FlatToggleButton:
+                        LightThemedToggleButton:
                             size_hint_y: None
                             height: self.texture_size[1]
                             size_hint_min_x: self.texture_size[0]
@@ -238,10 +229,7 @@
                             text: 'Serial'
                             state: 'down' if root.stage and root.stage.order == 'serial' else 'normal'
                             on_state: root.stage.order = 'serial' if self.state == 'down' else 'parallel'
-                            scale_down_color: True
-                            flat_color: app.theme.text_primary
-                            flat_background_color: app.theme.primary_light if self.state == 'normal' else app.theme.primary
-                        FlatToggleButton:
+                        LightThemedToggleButton:
                             size_hint_y: None
                             height: self.texture_size[1]
                             size_hint_min_x: self.texture_size[0]
@@ -249,9 +237,6 @@
                             text: 'Parallel'
                             state: 'down' if root.stage and root.stage.order == 'parallel' else 'normal'
                             on_state: root.stage.order = 'parallel' if self.state == 'down' else 'serial'
-                            scale_down_color: True
-                            flat_color: app.theme.text_primary
-                            flat_background_color: app.theme.primary_light if self.state == 'normal' else app.theme.primary
                     FlatLabel:
                         size_hint: None, None
                         size: self.texture_size
@@ -262,7 +247,7 @@
                         size_hint_y: None
                         height: self.minimum_height
                         size_hint_min_x: self.minimum_width
-                        FlatToggleButton:
+                        LightThemedToggleButton:
                             size_hint_y: None
                             height: self.texture_size[1]
                             size_hint_min_x: self.texture_size[0]
@@ -270,10 +255,7 @@
                             text: 'All'
                             state: 'down' if root.stage and root.stage.complete_on == 'all' else 'normal'
                             on_state: root.stage.complete_on = 'all' if self.state == 'down' else 'any'
-                            scale_down_color: True
-                            flat_color: app.theme.text_primary
-                            flat_background_color: app.theme.primary_light if self.state == 'normal' else app.theme.primary
-                        FlatToggleButton:
+                        LightThemedToggleButton:
                             size_hint_y: None
                             height: self.texture_size[1]
                             size_hint_min_x: self.texture_size[0]
@@ -281,9 +263,6 @@
                             text: 'Any'
                             state: 'down' if root.stage and root.stage.complete_on == 'any' else 'normal'
                             on_state: root.stage.complete_on = 'any' if self.state == 'down' else 'all'
-                            scale_down_color: True
-                            flat_color: app.theme.text_primary
-                            flat_background_color: app.theme.primary_light if self.state == 'normal' else app.theme.primary
     BoxLayout:
         id: more
         spacing: '5dp'

@@ -10,7 +10,7 @@ os.environ['SDL_VIDEO_MINIMIZE_ON_FOCUS_LOSS'] = '0'
 from functools import partial
 from os.path import join, dirname, isdir
 
-from cplcom.app import run_app as run_cpl_app, app_error
+from cplcom.app import run_app as run_cpl_app, app_error, CPLComApp
 from cplcom.config import populate_dump_config
 
 from kivy.app import App
@@ -27,6 +27,9 @@ from kivy.compat import string_types
 
 import ceed
 from ceed.view.controller import ViewController
+from ceed.view.view_widgets import ViewRootFocusBehavior
+from ceed.storage.controller import DataSerializer
+from ceed.function import FunctionFactory
 
 if ceed.is_view_inst or __name__ == '__main__':
     from kivy.core.window import Window
@@ -35,7 +38,7 @@ __all__ = ('CeedViewApp', 'run_app')
 
 
 kv = '''
-Widget:
+<ViewRootWidget>:
     canvas:
         Color:
             rgba: 0, 0, 0, 1
@@ -44,26 +47,35 @@ Widget:
             pos: 0, 0
 '''
 
+class ViewRootWidget(ViewRootFocusBehavior, Widget):
+    pass
 
-class CeedViewApp(KNSpaceBehavior, App):
+
+class CeedViewApp(CPLComApp):
     '''The app which runs the GUI.
     '''
 
-    configparser = None
+    @classmethod
+    def get_config_classes(cls):
+        d = super(CeedViewApp, cls).get_config_classes()
+        d['view'] = ViewController
+        d['serializer'] = DataSerializer
+        d['function'] = FunctionFactory
+        return d
 
-    app_settings = None
-
-    def __init__(self, **kwargs):
-        super(CeedViewApp, self).__init__(**kwargs)
-        self.knsname = 'app'
+    def init_load(self):
+        pass
 
     def build(self):
-        return Builder.load_string(kv)
+        Builder.load_string(kv)
+        return ViewRootWidget()
 
     def on_start(self):
         glDisable(GL_DITHER)
         Window.clearcolor = (0, 0, 0, 1)
         Window.minimize()
+        self.root.focus = True
+        Window.show_cursor = False
 
     def _ask_close(self, *largs, **kwargs):
         return False
