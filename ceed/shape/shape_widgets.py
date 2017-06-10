@@ -301,10 +301,14 @@ class WidgetShape(ShowMoreBehavior, BoxLayout):
         '''
         return self.shape.name
 
-    def show_widget(self):
+    def show_widget(self, index=None):
         '''Displays this widget in the list of shape widgets.
         '''
-        knspace.shapes.add_widget(self)
+        if index is None:
+            knspace.shapes.add_widget(self)
+        else:
+            knspace.shapes.add_widget(
+                self, index=len(knspace.shapes.children) - index)
 
     def hide_widget(self):
         '''Hides this widget from the list of shape widgets.

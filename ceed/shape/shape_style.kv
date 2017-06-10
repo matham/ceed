@@ -228,6 +228,16 @@
             flat_color: app.theme.text_primary
             center_texture: False
             text: root.shape.name if root.shape else ''
+        FlatImageButton:
+            scale_down_color: True
+            source: 'flat_arrow_down_bold.png'
+            flat_color: app.theme.accent
+            on_release: knspace.painter.move_shape_upwards(root.shape)
+        FlatImageButton:
+            scale_down_color: True
+            source: 'flat_arrow_up_bold.png'
+            flat_color: app.theme.accent
+            on_release: knspace.painter.move_shape_lower(root.shape)
         IconSwitchBehavior:
             source_down: 'flat_lock.png'
             source_normal: 'flat_unlock.png'

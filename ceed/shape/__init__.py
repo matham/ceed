@@ -140,6 +140,36 @@ class CeedPaintCanvasBehavior(KNSpaceBehavior, PaintCanvasBehavior):
         self.dispatch('on_changed')
         return True
 
+    def reorder_shape(self, shape, before_shape=None):
+        if shape._display:
+            shape.display.hide_widget()
+        super(CeedPaintCanvasBehavior, self).reorder_shape(
+            shape, before_shape=before_shape)
+        if self.show_widgets:
+            shape.display.show_widget(self.shapes.index(shape))
+        self.dispatch('on_changed')
+
+    def move_shape_lower(self, shape):
+        '''Moves it below the shape below it
+        '''
+        i = self.shapes.index(shape)
+        if not i:
+            return
+
+        before_shape = self.shapes[i - 1]
+        self.reorder_shape(shape, before_shape)
+
+    def move_shape_upwards(self, shape):
+        i = self.shapes.index(shape)
+        if i == len(self.shapes) - 1:
+            return
+
+        if i == len(self.shapes) - 2:
+            before_shape = None
+        else:
+            before_shape = self.shapes[i + 2]
+        self.reorder_shape(shape, before_shape)
+
     def add_group(self, group=None):
         '''Similar to :meth:`add_shape` but for a :class:`CeedShapeGroup`.
 
