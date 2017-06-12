@@ -1,7 +1,11 @@
 '''Player
 ==========
 
-Plays and records media.
+Plays and records media from e.g. a camera.
+
+Various player objects can play different filet types. For example
+:class:`CeedPTGrayPlayer` will play video from point gray cameras while
+:class:`CeedFFmpegPlayer` plays videos that ffmpeg can play.
 '''
 
 from os.path import abspath, isdir, dirname, join, exists
@@ -19,10 +23,17 @@ from kivy.uix.dropdown import DropDown
 from kivy.compat import clock
 from kivy.app import App
 
+__all__ = ('CeedPlayerBase', 'CeedPTGrayPlayer', 'CeedFFmpegPlayer',
+           'CeedPlayer')
+
 
 class CeedPlayerBase(object):
+    '''The underlying player class used in all player types.
+    '''
 
     def display_frame(self, *largs):
+        '''The displays the last image to the user.
+        '''
         widget = knspace.central_display
         img = self.last_image
         if widget is not None and img is not None:
@@ -31,57 +42,87 @@ class CeedPlayerBase(object):
 
 
 class CeedPTGrayPlayer(CeedPlayerBase, PTGrayPlayer):
+    '''Plays and records point gray media.
+    '''
     pass
 
 
 class CeedFFmpegPlayer(CeedPlayerBase, FFmpegPlayer):
+    '''Plays and records ffmpeg media.
+    '''
     pass
 
 
 class CeedPlayer(KNSpaceBehavior, EventDispatcher):
+    '''Controls the media player/recorder in ceed.
+
+    A singlton instance of this class controls both a :class:`CeedPTGrayPlayer`
+    and a :class:`CeedFFmpegPlayer` instance and selects the media source to
+    play and record based on which of them is currently in :attr:`player`.
+    '''
 
     __settings_attrs__ = ('browse_path', )
 
     player_singleton = None
+    '''The singleton instance of this class.
+    '''
 
     pt_player = None
+    '''A :class:`CeedPTGrayPlayer` instance.
+    '''
 
     ff_player = None
+    '''A :class:`CeedFFmpegPlayer` instance.
+    '''
 
     player = None
+    '''Either :attr:`pt_player` or :attr:`ff_player` and is the player
+    currently used.
+    '''
 
     pt_player_active = BooleanProperty(False)
-    '''True when pt player is playing or being configured.
+    '''True when :attr:`pt_player` is playing or being configured.
     '''
 
     pt_player_play = BooleanProperty(False)
-    '''True when pt player is actually playing (excluding when starting or
-    stopping to play).
+    '''True when :attr:`pt_player` is actually playing (excluding when starting
+    or stopping to play).
     '''
 
     ff_player_play = BooleanProperty(False)
-    '''True when ff player is actually playing (excluding when starting or
-    stopping to play).
+    '''True when :attr:`CeedFFmpegPlayer` is actually playing (excluding when
+    starting or stopping to play).
     '''
 
     player_record_active = BooleanProperty(False)
-    '''True when either player is starting, recording, or stopping recording.
+    '''True when either :attr:`pt_player` or :attr:`ff_player` is starting,
+    recording, or stopping recording.
     '''
 
     player_record = BooleanProperty(False)
-    '''True when player is actually recordings (excluding when starting or
-    stopping to record).
+    '''True when :attr:`player` is actually recordings (excluding when
+    starting or stopping to record).
     '''
 
     browse_path = StringProperty('')
+    '''Path where the filebrowser opens to.
+    '''
 
     last_record_filename = ''
+    '''The full path to the last recorded video file.
+    '''
 
     disk_used_percent = NumericProperty(0)
+    '''Percent of disk usage space.
+    '''
 
     play_status = StringProperty('')
+    '''A string showing some :attr:`player` statistics e.g. frame rate etc.
+    '''
 
     last_image = None
+    '''The last image instance that was gotten from the :attr:`player`.
+    '''
 
     def __init__(self, **kwargs):
         super(CeedPlayer, self).__init__(**kwargs)
@@ -94,6 +135,8 @@ class CeedPlayer(KNSpaceBehavior, EventDispatcher):
         Clock.schedule_interval(self.update_cycle, 0.1)
 
     def update_cycle(self, *largs):
+        '''Runs periodically to update the status and statistics.
+        '''
         p = knspace.path_dir.text
         p = 'C:\\' if not exists(p) else (p if isdir(p) else dirname(p))
         self.disk_used_percent = round(psutil.disk_usage(p).percent) / 100.
@@ -113,6 +156,9 @@ class CeedPlayer(KNSpaceBehavior, EventDispatcher):
             self.play_status = '{} {}fps'.format(s, int(player.real_rate))
 
     def bind_players(self, *largs):
+        '''Connects all the ffmpeg and point gray instance properties such
+        that when they update, the GUI is also updated.
+        '''
         pt_player = self.pt_player
 
         def player_active(*largs):
@@ -199,22 +245,34 @@ class CeedPlayer(KNSpaceBehavior, EventDispatcher):
         ff_player_filename()
 
     def refresh_pt_cams(self):
+        '''Causes the point gray cams to refresh.
+        '''
         self.pt_player.ask_config('serials')
 
     def reconfig_pt_cams(self):
+        '''Shows the point gray config GUI.
+        '''
         self.pt_player.ask_config('gui')
 
     def set_pt_serial(self, serial):
+        '''Selects the point gray camera to use by serial number.
+        '''
         self.pt_player.serial = int(serial) if serial else 0
 
     def set_pt_ip(self, ip):
+        '''Selects the point gray camera to use by IP number.
+        '''
         self.pt_player.ip = ip
 
     def set_ff_play_filename(self, filename):
+        '''Selects the file that the ffmpeh player will play.
+        '''
         self.ff_player.play_filename = filename
         self.ff_player.file_fmt = ''
 
     def update_record_path(self, directory=None, fname=None, count=None):
+        '''Called by the GUI to set the recording filename.
+        '''
         pt = self.pt_player
         ff = self.ff_player
         if directory is not None:
@@ -224,7 +282,11 @@ class CeedPlayer(KNSpaceBehavior, EventDispatcher):
         if count is not None:
             pt.record_fname_count = ff.record_fname_count = count
 
-    def set_filename_widget(self, text_wid, path, selection, filename, is_dir=True):
+    def set_filename_widget(self, text_wid, path, selection, filename,
+                            is_dir=True):
+        '''Called by the GUI to set the filename to the ``text_wid``
+        TextInput and to update the default browsing path.
+        '''
         if not selection:
             if exists(join(path, filename)):
                 selection = [filename]
@@ -238,6 +300,9 @@ class CeedPlayer(KNSpaceBehavior, EventDispatcher):
         self.browse_path = path
 
     def load_screenshot(self, path, selection, filename):
+        '''Loads a previously saved screenshot of the camera as a background
+        image.
+        '''
         if not isdir(path) or not filename:
             raise Exception('Invalid path or filename')
 
@@ -253,6 +318,8 @@ class CeedPlayer(KNSpaceBehavior, EventDispatcher):
         self.last_image = img
 
     def save_screenshot(self, img, path, selection, filename):
+        '''Saves the image acquired to a file.
+        '''
         if not isdir(path) or not filename:
             raise Exception('Invalid path or filename')
         self.browse_path = path
@@ -273,6 +340,9 @@ class CeedPlayer(KNSpaceBehavior, EventDispatcher):
             Player.save_image(fname, img)
 
     def handle_fname(self, fname, count, source='fname'):
+        '''Properly formats the filename of the recording video displayed
+        in the GUI.
+        '''
         n = count.text
         if source == 'count':
             fname.text = fname.fmt_text = fname.orig_text.replace('{}', n)
@@ -283,6 +353,8 @@ class CeedPlayer(KNSpaceBehavior, EventDispatcher):
             fname.text = fname.orig_text
 
     def play(self, live):
+        '''Starts playing the :attr:`player`.
+        '''
         player = self.pt_player if live else self.ff_player
         if self.player or player.play_state != 'none':
             return
@@ -292,6 +364,8 @@ class CeedPlayer(KNSpaceBehavior, EventDispatcher):
         player.play()
 
     def record(self):
+        '''Starts recording from the :attr:`player`.
+        '''
         if not self.player:
             return
         if self.player.record_state == 'none':
@@ -299,11 +373,16 @@ class CeedPlayer(KNSpaceBehavior, EventDispatcher):
             self.last_record_filename = self.player.record_filename
 
     def set_pause(self, state):
+        '''Sets the :attr:`player` to pause, but only for the ffmpeg player.
+        The point gray cam doesn't support pause.
+        '''
         if self.player is self.ff_player and \
                 self.player.play_state == 'playing':
             self.player.play_paused = state
 
     def stop(self):
+        '''Stops playing the :attr:`player`.
+        '''
         if not self.player:
             return
         if self.player.play_state in ('starting', 'playing'):
@@ -314,6 +393,8 @@ class CeedPlayer(KNSpaceBehavior, EventDispatcher):
         self.player = None
 
     def stop_recording(self):
+        '''Stops recording from the :attr:`player`.
+        '''
         if not self.player or self.player.record_state == 'none':
             return
 
@@ -340,6 +421,8 @@ class CeedPlayer(KNSpaceBehavior, EventDispatcher):
 
     @staticmethod
     def is_player_active():
+        '''Returns True if any of the players are currently playing.
+        '''
         player = CeedPlayer.player_singleton
         if not player:
             return False
@@ -348,4 +431,6 @@ class CeedPlayer(KNSpaceBehavior, EventDispatcher):
             or player.ff_player and player.ff_player.play_state != 'none'
 
     def save_config(self):
+        '''Saves the config to a file (not really).
+        '''
         pass
