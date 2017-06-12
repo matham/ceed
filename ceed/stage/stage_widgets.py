@@ -4,7 +4,9 @@
 Defines the GUI components used with :mod:`ceed.stage`.
 '''
 from copy import deepcopy
-from scipy.signal import decimate
+import os
+if not os.environ.get('KIVY_DOC_INCLUDE', None):
+    from scipy.signal import decimate
 import numpy as np
 
 from kivy.uix.behaviors.knspace import KNSpaceBehavior, knspace
