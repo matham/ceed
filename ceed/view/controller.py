@@ -46,7 +46,7 @@ except ImportError:
 
 __all__ = (
     'ViewControllerBase', 'ViewController', 'ViewSideViewControllerBase',
-    'view_process_enter', 'ControllerSideViewControllerBase', 'process_enter')
+    'view_process_enter', 'ControllerSideViewControllerBase')
 
 
 class ViewControllerBase(EventDispatcher):
@@ -63,9 +63,10 @@ class ViewControllerBase(EventDispatcher):
     :class:`ControllerSideViewControllerBase` instance.
 
     When the stage is played for real, it is played in a second process in
-    a second window which can also be displayed on the projector window. In
-    this case, the controller is a
-    :class:`ViewSideViewControllerBase` instance. Also, data is constantly
+    a second window which can be displayed on the projector window. In
+    this case, the controller in the second process is a
+    :class:`ViewSideViewControllerBase` instance while in the main GUI it
+    is a :class:`ControllerSideViewControllerBase` instance. Data is constantly
     sent between the two processes, specifically, the second process is
     initialized with the data to be displayed at the start. Once the playing
     starts, the client continuously sends data back to the main GUI for
@@ -292,19 +293,31 @@ class ViewControllerBase(EventDispatcher):
         pass
 
     def save_state(self):
+        '''Returns a dict representation of the state of the instance.
+
+        Use :meth:`set_state` to set the state with the result of this method.
+        '''
         d = {}
         for name in ViewControllerBase.__settings_attrs__:
             d[name] = getattr(self, name)
         return d
 
     def set_state(self, data):
+        '''Sets the instance state to the result of :meth:`save_state`.
+        '''
         for name, value in data.items():
             setattr(self, name, value)
 
     def request_process_data(self, data_type, data):
+        '''Called by the client that displays the shapes when it needs to
+        update the controller with some data.
+        '''
         pass
 
     def add_graphics(self, canvas):
+        '''Adds all the graphics required to visualize the shapes to the
+        canvas.
+        '''
         StageFactory.remove_shapes_gl_color_instructions(
             canvas, self.canvas_name)
         self.shape_views = []
@@ -343,6 +356,10 @@ class ViewControllerBase(EventDispatcher):
                           group=self.canvas_name)
 
     def get_all_shape_values(self, stage_name, frame_rate):
+        '''For every shape in the stage ``stage_name`` it samples the shape
+        at the frame rate and returns a list of intensity values for the shape
+        for each frame.
+        '''
         '''frame_rate is not :attr:`frame_rate` bur rather the rate at which we
         sample the functions.
         '''
@@ -368,6 +385,9 @@ class ViewControllerBase(EventDispatcher):
         return obj_values
 
     def start_stage(self, stage_name, canvas):
+        '''Starts the stage. It adds the graphics instructions to the canvas
+        and starts playing the shapes.
+        '''
         if self.tick_event:
             raise TypeError('Cannot start new stage while stage is active')
 
@@ -388,6 +408,8 @@ class ViewControllerBase(EventDispatcher):
         self.add_graphics(canvas)
 
     def end_stage(self):
+        '''Ends the stage if one is playing.
+        '''
         if not self.tick_event:
             return
 
@@ -407,6 +429,10 @@ class ViewControllerBase(EventDispatcher):
         self.serializer = None
 
     def tick_callback(self, *largs):
+        '''Called before every CPU frame to handle any processing work.
+
+        When graphics need to be updated this method will update them
+        '''
         t = clock()
         stats = self._cpu_stats
         tdiff = t - stats['last_call_t']
@@ -463,6 +489,8 @@ class ViewControllerBase(EventDispatcher):
             self.request_process_data('frame', (self.count, bits, values))
 
     def flip_callback(self, *largs):
+        '''Called before every GPU frame by the graphics system.
+        '''
         Window.on_flip()
 
         t = clock()
@@ -482,6 +510,9 @@ class ViewControllerBase(EventDispatcher):
 
 
 class ViewSideViewControllerBase(ViewControllerBase):
+    '''The instance that is created on the viewer side as
+    :attr:`ViewController`.
+    '''
 
     def start_stage(self, stage_name, canvas):
         self.prepare_view_window()
@@ -497,14 +528,23 @@ class ViewSideViewControllerBase(ViewControllerBase):
         self.queue_view_write.put_nowait((data_type, json_dumps(data)))
 
     def send_keyboard_down(self, key, modifiers):
+        '''Gets called by the window for every keyboard key press, which it
+        passes on to the main GUI process.
+        '''
         self.queue_view_write.put_nowait((
             'key_down', json_dumps((key, modifiers))))
 
     def send_keyboard_up(self, key):
+        '''Gets called by the window for every keyboard key release, which it
+        passes on to the main GUI process.
+        '''
         self.queue_view_write.put_nowait((
             'key_up', json_dumps((key, ))))
 
     def view_process_enter(self, read, write, settings, app_settings):
+        '''The method that the second process calls when it is run. This runs
+        the second, internal, app.
+        '''
         def assign_settings(*largs):
             app = App.get_running_app()
             app.app_settings = app_settings
@@ -527,6 +567,9 @@ class ViewSideViewControllerBase(ViewControllerBase):
         self.queue_view_write.put_nowait(('eof', None))
 
     def handle_exception(self, exception, exc_info=None):
+        '''Called by the second process upon an error which is passed on to the
+        main process.
+        '''
         if exc_info is not None:
             exc_info = ''.join(traceback.format_exception(*exc_info))
         self.queue_view_write.put_nowait(
@@ -534,6 +577,10 @@ class ViewSideViewControllerBase(ViewControllerBase):
 
     @app_error
     def view_read(self, *largs):
+        '''Communication between the two process occurs through queues, this
+        is run periodically to serve the queue and read messages from the main
+        GUI.
+        '''
         read = self.queue_view_read
         write = self.queue_view_write
         while True:
@@ -558,6 +605,9 @@ class ViewSideViewControllerBase(ViewControllerBase):
                 break
 
     def prepare_view_window(self, *largs):
+        '''Called before the app is run to prepare the app according to the
+        configuration parameters.
+        '''
         if Window.fullscreen != self.fullscreen or not self.fullscreen:
             Window.maximize()
             if self.do_quad_mode:
@@ -569,16 +619,25 @@ class ViewSideViewControllerBase(ViewControllerBase):
 
 
 def view_process_enter(*largs):
+    '''Called by the second internal view process when it is created.
+    This calls :meth:`ViewSideViewControllerBase.view_process_enter`.
+    '''
     return ViewController.view_process_enter(*largs)
 
 
 class ControllerSideViewControllerBase(ViewControllerBase):
+    '''The instance that is created in the main GUI as
+    :attr:`ViewController`.
+    '''
 
     view_process = ObjectProperty(None, allownone=True)
-    '''Process of the internal window that runs the experiment.
+    '''Process of the internal window that runs the experiment through
+    a :class:`ViewSideViewControllerBase`.
     '''
 
     _ctrl_down = False
+    '''True when ctrl is pressed down in the viewer side.
+    '''
 
     selected_stage_name = ''
     '''The name of the stage currently selected in the GUI. This will be the
@@ -587,6 +646,9 @@ class ControllerSideViewControllerBase(ViewControllerBase):
 
     @app_error
     def request_stage_start(self, stage_name):
+        '''Starts the stage either in the GUI when previewing or in the
+        viewer.
+        '''
         self.stage_active = True
         if not stage_name:
             self.stage_active = False
@@ -612,6 +674,9 @@ class ControllerSideViewControllerBase(ViewControllerBase):
 
     @app_error
     def request_stage_end(self):
+        '''Ends the stage either in the GUI when previewing or in the
+        viewer.
+        '''
         if self.preview:
             self.end_stage()
             CeedData.stop_experiment()
@@ -629,6 +694,9 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         return val
 
     def request_fullscreen(self, state):
+        '''Sets the fullscreen state to full or not of the second internal
+        view process.
+        '''
         self.fullscreen = state
         if self.view_process:
             self.queue_view_read.put_nowait(('fullscreen', state))
@@ -645,6 +713,9 @@ class ControllerSideViewControllerBase(ViewControllerBase):
                 CeedData.add_frame_flip(*data)
 
     def start_process(self):
+        '''Starts the process of the internal window that runs the experiment
+        through a :class:`ViewSideViewControllerBase`.
+        '''
         if self.view_process:
             return
 
@@ -663,11 +734,15 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         Clock.schedule_interval(self.controller_read, .25)
 
     def stop_process(self):
+        '''Ends the :class:`view_process` process by sending a EOF to
+        the second process.
+        '''
         if self.view_process:
             self.queue_view_read.put_nowait(('eof', None))
 
     def finish_stop_process(self):
-        '''Can only be called after recieving eof from view side.
+        '''Called by by the read queue thread when we receive the message that
+        the second process received an EOF and that it stopped.
         '''
         if not self.view_process:
             return
@@ -677,6 +752,9 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         Clock.unschedule(self.controller_read)
 
     def handle_key_press(self, key, modifiers=[], down=True):
+        '''Called by by the read queue thread when we receive a keypress
+        event from the second process.
+        '''
         if key in ('ctrl', 'lctrl', 'rctrl'):
             self._ctrl_down = down
         if not self._ctrl_down or down:
@@ -694,6 +772,9 @@ class ControllerSideViewControllerBase(ViewControllerBase):
             self.request_fullscreen(not self.fullscreen)
 
     def controller_read(self, *largs):
+        '''Called periodically to serve the queue that receives messages from
+        the second process.
+        '''
         write = self.queue_view_read
         read = self.queue_view_write
         while True:
@@ -726,6 +807,9 @@ class ControllerSideViewControllerBase(ViewControllerBase):
 
     @app_error
     def set_led_mode(self, mode):
+        '''Sets the projector's LED mode. ``mode`` can be one of
+        :attr:`ViewControllerBase.led_modes`.
+        '''
         if libdpx is None:
             raise ImportError('Cannot open PROPixx library')
         libdpx.DPxOpen()
@@ -735,6 +819,9 @@ class ControllerSideViewControllerBase(ViewControllerBase):
 
     @app_error
     def set_video_mode(self, mode):
+        '''Sets the projector's video mode. ``mode`` can be one of
+        :attr:`ViewControllerBase.video_modes`.
+        '''
         self.video_mode = mode
         if PROPixx is None:
             raise ImportError('Cannot open PROPixx library')
@@ -742,9 +829,6 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         dev.setDlpSequencerProgram(mode)
         dev.updateRegisterCache()
         dev.close()
-
-def process_enter(*largs, **kwargs):
-    ViewController.view_process_enter(*largs, **kwargs)
 
 ViewController = None
 '''The controller that plays or directs that the experimental projector output

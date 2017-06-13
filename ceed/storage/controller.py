@@ -1,5 +1,9 @@
 '''Storage Controller
-===========================
+=======================
+
+Handles all data aspects, from the storage, loading and saving of configuration
+data to the acquisition and creation of experimental data.
+
 '''
 import json
 import nixio as nix
@@ -35,6 +39,7 @@ from ceed.function import FunctionFactory, FuncBase
 from ceed.stage import StageFactory
 from ceed.shape import get_painter
 
+__all__ = ('CeedData', 'CeedDataBase', 'DataSerializer')
 
 class CeedDataBase(EventDispatcher):
 
@@ -565,5 +570,7 @@ class DataSerializer(EventDispatcher):
                 yield value
 
 
-
 CeedData = CeedDataBase()
+'''The singleton which controls the loading and saving of configuration and
+experimental data. It is a :class:`CeedDataBase` instance.
+'''
