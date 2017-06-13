@@ -23,8 +23,19 @@ __all__ = ('ShowMoreSelection', 'ShowMoreBehavior',
 
 
 class ShowMoreSelection(object):
+    '''This class is meant to be co-inherited from with a
+    :class:`kivy.uix.behaviors.compoundselection.CompoundSelectionBehavior`.
+
+    When a right or left keyboard key is pressed while a child of the resulting
+    widget is selected (i.e. a node is selected) this class sets the
+    :attr:`exapnd_prop` property of the selected widget to True or False
+    for right and left respectively.
+    '''
 
     exapnd_prop = StringProperty('show_more')
+    '''The name of the property of the selected widget that will be set
+    to True or False. See class description.
+    '''
 
     def keyboard_on_key_down(self, window, keycode, text, modifiers):
         if keycode[1] in ('right', 'left') and self.selected_nodes:
@@ -37,10 +48,19 @@ class ShowMoreSelection(object):
 
 
 class ShowMoreBehavior(object):
+    '''Behavior that displays or hides the :attr:`more` widget when
+    :attr:`show_more` is set to True or False respectively.
+    '''
 
     show_more = BooleanProperty(False)
+    '''Whether the :attr:`more` widget is displayed as a child of this
+    instance or removed.
+    '''
 
     more = ObjectProperty(None)
+    '''The widget to display as a child of the instance when :attr:`show_more`
+    is True.
+    '''
 
     def __init__(self, **kwargs):
         super(ShowMoreBehavior, self).__init__(**kwargs)
@@ -58,12 +78,30 @@ class ShowMoreBehavior(object):
 
 
 class TouchSelectBehavior(object):
+    '''Behavior meant to be used as the child of a
+    :class:`kivy.uix.behaviors.compoundselection.CompoundSelectionBehavior`
+    and adds touch selection to the child.
+
+    Specifically, when the child is touched this will select/de-select this
+    instance using the :attr:`controller`.
+    '''
 
     controller = ObjectProperty(None)
+    '''The
+    :class:`kivy.uix.behaviors.compoundselection.CompoundSelectionBehavior`
+    instance through which this instance is selected.
+    '''
 
     use_parent = BooleanProperty(True)
+    '''Whether the parent of this widget should be selected upon touch (True)
+    or whether the widget in :attr:`selectee` should be selected (False)
+    upon the touch.
+    '''
 
     selectee = ObjectProperty(None)
+    '''When :attr:`use_parent` is False, the widget stored in :attr:`selectee`
+    is selected rather than the parent of this widget.
+    '''
 
     def on_touch_up(self, touch):
         if super(TouchSelectBehavior, self).on_touch_up(touch):
@@ -78,12 +116,26 @@ class TouchSelectBehavior(object):
 
 
 class BoxSelector(TouchSelectBehavior, BoxLayout):
+    '''Combines the touch selection with a box layout.
+    '''
     pass
 
 
 class WidgetList(KNSpaceBehavior, CompoundSelectionBehavior, FocusBehavior):
+    '''A
+    :class:`kivy.uix.behaviors.compoundselection.CompoundSelectionBehavior`
+    based class with some convenience methods.
+
+    Mainly, when a keyboard key is typed it'll try to select the widget
+    whose text property called :attr:`child_name_attr_name` starts with that
+    string.
+    '''
 
     child_name_attr_name = 'name'
+    '''The propery name to use when sorting or searching for text associated
+    with the widgets to be selected. This is the property used to jump to a
+    widget when its "name" is typed.
+    '''
 
     def keyboard_on_key_down(self, window, keycode, text, modifiers):
         if super(WidgetList, self).keyboard_on_key_down(
