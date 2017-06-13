@@ -1,6 +1,9 @@
 
-<ExpandWidget>:
-    color: app.theme.accent
+<ExpandWidget@FlatImageToggleButton>:
+    is_open: self.state == 'down'
+    scale_down_color: False
+    source: 'flat_circle.png'
+    flat_color: app.theme.accent
     source: 'flat_arrow_right.png' if not self.is_open else 'flat_arrow_down.png'
 
 

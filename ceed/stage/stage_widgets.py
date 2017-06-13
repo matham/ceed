@@ -26,7 +26,7 @@ from kivy.graphics import Rectangle, Color, Line
 
 from ceed.utils import fix_name
 from ceed.graphics import WidgetList, ShowMoreSelection, BoxSelector, \
-    ShowMoreBehavior, ColorBackgroundBehavior
+    ShowMoreBehavior
 from ceed.stage import StageFactory, CeedStage
 from ceed.function.func_widgets import FuncWidget, FuncWidgetGroup, \
     FunctionFactory

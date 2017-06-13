@@ -20,8 +20,7 @@ from kivy.app import App
 from cplcom.graphics import FlatTextInput
 
 from ceed.utils import fix_name
-from ceed.graphics import WidgetList, ShowMoreSelection, ShowMoreBehavior, \
-    ColorBackgroundBehavior
+from ceed.graphics import WidgetList, ShowMoreSelection, ShowMoreBehavior
 from ceed.function import FunctionFactory, FuncGroup
 
 __all__ = ('FuncList', 'FuncWidget', 'FuncWidgetGroup', 'FuncPropTextWidget',

@@ -21,7 +21,7 @@ from cplcom.painter import PaintCanvasBehavior, PaintCircle, PaintEllipse, \
 
 from ceed.utils import fix_name
 from ceed.graphics import WidgetList, ShowMoreSelection, BoxSelector, \
-    ShowMoreBehavior, ColorBackgroundBehavior
+    ShowMoreBehavior
 from ceed.shape import CeedPaintCanvasBehavior
 
 __all__ = (

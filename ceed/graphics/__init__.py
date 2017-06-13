@@ -1,5 +1,7 @@
 '''Graphcs
 ==================
+
+Collection of widgets for displaying common things.
 '''
 from itertools import chain, islice
 
@@ -16,28 +18,8 @@ from kivy.factory import Factory
 from kivy.lang import Builder
 from kivy.utils import get_color_from_hex
 
-
-class ExpandWidget(Factory.IconSizedBehavior, Factory.Image):
-
-    is_open = BooleanProperty(False)
-
-    def on_touch_down(self, touch):
-        if self.collide_point(*touch.pos):
-            touch.ud['expand_used'] = True
-            return True
-        return super(ExpandWidget, self).on_touch_down(touch)
-
-    def on_touch_move(self, touch):
-        if touch.ud.get('expand_used', False):
-            return True
-        return super(ExpandWidget, self).on_touch_move(touch)
-
-    def on_touch_up(self, touch):
-        if touch.ud.get('expand_used', False) and \
-                self.collide_point(*touch.pos):
-            self.is_open = not self.is_open
-            return True
-        return super(ExpandWidget, self).on_touch_up(touch)
+__all__ = ('ShowMoreSelection', 'ShowMoreBehavior',
+           'TouchSelectBehavior', 'BoxSelector', 'WidgetList')
 
 
 class ShowMoreSelection(object):
@@ -163,42 +145,7 @@ class WidgetList(KNSpaceBehavior, CompoundSelectionBehavior, FocusBehavior):
             i = len(nodes) - 1 - i
         return nodes[i], i
 
-
-class ColorBackgroundBehavior(object):
-
-    odd = BooleanProperty(False)
-
-    odd_color = StringProperty('277553')
-
-    even_color = StringProperty('AA5939')
-
-    widget_color = ObjectProperty(get_color_from_hex('AA5939'))
-
-    source_obj = ObjectProperty(None, rebind=True)
-
-Builder.load_string('''
-<ColorBackgroundBehavior>:
-    odd: root.parent is not None and self.__self__ in root.parent.children and bool((len(self.parent.children) - self.parent.children.index(self.__self__)) % 2)
-    widget_color: get_color_from_hex(self.odd_color if self.odd else self.even_color)
-    canvas.before:
-        Color:
-            rgb: 1, 1, 1
-        BorderImage:
-            source: 'atlas://data/images/defaulttheme/textinput_disabled'
-            pos: self.pos
-            size: self.size
-            border: 4, 4, 4, 4
-        Color:
-            rgb: self.widget_color if self.source_obj is None else self.source_obj.widget_color
-        Rectangle:
-            size: self.width - 8, self.height - 8
-            pos: self.x + 4, self.y + 4
-        Color:
-            rgb: 1, 1, 1
-''')
-
 Factory.register(classname='ShowMoreSelection', cls=ShowMoreSelection)
 Factory.register(classname='ShowMoreBehavior', cls=ShowMoreBehavior)
 Factory.register(classname='TouchSelectBehavior', cls=TouchSelectBehavior)
 Factory.register(classname='WidgetList', cls=WidgetList)
-Factory.register(classname='ColorBackgroundBehavior', cls=ColorBackgroundBehavior)
