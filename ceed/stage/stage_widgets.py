@@ -33,11 +33,51 @@ from ceed.function.func_widgets import FuncWidget, FuncWidgetGroup, \
 from ceed.view.controller import ViewController
 from ceed.shape import get_painter
 
+from cplcom.drag_n_drop import DragableLayoutBehavior
+
 __all__ = ('StageList', 'StageWidget', 'StageShapeDisplay', 'ShapePlot',
            'StageGraph')
 
 
-class StageList(ShowMoreSelection, WidgetList, BoxLayout):
+class CeedStageDragableLayoutBehavior(DragableLayoutBehavior):
+
+    drag_target_stage = ObjectProperty(None)
+
+    def handle_drag_release(self, index, drag_widget):
+        stage = self.drag_target_stage
+        if drag_widget.drag_cls == 'stage':
+            stage_src = drag_widget.obj_dragged.stage
+            (stage or StageFactory).add_stage(stage_src.duplicate_stage())
+            return
+
+        if not stage:
+            stage = CeedStage()
+            StageFactory.add_stage(stage)
+
+        if drag_widget.drag_cls == 'func':
+            func = drag_widget.obj_dragged.func
+            if drag_widget.drag_copy:
+                func = deepcopy(func)
+
+            stage.add_func(func)
+        elif drag_widget.drag_cls == 'func_spinner':
+            func = deepcopy(FunctionFactory.funcs_inst[drag_widget.text])
+
+            stage.add_func(func)
+        elif drag_widget.drag_cls == 'shape':
+            stage.add_shape(drag_widget.obj_dragged.shape)
+            if drag_widget.obj_dragged.selected:
+                for shape in knspace.painter.selected_shapes:
+                    stage.add_shape(shape)
+        elif drag_widget.drag_cls == 'shape_group':
+            stage.add_shape(drag_widget.obj_dragged.group)
+            if drag_widget.obj_dragged.selected:
+                for shape in knspace.painter.selected_groups:
+                    stage.add_shape(shape)
+
+
+class StageList(CeedStageDragableLayoutBehavior, ShowMoreSelection, WidgetList,
+                BoxLayout):
     '''Widget that shows the list of all the stages.
     '''
 
@@ -773,3 +813,5 @@ class StageGraph(Factory.FlatSplitter):
         else:
             self.unpinned_parent.add_widget(self)
             self.unpinned_root.open()
+
+Factory.register('CeedStageDragableLayoutBehavior', cls=CeedStageDragableLayoutBehavior)

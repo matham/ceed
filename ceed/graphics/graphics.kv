@@ -6,6 +6,11 @@
     flat_color: app.theme.accent
     source: 'flat_arrow_right.png' if not self.is_open else 'flat_arrow_down.png'
 
+<DraggingWidget@CeedDragableObjectBehavior+FlatImage>:
+    drag_controller: knspace.dragger
+    source: 'flat_copy.png' if self.drag_copy else 'reorder-horizontal.png'
+    flat_color: app.theme.accent
+
 
 <XYSizedLabel@Label>:
     size_hint: None, None

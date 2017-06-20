@@ -10,6 +10,7 @@ See :class:`StageFactoryBase` and :class:`CeedStage` for details.
 '''
 import numpy as np
 import os
+from copy import deepcopy
 
 from kivy.properties import OptionProperty, ListProperty, ObjectProperty, \
     StringProperty, NumericProperty, DictProperty, BooleanProperty
@@ -635,6 +636,24 @@ class CeedStage(EventDispatcher):
                 self.add_shape(shapes[name])
             elif name in groups:
                 self.add_shape(groups[name])
+
+    def duplicate_stage(self):
+        stage = CeedStage()
+        if self._display:
+            stage.display
+
+        for name in self.get_state():
+            setattr(stage, name, getattr(self, name))
+
+        for child_stage in self.stages:
+            stage.add_stage(child_stage.duplicate_stage())
+
+        for func in self.functions:
+            stage.add_func(deepcopy(func))
+
+        for shape in self.shapes:
+            stage.add_shape(shape.shape)
+        return stage
 
     @property
     def display(self):

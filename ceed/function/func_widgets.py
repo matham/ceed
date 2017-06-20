@@ -18,6 +18,7 @@ from kivy.compat import string_types
 from kivy.app import App
 
 from cplcom.graphics import FlatTextInput
+from cplcom.drag_n_drop import DragableLayoutBehavior
 
 from ceed.utils import fix_name
 from ceed.graphics import WidgetList, ShowMoreSelection, ShowMoreBehavior
@@ -27,7 +28,22 @@ __all__ = ('FuncList', 'FuncWidget', 'FuncWidgetGroup', 'FuncPropTextWidget',
            'FuncNamePropTextWidget')
 
 
-class FuncList(ShowMoreSelection, WidgetList, BoxLayout):
+class FuncDragableLayoutBehavior(DragableLayoutBehavior):
+
+    controller = None
+
+    def handle_drag_release(self, index, drag_widget):
+        if drag_widget.drag_cls == 'func':
+            func = drag_widget.obj_dragged.func
+            if drag_widget.drag_copy:
+                func = deepcopy(func)
+        else:
+            func = deepcopy(FunctionFactory.funcs_inst[drag_widget.text])
+        self.controller.add_func(func, index=len(self.children) - index)
+
+
+class FuncList(FuncDragableLayoutBehavior, ShowMoreSelection, WidgetList,
+               BoxLayout):
     '''Widgets that shows the list of available functions and allows for the
     creation of new functions.
     '''
@@ -200,21 +216,28 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
         else:
             self.func_controller.remove_func(self.func)
 
-    def show_func(self, after_index=None):
+    def show_func(self, index=None):
         '''Shows the function's widget in its widget container.
         '''
         if self.parent:
             return
+
         parent = self.func.parent_func
         if parent:
-            i = len(parent.funcs) - parent.funcs.index(self.func) - 1
-            parent.display.more.add_widget(self, index=i)
+            if index is None:
+                index = 0
+            else:
+                index = len(parent.display.more.children) - index
+
+            parent.display.more.add_widget(self, index=index)
             self.link_container()
-        elif after_index is not None:
-            i = len(self.display_parent.children) - after_index - 1
-            self.display_parent.add_widget(self, index=i)
         else:
-            self.display_parent.add_widget(self)
+            if index is None:
+                index = 0
+            else:
+                index = len(self.display_parent.children) - index
+
+            self.display_parent.add_widget(self, index=index)
 
     def hide_func(self):
         '''Removes the function's widget from its widget container.
@@ -243,8 +266,8 @@ class FuncWidgetGroup(FuncWidget):
             if c is not None:
                 self.selection_controller.deselect_node(c.display)
 
-    def show_func(self, after_index=None):
-        super(FuncWidgetGroup, self).show_func(after_index=after_index)
+    def show_func(self, index=None):
+        super(FuncWidgetGroup, self).show_func(index=index)
         for f in self.func.funcs:
             f.display.show_func()
 
@@ -312,3 +335,5 @@ class FuncNamePropTextWidget(FuncPropTextWidget):
 
         if text != self.func.name:
             self.func.name = fix_name(text, FunctionFactory.funcs_inst)
+
+Factory.register('FuncDragableLayoutBehavior', cls=FuncDragableLayoutBehavior)

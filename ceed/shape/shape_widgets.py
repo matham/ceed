@@ -18,6 +18,7 @@ from kivy.clock import Clock
 
 from cplcom.painter import PaintCanvasBehavior, PaintCircle, PaintEllipse, \
     PaintPolygon, PaintBezier
+from cplcom.drag_n_drop import DragableLayoutBehavior
 
 from ceed.utils import fix_name
 from ceed.graphics import WidgetList, ShowMoreSelection, BoxSelector, \
@@ -71,7 +72,20 @@ class CeedPainter(CeedPaintCanvasBehavior, Widget):
             self.pos_label.text = ''
 
 
-class ShapeGroupList(ShowMoreSelection, WidgetList, BoxLayout):
+class ShapeGroupDragableLayoutBehavior(DragableLayoutBehavior):
+
+    group_widget = ObjectProperty(None)
+
+    def handle_drag_release(self, index, drag_widget):
+        group = self.group_widget.group
+        group.add_shape(drag_widget.obj_dragged.shape)
+        if drag_widget.obj_dragged.selected:
+            for shape in knspace.painter.selected_shapes:
+                group.add_shape(shape)
+
+
+class ShapeGroupList(
+        DragableLayoutBehavior, ShowMoreSelection, WidgetList, BoxLayout):
     '''Widget that shows the list of all the groups.
     '''
 
@@ -118,6 +132,17 @@ class ShapeGroupList(ShowMoreSelection, WidgetList, BoxLayout):
                 for c in reversed(child.shape_widgets):
                     nodes.append(c)
         return nodes
+
+    def handle_drag_release(self, index, drag_widget):
+        if drag_widget.drag_cls == 'shape':
+            group = self.knspace.painter.add_group()
+            group.add_shape(drag_widget.obj_dragged.shape)
+            if drag_widget.obj_dragged.selected:
+                self.knspace.painter.add_selected_shapes(group)
+        else:
+            group = self.knspace.painter.add_group()
+            for shape in drag_widget.obj_dragged.group.shapes:
+                group.add_shape(shape)
 
 
 class WidgetShapeGroup(ShowMoreBehavior, BoxLayout):
@@ -221,7 +246,8 @@ class ShapeGroupItem(BoxSelector):
         return self.shape.name
 
 
-class ShapeList(ShowMoreSelection, WidgetList, BoxLayout):
+class ShapeList(DragableLayoutBehavior, ShowMoreSelection, WidgetList,
+                BoxLayout):
     '''Widget that shows the list of all the shapes.
     '''
 
@@ -236,6 +262,12 @@ class ShapeList(ShowMoreSelection, WidgetList, BoxLayout):
             knspace.painter.deselect_shape(node.shape)
             return True
         return False
+
+    def handle_drag_release(self, index, drag_widget):
+        if drag_widget.obj_dragged.selected:
+            self.knspace.painter.duplicate_selected_shapes()
+        else:
+            self.knspace.painter.duplicate_shape(drag_widget.obj_dragged.shape)
 
 
 class WidgetShape(ShowMoreBehavior, BoxLayout):
@@ -377,3 +409,6 @@ class WidgetShape(ShowMoreBehavior, BoxLayout):
         '''Sets the area from the GUI.
         '''
         self.shape.set_area(area)
+
+Factory.register('ShapeGroupDragableLayoutBehavior',
+                 cls=ShapeGroupDragableLayoutBehavior)

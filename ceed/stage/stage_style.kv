@@ -18,88 +18,17 @@
         ScrollView:
             bar_width: '10dp'
             scroll_type: ['bars']
+            do_scroll_y: False
             size_hint_y: None
-            height: control_box.minimum_height
-            BoxLayout:
-                id: control_box
-                orientation: 'vertical'
-                size_hint_y: None
-                height: self.minimum_height
-                size_hint_min_x: self.minimum_width
-                BoxLayout:
-                    size_hint_y: None
-                    size_hint_min_x: self.minimum_width
-                    height: '34dp'
-                    spacing: '5dp'
-                    FlatButton:
-                        text: '+Stage'
-                        size_hint: None, None
-                        size: self.texture_size
-                        scale_down_color: True
-                        flat_color: app.theme.text_primary
-                        padding: '5dp', '5dp'
-                        flat_background_color: app.theme.primary_light if self.state == 'normal' else app.theme.primary
-                        on_release: stages.add_stage()
-                    FlatButton:
-                        text: '+Groups'
-                        size_hint: None, None
-                        size: self.texture_size
-                        scale_down_color: True
-                        flat_color: app.theme.text_primary
-                        padding: '5dp', '5dp'
-                        flat_background_color: app.theme.primary_light if self.state == 'normal' else app.theme.primary
-                        on_release: stages.add_selected_shape_groups()
-                    FlatButton:
-                        text: '+Shapes'
-                        size_hint: None, None
-                        size: self.texture_size
-                        scale_down_color: True
-                        flat_color: app.theme.text_primary
-                        padding: '5dp', '5dp'
-                        flat_background_color: app.theme.primary_light if self.state == 'normal' else app.theme.primary
-                        on_release: stages.add_selected_shapes()
-                BoxLayout:
-                    size_hint_y: None
-                    height: '34dp'
-                    padding: '5dp'
-                    spacing: '5dp'
-                    size_hint_min_x: self.minimum_width
-                    FlatSpinner:
-                        id: shape_spin
-                        values: sorted(list(knspace.painter.shape_names.keys()) + list(knspace.painter.shape_group_names.keys())) if knspace.painter and (knspace.painter.shape_names or knspace.painter.shape_group_names) else []
-                        text_autoupdate: True
-                        size_hint_min_x: self.minimum_width
-                        flat_color: app.theme.text_primary
-                        flat_menu_color: app.theme.accent
-                        flat_drop_background_color: app.theme.primary_text
-                        flat_drop_text_color: app.theme.text_primary
-                        flat_border_color: app.theme.divider
-                    FlatImageButton:
-                        scale_down_color: True
-                        source: 'flat_plus.png'
-                        flat_color: app.theme.accent
-                        on_release: stages.add_shape_by_name(shape_spin.text)
-                BoxLayout:
-                    size_hint_y: None
-                    height: '34dp'
-                    padding: '5dp'
-                    spacing: '5dp'
-                    size_hint_min_x: self.minimum_width
-                    FlatSpinner:
-                        id: func_spin
-                        values: sorted(FunctionFactory.funcs_inst.keys()) if FunctionFactory.funcs_inst else []
-                        text_autoupdate: True
-                        size_hint_min_x: self.minimum_width
-                        flat_color: app.theme.text_primary
-                        flat_menu_color: app.theme.accent
-                        flat_drop_background_color: app.theme.primary_text
-                        flat_drop_text_color: app.theme.text_primary
-                        flat_border_color: app.theme.divider
-                    FlatImageButton:
-                        scale_down_color: True
-                        source: 'flat_plus.png'
-                        flat_color: app.theme.accent
-                        on_release: stages.add_func(func_spin.text)
+            height: stages_label.texture_size[1]
+            FlatLabel:
+                id: stages_label
+                text: 'Stages'
+                width: max(self.texture_size[0], self.parent.width)
+                size_hint_x: None
+                padding: '5dp', '5dp'
+                flat_color: app.theme.text_primary
+                center_texture: True
         ScrollView:
             bar_width: '10dp'
             scroll_type: ['bars']
@@ -107,12 +36,18 @@
                 id: stages
                 knsname: 'stages'
                 orientation: 'vertical'
-                spacing: '5dp'
+                spacing: '3dp'
+                padding: '0', (0 if self.children else '10dp')
                 size_hint_y: None
                 height: self.minimum_height
                 size_hint_min_x: self.minimum_width
                 touch_deselect_last: True
+                spacer_props: {'size_hint_y': None, 'height': '40dp', 'size_hint_min_x': '40dp'}
+                drag_classes: ['shape', 'shape_group', 'func', 'func_spinner', 'stage']
+                drag_append_end: True
 
+
+<StageChildren@CeedStageDragableLayoutBehavior+BoxLayout>
 
 <StageWidget>:
     size_hint_y: None
@@ -127,7 +62,7 @@
     stage_widget: stage_widget
     func_widget: func_widget
     shape_widget: shape_widget
-    spacing: '5dp'
+    spacing: '3dp'
     BoxSelector:
         id: selector
         size_hint_y: None
@@ -143,6 +78,10 @@
             Rectangle:
                 size: self.size
                 pos: self.pos
+        DraggingWidget:
+            drag_widget: selector.__self__
+            obj_dragged: root
+            drag_cls: 'stage'
         ExpandWidget:
             id: expand
         FlatLabel:
@@ -265,50 +204,62 @@
                             on_state: root.stage.complete_on = 'any' if self.state == 'down' else 'all'
     BoxLayout:
         id: more
-        spacing: '5dp'
+        spacing: '3dp'
         size_hint_y: None
         height: self.minimum_height
         size_hint_min_x: self.minimum_width
         orientation: 'vertical'
-        BoxLayout:
+        StageChildren:
             id: stage_widget
-            padding: '5dp', 0, 0, 0
+            padding: '5dp', 0, 0, (0 if self.children else '5dp')
             spacing: '5dp'
             size_hint_y: None
             height: self.minimum_height
             size_hint_min_x: self.minimum_width
             orientation: 'vertical'
             source_obj: root
+            spacer_props: {'size_hint_y': None, 'height': '40dp', 'size_hint_min_x': '40dp'}
+            drag_classes: ['stage']
+            drag_target_stage: root.stage
+            drag_append_end: True
             canvas:
                 Color:
                     rgba: app.theme.divider
                 Rectangle:
                     pos: self.x + dp(1), self.y
                     size: dp(2), self.height
-        BoxLayout:
+        StageChildren:
             id: func_widget
-            padding: '5dp', 0, 0, 0
-            spacing: '5dp'
+            padding: '5dp', 0, 0, (0 if self.children else '5dp')
+            spacing: '3dp'
             size_hint_y: None
             height: self.minimum_height
             size_hint_min_x: self.minimum_width
             orientation: 'vertical'
             source_obj: root
+            spacer_props: {'size_hint_y': None, 'height': '40dp', 'size_hint_min_x': '40dp'}
+            drag_classes: ['func', 'func_spinner']
+            drag_target_stage: root.stage
+            drag_append_end: True
             canvas:
                 Color:
                     rgba: app.theme.divider
                 Rectangle:
                     pos: self.x + dp(1), self.y
                     size: dp(2), self.height
-        BoxLayout:
+        StageChildren:
             id: shape_widget
-            padding: '5dp', 0, 0, 0
-            spacing: '5dp'
+            padding: '5dp', 0, 0, (0 if self.children else '5dp')
+            spacing: '3dp'
             size_hint_y: None
             height: self.minimum_height
             size_hint_min_x: self.minimum_width
             orientation: 'vertical'
             source_obj: root
+            spacer_props: {'size_hint_y': None, 'height': '40dp', 'size_hint_min_x': '40dp'}
+            drag_classes: ['shape', 'shape_group']
+            drag_target_stage: root.stage
+            drag_append_end: True
             canvas:
                 Color:
                     rgba: app.theme.divider

@@ -129,33 +129,17 @@
             ScrollView:
                 bar_width: '10dp'
                 scroll_type: ['bars']
+                do_scroll_y: False
                 size_hint_y: None
-                height: '34dp'
-                spacing: '5dp'
-                padding: '5dp'
-                BoxLayout:
-                    id: control_box
-                    orientation: 'horizontal'
-                    size_hint_min_x: self.minimum_width
-                    spacing: '5dp'
-                    FlatButton:
-                        text: '+Selection'
-                        size_hint: None, None
-                        size: self.texture_size
-                        scale_down_color: True
-                        flat_color: app.theme.text_primary
-                        padding: '5dp', '5dp'
-                        flat_background_color: app.theme.primary_light if self.state == 'normal' else app.theme.primary
-                        on_release: shape_groups.add_selected_shapes()
-                    FlatButton:
-                        text: '+Group'
-                        size_hint: None, None
-                        size: self.texture_size
-                        scale_down_color: True
-                        flat_color: app.theme.text_primary
-                        on_release: knspace.painter.add_group()
-                        padding: '5dp', '5dp'
-                        flat_background_color: app.theme.primary_light if self.state == 'normal' else app.theme.primary
+                height: sshapes_label.texture_size[1]
+                FlatLabel:
+                    id: sshapes_label
+                    text: 'Shape groups'
+                    width: max(self.texture_size[0], self.parent.width)
+                    size_hint_x: None
+                    padding: '5dp', '5dp'
+                    flat_color: app.theme.text_primary
+                    center_texture: True
             FlatSplitter:
                 flat_color: app.theme.accent
                 size_hint_min_x: self.minimum_width
@@ -174,12 +158,16 @@
                         knsname: 'shape_groups'
                         orientation: 'vertical'
                         spacing: '3dp'
+                        padding: '0', ('10dp' if not self.children else '3dp')
                         size_hint_y: None
                         height: self.minimum_height
                         size_hint_min_x: self.minimum_width
                         multiselect: True
                         nodes_order_reversed: False
                         touch_deselect_last: True
+                        spacer_props: {'size_hint_y': None, 'height': '40dp', 'size_hint_min_x': '40dp'}
+                        drag_classes: ['shape', 'shape_group']
+                        drag_append_end: True
         ScrollView:
             bar_width: '10dp'
             scroll_type: ['bars']
@@ -188,11 +176,15 @@
                 knsname: 'shapes'
                 orientation: 'vertical'
                 spacing: '3dp'
+                padding: 0, (0 if self.children else '10dp')
                 size_hint_y: None
                 height: self.minimum_height
                 size_hint_min_x: self.minimum_width
                 multiselect: True
                 touch_deselect_last: True
+                spacer_props: {'size_hint_y': None, 'height': '50dp', 'size_hint_min_x': '40dp'}
+                drag_classes: ['shape']
+                drag_append_end: True
 
 
 <WidgetShape>:
@@ -212,6 +204,7 @@
             size: self.size
             pos: self.pos
     BoxSelector:
+        id: selector
         size_hint_y: None
         height: '34dp'
         size_hint_min_x: self.minimum_width
@@ -220,6 +213,10 @@
         spacing: '5dp'
         padding: '5dp'
         selectee: root
+        DraggingWidget:
+            drag_widget: selector.__self__
+            obj_dragged: root
+            drag_cls: 'shape'
         ExpandWidget:
             id: expand
         FlatLabel:
@@ -291,6 +288,8 @@
                 if not self.text: self.text = str(float(root.area))
 
 
+<BoxShapeDragableLayoutBehavior@ShapeGroupDragableLayoutBehavior+BoxLayout>
+
 <WidgetShapeGroup>:
     size_hint_y: None
     height: self.minimum_height
@@ -301,6 +300,7 @@
     spacing: '5dp'
     flat_color: app.theme.primary_light if not root.selected else app.theme.primary
     BoxSelector:
+        id: selector
         size_hint_y: None
         height: '34dp'
         size_hint_min_x: self.minimum_width
@@ -315,6 +315,10 @@
             Rectangle:
                 size: self.size
                 pos: self.pos
+        DraggingWidget:
+            drag_widget: selector.__self__
+            obj_dragged: root
+            drag_cls: 'shape_group'
         ExpandWidget:
             id: expand
         FlatLabel:
@@ -328,7 +332,7 @@
             source: 'flat_delete.png'
             flat_color: app.theme.accent
             on_release: knspace.painter.remove_group(root.group)
-    BoxLayout:
+    BoxShapeDragableLayoutBehavior:
         id: more
         spacing: '5dp'
         padding: '5dp', 0, 0, 0
@@ -336,6 +340,10 @@
         height: self.minimum_height
         size_hint_min_x: self.minimum_width
         orientation: 'vertical'
+        spacer_props: {'size_hint_y': None, 'height': '50dp', 'size_hint_min_x': '40dp'}
+        drag_classes: ['shape']
+        drag_append_end: True
+        group_widget: root
         canvas:
             Color:
                 rgba: app.theme.divider

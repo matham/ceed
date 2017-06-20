@@ -18,8 +18,11 @@ from kivy.factory import Factory
 from kivy.lang import Builder
 from kivy.utils import get_color_from_hex
 
+from cplcom.drag_n_drop import DragableController, DragableObjectBehavior
+
 __all__ = ('ShowMoreSelection', 'ShowMoreBehavior',
-           'TouchSelectBehavior', 'BoxSelector', 'WidgetList')
+           'TouchSelectBehavior', 'BoxSelector', 'WidgetList',
+           'CeedDragNDrop', 'CeedDragableObjectBehavior')
 
 
 class ShowMoreSelection(object):
@@ -108,7 +111,7 @@ class TouchSelectBehavior(object):
             return True
         if touch.grab_current is not None:
             return False
-        if self.collide_point(*touch.pos):
+        if self.collide_point(*touch.pos) and self.collide_point(*touch.opos):
             s = self.selectee or (self.parent if self.use_parent else self)
             self.controller.select_with_touch(s, touch)
             return True
@@ -197,7 +200,40 @@ class WidgetList(KNSpaceBehavior, CompoundSelectionBehavior, FocusBehavior):
             i = len(nodes) - 1 - i
         return nodes[i], i
 
+
+class CeedDragNDrop(KNSpaceBehavior, DragableController):
+    '''Adds ``KNSpaceBehavior`` to the drag controller.
+    '''
+    pass
+
+
+class CeedDragableObjectBehavior(DragableObjectBehavior):
+    '''Adds the ``on_drag_init`` event, which is dispatched when
+    ``initiate_drag`` is called.
+    '''
+
+    __events__ = ('on_drag_init', )
+
+    drag_copy = BooleanProperty(True)
+    '''Whether when the drag started the function was copied or was removed
+    from its parent and should be moved.
+    '''
+
+    obj_dragged = ObjectProperty(None)
+    '''The higher level object associated with the drag.
+    '''
+
+    def initiate_drag(self):
+        super(CeedDragableObjectBehavior, self).initiate_drag()
+        self.dispatch('on_drag_init')
+
+    def on_drag_init(self, *largs):
+        pass
+
 Factory.register(classname='ShowMoreSelection', cls=ShowMoreSelection)
 Factory.register(classname='ShowMoreBehavior', cls=ShowMoreBehavior)
 Factory.register(classname='TouchSelectBehavior', cls=TouchSelectBehavior)
 Factory.register(classname='WidgetList', cls=WidgetList)
+Factory.register(classname='CeedDragNDrop', cls=CeedDragNDrop)
+Factory.register(classname='CeedDragableObjectBehavior',
+                 cls=CeedDragableObjectBehavior)

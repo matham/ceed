@@ -317,7 +317,7 @@ class FunctionFactoryBase(EventDispatcher):
 
         return self.funcs_user[:], id_to_func_map
 
-    def add_func(self, func):
+    def add_func(self, func, index=None):
         '''Adds the function to :attr:`funcs_user` and :attr:`funcs_inst`,
         which makes it available in the GUI as one of the customized
         functions.
@@ -332,9 +332,12 @@ class FunctionFactoryBase(EventDispatcher):
 
         func.fbind('name', self._track_func_name, func)
         self.funcs_inst[func.name] = func
-        self.funcs_user.append(func)
+        if index is None:
+            self.funcs_user.append(func)
+        else:
+            self.funcs_user.insert(index, func)
         if self.show_widgets:
-            func.display.show_func()
+            func.display.show_func(index=index)
         self.dispatch('on_changed')
 
     def remove_func(self, func):
@@ -1093,7 +1096,7 @@ line 934, in __call__
 
         raise FuncDoneException
 
-    def add_func(self, func, after=None):
+    def add_func(self, func, after=None, index=None):
         '''Adds a ``func`` to this function as a sub-function in :attr:`funcs`.
 
         :Params:
@@ -1105,16 +1108,20 @@ line 934, in __call__
         '''
         func.parent_func = self
 
-        if after is None:
+        if after is None and index is None:
+            index = len(self.funcs)
             self.funcs.append(func)
+        elif index is not None:
+            self.funcs.insert(index, func)
         else:
             i = self.funcs.index(after)
+            index = i + 1
             self.funcs.insert(i + 1, func)
         func.fbind('duration', self._update_duration)
         self._update_duration()
-        self.dispatch('on_changed', op='add', index=len(self.funcs) - 1)
+        self.dispatch('on_changed', op='add', index=index)
         if self._display:
-            func.display.show_func()
+            func.display.show_func(index=index)
 
     def remove_func(self, func):
         '''Removes sub-function ``func`` from :attr:`funcs`. It must exist in

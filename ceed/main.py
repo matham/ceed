@@ -37,6 +37,7 @@ from ceed.function import FunctionFactory
 from ceed.stage import StageFactory
 from ceed.view.controller import ViewController
 from ceed.storage.controller import CeedData, DataSerializer
+from ceed.graphics import CeedDragNDrop
 
 if ceed.has_gui_control:
     from kivy.core.window import Window
@@ -51,6 +52,10 @@ class CeedApp(CPLComApp):
     player = None
 
     agreed_discard = False
+
+    drag_controller = None
+    '''
+    '''
 
     @classmethod
     def get_config_classes(cls):
@@ -85,6 +90,8 @@ class CeedApp(CPLComApp):
         Builder.load_file(join(base, 'view', 'view_style.kv'))
         Builder.load_file(join(base, 'storage', 'storage_style.kv'))
         self.yesno_prompt = Factory.CeedYesNoPrompt()
+        drag = self.drag_controller = CeedDragNDrop()
+        drag.knsname = 'dragger'
         return super(CeedApp, self).build()
 
     def on_start(self):
