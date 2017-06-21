@@ -3,12 +3,12 @@
 #:import FunctionFactory ceed.function.FunctionFactory
 #:import Clock kivy.clock.Clock
 
-<ControlDisplay@KNSpaceBehavior+ScrollView>
+<ControlDisplay>
     knsname: 'control_display'
     on_size:
-        scaler.transform = Matrix()
-        scaler.pos = 0, 0
-        float.size = scaler.bbox[1]
+        scalar.transform = Matrix()
+        scalar.pos = 0, 0
+        float_layout.size = scalar.bbox[1]
         self.scroll_x, self.scroll_y = 0., 1.
     bar_width: '10dp'
     scroll_type: ['bars']
@@ -19,26 +19,13 @@
             pos: self.pos
             size: self.size
     FloatLayout:
-        id: float
+        id: float_layout
         size_hint: None, None
         Scatter:
-            id: scaler
+            id: scalar
             size_hint: None, None
             size: ViewController.screen_width, ViewController.screen_height
-            x_trigger: Clock.create_trigger(lambda *x: setattr(root, 'scroll_x', left / (float.width - root.width)))
-            y_trigger: Clock.create_trigger(lambda *x: setattr(root, 'scroll_y', (top - root.height) / (float.height - root.height)))
-            on_touch_up:
-                top = -self.y + (float.height - root.height) * root.scroll_y + root.height
-                skip_y = self.y >= 0 or root.height >= float.height
-
-                left = -self.x + (float.width - root.width) * root.scroll_x
-                skip_x = self.x >= 0 or root.width >= float.width
-
-                self.parent.size = self.bbox[1]
-                self.pos = 0, 0
-
-                if not skip_x: self.x_trigger()
-                if not skip_y: self.y_trigger()
+            on_touch_up: root.resize_trigger()
             do_translation: False, False
             do_scale: painter.locked and not painter.select and not painter.move_cam
             do_rotation: False
