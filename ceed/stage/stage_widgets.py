@@ -385,11 +385,11 @@ class ShapePlot(object):
         self.graph = graph
         self.graph_canvas = graph_canvas
         self.background = []
-        b = self.r_btn = Factory.ShapeGraphSelector(controller=graph, text='R')
-        b.controller = graph
-        b = self.g_btn = Factory.ShapeGraphSelector(controller=graph, text='G')
-        b.controller = graph
-        b = self.b_btn = Factory.ShapeGraphSelector(controller=graph, text='B')
+        r = self.r_btn = Factory.ShapeGraphSelector(text='R')
+        r.controller = graph
+        g = self.g_btn = Factory.ShapeGraphSelector(text='G')
+        g.controller = graph
+        b = self.b_btn = Factory.ShapeGraphSelector(text='B')
         b.controller = graph
         app = App.get_running_app()
         self.selection_label = Factory.FlatMinXYSizedLabel(
