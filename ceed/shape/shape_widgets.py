@@ -410,5 +410,6 @@ class WidgetShape(ShowMoreBehavior, BoxLayout):
         '''
         self.shape.set_area(area)
 
+
 Factory.register('ShapeGroupDragableLayoutBehavior',
                  cls=ShapeGroupDragableLayoutBehavior)

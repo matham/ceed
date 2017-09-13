@@ -46,19 +46,18 @@ class ConstFunc(CeedFunc):
 
     a = NumericProperty(0.)
 
-    def __init__(self, **kwargs):
-        kwargs.setdefault('name', 'Const')
-        kwargs.setdefault('description', 'y(t) = a')
-        super(ConstFunc, self).__init__(**kwargs)
+    def __init__(self, name='Const', description='y(t) = a', **kwargs):
+        super(ConstFunc, self).__init__(
+            name=name, description=description, **kwargs)
 
     def __call__(self, t):
-        if self.check_done(t):
+        if not self.check_domain(t) and self.tick_loop(t):
             raise FuncDoneException
         return self.a
 
     def get_gui_props(self, attrs=None):
         d = super(ConstFunc, self).get_gui_props(attrs)
-        d ['a'] = None
+        d['a'] = None
         return d
 
     def get_state(self, *largs, **kwargs):
@@ -84,15 +83,15 @@ class LinearFunc(CeedFunc):
         super(LinearFunc, self).__init__(**kwargs)
 
     def __call__(self, t):
-        if self.check_done(t):
+        if not self.check_domain(t) and self.tick_loop(t):
             raise FuncDoneException
         t = t - self.t_start + self.t_offset
         return self.m * t + self.b
 
     def get_gui_props(self, attrs=None):
         d = super(LinearFunc, self).get_gui_props(attrs)
-        d ['m'] = None
-        d ['b'] = None
+        d['m'] = None
+        d['b'] = None
         return d
 
     def get_state(self, *largs, **kwargs):
@@ -125,17 +124,17 @@ class ExponentialFunc(CeedFunc):
         super(ExponentialFunc, self).__init__(**kwargs)
 
     def __call__(self, t):
-        if self.check_done(t):
+        if not self.check_domain(t) and self.tick_loop(t):
             raise FuncDoneException
         t = t - self.t_start + self.t_offset
         return self.A * exp(-t / self.tau1) + self.B * exp(-t / self.tau2)
 
     def get_gui_props(self, attrs=None):
         d = super(ExponentialFunc, self).get_gui_props(attrs)
-        d ['A'] = None
-        d ['B'] = None
-        d ['tau1'] = None
-        d ['tau2'] = None
+        d['A'] = None
+        d['B'] = None
+        d['tau1'] = None
+        d['tau2'] = None
         return d
 
     def get_state(self, *largs, **kwargs):
@@ -166,16 +165,16 @@ class CosFunc(CeedFunc):
         super(CosFunc, self).__init__(**kwargs)
 
     def __call__(self, t):
-        if self.check_done(t):
+        if not self.check_domain(t) and self.tick_loop(t):
             raise FuncDoneException
         t = t - self.t_start + self.t_offset
         return self.A * cos(2 * pi * self.f * t + self.th0 * pi / 180.)
 
     def get_gui_props(self, attrs=None):
         d = super(CosFunc, self).get_gui_props(attrs)
-        d ['f'] = None
-        d ['A'] = None
-        d ['th0'] = None
+        d['f'] = None
+        d['A'] = None
+        d['th0'] = None
         return d
 
     def get_state(self, *largs, **kwargs):

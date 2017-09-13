@@ -28,7 +28,7 @@ from kivy.app import App
 from kivy.uix.behaviors.knspace import knspace
 
 from cplcom.app import app_error
-from cplcom.utils import json_dumps, json_loads
+from cplcom.utils import yaml_dumps, yaml_loads
 
 import ceed
 from ceed.stage import StageFactory, StageDoneException
@@ -525,21 +525,22 @@ class ViewSideViewControllerBase(ViewControllerBase):
         return val
 
     def request_process_data(self, data_type, data):
-        self.queue_view_write.put_nowait((data_type, json_dumps(data)))
+        self.queue_view_write.put_nowait((
+            data_type, yaml_dumps(data)))
 
     def send_keyboard_down(self, key, modifiers):
         '''Gets called by the window for every keyboard key press, which it
         passes on to the main GUI process.
         '''
         self.queue_view_write.put_nowait((
-            'key_down', json_dumps((key, modifiers))))
+            'key_down', yaml_dumps((key, modifiers))))
 
     def send_keyboard_up(self, key):
         '''Gets called by the window for every keyboard key release, which it
         passes on to the main GUI process.
         '''
         self.queue_view_write.put_nowait((
-            'key_up', json_dumps((key, ))))
+            'key_up', yaml_dumps((key, ))))
 
     def view_process_enter(self, read, write, settings, app_settings):
         '''The method that the second process calls when it is run. This runs
@@ -573,7 +574,7 @@ class ViewSideViewControllerBase(ViewControllerBase):
         if exc_info is not None:
             exc_info = ''.join(traceback.format_exception(*exc_info))
         self.queue_view_write.put_nowait(
-            ('exception', json_dumps((str(exception), exc_info))))
+            ('exception', yaml_dumps((str(exception), exc_info))))
 
     @app_error
     def view_read(self, *largs):
@@ -593,7 +594,8 @@ class ViewSideViewControllerBase(ViewControllerBase):
                     if self.tick_event:
                         raise Exception('Cannot configure while running stage')
                     CeedData.clear_existing_config_data()
-                    CeedData.apply_config_data_dict(json_loads(value))
+                    CeedData.apply_config_data_dict(
+                        yaml_loads(value))
                 elif msg == 'start_stage':
                     self.start_stage(value, App.get_running_app().root.canvas)
                 elif msg == 'end_stage':
@@ -666,7 +668,8 @@ class ControllerSideViewControllerBase(ViewControllerBase):
 
             CeedData.prepare_experiment(stage_name)
             self.queue_view_read.put_nowait(
-                ('config', json_dumps(CeedData.gather_config_data_dict())))
+                ('config', yaml_dumps(
+                    CeedData.gather_config_data_dict())))
             self.queue_view_read.put_nowait(('start_stage', stage_name))
         else:
             self.stage_active = False
@@ -786,21 +789,22 @@ class ControllerSideViewControllerBase(ViewControllerBase):
                     self.stage_active = False
                     break
                 elif msg == 'exception':
-                    e, exec_info = json_loads(value)
+                    e, exec_info = yaml_loads(value)
                     App.get_running_app().handle_exception(
                         e, exc_info=exec_info)
                 elif msg in ('GPU', 'CPU', 'frame', 'frame_flip'):
-                    self.request_process_data(msg, json_loads(value))
+                    self.request_process_data(
+                        msg, yaml_loads(value))
                 elif msg == 'response' and value == 'end_stage':
                     self.stage_active = False
                 elif msg == 'end_stage':
                     CeedData.stop_experiment()
                     self.stage_active = False
                 elif msg == 'key_down':
-                    key, modifiers = json_loads(value)
+                    key, modifiers = yaml_loads(value)
                     self.handle_key_press(key, modifiers)
                 elif msg == 'key_up':
-                    key, = json_loads(value)
+                    key, = yaml_loads(value)
                     self.handle_key_press(key, down=False)
             except Empty:
                 break

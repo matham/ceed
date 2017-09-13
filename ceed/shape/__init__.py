@@ -317,7 +317,7 @@ class CeedPaintCanvasBehavior(KNSpaceBehavior, PaintCanvasBehavior):
             old_name_map[state['name']] = shape.name
         return shape
 
-    def set_state(self, state):
+    def set_state(self, state, old_to_new_name_map):
         '''Takes the dict returned by :meth:`save_state` and adds the shapes
         and groups to the controller.
         '''
@@ -326,17 +326,20 @@ class CeedPaintCanvasBehavior(KNSpaceBehavior, PaintCanvasBehavior):
         CeedShapeGroup._name_count = max(
             CeedShapeGroup._name_count, state['groups__name_count'])
 
-        old_name_map = {}
         for s in state['shapes']:
-            self.restore_shape(s, old_name_map)
+            self.restore_shape(s, old_to_new_name_map)
         shape_names = self.shape_names
 
         for group_state in state['groups']:
             group = CeedShapeGroup(paint_widget=self, name=group_state['name'])
+            if 'name' in group_state:
+                old_to_new_name_map[group_state['name']] = group.name
             self.add_group(group)
             for name in group_state['shapes']:
-                if name in old_name_map and old_name_map[name] in shape_names:
-                    group.add_shape(shape_names[old_name_map[name]])
+                if (name in old_to_new_name_map and
+                        old_to_new_name_map[name] in shape_names):
+                    group.add_shape(shape_names[old_to_new_name_map[name]])
+
         self.dispatch('on_changed')
 
     def on_remove_shape(self, shape):

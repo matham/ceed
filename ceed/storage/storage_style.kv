@@ -90,7 +90,7 @@
                 flat_color: app.theme.text_primary
                 on_release: CeedData.discard_file()
             FlatButton:
-                text: 'Load JSON'
+                text: 'Load YAML'
                 size_hint: None, None
                 size: self.texture_size
                 scale_down_color: True
@@ -98,10 +98,10 @@
                 on_release:
                     app.filebrowser.target = CeedData.root_path
                     app.filebrowser.dirselect =  app.filebrowser.multiselect = False
-                    app.filebrowser.callback = CeedData.get_filebrowser_callback(CeedData.read_json_config)
+                    app.filebrowser.callback = CeedData.get_filebrowser_callback(CeedData.read_yaml_config)
                     app.filebrowser.open()
             FlatButton:
-                text: 'Save JSON'
+                text: 'Save YAML'
                 size_hint: None, None
                 size: self.texture_size
                 scale_down_color: True
@@ -109,5 +109,5 @@
                 on_release:
                     app.filebrowser.target = CeedData.root_path
                     app.filebrowser.dirselect =  app.filebrowser.multiselect = False
-                    app.filebrowser.callback = CeedData.get_filebrowser_callback(CeedData.write_json_config, True)
+                    app.filebrowser.callback = CeedData.get_filebrowser_callback(CeedData.write_yaml_config, True)
                     app.filebrowser.open()

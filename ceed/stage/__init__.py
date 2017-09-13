@@ -67,7 +67,7 @@ class StageFactoryBase(EventDispatcher):
         super(StageFactoryBase, self).__init__(**kwargs)
         self.stages = []
 
-    def on_changed(self, *largs):
+    def on_changed(self, *largs, **kwargs):
         pass
 
     def save_stages(self, id_map=None):
@@ -104,7 +104,8 @@ class StageFactoryBase(EventDispatcher):
         states = [s.get_state() for s in self.stages]
         return states, id_map
 
-    def recover_stages(self, stages, id_to_func_map=None, old_id_map=None):
+    def recover_stages(self, stages, id_to_func_map=None, old_id_map=None,
+                       old_to_new_name_shape_map=None):
         '''Restores all the stages that was saved with :meth:`save_stages`.
 
         :Params:
@@ -142,7 +143,9 @@ class StageFactoryBase(EventDispatcher):
             stage = CeedStage()
             if self.show_widgets:
                 stage.display
-            stage.apply_state(state, clone=True, old_id_map=old_id_map)
+            stage.apply_state(
+                state, clone=True, old_id_map=old_id_map,
+                old_to_new_name_shape_map=old_to_new_name_shape_map)
             self.add_stage(stage)
 
         id_to_func_map = {} if id_to_func_map is None else id_to_func_map
@@ -167,6 +170,7 @@ class StageFactoryBase(EventDispatcher):
         stage.name = fix_name(stage.name, [s.name for s in self.stages])
         self.stages.append(stage)
         self.stage_names[stage.name] = stage
+        stage.init_factory(self)
         if self.show_widgets:
             stage.display.show_stage()
         self.dispatch('on_changed')
@@ -180,6 +184,7 @@ class StageFactoryBase(EventDispatcher):
             `stage`: :class:`CeedStage`
                 The stage to remove.
         '''
+        stage.del_factory(self)
         self.stages.remove(stage)
         del self.stage_names[stage.name]
 
@@ -547,13 +552,29 @@ class CeedStage(EventDispatcher):
 
     __events__ = ('on_changed', )
 
-    def __init__(self, **kwargs):
-        super(CeedStage, self).__init__(**kwargs)
+    def init_factory(self, factory):
         for name in self.get_state():
             self.fbind(name, self.dispatch, 'on_changed')
-        self.fbind('on_changed', StageFactory.dispatch, 'on_changed')
+        self.fbind('on_changed', factory.dispatch, 'on_changed')
 
-    def on_changed(self, *largs):
+        for f in self.functions:
+            f.init_factory(self)
+        for stage in self.stages:
+            stage.init_factory(self)
+        self.dispatch('on_changed')
+
+    def del_factory(self, factory):
+        for name in self.get_state():
+            self.funbind(name, self.dispatch, 'on_changed')
+        self.funbind('on_changed', factory.dispatch, 'on_changed')
+
+        for f in self.functions:
+            f.del_factory(self)
+        for stage in self.stages:
+            stage.del_factory(self)
+        self.dispatch('on_changed')
+
+    def on_changed(self, *largs, **kwargs):
         pass
 
     def get_state(self, state=None):
@@ -586,7 +607,8 @@ class CeedStage(EventDispatcher):
             state.update(d)
         return state
 
-    def apply_state(self, state={}, clone=False, old_id_map=None):
+    def apply_state(self, state={}, clone=False, old_id_map=None,
+                    old_to_new_name_shape_map=None):
         '''Takes the state of the stage saved with :meth:`get_state` and
         applies it to this stage. it also creates any children functions and
         stages and creates the references to the :attr:`shapes`.
@@ -622,7 +644,9 @@ class CeedStage(EventDispatcher):
             s = CeedStage()
             if self._display:
                 s.display
-            s.apply_state(data, clone=True)
+            s.apply_state(
+                data, clone=True, old_id_map=old_id_map,
+                old_to_new_name_shape_map=old_to_new_name_shape_map)
             self.add_stage(s)
 
         for data in functions:
@@ -632,6 +656,10 @@ class CeedStage(EventDispatcher):
         shapes = get_painter().shape_names
         groups = get_painter().shape_group_names
         for name in shapes_state:
+            if name not in old_to_new_name_shape_map:
+                continue
+
+            name = old_to_new_name_shape_map[name]
             if name in shapes:
                 self.add_shape(shapes[name])
             elif name in groups:
@@ -921,13 +949,17 @@ class StageShape(EventDispatcher):
         w = self._display = Factory.StageShapeDisplay(stage_shape=self)
         return w
 
+
 StageFactory = StageFactoryBase()
 '''The singleton :class:`StageFactoryBase` instance through which all stage
 operations are accessed.
 '''
 
+
 def _bind_remove(*largs):
     get_painter().fbind('on_remove_shape', StageFactory.remove_shape_from_all)
     get_painter().fbind('on_remove_group', StageFactory.remove_shape_from_all)
+
+
 if not os.environ.get('KIVY_DOC_INCLUDE', None):
     Clock.schedule_once(_bind_remove, 0)

@@ -5,7 +5,6 @@ Handles all data aspects, from the storage, loading and saving of configuration
 data to the acquisition and creation of experimental data.
 
 '''
-import json
 import nixio as nix
 from os.path import exists, basename, splitext, split, join, isdir
 from os import remove
@@ -31,15 +30,15 @@ from kivy.uix.behaviors.knspace import knspace
 from kivy.logger import Logger
 from kivy.compat import clock
 
-from cplcom.config import byteify
-from cplcom.utils import json_dumps, json_loads
 from cplcom.app import app_error
+from cplcom.utils import yaml_dumps, yaml_loads
 
 from ceed.function import FunctionFactory, FuncBase
 from ceed.stage import StageFactory
 from ceed.shape import get_painter
 
 __all__ = ('CeedData', 'CeedDataBase', 'DataSerializer')
+
 
 class CeedDataBase(EventDispatcher):
 
@@ -68,7 +67,7 @@ class CeedDataBase(EventDispatcher):
     def __init__(self, **kwargs):
         super(CeedDataBase, self).__init__(**kwargs)
         if not os.environ.get('KIVY_DOC_INCLUDE', None):
-            Clock.schedule_interval(self.backup_file, self.backup_interval)
+            Clock.schedule_interval(self.write_changes, self.backup_interval)
 
     @staticmethod
     def gather_config_data_dict():
@@ -87,28 +86,37 @@ class CeedDataBase(EventDispatcher):
     def clear_existing_config_data():
         StageFactory.clear_stages()
         get_painter().remove_all_groups()
-        get_painter().delete_all_shapes()
+        get_painter().delete_all_shapes(keep_locked_shapes=False)
         FunctionFactory.clear_funcs()
 
     @staticmethod
     def apply_config_data_dict(data):
         from ceed.view.controller import ViewController
         ViewController.set_state(data['view_controller'])
-        get_painter().set_state(data['shape'])
+        old_to_new_name_shape_map = {}
+        get_painter().set_state(data['shape'], old_to_new_name_shape_map)
 
         id_to_func_map = {}
         old_id_map = {}
+        old_to_new_name = {}
+
         f1 = FunctionFactory.recover_funcs(
-            data['function'], id_to_func_map, old_id_map=old_id_map)
+            data['function'], id_to_func_map, old_id_map, old_to_new_name)
         f2 = StageFactory.recover_stages(
-            data['stage'], id_to_func_map, old_id_map=old_id_map)
+            data['stage'], id_to_func_map, old_id_map=old_id_map,
+            old_to_new_name_shape_map=old_to_new_name_shape_map)
+
+        old_to_new_id_map = {v: k for k, v in old_id_map.items()}
+
         id_map = data['func_id_map']
-        id_to_func_map = {
-            old_id_map[new_id]: f for new_id, f in id_to_func_map.items()
-            if new_id in old_id_map}
+        id_map_new = {old_to_new_id_map[a]: old_to_new_id_map[b]
+                      for a, b in id_map.items()
+                      if a in old_to_new_id_map and b in old_to_new_id_map}
 
         for f in f1[0] + f2[0]:
-            FuncBase.set_source_from_id(f, id_map, id_to_func_map)
+            for func in f.get_funcs():
+                func.finalize_func_state(
+                    id_map_new, id_to_func_map, old_to_new_name)
 
     def get_filebrowser_callback(
             self, func, check_exists=False, check_unsaved=False):
@@ -149,6 +157,11 @@ class CeedDataBase(EventDispatcher):
         return callback
 
     def ui_close(self, app_close=False):
+        '''The UI asked for to close a file. We create a new one if the app
+        doesn't close.
+
+        If unsaved, will prompt if want to save
+        '''
         if self.has_unsaved or self.config_changed:
             def close_callback(discard):
                 if discard:
@@ -160,7 +173,8 @@ class CeedDataBase(EventDispatcher):
                         self.create_file('')
 
             yesno = App.get_running_app().yesno_prompt
-            yesno.msg = 'There are unsaved changes.\nDiscard them?'
+            yesno.msg = ('There are unsaved changes.\n'
+                         'Are you sure you want to discard them?')
             yesno.callback = close_callback
             yesno.open()
             return False
@@ -169,6 +183,12 @@ class CeedDataBase(EventDispatcher):
             if not app_close:
                 self.create_file('')
             return True
+
+    def create_open_file(self, filename):
+        if exists(filename):
+            self.open_file(filename)
+        else:
+            self.create_file(filename)
 
     def create_file(self, filename, overwrite=False):
         if exists(filename) and not overwrite:
@@ -200,6 +220,7 @@ class CeedDataBase(EventDispatcher):
         self.save()
 
     def open_file(self, filename):
+        '''Loads the file's config and opens the file for usage. '''
         self.close_file()
 
         self.filename = filename
@@ -215,7 +236,7 @@ class CeedDataBase(EventDispatcher):
         self.clear_existing_config_data()
         self.import_file(self.backup_filename)
 
-        f = self.nix_file = nix.File.open(
+        self.nix_file = nix.File.open(
             self.backup_filename, nix.FileMode.ReadWrite)
         self.config_changed = self.has_unsaved = True
         Logger.debug(
@@ -223,7 +244,10 @@ class CeedDataBase(EventDispatcher):
             'file "{}"'.format(self.backup_filename, self.filename))
         self.save()
 
-    def close_file(self):
+    def close_file(self, force_remove_autosave=False):
+        '''Closes without saving the data. But if data was unsaved, it leaves
+        the backup file unchanged.
+        '''
         if self.data_thread:
             raise TypeError("Cannot close data during an experiment")
         if self.nix_file:
@@ -231,7 +255,7 @@ class CeedDataBase(EventDispatcher):
             self.nix_file = None
 
         if (not self.has_unsaved and not self.config_changed or
-                not self.filename) and self.backup_filename:
+                force_remove_autosave) and self.backup_filename:
             remove(self.backup_filename)
 
         Logger.debug(
@@ -241,6 +265,7 @@ class CeedDataBase(EventDispatcher):
         self.config_changed = self.has_unsaved = False
 
     def import_file(self, filename):
+        '''Loads the file's config data. '''
         f = nix.File.open(filename, nix.FileMode.ReadOnly)
         Logger.debug(
             'Ceed Controller (storage): Imported "{}"'.format(self.filename))
@@ -248,7 +273,7 @@ class CeedDataBase(EventDispatcher):
 
         try:
             for prop in f.sections['app_config']:
-                data[prop.name] = json_loads(prop.values[0].value)
+                data[prop.name] = yaml_loads(prop.values[0].value)
         except:
             f.close()
             raise
@@ -279,6 +304,9 @@ class CeedDataBase(EventDispatcher):
         self.open_file(filename)
 
     def save(self, filename=None, force=False):
+        '''Saves the changes to the autosave and also saves the changes to
+        the file in filename (if None saves to the current filename).
+        '''
         if not force and not self.has_unsaved and not self.config_changed:
             return
 
@@ -286,22 +314,19 @@ class CeedDataBase(EventDispatcher):
             if self.data_lock:
                 self.data_lock.acquire()
 
-            self.backup_file()
+            self.write_changes()
             filename = filename or self.filename
             if filename:
                 copy2(self.backup_filename, filename)
-        except:
-            if self.data_lock:
-                self.data_lock.release()
-            raise
-        else:
+        finally:
             if self.data_lock:
                 self.data_lock.release()
 
         if filename:
             self.config_changed = self.has_unsaved = False
 
-    def backup_file(self, *largs):
+    def write_changes(self, *largs):
+        '''Writes unsaved changes to the current (autosave) file. '''
         if not self.nix_file:
             return
 
@@ -312,26 +337,22 @@ class CeedDataBase(EventDispatcher):
             if self.config_changed:
                 self.write_config()
             self.nix_file._h5file.flush()
-        except:
-            if self.data_lock:
-                self.data_lock.release()
-            raise
-        else:
+        finally:
             if self.data_lock:
                 self.data_lock.release()
 
-    def write_json_config(self, filename, overwrite=False):
+    def write_yaml_config(self, filename, overwrite=False):
         if exists(filename) and not overwrite:
             raise ValueError('{} already exists'.format(filename))
 
-        data = json_dumps(self.gather_config_data_dict())
+        data = yaml_dumps(self.gather_config_data_dict())
         with open(filename, 'w') as fh:
             fh.write(data)
 
-    def read_json_config(self, filename):
+    def read_yaml_config(self, filename):
         with open(filename, 'r') as fh:
             data = fh.read()
-        data = json_loads(data)
+        data = yaml_loads(data)
         self.apply_config_data_dict(data)
         self.config_changed = True
 
@@ -339,13 +360,13 @@ class CeedDataBase(EventDispatcher):
         config = config_section or self.nix_file.sections['app_config']
         data = self.gather_config_data_dict()
         for k, v in data.items():
-            config[k] = json_dumps(v)
+            config[k] = yaml_dumps(v)
 
     def read_config(self, config_section=None):
         config = config_section or self.nix_file.sections['app_config']
         data = {}
         for prop in config.props:
-            data[prop.name] = json_loads(prop.values[0].value)
+            data[prop.name] = yaml_loads(prop.values[0].value)
         return data
 
     def write_fluorescent_image(self, block, img):
@@ -353,10 +374,10 @@ class CeedDataBase(EventDispatcher):
 
         config = block.metadata.create_section(
             'fluorescent_image_config', 'image')
-        config['size'] = json_dumps(img.get_size())
+        config['size'] = yaml_dumps(img.get_size())
         config['pix_fmt'] = img.get_pixel_format()
-        config['linesizes'] = json_dumps(img.get_linesizes())
-        config['buffer_size'] = json_dumps(img.get_buffer_size())
+        config['linesizes'] = yaml_dumps(img.get_linesizes())
+        config['buffer_size'] = yaml_dumps(img.get_buffer_size())
         group.metadata = config
 
         for i, plane in enumerate(img.to_bytearray()):
@@ -373,7 +394,7 @@ class CeedDataBase(EventDispatcher):
 
         planes = [bytes(d) for d in group.data_arrays]
         img = Image(plane_buffers=planes, pix_fmt=group.metadata['pix_fmt'],
-                    size=json_loads(group.metadata['size']))
+                    size=yaml_loads(group.metadata['size']))
         return img
 
     def ensure_array_size(self, used, allocated, added=1):

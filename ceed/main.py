@@ -24,6 +24,7 @@ from kivy.clock import Clock
 from kivy.factory import Factory
 
 import ceed.graphics
+Builder.load_file(join(dirname(__file__), 'graphics', 'graphics.kv'))
 from ceed.player import CeedPlayer, CeedFFmpegPlayer, CeedPTGrayPlayer
 import ceed.function.plugin
 import ceed.shape
@@ -81,7 +82,7 @@ class CeedApp(CPLComApp):
 
     def build(self):
         base = dirname(__file__)
-        Builder.load_file(join(base, 'graphics', 'graphics.kv'))
+        # Builder.load_file(join(base, 'graphics', 'graphics.kv'))
         Builder.load_file(join(base, 'ceed_style.kv'))
         Builder.load_file(join(base, 'player_style.kv'))
         Builder.load_file(join(base, 'shape', 'shape_style.kv'))

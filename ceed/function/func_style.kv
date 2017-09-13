@@ -52,7 +52,7 @@
                 knsname: 'funcs'
                 orientation: 'vertical'
                 spacing: '3dp'
-                padding: '0', '10dp'
+                padding: '0dp', '10dp'
                 size_hint_y: None
                 height: self.minimum_height
                 size_hint_min_x: self.minimum_width
@@ -103,6 +103,7 @@
         ExpandWidget:
             id: expand
         FlatLabel:
+            id: func_label
             text: (root.func.source_func.name if root.func.source_func else root.func.name) if root.func else ''
             size_hint_min_x: self.texture_size[0]
             padding: '5dp', '5dp'
@@ -122,11 +123,11 @@
                 on_state:
                     if root.func: root.func.track_source = self.state == 'down'
                     if root.func and root.func.track_source: root.func.reload_from_source()
-            FlatImageButton:
-                scale_down_color: True
-                source: 'flat_refresh.png'
-                flat_color: app.theme.accent
-                on_release: root.func.reload_from_source()
+        FlatImageButton:
+            scale_down_color: True
+            source: 'flat_refresh.png'
+            flat_color: app.theme.accent
+            on_release: root.func.reload_from_source()
         FlatImageButton:
             scale_down_color: True
             source: 'flat_delete.png'

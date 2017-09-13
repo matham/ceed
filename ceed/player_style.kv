@@ -39,28 +39,18 @@
                     source: 'flat_refresh.png'
                     flat_color: app.theme.accent
                     on_release: knspace.player.refresh_pt_cams()
-                FlatSpinner:
+                CeedFlatSpinner:
                     knsname: 'pt_serial'
                     id: pt_serial
                     size_hint_x: None
                     width: self.minimum_width
                     on_text: knspace.player.set_pt_serial(self.text)
-                    flat_color: app.theme.text_primary
-                    flat_menu_color: app.theme.accent
-                    flat_drop_background_color: app.theme.primary_text
-                    flat_drop_text_color: app.theme.text_primary
-                    flat_border_color: app.theme.divider
-                FlatSpinner:
+                CeedFlatSpinner:
                     knsname: 'pt_ip'
                     id: pt_ip
                     size_hint_x: None
                     width: self.minimum_width
                     on_text: knspace.player.set_pt_ip(self.text)
-                    flat_color: app.theme.text_primary
-                    flat_menu_color: app.theme.accent
-                    flat_drop_background_color: app.theme.primary_text
-                    flat_drop_text_color: app.theme.text_primary
-                    flat_border_color: app.theme.divider
             GridLayout:
                 size_hint: 1, None
                 height: self.minimum_height

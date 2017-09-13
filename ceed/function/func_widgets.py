@@ -13,6 +13,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.properties import BooleanProperty, NumericProperty, StringProperty, \
     ObjectProperty, ListProperty, DictProperty
 from kivy.core.window import Window
+from kivy.clock import Clock
 from kivy.factory import Factory
 from kivy.compat import string_types
 from kivy.app import App
@@ -142,20 +143,16 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
                         float: 'float', 'str': 'str', str: 'str'}
         input_filter = {'float': 'float', 'int': 'int', 'str': None}
         props = defaultdict(list)
+        cls_widgets = []
 
         assert 'name' in kwargs
-        if not func.source_func:
-            w = FuncNamePropTextWidget(func=func, prop_name='name')
-            add(w)
-            if func.parent_func:
-                w.disabled = True
-            s = self.ids.source_control
-            s.parent.remove_widget(s)
         del kwargs['name']
 
         for key, value in kwargs.items():
             if value is not None:
-                if value in input_types:
+                if isinstance(value, (list, tuple)):
+                    cls_widgets.append((key, value))
+                elif value in input_types:
                     props[input_types[value]].append(key)
                 else:
                     raise TypeError('"{}" is not a recognized type'.
@@ -172,7 +169,7 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
                     raise TypeError('"{}" is not a recognized type'.
                                     format(value))
 
-        if props:
+        if props or cls_widgets:
             grid = Factory.XYSizedGridLayout(cols=2)
             label = Factory.FlatXSizedLabel
             color = App.get_running_app().theme.text_primary
@@ -184,9 +181,23 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
                     grid.add_widget(FuncPropTextWidget(
                         func=func, prop_name=key,
                         input_filter=input_filter[fmt]))
+
+            for key, cls in sorted(cls_widgets, key=lambda x: x[0]):
+                cls, kw = cls
+                if isinstance(cls, string_types):
+                    cls = Factory.get(cls)
+
+                grid.add_widget(
+                    label(text=pretty_names.get(key, key),
+                          padding_x='10dp', flat_color=color))
+                grid.add_widget(cls(
+                    func=func, prop_name=key, **kw))
+
             add(grid)
 
         for item in items:
+            if isinstance(item, string_types):
+                item = Factory.get(item)()
             add(item)
 
     def link_container(self):
@@ -221,6 +232,8 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
         '''
         if self.parent:
             return
+        self.func.fbind('source_func', self._track_source)
+        self._track_source()
 
         parent = self.func.parent_func
         if parent:
@@ -250,7 +263,29 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
                 self.selection_controller.deselect_node(c.display)
 
         if self.parent:
+            self.func.funbind('source_func', self._track_source)
             self.parent.remove_widget(self)
+
+    def _track_source(self, *largs):
+        if not self.func.source_func:
+            if not self.source_control.parent:
+                return
+
+            w = FuncNamePropTextWidget(func=self.func, prop_name='name')
+            self.settings.add_widget(w, index=len(self.settings.children))
+            if self.func.parent_func:
+                w.disabled = True
+            s = self.source_control
+            s.parent.remove_widget(s)
+        else:
+            if self.source_control.parent:
+                return
+            s = self.source_control
+            parent = self.ids.selector
+            prev = parent.children.index(self.ids.func_label)
+            parent.add_widget(s, index=prev)
+
+            self.settings.remove_widget(self.settings.children[-1])
 
 
 class FuncWidgetGroup(FuncWidget):
@@ -270,6 +305,11 @@ class FuncWidgetGroup(FuncWidget):
         super(FuncWidgetGroup, self).show_func(index=index)
         for f in self.func.funcs:
             f.display.show_func()
+
+    def hide_func(self):
+        super(FuncWidgetGroup, self).hide_func()
+        for f in self.func.funcs:
+            f.display.hide_func()
 
     def selected_child(self):
         '''Returns the child or sub-child etc. :class:`ceed.function.FuncBase`
@@ -335,5 +375,68 @@ class FuncNamePropTextWidget(FuncPropTextWidget):
 
         if text != self.func.name:
             self.func.name = fix_name(text, FunctionFactory.funcs_inst)
+
+
+class TrackOptionsSpinner(Factory.SizedCeedFlatSpinner):
+
+    func = None
+    '''The :class:`ceed.function.FuncBase` instance it's associated with.
+    '''
+
+    prop_name = ''
+    '''The name of the property of :attr:`func` that this widget edits.
+    '''
+
+    allow_empty = False
+
+    track_obj = None
+
+    track_prop = ''
+
+    update_items_on_press = BooleanProperty(False)
+
+    _value_trigger = None
+
+    def __init__(self, func=None, prop_name=None, allow_empty=False,
+                 track_obj=None, track_prop='', **kwargs):
+        super(TrackOptionsSpinner, self).__init__(**kwargs)
+        self.func = func
+        self.prop_name = prop_name
+        self.allow_empty = allow_empty
+        self.track_obj = track_obj
+        self.track_prop = track_prop
+        self._value_trigger = Clock.create_trigger(self._update_values, -1)
+
+        if self.update_items_on_press:
+            self.spinner.fbind('on_press', self._value_trigger)
+        else:
+            track_obj.fbind(track_prop, self._value_trigger)
+        func.fbind(prop_name, self._update_text)
+        self.fbind('text', self._update_attr)
+        self._update_text()
+        self._update_values()
+
+    def _update_text(self, *largs):
+        '''Updates the GUI from the function.
+        '''
+        self.text = getattr(self.func, self.prop_name)
+
+    def _update_attr(self, *largs):
+        '''Updates the function property from the GUI.
+        '''
+        if getattr(self.func, self.prop_name) != self.text:
+            self.func.track_source = False
+            setattr(self.func, self.prop_name, self.text)
+
+    def _update_values(self, *largs):
+        vals = list(sorted(getattr(self.track_obj, self.track_prop)))
+
+        if self.allow_empty:
+            vals.insert(0, '')
+        self.values = vals
+
+        if self.text not in vals:
+            self.text = vals[0] if vals else ''
+
 
 Factory.register('FuncDragableLayoutBehavior', cls=FuncDragableLayoutBehavior)

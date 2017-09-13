@@ -385,11 +385,11 @@ class ShapePlot(object):
         self.graph = graph
         self.graph_canvas = graph_canvas
         self.background = []
-        b = self.r_btn = Factory.ShapeGraphSelector(controller=graph, text='R')
+        b = self.r_btn = Factory.ShapeGraphSelector(text='R')
         b.controller = graph
-        b = self.g_btn = Factory.ShapeGraphSelector(controller=graph, text='G')
+        b = self.g_btn = Factory.ShapeGraphSelector(text='G')
         b.controller = graph
-        b = self.b_btn = Factory.ShapeGraphSelector(controller=graph, text='B')
+        b = self.b_btn = Factory.ShapeGraphSelector(text='B')
         b.controller = graph
         app = App.get_running_app()
         self.selection_label = Factory.FlatMinXYSizedLabel(
@@ -814,4 +814,6 @@ class StageGraph(Factory.FlatSplitter):
             self.unpinned_parent.add_widget(self)
             self.unpinned_root.open()
 
-Factory.register('CeedStageDragableLayoutBehavior', cls=CeedStageDragableLayoutBehavior)
+
+Factory.register('CeedStageDragableLayoutBehavior',
+                 cls=CeedStageDragableLayoutBehavior)
