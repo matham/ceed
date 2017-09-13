@@ -800,6 +800,8 @@ class ControllerSideViewControllerBase(ViewControllerBase):
                 elif msg == 'end_stage':
                     CeedData.stop_experiment()
                     self.stage_active = False
+                    if libdpx is not None:
+                        self.set_led_mode(self.LED_mode_idle)
                 elif msg == 'key_down':
                     key, modifiers = yaml_loads(value)
                     self.handle_key_press(key, modifiers)
