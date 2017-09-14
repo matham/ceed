@@ -308,11 +308,16 @@ class CeedPlayer(KNSpaceBehavior, EventDispatcher):
 
         self.browse_path = path
         fname = join(path, filename)
-        images = [m for m in ImageLoader(fname)]
 
-        if not images:
-            raise Exception('Could not find image in {}'.format(fname))
-        img = images[0][0]
+        if filename.endswith('.h5'):
+            from ceed.storage.controller import CeedData
+            img = CeedData.load_last_fluorescent_image(fname)
+        else:
+            images = [m for m in ImageLoader(fname)]
+
+            if not images:
+                raise Exception('Could not find image in {}'.format(fname))
+            img = images[0][0]
 
         knspace.central_display.update_img(img)
         self.last_image = img

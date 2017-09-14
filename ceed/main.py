@@ -151,10 +151,10 @@ class CeedApp(CPLComApp):
 
 def _cleanup(app, *largs):
     CeedPlayer.exit_players()
-    app.dump_json_config()
     ViewController.stop_process()
     ViewController.finish_stop_process()
     CeedData.stop_experiment()
+    app.dump_json_config()
 
 run_app = partial(run_cpl_app, CeedApp, _cleanup)
 '''The function that starts the GUI and the entry point for

@@ -66,19 +66,19 @@ class CeedDataBase(EventDispatcher):
 
     def __init__(self, **kwargs):
         super(CeedDataBase, self).__init__(**kwargs)
-        if not os.environ.get('KIVY_DOC_INCLUDE', None):
+        if (not os.environ.get('KIVY_DOC_INCLUDE', None) and
+                self.backup_interval):
             Clock.schedule_interval(self.write_changes, self.backup_interval)
 
     @staticmethod
     def gather_config_data_dict():
-        from ceed.view.controller import ViewController
         data = {}
         data['shape'] = get_painter().save_state()
         func_id_map = {}
         data['function'] = FunctionFactory.save_funcs(func_id_map)[0]
         data['stage'] = StageFactory.save_stages(func_id_map)[0]
         data['func_id_map'] = func_id_map
-        data['view_controller'] = ViewController.save_state()
+        data['app_settings'] = App.get_running_app().app_settings
 
         return data
 
@@ -91,8 +91,13 @@ class CeedDataBase(EventDispatcher):
 
     @staticmethod
     def apply_config_data_dict(data):
-        from ceed.view.controller import ViewController
-        ViewController.set_state(data['view_controller'])
+        app = App.get_running_app()
+        app_settings = data['app_settings']
+        # filter classes that are not of this app
+        classes = app.get_config_classes()
+        app.app_settings = {cls: app_settings[cls] for cls in classes}
+        app.apply_json_config()
+
         old_to_new_name_shape_map = {}
         get_painter().set_state(data['shape'], old_to_new_name_shape_map)
 
@@ -369,6 +374,25 @@ class CeedDataBase(EventDispatcher):
             data[prop.name] = yaml_loads(prop.values[0].value)
         return data
 
+    def load_last_fluorescent_image(self, filename):
+        f = nix.File.open(filename, nix.FileMode.ReadOnly)
+        Logger.debug(
+            'Ceed Controller (storage): Importing fluorescent image from '
+            '"{}"'.format(self.filename))
+
+        try:
+            if not f.blocks:
+                raise ValueError('Image not found in {}'.format(filename))
+
+            for block in reversed(f.blocks):
+                img = self.read_fluorescent_image(block)
+                if img is not None:
+                    return img
+
+            raise ValueError('Image not found in {}'.format(filename))
+        finally:
+            f.close()
+
     def write_fluorescent_image(self, block, img):
         group = block.create_group('fluorescent_image', 'image')
 
@@ -383,16 +407,16 @@ class CeedDataBase(EventDispatcher):
         for i, plane in enumerate(img.to_bytearray()):
             image_data = block.create_data_array(
                     'fluorescent_image_plane_{}'.format(i), 'image',
-                    dtype=np.uint32, data=plane)
+                    dtype=np.uint8, data=plane)
             group.data_arrays.append(image_data)
 
     def read_fluorescent_image(self, block):
         try:
-            group = block.fluorescent_image
-        except AttributeError:
+            group = block.groups['fluorescent_image']
+        except KeyError:
             return None
 
-        planes = [bytes(d) for d in group.data_arrays]
+        planes = [np.array(d).tobytes() for d in group.data_arrays]
         img = Image(plane_buffers=planes, pix_fmt=group.metadata['pix_fmt'],
                     size=yaml_loads(group.metadata['size']))
         return img
@@ -405,9 +429,8 @@ class CeedDataBase(EventDispatcher):
 
     @app_error
     def collect_experiment(self, block, shapes, frame_bits, frame_counter,
-                           frame_time, frame_time_counter):
-        queue = self.data_queue
-        lock = self.data_lock
+                           frame_time, frame_time_counter, queue, lock,
+                           led_state):
 
         frame_count_buf = np.zeros((512, ), dtype=np.uint64)
         bits_buf = np.zeros((512, ), dtype=np.uint32)
@@ -472,6 +495,15 @@ class CeedDataBase(EventDispatcher):
                 flip_count_buf[flip_i] = count
                 flip_t_buf[flip_i] = t
                 flip_i += 1
+            elif msg == 'led_state':
+                count, r, g, b = value
+                rec = np.rec.fromarrays((
+                    np.array([count], dtype=np.uint64),
+                    np.array([r], dtype=np.uint8),
+                    np.array([g], dtype=np.uint8),
+                    np.array([b], dtype=np.uint8)),
+                    names=('frame', 'r', 'g', 'b'))
+                led_state.append(rec)
 
     def prepare_experiment(self, stage_name):
         self.stop_experiment()
@@ -506,12 +538,22 @@ class CeedDataBase(EventDispatcher):
         frame_time_counter = block.create_data_array(
                 'frame_time_counter', 'counter', dtype=np.uint64, data=[])
 
+        led_state = block.create_data_array(
+            'led_state', 'led_state',
+            data=np.rec.fromarrays(
+                (np.empty(
+                    (0, ), dtype=np.uint64), np.empty((0, ), dtype=np.uint8),
+                 np.empty(
+                     (0, ), dtype=np.uint8), np.empty((0, ), dtype=np.uint8)),
+                names=('frame', 'r', 'g', 'b')))
+
         self.data_queue = Queue()
         self.data_lock = RLock()
         t = self.data_thread = Thread(
             target=self.collect_experiment, name='data_collection',
             args=(block, shapes, frame_bits, frame_counter, frame_time,
-                  frame_time_counter))
+                  frame_time_counter, self.data_queue, self.data_lock,
+                  led_state))
         t.start()
 
     def stop_experiment(self):
@@ -519,7 +561,6 @@ class CeedDataBase(EventDispatcher):
             return
 
         self.data_queue.put_nowait(('eof', None))
-        self.data_thread.join()
         self.data_queue = self.data_thread = self.data_lock = None
 
     def add_frame(self, count, bits, values):
@@ -534,6 +575,11 @@ class CeedDataBase(EventDispatcher):
             return
         if self.data_queue:
             self.data_queue.put_nowait(('frame_flip', (count, t)))
+            self.has_unsaved = True
+
+    def add_led_state(self, count, r, g, b):
+        if self.data_queue:
+            self.data_queue.put_nowait(('led_state', (count, r, g, b)))
             self.has_unsaved = True
 
 

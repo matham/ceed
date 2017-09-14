@@ -41,8 +41,9 @@ if ceed.has_gui_control or ceed.is_view_inst:
 try:
     from pypixxlib import _libdpx as libdpx
     from pypixxlib.propixx import PROPixx
+    from pypixxlib.propixx import PROPixxCTRL
 except ImportError:
-    libdpx = PROPixx = None
+    libdpx = PROPixx = PROPixxCTRL = None
 
 __all__ = (
     'ViewControllerBase', 'ViewController', 'ViewSideViewControllerBase',
@@ -292,22 +293,6 @@ class ViewControllerBase(EventDispatcher):
     def on_changed(self, *largs):
         pass
 
-    def save_state(self):
-        '''Returns a dict representation of the state of the instance.
-
-        Use :meth:`set_state` to set the state with the result of this method.
-        '''
-        d = {}
-        for name in ViewControllerBase.__settings_attrs__:
-            d[name] = getattr(self, name)
-        return d
-
-    def set_state(self, data):
-        '''Sets the instance state to the result of :meth:`save_state`.
-        '''
-        for name, value in data.items():
-            setattr(self, name, value)
-
     def request_process_data(self, data_type, data):
         '''Called by the client that displays the shapes when it needs to
         update the controller with some data.
@@ -348,7 +333,7 @@ class ViewControllerBase(EventDispatcher):
 
         if self.output_count and not self.serializer_tex:
             with canvas:
-                Color(0, 0, 0, 1, group=self.canvas_name)
+                Color(1, 1, 1, 1, group=self.canvas_name)
                 tex = self.serializer_tex = Texture.create(size=(1, 1))
                 tex.mag_filter = 'nearest'
                 tex.min_filter = 'nearest'
@@ -378,8 +363,7 @@ class ViewControllerBase(EventDispatcher):
             except StageDoneException:
                 break
 
-            values = StageFactory.fill_shape_gl_color_values(
-                None, shape_values)
+            values = StageFactory.fill_shape_gl_color_values(None, shape_values)
             for name, r, g, b, a in values:
                 obj_values[name].append((r, g, b, a))
         return obj_values
@@ -533,7 +517,7 @@ class ViewSideViewControllerBase(ViewControllerBase):
         passes on to the main GUI process.
         '''
         self.queue_view_write.put_nowait((
-            'key_down', yaml_dumps((key, modifiers))))
+            'key_down', yaml_dumps((key, list(modifiers)))))
 
     def send_keyboard_up(self, key):
         '''Gets called by the window for every keyboard key release, which it
@@ -548,7 +532,8 @@ class ViewSideViewControllerBase(ViewControllerBase):
         '''
         def assign_settings(*largs):
             app = App.get_running_app()
-            app.app_settings = app_settings
+            classes = app.get_config_classes()
+            app.app_settings = {cls: app_settings[cls] for cls in classes}
             app.apply_json_config()
         for k, v in settings.items():
             setattr(self, k, v)
@@ -610,14 +595,11 @@ class ViewSideViewControllerBase(ViewControllerBase):
         '''Called before the app is run to prepare the app according to the
         configuration parameters.
         '''
-        if Window.fullscreen != self.fullscreen or not self.fullscreen:
-            Window.maximize()
-            if self.do_quad_mode:
-                Window.size = 2 * self.screen_width, 2 * self.screen_height
-            else:
-                Window.size = self.screen_width, self.screen_height
-            Window.left = self.screen_offset_x
-            Window.fullscreen = self.fullscreen
+        # if Window.fullscreen != self.fullscreen or not self.fullscreen:
+        #     # Window.maximize()
+        Window.size = self.screen_width, self.screen_height
+        Window.left = self.screen_offset_x
+        Window.fullscreen = self.fullscreen
 
 
 def view_process_enter(*largs):
@@ -646,6 +628,10 @@ class ControllerSideViewControllerBase(ViewControllerBase):
     one started.
     '''
 
+    propixx_dev = None
+
+    propixx_ctrl = None
+
     @app_error
     def request_stage_start(self, stage_name):
         '''Starts the stage either in the GUI when previewing or in the
@@ -657,16 +643,16 @@ class ControllerSideViewControllerBase(ViewControllerBase):
             raise ValueError('No stage specified')
 
         if self.preview:
-            if libdpx is not None:
+            CeedData.prepare_experiment(stage_name)
+            if self.propixx_lib:
                 self.set_led_mode(self.LED_mode)
 
-            CeedData.prepare_experiment(stage_name)
             self.start_stage(stage_name, knspace.painter.canvas)
         elif self.view_process:
-            if libdpx is not None:
+            CeedData.prepare_experiment(stage_name)
+            if self.propixx_lib:
                 self.set_led_mode(self.LED_mode)
 
-            CeedData.prepare_experiment(stage_name)
             self.queue_view_read.put_nowait(
                 ('config', yaml_dumps(
                     CeedData.gather_config_data_dict())))
@@ -682,18 +668,20 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         '''
         if self.preview:
             self.end_stage()
-            CeedData.stop_experiment()
-            self.stage_active = False
         elif self.view_process:
             self.queue_view_read.put_nowait(('end_stage', None))
+
+    def stage_end_cleanup(self):
+        CeedData.stop_experiment()
+        self.stage_active = False
+
+        if self.propixx_lib:
+            self.set_led_mode(self.LED_mode_idle)
 
     @app_error
     def end_stage(self):
         val = super(ControllerSideViewControllerBase, self).end_stage()
-        self.stage_active = False
-
-        if libdpx is not None:
-            self.set_led_mode(self.LED_mode_idle)
+        self.stage_end_cleanup()
         return val
 
     def request_fullscreen(self, state):
@@ -785,8 +773,7 @@ class ControllerSideViewControllerBase(ViewControllerBase):
                 msg, value = read.get(False)
                 if msg == 'eof':
                     self.finish_stop_process()
-                    CeedData.stop_experiment()
-                    self.stage_active = False
+                    self.stage_end_cleanup()
                     break
                 elif msg == 'exception':
                     e, exec_info = yaml_loads(value)
@@ -798,10 +785,7 @@ class ControllerSideViewControllerBase(ViewControllerBase):
                 elif msg == 'response' and value == 'end_stage':
                     self.stage_active = False
                 elif msg == 'end_stage':
-                    CeedData.stop_experiment()
-                    self.stage_active = False
-                    if libdpx is not None:
-                        self.set_led_mode(self.LED_mode_idle)
+                    self.stage_end_cleanup()
                 elif msg == 'key_down':
                     key, modifiers = yaml_loads(value)
                     self.handle_key_press(key, modifiers)
@@ -811,30 +795,56 @@ class ControllerSideViewControllerBase(ViewControllerBase):
             except Empty:
                 break
 
+    def open_projector(self):
+        if libdpx is None or PROPixx is None or PROPixxCTRL is None:
+            raise ImportError('Cannot open PROPixx library')
+
+        if self.propixx_dev:
+            return
+
+        self.propixx_dev = PROPixx()
+        self.propixx_ctrl = PROPixxCTRL()
+        libdpx.DPxOpen()
+
+    def close_projector(self):
+        if libdpx is None or PROPixx is None or PROPixxCTRL is None:
+            return
+
+        if not self.propixx_dev:
+            return
+
+        libdpx.DPxClose()
+        self.propixx_ctrl.close()
+        self.propixx_dev.close()
+        self.propixx_ctrl = self.propixx_dev = None
+
+    @app_error
+    def set_pixel_mode(self, state):
+        self.open_projector()
+        if state:
+            self.propixx_ctrl.dout.enablePixelMode()
+        else:
+            self.propixx_ctrl.dout.disablePixelMode()
+        self.propixx_ctrl.updateRegisterCache()
+
     @app_error
     def set_led_mode(self, mode):
         '''Sets the projector's LED mode. ``mode`` can be one of
         :attr:`ViewControllerBase.led_modes`.
         '''
-        if libdpx is None:
-            raise ImportError('Cannot open PROPixx library')
-        libdpx.DPxOpen()
+        self.open_projector()
         libdpx.DPxSetPPxLedMask(self.led_modes[mode])
         libdpx.DPxUpdateRegCache()
-        libdpx.DPxClose()
 
     @app_error
     def set_video_mode(self, mode):
         '''Sets the projector's video mode. ``mode`` can be one of
         :attr:`ViewControllerBase.video_modes`.
         '''
-        self.video_mode = mode
-        if PROPixx is None:
-            raise ImportError('Cannot open PROPixx library')
-        dev = PROPixx()
-        dev.setDlpSequencerProgram(mode)
-        dev.updateRegisterCache()
-        dev.close()
+        self.open_projector()
+        self.propixx_dev.setDlpSequencerProgram(mode)
+        self.propixx_dev.updateRegisterCache()
+
 
 ViewController = None
 '''The controller that plays or directs that the experimental projector output

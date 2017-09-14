@@ -180,10 +180,11 @@
                 size: self.texture_size
                 text: 'Video mode'
             ThemedSpinner:
-                #disabled: not ViewController.propixx_lib
                 values: ViewController.video_modes
                 text: ViewController.video_mode
-                on_text: ViewController.set_video_mode(self.text)
+                on_text:
+                    ViewController.video_mode = self.text
+                    if ViewController.propixx_lib: ViewController.set_video_mode(ViewController.video_mode)
                 size_hint_x: None
                 width: self.minimum_width
             ThemedLabel:
@@ -191,7 +192,6 @@
                 size: self.texture_size
                 text: 'LED mode'
             ThemedSpinner:
-                disabled: not ViewController.propixx_lib
                 values: ViewController.led_modes.keys()
                 text: ViewController.LED_mode
                 on_text: ViewController.LED_mode = self.text
@@ -202,11 +202,10 @@
                 size: self.texture_size
                 text: 'LED mode idle'
             ThemedSpinner:
-                disabled: not ViewController.propixx_lib
                 values: ViewController.led_modes.keys()
                 text: ViewController.LED_mode_idle
                 on_text:
                     ViewController.LED_mode_idle = self.text
-                    ViewController.set_led_mode(ViewController.LED_mode_idle)
+                    if ViewController.propixx_lib: ViewController.set_led_mode(ViewController.LED_mode_idle)
                 size_hint_x: None
                 width: self.minimum_width

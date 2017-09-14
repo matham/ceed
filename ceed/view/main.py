@@ -47,6 +47,7 @@ kv = '''
             pos: 0, 0
 '''
 
+
 class ViewRootWidget(ViewRootFocusBehavior, Widget):
     pass
 
@@ -73,7 +74,7 @@ class CeedViewApp(CPLComApp):
     def on_start(self):
         glDisable(GL_DITHER)
         Window.clearcolor = (0, 0, 0, 1)
-        Window.minimize()
+        # Window.minimize()
         self.root.focus = True
         Window.show_cursor = False
 
