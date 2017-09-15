@@ -78,6 +78,9 @@ class CeedDataBase(EventDispatcher):
         data['function'] = FunctionFactory.save_funcs(func_id_map)[0]
         data['stage'] = StageFactory.save_stages(func_id_map)[0]
         data['func_id_map'] = func_id_map
+
+        App.get_running_app().dump_json_config()
+        App.get_running_app().load_json_config()
         data['app_settings'] = App.get_running_app().app_settings
 
         return data
@@ -583,7 +586,7 @@ class CeedDataBase(EventDispatcher):
             self.has_unsaved = True
 
 
-class DataSerializer(EventDispatcher):
+class DataSerializerBase(EventDispatcher):
 
     __settings_attrs__ = ('counter_bit_width', 'clock_idx', 'count_indices',
                           'short_count_indices', 'projector_to_aquisition_map')
@@ -641,3 +644,4 @@ CeedData = CeedDataBase()
 '''The singleton which controls the loading and saving of configuration and
 experimental data. It is a :class:`CeedDataBase` instance.
 '''
+DataSerializer = DataSerializerBase()

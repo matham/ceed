@@ -263,8 +263,8 @@ class ViewControllerBase(EventDispatcher):
     '''
 
     serializer = None
-    '''The :class:`ceed.storage.controller.DataSerializer` instance that
-    generates the corner pixel value.
+    '''The :meth:`ceed.storage.controller.DataSerializerBase.get_bits`
+    generator instance that generates the corner pixel value.
     '''
 
     serializer_tex = None
@@ -386,8 +386,7 @@ class ViewControllerBase(EventDispatcher):
             self._cpu_stats['tstart'] = clock()
 
         if self.output_count:
-            kwargs = App.get_running_app().app_settings['serializer']
-            self.serializer = DataSerializer(**kwargs).get_bits(-1)
+            self.serializer = DataSerializer.get_bits(-1)
 
         self.add_graphics(canvas)
 
@@ -466,7 +465,7 @@ class ViewControllerBase(EventDispatcher):
                 r, g, b = bits & 0xFF, (bits & 0xFF00) >> 8, \
                     (bits & 0xFF0000) >> 16
                 self.serializer_tex.blit_buffer(
-                    bytearray([r, g, b]), colorfmt='rgb', bufferfmt='ubyte')
+                    bytes([r, g, b]), colorfmt='rgb', bufferfmt='ubyte')
 
             values = StageFactory.fill_shape_gl_color_values(
                 shape_views, shape_values, proj)
@@ -595,8 +594,6 @@ class ViewSideViewControllerBase(ViewControllerBase):
         '''Called before the app is run to prepare the app according to the
         configuration parameters.
         '''
-        # if Window.fullscreen != self.fullscreen or not self.fullscreen:
-        #     # Window.maximize()
         Window.size = self.screen_width, self.screen_height
         Window.left = self.screen_offset_x
         Window.fullscreen = self.fullscreen
@@ -628,38 +625,36 @@ class ControllerSideViewControllerBase(ViewControllerBase):
     one started.
     '''
 
-    propixx_dev = None
-
-    propixx_ctrl = None
-
     @app_error
     def request_stage_start(self, stage_name):
         '''Starts the stage either in the GUI when previewing or in the
         viewer.
         '''
-        self.stage_active = True
         if not stage_name:
-            self.stage_active = False
             raise ValueError('No stage specified')
+        if not self.preview and not self.view_process:
+            raise Exception("No window to run experiment")
+
+        self.stage_active = True
+        App.get_running_app().dump_json_config()
+        App.get_running_app().load_json_config()
+        CeedData.prepare_experiment(stage_name)
+
+        if self.propixx_lib:
+            m = self.LED_mode
+            self.set_led_mode(m)
+            CeedData.add_led_state(0, 'R' in m, 'G' in m, 'B' in m)
+            self.set_pixel_mode(True)
+        else:
+            CeedData.add_led_state(0, 1, 1, 1)
 
         if self.preview:
-            CeedData.prepare_experiment(stage_name)
-            if self.propixx_lib:
-                self.set_led_mode(self.LED_mode)
-
             self.start_stage(stage_name, knspace.painter.canvas)
         elif self.view_process:
-            CeedData.prepare_experiment(stage_name)
-            if self.propixx_lib:
-                self.set_led_mode(self.LED_mode)
-
             self.queue_view_read.put_nowait(
                 ('config', yaml_dumps(
                     CeedData.gather_config_data_dict())))
             self.queue_view_read.put_nowait(('start_stage', stage_name))
-        else:
-            self.stage_active = False
-            raise Exception("No window to run experiment")
 
     @app_error
     def request_stage_end(self):
@@ -676,6 +671,7 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         self.stage_active = False
 
         if self.propixx_lib:
+            self.set_pixel_mode(False)
             self.set_led_mode(self.LED_mode_idle)
 
     @app_error
@@ -710,6 +706,8 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         if self.view_process:
             return
 
+        App.get_running_app().dump_json_config()
+        App.get_running_app().load_json_config()
         settings = {name: getattr(self, name)
                     for name in ViewControllerBase.__settings_attrs__}
 
@@ -795,55 +793,44 @@ class ControllerSideViewControllerBase(ViewControllerBase):
             except Empty:
                 break
 
-    def open_projector(self):
-        if libdpx is None or PROPixx is None or PROPixxCTRL is None:
-            raise ImportError('Cannot open PROPixx library')
-
-        if self.propixx_dev:
-            return
-
-        self.propixx_dev = PROPixx()
-        self.propixx_ctrl = PROPixxCTRL()
-        libdpx.DPxOpen()
-
-    def close_projector(self):
-        if libdpx is None or PROPixx is None or PROPixxCTRL is None:
-            return
-
-        if not self.propixx_dev:
-            return
-
-        libdpx.DPxClose()
-        self.propixx_ctrl.close()
-        self.propixx_dev.close()
-        self.propixx_ctrl = self.propixx_dev = None
-
     @app_error
     def set_pixel_mode(self, state):
-        self.open_projector()
+        if PROPixxCTRL is None:
+            raise ImportError('Cannot open PROPixx library')
+
+        ctrl = PROPixxCTRL()
         if state:
-            self.propixx_ctrl.dout.enablePixelMode()
+            ctrl.dout.enablePixelMode()
         else:
-            self.propixx_ctrl.dout.disablePixelMode()
-        self.propixx_ctrl.updateRegisterCache()
+            ctrl.dout.disablePixelMode()
+        ctrl.updateRegisterCache()
+        ctrl.close()
 
     @app_error
     def set_led_mode(self, mode):
         '''Sets the projector's LED mode. ``mode`` can be one of
         :attr:`ViewControllerBase.led_modes`.
         '''
-        self.open_projector()
+        if libdpx is None:
+            raise ImportError('Cannot open PROPixx library')
+
+        libdpx.DPxOpen()
         libdpx.DPxSetPPxLedMask(self.led_modes[mode])
         libdpx.DPxUpdateRegCache()
+        libdpx.DPxClose()
 
     @app_error
     def set_video_mode(self, mode):
         '''Sets the projector's video mode. ``mode`` can be one of
         :attr:`ViewControllerBase.video_modes`.
         '''
-        self.open_projector()
-        self.propixx_dev.setDlpSequencerProgram(mode)
-        self.propixx_dev.updateRegisterCache()
+        if PROPixx is None:
+            raise ImportError('Cannot open PROPixx library')
+
+        dev = PROPixx()
+        dev.setDlpSequencerProgram(mode)
+        dev.updateRegisterCache()
+        dev.close()
 
 
 ViewController = None
