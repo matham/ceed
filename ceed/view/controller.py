@@ -33,7 +33,7 @@ from cplcom.utils import yaml_dumps, yaml_loads
 import ceed
 from ceed.stage import StageFactory, StageDoneException
 from ceed.storage.controller import DataSerializer, CeedData
-from ceed.function import FunctionFactory
+import ceed.view._projector_process
 
 if ceed.has_gui_control or ceed.is_view_inst:
     from kivy.core.window import Window
@@ -813,6 +813,8 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         if PROPixxCTRL is None:
             raise ImportError('Cannot open PROPixx library')
 
+        return ceed.view._projector_process.run_subprocess('pixel', state)
+
         ctrl = PROPixxCTRL()
         if state:
             ctrl.dout.enablePixelMode()
@@ -829,6 +831,8 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         if libdpx is None:
             raise ImportError('Cannot open PROPixx library')
 
+        return ceed.view._projector_process.run_subprocess('led', mode)
+
         libdpx.DPxOpen()
         libdpx.DPxSetPPxLedMask(self.led_modes[mode])
         libdpx.DPxUpdateRegCache()
@@ -841,6 +845,8 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         '''
         if PROPixx is None:
             raise ImportError('Cannot open PROPixx library')
+
+        return ceed.view._projector_process.run_subprocess('video', mode)
 
         dev = PROPixx()
         dev.setDlpSequencerProgram(mode)
