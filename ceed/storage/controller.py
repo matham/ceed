@@ -79,8 +79,8 @@ class CeedDataBase(EventDispatcher):
         data['stage'] = StageFactory.save_stages(func_id_map)[0]
         data['func_id_map'] = func_id_map
 
-        App.get_running_app().dump_json_config()
-        App.get_running_app().load_json_config()
+        App.get_running_app().dump_app_settings_to_file()
+        App.get_running_app().load_app_settings_from_file()
         data['app_settings'] = App.get_running_app().app_settings
 
         return data
@@ -99,7 +99,7 @@ class CeedDataBase(EventDispatcher):
         # filter classes that are not of this app
         classes = app.get_config_classes()
         app.app_settings = {cls: app_settings[cls] for cls in classes}
-        app.apply_json_config()
+        app.apply_app_settings()
 
         old_to_new_name_shape_map = {}
         get_painter().set_state(data['shape'], old_to_new_name_shape_map)

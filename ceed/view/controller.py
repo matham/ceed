@@ -533,7 +533,7 @@ class ViewSideViewControllerBase(ViewControllerBase):
             app = App.get_running_app()
             classes = app.get_config_classes()
             app.app_settings = {cls: app_settings[cls] for cls in classes}
-            app.apply_json_config()
+            app.apply_app_settings()
         for k, v in settings.items():
             setattr(self, k, v)
 
@@ -581,7 +581,8 @@ class ViewSideViewControllerBase(ViewControllerBase):
                     CeedData.apply_config_data_dict(
                         yaml_loads(value))
                 elif msg == 'start_stage':
-                    self.start_stage(value, App.get_running_app().root.canvas)
+                    self.start_stage(
+                        value, App.get_running_app().get_display_canvas())
                 elif msg == 'end_stage':
                     self.end_stage()
                 elif msg == 'fullscreen':
@@ -630,14 +631,23 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         '''Starts the stage either in the GUI when previewing or in the
         viewer.
         '''
+        # needs t be set here so button is reset on fail
+        self.stage_active = True
         if not stage_name:
+            self.stage_active = False
             raise ValueError('No stage specified')
         if not self.preview and not self.view_process:
+            self.stage_active = False
             raise Exception("No window to run experiment")
 
-        self.stage_active = True
-        App.get_running_app().dump_json_config()
-        App.get_running_app().load_json_config()
+        # if we need to save the florescent image, start video cam
+        if knspace.gui_save_cam_stage.state == 'down':
+            video_btn = knspace.gui_play
+            if video_btn.state == 'normal':
+                video_btn.trigger_action(0)
+
+        App.get_running_app().dump_app_settings_to_file()
+        App.get_running_app().load_app_settings_from_file()
         CeedData.prepare_experiment(stage_name)
 
         if self.propixx_lib:
@@ -669,6 +679,13 @@ class ControllerSideViewControllerBase(ViewControllerBase):
     def stage_end_cleanup(self):
         CeedData.stop_experiment()
         self.stage_active = False
+
+        # if we need to save the florescent image, stop video cam
+        if knspace.gui_save_cam_stage.state == 'down':
+            video_btn = knspace.gui_play
+            if video_btn.state == 'down':
+                video_btn.trigger_action(0)
+            knspace.gui_save_cam_stage.state = 'normal'
 
         if self.propixx_lib:
             self.set_pixel_mode(False)
@@ -706,8 +723,8 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         if self.view_process:
             return
 
-        App.get_running_app().dump_json_config()
-        App.get_running_app().load_json_config()
+        App.get_running_app().dump_app_settings_to_file()
+        App.get_running_app().load_app_settings_from_file()
         settings = {name: getattr(self, name)
                     for name in ViewControllerBase.__settings_attrs__}
 
@@ -780,9 +797,7 @@ class ControllerSideViewControllerBase(ViewControllerBase):
                 elif msg in ('GPU', 'CPU', 'frame', 'frame_flip'):
                     self.request_process_data(
                         msg, yaml_loads(value))
-                elif msg == 'response' and value == 'end_stage':
-                    self.stage_active = False
-                elif msg == 'end_stage':
+                elif msg == 'end_stage' and msg != 'response':
                     self.stage_end_cleanup()
                 elif msg == 'key_down':
                     key, modifiers = yaml_loads(value)

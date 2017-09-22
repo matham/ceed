@@ -3,59 +3,51 @@
 #:import FunctionFactory ceed.function.FunctionFactory
 #:import Clock kivy.clock.Clock
 
-<ControlDisplay>
-    knsname: 'control_display'
-    on_size:
-        scalar.transform = Matrix()
-        scalar.pos = 0, 0
-        float_layout.size = scalar.bbox[1]
-        self.scroll_x, self.scroll_y = 0., 1.
-    bar_width: '10dp'
-    scroll_type: ['bars']
-    canvas.before:
-        Color:
-            rgba: [0, 0, 0, 1]
-        Rectangle:
-            pos: self.pos
-            size: self.size
-    FloatLayout:
-        id: float_layout
+<ControlDisplay>:
+    Scatter:
+        id: scatter
+        x: min(max(self.x, root.right - self.bbox[1][0]), root.x)
+        y: min(max(self.y, root.top - self.bbox[1][1]), root.y)
+        scale: max(self.scale, min(1, min(root.height / ViewController.screen_height, root.width / ViewController.screen_width)))
         size_hint: None, None
-        Scatter:
-            id: scalar
-            size_hint: None, None
-            size: ViewController.screen_width, ViewController.screen_height
-            on_touch_up: root.resize_trigger()
-            do_translation: False, False
-            do_scale: painter.locked and not painter.select and not painter.move_cam
-            do_rotation: False
-            Widget:
-                BufferImage:
-                    knsname: 'central_display'
-                    auto_bring_to_front: False
-                    size_hint: None, None
-                    size: self.image_size
-                    scale_to_image: False
+        size: ViewController.screen_width, ViewController.screen_height
+        do_translation: painter.locked and not painter.select and not painter.move_cam, painter.locked and not painter.select and not painter.move_cam
+        do_scale: painter.locked and not painter.select and not painter.move_cam
+        do_rotation: False
+        Widget:
+            size: scatter.width, scatter.height
+            canvas.before:
+                Color:
+                    rgba: [0, 0, 0, 1]
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+            BufferImage:
+                knsname: 'central_display'
+                auto_bring_to_front: False
+                size_hint: None, None
+                size: self.image_size
+                scale_to_image: False
 
-                    do_scale: painter.locked and not painter.select and painter.move_cam
-                    do_translation: self.do_scale, self.do_scale
-                    do_rotation: self.do_scale
+                do_scale: painter.locked and not painter.select and painter.move_cam
+                do_translation: self.do_scale, self.do_scale
+                do_rotation: self.do_scale
 
-                    scale: ViewController.cam_scale
-                    x: ViewController.cam_offset_x
-                    y: ViewController.cam_offset_y
-                    rotation: ViewController.cam_rotation
+                scale: ViewController.cam_scale
+                x: ViewController.cam_offset_x
+                y: ViewController.cam_offset_y
+                rotation: ViewController.cam_rotation
 
-                    on_x: ViewController.cam_offset_x = self.x
-                    on_y: ViewController.cam_offset_y = self.y
-                    on_scale: ViewController.cam_scale = self.scale
-                    on_rotation: ViewController.cam_rotation = self.rotation
-                CeedPainter:
-                    knsname: 'painter'
-                    id: painter
-                    size_hint: None, None
-                    size: ViewController.screen_width, ViewController.screen_height
-                    move_cam: False
+                on_x: ViewController.cam_offset_x = self.x
+                on_y: ViewController.cam_offset_y = self.y
+                on_scale: ViewController.cam_scale = self.scale
+                on_rotation: ViewController.cam_rotation = self.rotation
+            CeedPainter:
+                knsname: 'painter'
+                id: painter
+                size_hint: None, None
+                size: ViewController.screen_width, ViewController.screen_height
+                move_cam: False
 
 <ControlBar@BoxLayout>:
     size_hint: None, None
@@ -75,6 +67,12 @@
         on_release: ViewController.request_stage_start(stage_spinner.text) if self.state == 'down' else ViewController.request_stage_end()
         state: 'down' if ViewController.stage_active else 'normal'
         hover_text: '[b]start[/b] stage' if self.state == 'normal' else '[b]stop[/b] stage'
+    FlatImageToggleButton:
+        knsname: 'gui_save_cam_stage'
+        source: 'flat_not_live.png' if self.state == 'normal' else 'flat_live.png'
+        hover_text: 'auto screenshot' if self.state == 'normal' else '[b]auto screenshot[/b]'
+        flat_color: app.theme.accent
+        state: 'normal'
     FlatImageToggleButton:
         on_release: ViewController.start_process() if self.state == 'down' else ViewController.stop_process()
         state: 'down' if ViewController.view_process else 'normal'

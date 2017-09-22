@@ -17,11 +17,13 @@ from kivy.app import App
 from kivy.properties import ObjectProperty
 from kivy.resources import resource_add_path
 from kivy.uix.behaviors.knspace import knspace, KNSpaceBehavior
-from kivy.uix.widget import Widget
+from kivy.uix.scatter import Scatter
 from kivy.garden.filebrowser import FileBrowser
 from kivy.lang import Builder
+from kivy.uix.widget import Widget
 from kivy.graphics.opengl import glEnable, GL_DITHER, glDisable
 from kivy.logger import Logger
+from kivy.graphics.transformation import Matrix
 from kivy.clock import Clock
 from kivy.compat import string_types
 
@@ -38,6 +40,7 @@ __all__ = ('CeedViewApp', 'run_app')
 
 
 kv = '''
+#:import ViewController ceed.view.controller.ViewController
 <ViewRootWidget>:
     canvas:
         Color:
@@ -45,6 +48,11 @@ kv = '''
         Rectangle:
             size: self.size
             pos: 0, 0
+    Scatter:
+        size_hint: None, None
+        do_rotation: False
+        do_scale: False
+        do_translation: False, False
 '''
 
 
@@ -67,9 +75,27 @@ class CeedViewApp(CPLComApp):
     def init_load(self):
         pass
 
+    def _reload_trans(self, *largs):
+        scatter = self.root.children[0]
+        scatter.size = self.root.size
+        scatter.transform = Matrix()
+        scatter.rotation = -ViewController.cam_rotation
+        scatter.scale = 1 / ViewController.cam_scale
+        scatter.x = -ViewController.cam_offset_x
+        scatter.y = -ViewController.cam_offset_y
+
+    def get_display_canvas(self):
+        return self.root.children[0].canvas
+
     def build(self):
         Builder.load_string(kv)
-        return ViewRootWidget()
+        widget = ViewRootWidget()
+        widget.fbind('size', self._reload_trans)
+        ViewController.fbind('cam_scale', self._reload_trans)
+        ViewController.fbind('cam_offset_x', self._reload_trans)
+        ViewController.fbind('cam_offset_y', self._reload_trans)
+        ViewController.fbind('cam_rotation', self._reload_trans)
+        return widget
 
     def on_start(self):
         glDisable(GL_DITHER)

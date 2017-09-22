@@ -77,8 +77,8 @@ class CeedApp(CPLComApp):
     def __init__(self, **kwargs):
         self.player = CeedPlayer()
         super(CeedApp, self).__init__(**kwargs)
-        self.load_json_config()
-        self.apply_json_config()
+        self.load_app_settings_from_file()
+        self.apply_app_settings()
 
     def build(self):
         base = dirname(__file__)
@@ -154,7 +154,7 @@ def _cleanup(app, *largs):
     ViewController.stop_process()
     ViewController.finish_stop_process()
     CeedData.stop_experiment()
-    app.dump_json_config()
+    app.dump_app_settings_to_file()
 
 run_app = partial(run_cpl_app, CeedApp, _cleanup)
 '''The function that starts the GUI and the entry point for

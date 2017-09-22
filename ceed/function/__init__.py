@@ -478,7 +478,7 @@ class FuncBase(EventDispatcher):
     '''The function icon. Not used currently.
     '''
 
-    duration = NumericProperty(0)
+    duration = NumericProperty(0.)
     '''How long, after the start of the function the function is valid.
     -1 means go on forever. See class for more details.
 

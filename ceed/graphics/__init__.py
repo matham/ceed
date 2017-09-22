@@ -22,7 +22,8 @@ from cplcom.drag_n_drop import DragableController, DragableObjectBehavior
 
 __all__ = ('ShowMoreSelection', 'ShowMoreBehavior',
            'TouchSelectBehavior', 'BoxSelector', 'WidgetList',
-           'CeedDragNDrop', 'CeedDragableObjectBehavior')
+           'CeedDragNDrop', 'CeedDragableObjectBehavior',
+           'FilterTouchEagerlyBehavior')
 
 
 class ShowMoreSelection(object):
@@ -230,6 +231,27 @@ class CeedDragableObjectBehavior(DragableObjectBehavior):
     def on_drag_init(self, *largs):
         pass
 
+
+class FilterTouchEagerlyBehavior(object):
+
+    def on_touch_down(self, touch):
+        if not self.collide_point(*touch.pos):
+            return False
+        return super(FilterTouchEagerlyBehavior, self).on_touch_down(touch)
+
+    def on_touch_move(self, touch):
+        if not self.collide_point(*touch.pos):
+            print('filtered', touch)
+            return False
+        print('passed', touch)
+        return super(FilterTouchEagerlyBehavior, self).on_touch_move(touch)
+
+    def on_touch_up(self, touch):
+        if not self.collide_point(*touch.pos):
+            return False
+        return super(FilterTouchEagerlyBehavior, self).on_touch_up(touch)
+
+
 Factory.register(classname='ShowMoreSelection', cls=ShowMoreSelection)
 Factory.register(classname='ShowMoreBehavior', cls=ShowMoreBehavior)
 Factory.register(classname='TouchSelectBehavior', cls=TouchSelectBehavior)
@@ -237,3 +259,5 @@ Factory.register(classname='WidgetList', cls=WidgetList)
 Factory.register(classname='CeedDragNDrop', cls=CeedDragNDrop)
 Factory.register(classname='CeedDragableObjectBehavior',
                  cls=CeedDragableObjectBehavior)
+Factory.register(classname='FilterTouchEagerlyBehavior',
+                 cls=FilterTouchEagerlyBehavior)
