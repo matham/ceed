@@ -4,11 +4,12 @@
 #:import Clock kivy.clock.Clock
 
 <ControlDisplay>:
-    Scatter:
+    on_size:
+        scatter._sizing_trigger()
+        scatter._pos_trigger()
+    on_pos: scatter._pos_trigger()
+    PainterScatter:
         id: scatter
-        x: min(max(self.x, root.right - self.bbox[1][0]), root.x)
-        y: min(max(self.y, root.top - self.bbox[1][1]), root.y)
-        scale: max(self.scale, min(1, min(root.height / ViewController.screen_height, root.width / ViewController.screen_width)))
         size_hint: None, None
         size: ViewController.screen_width, ViewController.screen_height
         do_translation: painter.locked and not painter.select and not painter.move_cam, painter.locked and not painter.select and not painter.move_cam

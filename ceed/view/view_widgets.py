@@ -7,6 +7,8 @@ These are displayed when the second process of the viewer is running.
 
 from kivy.uix.behaviors.focus import FocusBehavior
 from kivy.uix.stencilview import StencilView
+from kivy.uix.scatter import Scatter
+from kivy.clock import Clock
 
 from ceed.view.controller import ViewController
 
@@ -45,3 +47,33 @@ class ControlDisplay(StencilView):
         if not self.collide_point(*touch.pos):
             return False
         return super(ControlDisplay, self).on_touch_up(touch)
+
+
+class PainterScatter(Scatter):
+
+    _sizing_trigger = None
+
+    _pos_trigger = None
+
+    def __init__(self, **kwargs):
+        super(PainterScatter, self).__init__(**kwargs)
+        self._sizing_trigger = Clock.create_trigger(self._recalculate_size, -1)
+        self.fbind('scale', self._sizing_trigger)
+        ViewController.fbind('screen_height', self._sizing_trigger)
+        ViewController.fbind('screen_width', self._sizing_trigger)
+
+        self._pos_trigger = Clock.create_trigger(self._recalculate_pos, -1)
+        self.fbind('pos', self._pos_trigger)
+        self.fbind('bbox', self._pos_trigger)
+
+    def _recalculate_size(self, *largs):
+        parent = self.parent
+        self.scale = max(
+            self.scale, min(1, min(parent.height / ViewController.screen_height,
+                                   parent.width / ViewController.screen_width)))
+
+    def _recalculate_pos(self, *largs):
+        parent = self.parent
+        x = min(max(self.x, parent.right - self.bbox[1][0]), parent.x)
+        y = min(max(self.y, parent.top - self.bbox[1][1]), parent.y)
+        self.pos = x, y
