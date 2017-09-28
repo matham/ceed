@@ -390,6 +390,8 @@ class WidgetShape(ShowMoreBehavior, BoxLayout):
     def _shape_update(self, *largs):
         '''Update the centroids and area when the shape is changed.
         '''
+        if not self.shape.finished:
+            return
         self.centroid_x, self.centroid_y = tuple(
             map(round, self.shape.centroid))
         self.area = round(self.shape.area)
