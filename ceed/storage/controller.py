@@ -173,8 +173,8 @@ class CeedDataBase(EventDispatcher):
         if self.has_unsaved or self.config_changed:
             def close_callback(discard):
                 if discard:
-                    self.discard_file()
-                    self.close_file()
+                    self.close_file(force_remove_autosave=True)
+                    self.clear_existing_config_data()
                     if app_close:
                         App.get_running_app().stop()
                     else:
@@ -188,6 +188,7 @@ class CeedDataBase(EventDispatcher):
             return False
         else:
             self.close_file()
+            self.clear_existing_config_data()
             if not app_close:
                 self.create_file('')
             return True
@@ -291,19 +292,17 @@ class CeedDataBase(EventDispatcher):
         self.apply_config_data_dict(data)
         self.config_changed = True
 
-    def discard_file(self):
+    def discard_file(self,):
         if not self.has_unsaved and not self.config_changed:
             return
 
-        if not self.filename:
-            self.close_file()
-            self.clear_existing_config_data()
-            self.create_file('')
-            self.has_unsaved = self.config_changed = False
-        else:
-            f = self.filename
-            self.close_file()
+        f = self.filename
+        self.close_file(force_remove_autosave=True)
+        self.clear_existing_config_data()
+        if f:
             self.open_file(f)
+        else:
+            self.create_file('')
 
     def save_as(self, filename, overwrite=False):
         if exists(filename) and not overwrite:
