@@ -16,6 +16,7 @@
         do_scale: painter.locked and not painter.select and not painter.move_cam
         do_rotation: False
         do_collide_after_children: True
+        auto_bring_to_front: False  # required for ctrl click to work in painter
         Widget:
             size: scatter.width, scatter.height
             canvas.before:

@@ -22,12 +22,32 @@ class ViewRootFocusBehavior(FocusBehavior):
     controller.
     '''
 
+    _ctrl_down = False
+
     def keyboard_on_key_down(self, window, keycode, text, modifiers):
+        if keycode[1] in ('ctrl', 'lctrl', 'rctrl'):
+            self._ctrl_down = True
         ViewController.send_keyboard_down(keycode[1], modifiers)
         return True
 
     def keyboard_on_key_up(self, window, keycode):
+        if keycode[1] in ('ctrl', 'lctrl', 'rctrl'):
+            self._ctrl_down = False
+
+        if self._ctrl_down and keycode[1] == 'q':
+            ViewController.filter_background = not ViewController.filter_background
+            return True
         ViewController.send_keyboard_up(keycode[1])
+        return True
+
+    def keyboard_on_textinput(self, window, text):
+        if not self._ctrl_down:
+            return True
+
+        if text == '+':
+            ViewController.alpha_color = min(1., ViewController.alpha_color + .01)
+        elif text == '-':
+            ViewController.alpha_color = max(0., ViewController.alpha_color - .01)
         return True
 
 

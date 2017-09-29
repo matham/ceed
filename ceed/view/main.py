@@ -42,17 +42,39 @@ __all__ = ('CeedViewApp', 'run_app')
 kv = '''
 #:import ViewController ceed.view.controller.ViewController
 <ViewRootWidget>:
-    canvas:
-        Color:
-            rgba: 0, 0, 0, 1
-        Rectangle:
-            size: self.size
-            pos: 0, 0
-    Scatter:
-        size_hint: None, None
-        do_rotation: False
-        do_scale: False
-        do_translation: False, False
+    Widget:
+        size: root.width, root.height
+        canvas.before:
+            Color:
+                rgba: [0, 0, 0, 1]
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        Widget:
+            size: root.size
+            id: display_canvas
+        BufferImage:
+            id: background_widget
+            auto_bring_to_front: False
+            size_hint: None, None
+            size: self.image_size
+            scale_to_image: False
+            color: [1, 1, 1, ViewController.alpha_color]
+    
+            do_scale: True
+            do_translation: True, True
+            do_rotation: True
+    
+            scale: ViewController.cam_scale
+            x: ViewController.cam_offset_x
+            y: ViewController.cam_offset_y
+            rotation: ViewController.cam_rotation
+
+            on_x: ViewController.cam_offset_x = self.x
+            on_y: ViewController.cam_offset_y = self.y
+            on_scale: ViewController.cam_scale = self.scale
+            on_rotation: ViewController.cam_rotation = self.rotation
+        
 '''
 
 
@@ -75,26 +97,15 @@ class CeedViewApp(CPLComApp):
     def init_load(self):
         pass
 
-    def _reload_trans(self, *largs):
-        scatter = self.root.children[0]
-        scatter.size = self.root.size
-        scatter.transform = Matrix()
-        scatter.rotation = -ViewController.cam_rotation
-        scatter.scale = 1 / ViewController.cam_scale
-        scatter.x = -ViewController.cam_offset_x
-        scatter.y = -ViewController.cam_offset_y
-
     def get_display_canvas(self):
-        return self.root.children[0].canvas
+        return self.root.ids.display_canvas.canvas
+
+    def get_background_widget(self):
+        return self.root.ids.background_widget
 
     def build(self):
         Builder.load_string(kv)
         widget = ViewRootWidget()
-        widget.fbind('size', self._reload_trans)
-        ViewController.fbind('cam_scale', self._reload_trans)
-        ViewController.fbind('cam_offset_x', self._reload_trans)
-        ViewController.fbind('cam_offset_y', self._reload_trans)
-        ViewController.fbind('cam_rotation', self._reload_trans)
         return widget
 
     def on_start(self):

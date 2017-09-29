@@ -11,10 +11,14 @@ import sys
 from fractions import Fraction
 import traceback
 from collections import defaultdict
+import cv2
+import numpy as np
+from matplotlib import pyplot as plt
 try:
     from Queue import Empty
 except ImportError:
     from queue import Empty
+from ffpyplayer.pic import Image, SWScale
 
 from kivy.event import EventDispatcher
 from kivy.properties import NumericProperty, StringProperty, BooleanProperty, \
@@ -33,7 +37,6 @@ from cplcom.utils import yaml_dumps, yaml_loads
 import ceed
 from ceed.stage import StageFactory, StageDoneException
 from ceed.storage.controller import DataSerializer, CeedData
-import ceed.view._projector_process
 
 if ceed.has_gui_control or ceed.is_view_inst:
     from kivy.core.window import Window
@@ -299,7 +302,7 @@ class ViewControllerBase(EventDispatcher):
         '''
         pass
 
-    def add_graphics(self, canvas):
+    def add_graphics(self, canvas, black_back=False):
         '''Adds all the graphics required to visualize the shapes to the
         canvas.
         '''
@@ -308,9 +311,11 @@ class ViewControllerBase(EventDispatcher):
         self.shape_views = []
         w, h = self.screen_width, self.screen_height
 
-        with canvas:
-            Color(0, 0, 0, 1, group=self.canvas_name)
-            Rectangle(size=(w, h), group=self.canvas_name)
+        if black_back:
+            with canvas:
+                Color(0, 0, 0, 1, group=self.canvas_name)
+                Rectangle(size=(w, h), group=self.canvas_name)
+
         if self.do_quad_mode:
             half_w = w // 2
             half_h = h // 2
@@ -497,6 +502,10 @@ class ViewSideViewControllerBase(ViewControllerBase):
     :attr:`ViewController`.
     '''
 
+    alpha_color = NumericProperty(1.)
+
+    filter_background = True
+
     def start_stage(self, stage_name, canvas):
         self.prepare_view_window()
         return super(ViewSideViewControllerBase, self).start_stage(
@@ -504,7 +513,10 @@ class ViewSideViewControllerBase(ViewControllerBase):
 
     def end_stage(self):
         val = super(ViewSideViewControllerBase, self).end_stage()
-        self.queue_view_write.put_nowait(('end_stage', None))
+        d = {}
+        for key in ('cam_scale', 'cam_offset_x', 'cam_offset_y', 'cam_rotation'):
+            d[key] = getattr(self, key)
+        self.queue_view_write.put_nowait(('end_stage', d))
         return val
 
     def request_process_data(self, data_type, data):
@@ -587,6 +599,30 @@ class ViewSideViewControllerBase(ViewControllerBase):
                     self.end_stage()
                 elif msg == 'fullscreen':
                     Window.fullscreen = self.fullscreen = value
+                elif msg == 'image':
+                    plane_buffers, pix_fmt, size, linesize = value
+
+                    img = Image(
+                        plane_buffers=plane_buffers, pix_fmt=pix_fmt,
+                        size=size, linesize=linesize)
+                    sws = SWScale(*size, pix_fmt, ofmt='gray', ow=size[0], oh=size[1])
+                    img = sws.scale(img)
+
+                    if self.filter_background:
+                        buffer = np.array(img.to_bytearray()[0], dtype=np.uint8).reshape((size[1], size[0]))
+                        blur = cv2.GaussianBlur(buffer, (5, 5), 0)
+                        binarized = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
+                        data = cv2.Canny(binarized, 100, 200).reshape((size[1] * size[0], ))
+                    else:
+                        data = np.array(img.to_bytearray()[0], dtype=np.uint8)
+
+                    rgb = np.zeros((size[1] * size[0], 3), dtype=np.uint8)
+                    rgb[:, 0] = data
+                    img = Image(
+                        plane_buffers=[rgb.tobytes(), 0, 0, 0], pix_fmt='rgb24',
+                        size=size)
+
+                    App.get_running_app().get_background_widget().update_img(img)
                 write.put_nowait(('response', msg))
             except Empty:
                 break
@@ -626,6 +662,10 @@ class ControllerSideViewControllerBase(ViewControllerBase):
     one started.
     '''
 
+    def add_graphics(self, canvas, black_back=True):
+        return super(ControllerSideViewControllerBase, self).add_graphics(
+            canvas, black_back=black_back)
+
     @app_error
     def request_stage_start(self, stage_name):
         '''Starts the stage either in the GUI when previewing or in the
@@ -660,7 +700,7 @@ class ControllerSideViewControllerBase(ViewControllerBase):
 
         if self.preview:
             self.start_stage(stage_name, knspace.painter.canvas)
-        elif self.view_process:
+        elif self.view_process and self.queue_view_read:
             self.queue_view_read.put_nowait(
                 ('config', yaml_dumps(
                     CeedData.gather_config_data_dict())))
@@ -673,10 +713,15 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         '''
         if self.preview:
             self.end_stage()
-        elif self.view_process:
+        elif self.view_process and self.queue_view_read:
+            if knspace.gui_save_cam_stage.state == 'down':
+                video_btn = knspace.gui_play
+                if video_btn.state == 'down':
+                    video_btn.trigger_action(0)
+                knspace.gui_save_cam_stage.state = 'normal'
             self.queue_view_read.put_nowait(('end_stage', None))
 
-    def stage_end_cleanup(self):
+    def stage_end_cleanup(self, state={}):
         CeedData.stop_experiment()
         self.stage_active = False
 
@@ -686,6 +731,12 @@ class ControllerSideViewControllerBase(ViewControllerBase):
             if video_btn.state == 'down':
                 video_btn.trigger_action(0)
             knspace.gui_save_cam_stage.state = 'normal'
+
+        if state:
+            self.cam_rotation = state['cam_rotation']
+            self.cam_scale = state['cam_scale']
+            self.cam_offset_x = state['cam_offset_x']
+            self.cam_offset_y = state['cam_offset_y']
 
         if self.propixx_lib:
             self.set_pixel_mode(False)
@@ -702,8 +753,17 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         view process.
         '''
         self.fullscreen = state
-        if self.view_process:
+        if self.view_process and self.queue_view_read:
             self.queue_view_read.put_nowait(('fullscreen', state))
+
+    def send_background_image(self, image):
+        '''Sets the fullscreen state to full or not of the second internal
+        view process.
+        '''
+        if self.view_process and self.queue_view_read:
+            self.queue_view_read.put_nowait((
+                'image', (image.to_bytearray(), image.get_pixel_format(),
+                          image.get_size(), image.get_linesizes())))
 
     def request_process_data(self, data_type, data):
         if data_type == 'GPU':
@@ -743,8 +803,9 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         '''Ends the :class:`view_process` process by sending a EOF to
         the second process.
         '''
-        if self.view_process:
+        if self.view_process and self.queue_view_read:
             self.queue_view_read.put_nowait(('eof', None))
+            self.queue_view_read = None
 
     def finish_stop_process(self):
         '''Called by by the read queue thread when we receive the message that
@@ -781,7 +842,6 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         '''Called periodically to serve the queue that receives messages from
         the second process.
         '''
-        write = self.queue_view_read
         read = self.queue_view_write
         while True:
             try:
@@ -798,7 +858,7 @@ class ControllerSideViewControllerBase(ViewControllerBase):
                     self.request_process_data(
                         msg, yaml_loads(value))
                 elif msg == 'end_stage' and msg != 'response':
-                    self.stage_end_cleanup()
+                    self.stage_end_cleanup(value)
                 elif msg == 'key_down':
                     key, modifiers = yaml_loads(value)
                     self.handle_key_press(key, modifiers)
@@ -812,8 +872,6 @@ class ControllerSideViewControllerBase(ViewControllerBase):
     def set_pixel_mode(self, state):
         if PROPixxCTRL is None:
             raise ImportError('Cannot open PROPixx library')
-
-        return ceed.view._projector_process.run_subprocess('pixel', state)
 
         ctrl = PROPixxCTRL()
         if state:
@@ -831,9 +889,8 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         if libdpx is None:
             raise ImportError('Cannot open PROPixx library')
 
-        return ceed.view._projector_process.run_subprocess('led', mode)
-
         libdpx.DPxOpen()
+        libdpx.DPxSelectDevice('PROPixx')
         libdpx.DPxSetPPxLedMask(self.led_modes[mode])
         libdpx.DPxUpdateRegCache()
         libdpx.DPxClose()
@@ -845,8 +902,6 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         '''
         if PROPixx is None:
             raise ImportError('Cannot open PROPixx library')
-
-        return ceed.view._projector_process.run_subprocess('video', mode)
 
         dev = PROPixx()
         dev.setDlpSequencerProgram(mode)

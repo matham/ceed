@@ -39,6 +39,9 @@ class CeedPlayerBase(object):
         if widget is not None and img is not None:
             widget.update_img(img[0])
             knspace.player.last_image = img[0]
+            if knspace.gui_save_cam_stage.state == 'down':
+                from ceed.view.controller import ViewController
+                ViewController.send_background_image(img[0])
 
 
 class CeedPTGrayPlayer(CeedPlayerBase, PTGrayPlayer):

@@ -127,7 +127,7 @@ class CeedDataBase(EventDispatcher):
                     id_map_new, id_to_func_map, old_to_new_name)
 
     def get_filebrowser_callback(
-            self, func, check_exists=False, check_unsaved=False):
+            self, func, check_exists=False, clear_data=False):
 
         def callback(path, selection, filename):
             if not isdir(path) or not filename:
@@ -136,15 +136,16 @@ class CeedDataBase(EventDispatcher):
             fname = join(path, filename)
 
             def discard_callback(discard):
-                if check_unsaved and (self.has_unsaved or self.config_changed):
-                    if not discard:
-                        return
-                    self.discard_file()
+                if clear_data and not discard:
+                    return
 
                 if check_exists and exists(fname):
                     def yesno_callback(overwrite):
                         if not overwrite:
                             return
+                        if clear_data:
+                            self.close_file(force_remove_autosave=True)
+                            self.clear_existing_config_data()
                         func(fname, overwrite)
 
                     yesno = App.get_running_app().yesno_prompt
@@ -153,9 +154,12 @@ class CeedDataBase(EventDispatcher):
                     yesno.callback = yesno_callback
                     yesno.open()
                 else:
+                    if clear_data:
+                        self.close_file(force_remove_autosave=True)
+                        self.clear_existing_config_data()
                     func(fname)
 
-            if check_unsaved and (self.has_unsaved or self.config_changed):
+            if clear_data and (self.has_unsaved or self.config_changed):
                 yesno = App.get_running_app().yesno_prompt
                 yesno.msg = 'There are unsaved changes.\nDiscard them?'
                 yesno.callback = discard_callback
