@@ -62,7 +62,7 @@
                 on_release:
                     app.filebrowser.target = CeedData.root_path
                     app.filebrowser.dirselect =  app.filebrowser.multiselect = False
-                    app.filebrowser.callback = CeedData.get_filebrowser_callback(CeedData.open_file, check_unsaved=True)
+                    app.filebrowser.callback = CeedData.get_filebrowser_callback(CeedData.open_file, clear_data=True)
                     app.filebrowser.open()
             FlatButton:
                 text: 'Import'

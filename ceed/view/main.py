@@ -20,6 +20,8 @@ from kivy.uix.behaviors.knspace import knspace, KNSpaceBehavior
 from kivy.uix.scatter import Scatter
 from kivy.garden.filebrowser import FileBrowser
 from kivy.lang import Builder
+from kivy.graphics import Color, Point, Fbo, Rectangle, Scale, PushMatrix, \
+    PopMatrix, Translate, ClearColor, ClearBuffers
 from kivy.uix.widget import Widget
 from kivy.graphics.opengl import glEnable, GL_DITHER, glDisable
 from kivy.logger import Logger
@@ -57,7 +59,9 @@ kv = '''
             id: background_widget
             auto_bring_to_front: False
             size_hint: None, None
-            size: self.image_size
+            on_image_size:
+                ViewController._restore_cam_pos()
+                self.size = self.image_size
             scale_to_image: False
             color: [1, 1, 1, ViewController.alpha_color]
     
@@ -66,12 +70,10 @@ kv = '''
             do_rotation: True
     
             scale: ViewController.cam_scale
-            x: ViewController.cam_offset_x
-            y: ViewController.cam_offset_y
+            center: ViewController.cam_center_x, ViewController.cam_center_y
             rotation: ViewController.cam_rotation
 
-            on_x: ViewController.cam_offset_x = self.x
-            on_y: ViewController.cam_offset_y = self.y
+            on_center: ViewController.cam_center_x, ViewController.cam_center_y = self.center
             on_scale: ViewController.cam_scale = self.scale
             on_rotation: ViewController.cam_rotation = self.rotation
         
@@ -108,12 +110,36 @@ class CeedViewApp(CPLComApp):
         widget = ViewRootWidget()
         return widget
 
+    def get_root_pixels(self):
+        widget = self.root.ids.display_canvas
+
+        canvas_parent_index = widget.parent.canvas.indexof(widget.canvas)
+        if canvas_parent_index > -1:
+            widget.parent.canvas.remove(widget.canvas)
+
+        fbo = Fbo(size=widget.size, with_stencilbuffer=True)
+
+        with fbo:
+            ClearColor(0, 0, 0, 1)
+            ClearBuffers()
+            Scale(1, -1, 1)
+            Translate(0, -widget.height, 0)
+
+        fbo.add(widget.canvas)
+        fbo.draw()
+        pixels = fbo.pixels
+        fbo.remove(widget.canvas)
+
+        if canvas_parent_index > -1:
+            widget.parent.canvas.insert(canvas_parent_index, widget.canvas)
+        return pixels, widget.size
+
     def on_start(self):
         glDisable(GL_DITHER)
         Window.clearcolor = (0, 0, 0, 1)
         # Window.minimize()
         self.root.focus = True
-        Window.show_cursor = False
+        #Window.show_cursor = False
 
     def _ask_close(self, *largs, **kwargs):
         return False

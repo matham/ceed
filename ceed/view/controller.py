@@ -7,13 +7,18 @@ or in the main GUI when previewing. See :class:`ViewControllerBase`.
 '''
 import multiprocessing as mp
 import os
+from math import radians
 import sys
 from fractions import Fraction
 import traceback
 from collections import defaultdict
+from functools import partial
+from threading import Thread
 import cv2
 import numpy as np
+import imreg_dft as ird
 from matplotlib import pyplot as plt
+from scipy.ndimage import zoom
 try:
     from Queue import Empty
 except ImportError:
@@ -29,6 +34,7 @@ from kivy.graphics import Color, Point, Fbo, Rectangle, Scale, PushMatrix, \
     PopMatrix, Translate
 from kivy.graphics.texture import Texture
 from kivy.app import App
+from kivy.graphics.transformation import Matrix
 from kivy.uix.behaviors.knspace import knspace
 
 from cplcom.app import app_error
@@ -87,9 +93,9 @@ class ViewControllerBase(EventDispatcher):
 
     __settings_attrs__ = (
         'screen_width', 'screen_height', 'frame_rate',
-        'use_software_frame_rate', 'cam_scale', 'cam_offset_x', 'cam_offset_y',
-        'cam_rotation', 'output_count', 'screen_offset_x', 'preview',
-        'fullscreen', 'video_mode', 'LED_mode', 'LED_mode_idle')
+        'use_software_frame_rate', 'cam_rotation', 'cam_scale',
+        'cam_center_x', 'cam_center_y', 'output_count', 'screen_offset_x',
+        'preview', 'fullscreen', 'video_mode', 'LED_mode', 'LED_mode_idle')
 
     screen_width = NumericProperty(1920)
     '''The screen width on which the data is played. This is the full-screen
@@ -132,12 +138,12 @@ class ViewControllerBase(EventDispatcher):
     '''The scaling factor of the background image.
     '''
 
-    cam_offset_x = NumericProperty(0)
-    '''The x offset of the background image.
+    cam_center_x = NumericProperty(0)
+    '''The x center of the background image.
     '''
 
-    cam_offset_y = NumericProperty(0)
-    '''The y offset of the background image.
+    cam_center_y = NumericProperty(0)
+    '''The y center of the background image.
     '''
 
     cam_rotation = NumericProperty(0)
@@ -284,6 +290,8 @@ class ViewControllerBase(EventDispatcher):
     controller side.
     '''
 
+    _scheduled_pos_restore = False
+
     __events__ = ('on_changed', )
 
     def __init__(self, **kwargs):
@@ -292,6 +300,37 @@ class ViewControllerBase(EventDispatcher):
             self.fbind(name, self.dispatch, 'on_changed')
         self.propixx_lib = libdpx is not None
         self.shape_views = []
+
+    def _restore_cam_pos(self):
+        if self._scheduled_pos_restore:
+            return
+
+        self._scheduled_pos_restore = True
+        center = self.cam_center_x, self.cam_center_y
+        scale = self.cam_scale
+        rotation = self.cam_rotation
+
+        def restore_state(*largs):
+            self.cam_rotation = rotation
+            self.cam_scale = scale
+            self.cam_center_x, self.cam_center_y = center
+            self._scheduled_pos_restore = False
+
+        Clock.schedule_once(restore_state, -1)
+
+    def apply_settings_attrs(self, config):
+        config = dict(config)
+        rotation = config.pop('cam_rotation', self.cam_rotation)
+        scale = config.pop('cam_scale', self.cam_scale)
+        center_x = config.pop('cam_center_x', self.cam_center_x)
+        center_y = config.pop('cam_center_y', self.cam_center_y)
+        for k, v in config.items():
+            setattr(self, k, v)
+
+        self.cam_rotation = rotation
+        self.cam_scale = scale
+        self.cam_center_x = center_x
+        self.cam_center_y = center_y
 
     def on_changed(self, *largs):
         pass
@@ -512,10 +551,13 @@ class ViewSideViewControllerBase(ViewControllerBase):
             stage_name, canvas)
 
     def end_stage(self):
-        val = super(ViewSideViewControllerBase, self).end_stage()
         d = {}
-        for key in ('cam_scale', 'cam_offset_x', 'cam_offset_y', 'cam_rotation'):
+        for key in ('cam_scale', 'cam_center_x', 'cam_center_y', 'cam_rotation'):
             d[key] = getattr(self, key)
+        d['pixels'], d['proj_size'] = App.get_running_app().get_root_pixels()
+        d['proj_size'] = tuple(d['proj_size'])
+
+        val = super(ViewSideViewControllerBase, self).end_stage()
         self.queue_view_write.put_nowait(('end_stage', d))
         return val
 
@@ -616,13 +658,23 @@ class ViewSideViewControllerBase(ViewControllerBase):
                     else:
                         data = np.array(img.to_bytearray()[0], dtype=np.uint8)
 
-                    rgb = np.zeros((size[1] * size[0], 3), dtype=np.uint8)
-                    rgb[:, 0] = data
+                    rgba = np.zeros((size[1] * size[0], 4), dtype=np.uint8)
+                    rgba[:, 3] = rgba[:, 0] = data
                     img = Image(
-                        plane_buffers=[rgb.tobytes(), 0, 0, 0], pix_fmt='rgb24',
+                        plane_buffers=[rgba.tobytes(), 0, 0, 0], pix_fmt='rgba',
                         size=size)
 
                     App.get_running_app().get_background_widget().update_img(img)
+                elif msg == 'get_pixels_register':
+                    pixels, size = App.get_running_app().get_root_pixels()
+                    write.put_nowait(('get_pixels_register', (pixels, tuple(size))))
+                elif msg == 'cam_params':
+
+                    tx, ty, scale, angle, cam_size = value
+                    self.cam_rotation = angle
+                    self.cam_scale = scale
+                    self.cam_center_x = cam_size[0] // 2 + tx
+                    self.cam_center_y = cam_size[1] // 2 + ty
                 write.put_nowait(('response', msg))
             except Empty:
                 break
@@ -662,6 +714,18 @@ class ControllerSideViewControllerBase(ViewControllerBase):
     one started.
     '''
 
+    last_cam_image = None
+
+    cam_image = None
+
+    proj_size = None
+
+    proj_pixels = None
+
+    proj_t_pixels = None
+
+    registration_thread = None
+
     def add_graphics(self, canvas, black_back=True):
         return super(ControllerSideViewControllerBase, self).add_graphics(
             canvas, black_back=black_back)
@@ -673,6 +737,8 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         '''
         # needs t be set here so button is reset on fail
         self.stage_active = True
+        self.last_cam_image = self.cam_image = self.proj_pixels = \
+            self.proj_size = self.proj_t_pixels = None
         if not stage_name:
             self.stage_active = False
             raise ValueError('No stage specified')
@@ -718,7 +784,7 @@ class ControllerSideViewControllerBase(ViewControllerBase):
                 video_btn = knspace.gui_play
                 if video_btn.state == 'down':
                     video_btn.trigger_action(0)
-                knspace.gui_save_cam_stage.state = 'normal'
+
             self.queue_view_read.put_nowait(('end_stage', None))
 
     def stage_end_cleanup(self, state={}):
@@ -732,11 +798,16 @@ class ControllerSideViewControllerBase(ViewControllerBase):
                 video_btn.trigger_action(0)
             knspace.gui_save_cam_stage.state = 'normal'
 
-        if state:
-            self.cam_rotation = state['cam_rotation']
-            self.cam_scale = state['cam_scale']
-            self.cam_offset_x = state['cam_offset_x']
-            self.cam_offset_y = state['cam_offset_y']
+            if state:
+                self.cam_rotation = state['cam_rotation']
+                self.cam_scale = state['cam_scale']
+                self.cam_center_x = state['cam_center_x']
+                self.cam_center_y = state['cam_center_y']
+                if self.last_cam_image:
+                    self.cam_image = self.last_cam_image
+                    self.proj_size = state['proj_size']
+                    self.proj_pixels = state['pixels']
+                    self.proj_t_pixels = None
 
         if self.propixx_lib:
             self.set_pixel_mode(False)
@@ -764,6 +835,7 @@ class ControllerSideViewControllerBase(ViewControllerBase):
             self.queue_view_read.put_nowait((
                 'image', (image.to_bytearray(), image.get_pixel_format(),
                           image.get_size(), image.get_linesizes())))
+            self.last_cam_image = image
 
     def request_process_data(self, data_type, data):
         if data_type == 'GPU':
@@ -837,6 +909,9 @@ class ControllerSideViewControllerBase(ViewControllerBase):
             self.request_stage_start(self.selected_stage_name)
         elif key == 'f':
             self.request_fullscreen(not self.fullscreen)
+        elif key == 'r':
+            if self.last_cam_image:
+                self.queue_view_read.put_nowait(('get_pixels_register', None))
 
     def controller_read(self, *largs):
         '''Called periodically to serve the queue that receives messages from
@@ -865,6 +940,12 @@ class ControllerSideViewControllerBase(ViewControllerBase):
                 elif msg == 'key_up':
                     key, = yaml_loads(value)
                     self.handle_key_press(key, down=False)
+                elif msg == 'get_pixels_register':
+                    if self.last_cam_image:
+                        self.proj_pixels, self.proj_size = value
+                        self.cam_image = self.last_cam_image
+                        self.proj_t_pixels = None
+                        self.do_cam_registration()
             except Empty:
                 break
 
@@ -907,6 +988,67 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         dev.setDlpSequencerProgram(mode)
         dev.updateRegisterCache()
         dev.close()
+
+    def do_cam_registration(self):
+        if not self.proj_pixels or not self.cam_image or self.registration_thread:
+            return
+
+        self.registration_thread = t = Thread(
+            target=self.register_cam_to_projector,
+            args=(self.proj_pixels, self.cam_image, self.proj_size))
+        t.start()
+
+    def get_cam_registration_results(self, res, *largs):
+        ty, tx, scale, angle, cam_size = res
+        self.cam_scale = 1.
+        self.cam_center_x = self.screen_width // 2 + tx
+        self.cam_center_y = self.screen_height // 2 - ty
+        self.cam_rotation = angle
+        self.cam_scale = scale
+
+        if self.queue_view_read:
+            self.queue_view_read.put_nowait(('cam_params', res))
+        self.registration_thread = None
+
+    def register_cam_to_projector(self, proj_pixels, cam_image, proj_size):
+        try:
+            import time
+            ts = time.clock()
+            cam = cam_image
+            cam_size = cam.get_size()
+            sws = SWScale(*cam_size, cam.get_pixel_format(), ofmt='gray')
+            cam = sws.scale(cam)
+
+            cam = np.array(
+                cam.to_bytearray()[0], dtype=np.uint8).reshape(
+                (cam_size[1], cam_size[0]))
+            blur = cv2.GaussianBlur(cam, (5, 5), 0)
+            cam2 = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
+            cam3 = zoom(cam2, .5)
+            cam4 = np.zeros(cam_size[::-1])
+            cam4[512:-512, 612:-612] = cam3
+
+            proj_size = proj_size
+            proj = np.frombuffer(proj_pixels, dtype=np.uint8).reshape(
+                (proj_size[1], proj_size[0], 4))[:, :, :3]
+            proj = np.mean(proj, axis=-1, dtype=np.uint8)
+            proj_pad = np.zeros(cam_size[::-1], dtype=np.uint8)
+            proj_pad[968 // 2:-968 // 2, 528 // 2:-528 // 2] = proj
+            blur = cv2.GaussianBlur(proj_pad, (5, 5), 0)
+            proj_pad2 = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
+
+            res = ird.similarity(proj_pad2, cam4, numiter=3)
+            scale = float(res['scale']) / 2
+            angle = float(res['angle'])
+            tx, ty = map(float, res['tvec'])
+
+            Clock.schedule_once(partial(
+                self.get_cam_registration_results,
+                (tx, ty, scale, angle, cam_size)), 0)
+            print('It took', time.clock() - ts)
+        except:
+            self.registration_thread = None
+            raise
 
 
 ViewController = None

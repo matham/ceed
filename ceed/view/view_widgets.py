@@ -34,9 +34,10 @@ class ViewRootFocusBehavior(FocusBehavior):
         if keycode[1] in ('ctrl', 'lctrl', 'rctrl'):
             self._ctrl_down = False
 
-        if self._ctrl_down and keycode[1] == 'q':
-            ViewController.filter_background = not ViewController.filter_background
-            return True
+        if self._ctrl_down:
+            if keycode[1] == 'q':
+                ViewController.filter_background = not ViewController.filter_background
+                return True
         ViewController.send_keyboard_up(keycode[1])
         return True
 

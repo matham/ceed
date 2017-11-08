@@ -84,7 +84,7 @@
             if self.state == 'normal': move_cam.state = 'normal'
     FlatImageToggleButton:
         scale_down_color: True
-        hover_text: '[b]foreground[/b] / background scaling' if self.state == 'normal' else 'foreground / [b]background[/b] scaling'
+        hover_text: '[b]projector[/b] / camera scaling' if self.state == 'normal' else 'projector / [b]camera[/b] scaling'
         source: 'flat_camera_switch.png'
         flat_color: app.theme.accent
         id: move_cam
