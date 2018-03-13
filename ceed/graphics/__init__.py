@@ -16,6 +16,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.dropdown import DropDown
 from kivy.factory import Factory
 from kivy.lang import Builder
+from kivy.uix.slider import Slider
 from kivy.utils import get_color_from_hex
 
 from cplcom.drag_n_drop import DragableController, DragableObjectBehavior
@@ -250,6 +251,20 @@ class FilterTouchEagerlyBehavior(object):
         if not self.collide_point(*touch.pos):
             return False
         return super(FilterTouchEagerlyBehavior, self).on_touch_up(touch)
+
+
+class KNSlider(KNSpaceBehavior, Slider):
+
+    __events__ = ('on_release', )
+
+    def on_release(self, *largs):
+        pass
+
+    def on_touch_up(self, touch):
+        if super(KNSlider, self).on_touch_up(touch):
+            if touch.grab_current == self:
+                self.dispatch('on_release', self)
+            return True
 
 
 Factory.register(classname='ShowMoreSelection', cls=ShowMoreSelection)

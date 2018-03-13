@@ -5,6 +5,9 @@
 #:import Matrix kivy.graphics.transformation.Matrix
 #:import get_color_from_hex kivy.utils.get_color_from_hex
 
+<FlatNamedLabel@KNSpaceBehavior+FlatLabel>
+
+
 <VideoConfig@FlatDropDown>:
     flat_color: app.theme.primary_text
     flat_border_color: app.theme.divider
@@ -115,6 +118,82 @@
                     on_text:
                         knspace.player.handle_fname(path_fname, path_count, 'count')
                         knspace.player.update_record_path(count=self.text)
+            GridLayout:
+                size_hint: 1, None
+                height: self.minimum_height
+                spacing: ['5dp']
+                rows: 1
+                disabled: not knspace.player or not knspace.player.pt_player_play
+                CeedFlatSpinner:
+                    knsname: 'pt_settings_opt'
+                    id: pt_settings_opt
+                    size_hint_x: None
+                    width: self.minimum_width
+                    values: ['brightness', 'exposure', 'sharpness', 'hue', 'saturation', 'gamma', 'shutter', 'gain', 'iris', 'frame_rate', 'pan', 'tilt']
+                    on_text: knspace.player.bind_pt_setting(self.text)
+                    controllable: gui_pt_settings_opt_disable.state == 'normal'
+                FlatToggleButton:
+                    knsname: 'gui_pt_settings_opt_auto'
+                    text: 'Auto'
+                    padding: '5dp', '5dp'
+                    size_hint: None, None
+                    size: self.texture_size
+                    scale_down_color: True
+                    flat_background_color: app.theme.accent
+                    on_release: knspace.player.change_pt_setting_opt(pt_settings_opt.text, 'auto', self.state == 'down')
+                    disabled: not pt_settings_opt.controllable
+                FlatButton:
+                    text: 'One push'
+                    size_hint: None, None
+                    size: self.texture_size
+                    padding: '5dp', '5dp'
+                    scale_down_color: True
+                    flat_background_color: app.theme.accent
+                    on_release: knspace.player.change_pt_setting_opt(pt_settings_opt.text, 'one_push', True)
+                    disabled: not pt_settings_opt.controllable
+                FlatToggleButton:
+                    knsname: 'gui_pt_settings_opt_disable'
+                    id: gui_pt_settings_opt_disable
+                    text: 'Disable'
+                    padding: '5dp', '5dp'
+                    size_hint: None, None
+                    size: self.texture_size
+                    scale_down_color: True
+                    flat_background_color: app.theme.accent
+                    on_release: knspace.player.change_pt_setting_opt(pt_settings_opt.text, 'controllable', self.state == 'normal')
+                FlatNamedLabel:
+                    knsname: 'gui_pt_settings_opt_min'
+                    padding: '5dp', '5dp'
+                    flat_color: app.theme.text_primary
+                    center_texture: True
+                    size_hint: None, None
+                    size: self.texture_size
+                    disabled: not pt_settings_opt.controllable
+                FlatSizedTextInput:
+                    knsname: 'gui_pt_settings_opt_value'
+                    background_color: root.flat_color
+                    on_focus: if not self.focus: knspace.player.change_pt_setting_opt(pt_settings_opt.text, 'value', float(self.text or 0))
+                    input_filter: 'float'
+                    disabled: not pt_settings_opt.controllable
+                FlatNamedLabel:
+                    knsname: 'gui_pt_settings_opt_max'
+                    padding: '5dp', '5dp'
+                    flat_color: app.theme.text_primary
+                    center_texture: True
+                    size_hint: None, None
+                    size: self.texture_size
+                    disabled: not pt_settings_opt.controllable
+                FlatImageButton:
+                    scale_down_color: True
+                    source: 'flat_refresh.png'
+                    flat_color: app.theme.accent
+                    on_release: knspace.player.reload_pt_setting_opt(pt_settings_opt.text)
+            KNSlider:
+                knsname: 'gui_pt_settings_opt_slider'
+                size_hint_y: None
+                height: '25dp'
+                on_release: knspace.player.change_pt_setting_opt(pt_settings_opt.text, 'value', self.value)
+                disabled: not pt_settings_opt.controllable
 
 <VideoControl@BoxLayout>
     size_hint: None, None

@@ -42,6 +42,9 @@ class CeedPlayerBase(object):
             if knspace.gui_save_cam_stage.state == 'down':
                 from ceed.view.controller import ViewController
                 ViewController.send_background_image(img[0])
+            if knspace.gui_remote_view.state == 'down':
+                from ceed.view.remote_view import RemoteViewerListener
+                RemoteViewerListener.send_image(img[0])
 
 
 class CeedPTGrayPlayer(CeedPlayerBase, PTGrayPlayer):
@@ -127,6 +130,10 @@ class CeedPlayer(KNSpaceBehavior, EventDispatcher):
     '''The last image instance that was gotten from the :attr:`player`.
     '''
 
+    _pt_settings_last = ''
+
+    _pt_settings_remote_last = ''
+
     def __init__(self, **kwargs):
         super(CeedPlayer, self).__init__(**kwargs)
         CeedPlayer.player_singleton = self
@@ -142,6 +149,8 @@ class CeedPlayer(KNSpaceBehavior, EventDispatcher):
         '''
         p = knspace.path_dir.text
         p = 'C:\\' if not exists(p) else (p if isdir(p) else dirname(p))
+        if not exists(p):
+            p = '/home'
         self.disk_used_percent = round(psutil.disk_usage(p).percent) / 100.
 
         player = self.player
@@ -163,11 +172,18 @@ class CeedPlayer(KNSpaceBehavior, EventDispatcher):
         that when they update, the GUI is also updated.
         '''
         pt_player = self.pt_player
+        from ceed.view.remote_view import RemoteViewerListener
 
         def player_active(*largs):
             self.pt_player_active = bool(self.pt_player.play_state != 'none'
                 or self.pt_player.config_active)
             self.pt_player_play = self.pt_player.play_state == 'playing'
+
+            settings = self.get_valid_pt_settings()
+            knspace.pt_settings_opt.values = settings
+
+            if knspace.gui_remote_view.state == 'down':
+                RemoteViewerListener.send_cam_settings('cam_settings', settings)
 
         pt_player.fbind('play_state', player_active)
         pt_player.fbind('config_active', player_active)
@@ -237,6 +253,7 @@ class CeedPlayer(KNSpaceBehavior, EventDispatcher):
         pt_player.fbind('record_state', track_state)
         self.ff_player.fbind('play_state', track_state)
         self.ff_player.fbind('record_state', track_state)
+        self.bind_pt_setting(knspace.pt_settings_opt.text)
 
         player_active()
         knspace.pt_ip.values = self.pt_player.ips
@@ -247,10 +264,70 @@ class CeedPlayer(KNSpaceBehavior, EventDispatcher):
         player_record()
         ff_player_filename()
 
+    def _update_pt_setting(self, *largs):
+        opts = getattr(self.pt_player, self._pt_settings_last)
+        knspace.gui_pt_settings_opt_auto.state = 'down' if opts['auto'] else 'normal'
+        knspace.gui_pt_settings_opt_min.text = '{:0.2f}'.format(opts['min'])
+        knspace.gui_pt_settings_opt_max.text = '{:0.2f}'.format(opts['max'])
+        knspace.gui_pt_settings_opt_value.text = '{:0.2f}'.format(opts['value'])
+        knspace.gui_pt_settings_opt_disable.state = 'normal' if opts['controllable'] else 'down'
+        knspace.gui_pt_settings_opt_slider.min = opts['min']
+        knspace.gui_pt_settings_opt_slider.max = opts['max']
+        knspace.gui_pt_settings_opt_slider.value = opts['value']
+
+    def bind_pt_setting(self, setting):
+        if self._pt_settings_last:
+            self.pt_player.funbind(self._pt_settings_last, self._update_pt_setting)
+        self._pt_settings_last = ''
+
+        if setting:
+            self._pt_settings_last = setting
+            self.pt_player.fbind(setting, self._update_pt_setting)
+            self._update_pt_setting()
+
+    def _update_pt_setting_remote(self, *largs):
+        from ceed.view.remote_view import RemoteViewerListener
+
+        if knspace.gui_remote_view.state == 'down':
+            RemoteViewerListener.send_cam_settings(
+                'cam_setting',
+                (self._pt_settings_remote_last,
+                 dict(getattr(self.pt_player, self._pt_settings_remote_last))
+                 )
+            )
+
+    def bind_pt_remote_setting(self, setting):
+        if self._pt_settings_remote_last:
+            self.pt_player.funbind(
+                self._pt_settings_remote_last, self._update_pt_setting_remote)
+        self._pt_settings_remote_last = ''
+
+        if setting:
+            self._pt_settings_remote_last = setting
+            self.pt_player.fbind(setting, self._update_pt_setting_remote)
+            self._update_pt_setting_remote()
+
+    def get_valid_pt_settings(self):
+        settings = []
+        for setting in [
+                'brightness', 'exposure', 'sharpness', 'hue', 'saturation',
+                'gamma', 'shutter', 'gain', 'iris', 'frame_rate', 'pan',
+                'tilt']:
+            opts = getattr(self.pt_player, setting)
+            if opts['present']:
+                settings.append(setting)
+        return list(sorted(settings))
+
     def refresh_pt_cams(self):
         '''Causes the point gray cams to refresh.
         '''
         self.pt_player.ask_config('serials')
+
+    def change_pt_setting_opt(self, setting, name, value):
+        self.pt_player.ask_cam_option_config(setting, name, value)
+
+    def reload_pt_setting_opt(self, setting):
+        self.pt_player.ask_cam_option_config(setting, '', None)
 
     def reconfig_pt_cams(self):
         '''Shows the point gray config GUI.

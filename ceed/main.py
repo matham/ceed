@@ -39,6 +39,7 @@ from ceed.stage import StageFactory
 from ceed.view.controller import ViewController
 from ceed.storage.controller import CeedData, DataSerializer
 from ceed.graphics import CeedDragNDrop
+from ceed.view.remote_view import RemoteViewerListener
 
 if ceed.has_gui_control:
     from kivy.core.window import Window
@@ -68,6 +69,7 @@ class CeedApp(CPLComApp):
         d['point_gray_cam'] = CeedPTGrayPlayer
         d['video_file_playback'] = CeedFFmpegPlayer
         d['function'] = FunctionFactory
+        d['remote_viewer'] = RemoteViewerListener
         if cls.get_running_app():
             p = d['player'] = cls.get_running_app().player
             d['point_gray_cam'] = p.pt_player
@@ -149,7 +151,9 @@ class CeedApp(CPLComApp):
             return False
         return True
 
+
 def _cleanup(app, *largs):
+    RemoteViewerListener.stop_listener()
     CeedPlayer.exit_players()
     ViewController.stop_process()
     ViewController.finish_stop_process()
