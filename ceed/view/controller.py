@@ -489,7 +489,6 @@ class ViewControllerBase(EventDispatcher):
             views = self.shape_views
         effective_rate = int(self.effective_frame_rate)
 
-        bits = None if self.serializer else 0
         for shape_views, proj in zip(views, projections):
             self.count += 1
 
@@ -503,7 +502,7 @@ class ViewControllerBase(EventDispatcher):
                 self.end_stage()
                 raise
 
-            if self.serializer and bits is None:
+            if self.serializer:
                 next(self.serializer)
                 bits = self.serializer.send(self.count)
                 r, g, b = bits & 0xFF, (bits & 0xFF00) >> 8, \

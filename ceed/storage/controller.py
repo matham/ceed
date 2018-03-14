@@ -596,14 +596,14 @@ class DataSerializerBase(EventDispatcher):
 
     counter_bit_width = NumericProperty(16)
 
-    clock_idx = NumericProperty(0)
+    clock_idx = NumericProperty(2)
 
-    count_indices = ListProperty([4, 5])
+    count_indices = ListProperty([11, 12, 18, 19, 20])
 
-    short_count_indices = ListProperty([1, 2, 3])
+    short_count_indices = ListProperty([3, 4, 10])
 
     projector_to_aquisition_map = DictProperty(
-        {0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5})
+        {2: 0, 3: 1, 4: 2, 10: 3, 11: 4, 12: 5, 18: 6, 19: 7, 20: 8})
 
     def get_bits(self, last_count):
         clock_base = 1 << self.clock_idx
