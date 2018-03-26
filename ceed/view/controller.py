@@ -23,6 +23,7 @@ try:
     from Queue import Empty
 except ImportError:
     from queue import Empty
+import uuid
 from ffpyplayer.pic import Image, SWScale
 
 from kivy.event import EventDispatcher
@@ -430,7 +431,8 @@ class ViewControllerBase(EventDispatcher):
             self._cpu_stats['tstart'] = clock()
 
         if self.output_count:
-            self.serializer = DataSerializer.get_bits(-1)
+            self.serializer = DataSerializer.get_bits(
+                -1, list(uuid.uuid4().bytes))
 
         self.add_graphics(canvas)
 

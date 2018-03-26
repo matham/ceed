@@ -594,7 +594,7 @@ class DataSerializerBase(EventDispatcher):
     __settings_attrs__ = ('counter_bit_width', 'clock_idx', 'count_indices',
                           'short_count_indices', 'projector_to_aquisition_map')
 
-    counter_bit_width = NumericProperty(16)
+    counter_bit_width = NumericProperty(32)
 
     clock_idx = NumericProperty(2)
 
@@ -605,7 +605,7 @@ class DataSerializerBase(EventDispatcher):
     projector_to_aquisition_map = DictProperty(
         {2: 0, 3: 1, 4: 2, 10: 3, 11: 4, 12: 5, 18: 6, 19: 7, 20: 8})
 
-    def get_bits(self, last_count):
+    def get_bits(self, last_count, config_bytes=[]):
         clock_base = 1 << self.clock_idx
         clock = 0
 
@@ -616,19 +616,19 @@ class DataSerializerBase(EventDispatcher):
         short_val = 0
 
         count_cycles = int(ceil(self.counter_bit_width / float(len(count_i))))
-        count_iters = [list(enumerate(count_i))]
+        count_iters = []
         for i in range(count_cycles):
             count_iters.append(list(enumerate(count_i, i * len(count_i))))
+            count_iters.append(list(enumerate(count_i, i * len(count_i))))
+
+        config_bytes = list(config_bytes)
+        sending_config = bool(config_bytes)
 
         while True:
             first = True
-            for data in count_iters:
+            for k, data in enumerate(count_iters):
                 count = yield
                 value = clock = clock ^ clock_base
-
-                if first:
-                    count_val = count
-                    first = False
 
                 short_val = (short_val + count - last_count) % short_n
                 last_count = count
@@ -636,11 +636,24 @@ class DataSerializerBase(EventDispatcher):
                     if (1 << i) & short_val:
                         value |= v
 
+                if first:
+                    if config_bytes:
+                        count_val = config_bytes.pop(0)
+                        sending_config = True
+                    else:
+                        count_val = count
+                        sending_config = False
+                    first = False
+
                 for i, v in data:
-                    if (1 << i) & count_val:
+                    if ((not k % 2 or k == 1 or sending_config) and
+                        ((1 << i) & count_val)) or \
+                            k % 2 and not ((1 << i) & count_val):
                         value |= v
 
                 yield value
+            else:
+                pass
 
 
 CeedData = CeedDataBase()

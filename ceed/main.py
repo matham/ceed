@@ -95,7 +95,9 @@ class CeedApp(CPLComApp):
         self.yesno_prompt = Factory.CeedYesNoPrompt()
         drag = self.drag_controller = CeedDragNDrop()
         drag.knsname = 'dragger'
-        return super(CeedApp, self).build()
+
+        root = Factory.get('MainView')()
+        return super(CeedApp, self).build(root)
 
     def on_start(self):
         knspace.painter.show_widgets = True
