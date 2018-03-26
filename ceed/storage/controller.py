@@ -368,13 +368,15 @@ class CeedDataBase(EventDispatcher):
         self.config_changed = True
 
     def write_config(self, config_section=None):
-        config = config_section or self.nix_file.sections['app_config']
+        config = config_section if config_section is not None else \
+            self.nix_file.sections['app_config']
         data = self.gather_config_data_dict()
         for k, v in data.items():
             config[k] = yaml_dumps(v)
 
     def read_config(self, config_section=None):
-        config = config_section or self.nix_file.sections['app_config']
+        config = config_section if config_section is not None else \
+            self.nix_file.sections['app_config']
         data = {}
         for prop in config.props:
             data[prop.name] = yaml_loads(prop.values[0].value)
