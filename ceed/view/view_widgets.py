@@ -9,10 +9,10 @@ from kivy.uix.behaviors.focus import FocusBehavior
 from kivy.uix.stencilview import StencilView
 from kivy.uix.scatter import Scatter
 from kivy.clock import Clock
-
-from ceed.view.controller import ViewController
-
+from kivy.app import App
 __all__ = ('ViewRootFocusBehavior', )
+
+_get_app = App.get_running_app
 
 
 class ViewRootFocusBehavior(FocusBehavior):
@@ -27,7 +27,7 @@ class ViewRootFocusBehavior(FocusBehavior):
     def keyboard_on_key_down(self, window, keycode, text, modifiers):
         if keycode[1] in ('ctrl', 'lctrl', 'rctrl'):
             self._ctrl_down = True
-        ViewController.send_keyboard_down(keycode[1], modifiers)
+        _get_app().view_controller.send_keyboard_down(keycode[1], modifiers)
         return True
 
     def keyboard_on_key_up(self, window, keycode):
@@ -36,9 +36,10 @@ class ViewRootFocusBehavior(FocusBehavior):
 
         if self._ctrl_down:
             if keycode[1] == 'q':
-                ViewController.filter_background = not ViewController.filter_background
+                _get_app().view_controller.filter_background = \
+                    not _get_app().view_controller.filter_background
                 return True
-        ViewController.send_keyboard_up(keycode[1])
+        _get_app().view_controller.send_keyboard_up(keycode[1])
         return True
 
     def keyboard_on_textinput(self, window, text):
@@ -46,9 +47,11 @@ class ViewRootFocusBehavior(FocusBehavior):
             return True
 
         if text == '+':
-            ViewController.alpha_color = min(1., ViewController.alpha_color + .01)
+            _get_app().view_controller.alpha_color = min(
+                1., _get_app().view_controller.alpha_color + .01)
         elif text == '-':
-            ViewController.alpha_color = max(0., ViewController.alpha_color - .01)
+            _get_app().view_controller.alpha_color = max(
+                0., _get_app().view_controller.alpha_color - .01)
         return True
 
 
@@ -80,8 +83,8 @@ class PainterScatter(Scatter):
         super(PainterScatter, self).__init__(**kwargs)
         self._sizing_trigger = Clock.create_trigger(self._recalculate_size, -1)
         self.fbind('scale', self._sizing_trigger)
-        ViewController.fbind('screen_height', self._sizing_trigger)
-        ViewController.fbind('screen_width', self._sizing_trigger)
+        _get_app().view_controller.fbind('screen_height', self._sizing_trigger)
+        _get_app().view_controller.fbind('screen_width', self._sizing_trigger)
 
         self._pos_trigger = Clock.create_trigger(self._recalculate_pos, -1)
         self.fbind('pos', self._pos_trigger)
@@ -90,8 +93,10 @@ class PainterScatter(Scatter):
     def _recalculate_size(self, *largs):
         parent = self.parent
         self.scale = max(
-            self.scale, min(1, min(parent.height / ViewController.screen_height,
-                                   parent.width / ViewController.screen_width)))
+            self.scale, min(
+                1,
+                min(parent.height / _get_app().view_controller.screen_height,
+                    parent.width / _get_app().view_controller.screen_width)))
 
     def _recalculate_pos(self, *largs):
         parent = self.parent

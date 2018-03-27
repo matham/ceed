@@ -30,7 +30,7 @@ from kivy.clock import Clock
 from kivy.compat import string_types
 
 import ceed
-from ceed.view.controller import ViewController
+from ceed.view.controller import ViewSideViewControllerBase
 from ceed.view.view_widgets import ViewRootFocusBehavior
 from ceed.storage.controller import DataSerializer
 from ceed.function import FunctionFactory
@@ -42,7 +42,6 @@ __all__ = ('CeedViewApp', 'run_app')
 
 
 kv = '''
-#:import ViewController ceed.view.controller.ViewController
 <ViewRootWidget>:
     Widget:
         size: root.width, root.height
@@ -60,22 +59,22 @@ kv = '''
             auto_bring_to_front: False
             size_hint: None, None
             on_image_size:
-                ViewController._restore_cam_pos()
+                app.view_controller._restore_cam_pos()
                 self.size = self.image_size
             scale_to_image: False
-            color: [1, 1, 1, ViewController.alpha_color]
+            color: [1, 1, 1, app.view_controller.alpha_color]
     
             do_scale: True
             do_translation: True, True
             do_rotation: True
     
-            scale: ViewController.cam_scale
-            center: ViewController.cam_center_x, ViewController.cam_center_y
-            rotation: ViewController.cam_rotation
+            scale: app.view_controller.cam_scale
+            center: app.view_controller.cam_center_x, app.view_controller.cam_center_y
+            rotation: app.view_controller.cam_rotation
 
-            on_center: ViewController.cam_center_x, ViewController.cam_center_y = self.center
-            on_scale: ViewController.cam_scale = self.scale
-            on_rotation: ViewController.cam_rotation = self.rotation
+            on_center: app.view_controller.cam_center_x, app.view_controller.cam_center_y = self.center
+            on_scale: app.view_controller.cam_scale = self.scale
+            on_rotation: app.view_controller.cam_rotation = self.rotation
         
 '''
 
@@ -88,13 +87,26 @@ class CeedViewApp(CPLComApp):
     '''The app which runs the GUI.
     '''
 
+    view_controller = None
+
     @classmethod
     def get_config_classes(cls):
         d = super(CeedViewApp, cls).get_config_classes()
-        d['view'] = ViewController
-        d['serializer'] = DataSerializer
-        d['function'] = FunctionFactory
+        app = cls.get_running_app()
+        if app is None:
+            d['view'] = ViewSideViewControllerBase
+            d['serializer'] = DataSerializer
+            d['function'] = FunctionFactory
+        else:
+            d['view'] = app.view_controller
+            d['serializer'] = DataSerializer
+            d['function'] = FunctionFactory
         return d
+
+    def __init__(self, **kwargs):
+        self.view_controller = ViewSideViewControllerBase()
+
+        super(CeedViewApp, self).__init__(**kwargs)
 
     def init_load(self):
         pass
@@ -172,7 +184,7 @@ class CeedViewApp(CPLComApp):
             err = exception
         else:
             err = '{} from {}'.format(exception, obj)
-        ViewController.handle_exception(err, exc_info)
+        self.view_controller.handle_exception(err, exc_info)
 
     def get_logger(self):
         return Logger

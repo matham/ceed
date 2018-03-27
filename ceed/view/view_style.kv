@@ -1,4 +1,3 @@
-#:import ViewController ceed.view.controller.ViewController
 #:import Factory kivy.factory.Factory
 #:import FunctionFactory ceed.function.FunctionFactory
 #:import Clock kivy.clock.Clock
@@ -12,7 +11,7 @@
     PainterScatter:
         id: scatter
         size_hint: None, None
-        size: ViewController.screen_width, ViewController.screen_height
+        size: app.view_controller.screen_width, app.view_controller.screen_height
         do_translation: painter.locked and not painter.select and not painter.move_cam, painter.locked and not painter.select and not painter.move_cam
         do_scale: painter.locked and not painter.select and not painter.move_cam
         do_rotation: False
@@ -37,7 +36,7 @@
                 auto_bring_to_front: False
                 size_hint: None, None
                 on_image_size:
-                    ViewController._restore_cam_pos()
+                    app.view_controller._restore_cam_pos()
                     self.size = self.image_size
                 scale_to_image: False
 
@@ -45,18 +44,18 @@
                 do_translation: self.do_scale, self.do_scale
                 do_rotation: self.do_scale
 
-                scale: ViewController.cam_scale
-                center: ViewController.cam_center_x, ViewController.cam_center_y
-                rotation: ViewController.cam_rotation
+                scale: app.view_controller.cam_scale
+                center: app.view_controller.cam_center_x, app.view_controller.cam_center_y
+                rotation: app.view_controller.cam_rotation
 
-                on_center: ViewController.cam_center_x, ViewController.cam_center_y = self.center
-                on_scale: ViewController.cam_scale = self.scale
-                on_rotation: ViewController.cam_rotation = self.rotation
+                on_center: app.view_controller.cam_center_x, app.view_controller.cam_center_y = self.center
+                on_scale: app.view_controller.cam_scale = self.scale
+                on_rotation: app.view_controller.cam_rotation = self.rotation
             CeedPainter:
                 knsname: 'painter'
                 id: painter
                 size_hint: None, None
-                size: ViewController.screen_width, ViewController.screen_height
+                size: app.view_controller.screen_width, app.view_controller.screen_height
                 move_cam: False
 
 <ControlBar@BoxLayout>:
@@ -68,14 +67,14 @@
         id: stage_spinner
         values: sorted(StageFactory.stage_names.keys()) if StageFactory.stage_names else []
         text_autoupdate: True
-        on_text: ViewController.selected_stage_name = self.text
+        on_text: app.view_controller.selected_stage_name = self.text
         size_hint_x: None
         width: self.minimum_width
     FlatImageToggleButton:
         source: 'flat_play.png' if self.state == 'normal' else 'flat_stop.png'
         flat_color: app.theme.accent
-        on_release: ViewController.request_stage_start(stage_spinner.text) if self.state == 'down' else ViewController.request_stage_end()
-        state: 'down' if ViewController.stage_active else 'normal'
+        on_release: app.view_controller.request_stage_start(stage_spinner.text) if self.state == 'down' else app.view_controller.request_stage_end()
+        state: 'down' if app.view_controller.stage_active else 'normal'
         hover_text: '[b]start[/b] stage' if self.state == 'normal' else '[b]stop[/b] stage'
     FlatImageToggleButton:
         knsname: 'gui_save_cam_stage'
@@ -84,21 +83,21 @@
         flat_color: app.theme.accent
         state: 'normal'
     FlatImageButton:
-        on_release: ViewController.do_cam_registration()
+        on_release: app.view_controller.do_cam_registration()
         source: 'flat_align.png'
         scale_down_color: True
         flat_color: app.theme.accent
         hover_text: 'align cam'
     FlatImageToggleButton:
-        on_release: ViewController.start_process() if self.state == 'down' else ViewController.stop_process()
-        state: 'down' if ViewController.view_process else 'normal'
+        on_release: app.view_controller.start_process() if self.state == 'down' else app.view_controller.stop_process()
+        state: 'down' if app.view_controller.view_process else 'normal'
         source: 'flat_window_restore.png'
         scale_down_color: True
         flat_color: app.theme.accent
         hover_text: '[b]hide[/b] / show window' if self.state == 'normal' else 'hide / [b]show[/b] window'
     FlatImageToggleButton:
-        on_release: ViewController.preview = self.state == 'down'
-        state: 'down' if ViewController.preview else 'normal'
+        on_release: app.view_controller.preview = self.state == 'down'
+        state: 'down' if app.view_controller.preview else 'normal'
         source: 'flat_snowflake.png'
         scale_down_color: True
         flat_color: app.theme.accent
@@ -114,8 +113,8 @@
     FlatImageToggleButton:
         source: 'flat_fullscreen.png' if self.state == 'normal' else 'flat_fullscreen_exit.png'
         flat_color: app.theme.accent
-        on_release: ViewController.request_fullscreen(self.state == 'down')
-        state: 'down' if ViewController.fullscreen else 'normal'
+        on_release: app.view_controller.request_fullscreen(self.state == 'down')
+        state: 'down' if app.view_controller.fullscreen else 'normal'
         hover_text: 'fullscreen' if self.state == 'normal' else '[b]fullscreen[/b]'
     FlatImageButton:
         on_parent: self.stage_graph = Factory.StageGraphPopup()
@@ -125,7 +124,7 @@
         flat_color: app.theme.accent
         hover_text: 'show stage timeline'
     ThemedLabel:
-        text: '{:^ 3} / {:^ 3}'.format(int(round(ViewController.cpu_fps)), int(round(ViewController.gpu_fps)))
+        text: '{:^ 3} / {:^ 3}'.format(int(round(app.view_controller.cpu_fps)), int(round(app.view_controller.gpu_fps)))
         size_hint_x: None
         padding_x: '5dp'
         width: self.texture_size[0]
@@ -160,17 +159,17 @@
                 size: self.texture_size
                 text: 'Use software rate'
             LightThemedToggleButton:
-                text: 'ON' if ViewController.use_software_frame_rate else 'OFF'
-                state: 'down' if ViewController.use_software_frame_rate else 'normal'
-                on_state: ViewController.use_software_frame_rate = self.state == 'down'
+                text: 'ON' if app.view_controller.use_software_frame_rate else 'OFF'
+                state: 'down' if app.view_controller.use_software_frame_rate else 'normal'
+                on_state: app.view_controller.use_software_frame_rate = self.state == 'down'
             ThemedLabel:
                 size_hint: None, None
                 size: self.texture_size
                 text: 'Refresh rate'
             FlatSizedTextInput:
                 input_filter: 'int'
-                text: str(ViewController.frame_rate)
-                on_text_validate: ViewController.frame_rate = float(self.text)
+                text: str(app.view_controller.frame_rate)
+                on_text_validate: app.view_controller.frame_rate = float(self.text)
             ThemedLabel:
                 size_hint: None, None
                 size: self.texture_size
@@ -178,7 +177,7 @@
             ThemedLabel:
                 size_hint: None, None
                 size: self.texture_size
-                text: str(ViewController.effective_frame_rate)
+                text: str(app.view_controller.effective_frame_rate)
             ThemedLabel:
                 size_hint: None, None
                 size: self.texture_size
@@ -202,11 +201,11 @@
                 size: self.texture_size
                 text: 'Video mode'
             ThemedSpinner:
-                values: ViewController.video_modes
-                text: ViewController.video_mode
+                values: app.view_controller.video_modes
+                text: app.view_controller.video_mode
                 on_text:
-                    ViewController.video_mode = self.text
-                    if ViewController.propixx_lib: ViewController.set_video_mode(ViewController.video_mode)
+                    app.view_controller.video_mode = self.text
+                    if app.view_controller.propixx_lib: app.view_controller.set_video_mode(app.view_controller.video_mode)
                 size_hint_x: None
                 width: self.minimum_width
             ThemedLabel:
@@ -214,9 +213,9 @@
                 size: self.texture_size
                 text: 'LED mode'
             ThemedSpinner:
-                values: ViewController.led_modes.keys()
-                text: ViewController.LED_mode
-                on_text: ViewController.LED_mode = self.text
+                values: app.view_controller.led_modes.keys()
+                text: app.view_controller.LED_mode
+                on_text: app.view_controller.LED_mode = self.text
                 size_hint_x: None
                 width: self.minimum_width
             ThemedLabel:
@@ -224,10 +223,10 @@
                 size: self.texture_size
                 text: 'LED mode idle'
             ThemedSpinner:
-                values: ViewController.led_modes.keys()
-                text: ViewController.LED_mode_idle
+                values: app.view_controller.led_modes.keys()
+                text: app.view_controller.LED_mode_idle
                 on_text:
-                    ViewController.LED_mode_idle = self.text
-                    if ViewController.propixx_lib: ViewController.set_led_mode(ViewController.LED_mode_idle)
+                    app.view_controller.LED_mode_idle = self.text
+                    if app.view_controller.propixx_lib: app.view_controller.set_led_mode(app.view_controller.LED_mode_idle)
                 size_hint_x: None
                 width: self.minimum_width

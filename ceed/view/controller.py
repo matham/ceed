@@ -2,8 +2,6 @@
 ======================
 
 Displays the preview or live pixel output of the experiment.
-:attr:`ViewController` is the controller that plays the output to the projector
-or in the main GUI when previewing. See :class:`ViewControllerBase`.
 '''
 import multiprocessing as mp
 import os
@@ -14,7 +12,7 @@ import traceback
 from collections import defaultdict
 from functools import partial
 from threading import Thread
-import cv2
+# import cv2
 import numpy as np
 import imreg_dft as ird
 from matplotlib import pyplot as plt
@@ -56,7 +54,7 @@ except ImportError:
     libdpx = PROPixx = PROPixxCTRL = None
 
 __all__ = (
-    'ViewControllerBase', 'ViewController', 'ViewSideViewControllerBase',
+    'ViewControllerBase', 'ViewSideViewControllerBase',
     'view_process_enter', 'ControllerSideViewControllerBase')
 
 
@@ -538,8 +536,7 @@ class ViewControllerBase(EventDispatcher):
 
 
 class ViewSideViewControllerBase(ViewControllerBase):
-    '''The instance that is created on the viewer side as
-    :attr:`ViewController`.
+    '''The instance that is created on the viewer side.
     '''
 
     alpha_color = NumericProperty(1.)
@@ -579,32 +576,6 @@ class ViewSideViewControllerBase(ViewControllerBase):
         '''
         self.queue_view_write.put_nowait((
             'key_up', yaml_dumps((key, ))))
-
-    def view_process_enter(self, read, write, settings, app_settings):
-        '''The method that the second process calls when it is run. This runs
-        the second, internal, app.
-        '''
-        def assign_settings(*largs):
-            app = App.get_running_app()
-            classes = app.get_config_classes()
-            app.app_settings = {cls: app_settings[cls] for cls in classes}
-            app.apply_app_settings()
-        for k, v in settings.items():
-            setattr(self, k, v)
-
-        from ceed.view.main import run_app
-        self.queue_view_read = read
-        self.queue_view_write = write
-        Clock.schedule_once(assign_settings, 0)
-        Clock.schedule_interval(self.view_read, .25)
-        Clock.schedule_once(self.prepare_view_window, 0)
-
-        try:
-            run_app()
-        except Exception as e:
-            App.get_running_app().handle_exception(e, exc_info=sys.exc_info())
-
-        self.queue_view_write.put_nowait(('eof', None))
 
     def handle_exception(self, exception, exc_info=None):
         '''Called by the second process upon an error which is passed on to the
@@ -689,16 +660,40 @@ class ViewSideViewControllerBase(ViewControllerBase):
         Window.fullscreen = self.fullscreen
 
 
-def view_process_enter(*largs):
+def view_process_enter(read, write, settings, app_settings):
     '''Called by the second internal view process when it is created.
     This calls :meth:`ViewSideViewControllerBase.view_process_enter`.
     '''
-    return ViewController.view_process_enter(*largs)
+    from cplcom.app import run_cpl_app
+    from ceed.view.main import CeedViewApp, _cleanup
+
+    app = None
+    try:
+        app = CeedViewApp()
+
+        classes = app.get_config_classes()
+        app.app_settings = {cls: app_settings[cls] for cls in classes}
+        app.apply_app_settings()
+
+        viewer = app.view_controller
+        for k, v in settings.items():
+            setattr(viewer, k, v)
+
+        viewer.queue_view_read = read
+        viewer.queue_view_write = write
+        Clock.schedule_interval(viewer.view_read, .25)
+        Clock.schedule_once(viewer.prepare_view_window, 0)
+
+        run_cpl_app(app, _cleanup)
+    except Exception as e:
+        if app is not None:
+            app.handle_exception(e, exc_info=sys.exc_info())
+
+    write.put_nowait(('eof', None))
 
 
 class ControllerSideViewControllerBase(ViewControllerBase):
-    '''The instance that is created in the main GUI as
-    :attr:`ViewController`.
+    '''The instance that is created in the main GUI.
     '''
 
     view_process = ObjectProperty(None, allownone=True)
@@ -1050,18 +1045,3 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         except:
             self.registration_thread = None
             raise
-
-
-ViewController = None
-'''The controller that plays or directs that the experimental projector output
-be played on the client.
-
-When running from the main GUI, :attr:`ViewController`
-is an :class:`ControllerSideViewControllerBase` instance. When this code is
-run in the second process that runs the projector side code,
-:attr:`ViewController` is an :class:`ViewSideViewControllerBase` instance.
-'''
-if ceed.is_view_inst:
-    ViewController = ViewSideViewControllerBase()
-else:
-    ViewController = ControllerSideViewControllerBase()

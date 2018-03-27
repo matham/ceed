@@ -40,8 +40,8 @@ class CeedPlayerBase(object):
             widget.update_img(img[0])
             knspace.player.last_image = img[0]
             if knspace.gui_save_cam_stage.state == 'down':
-                from ceed.view.controller import ViewController
-                ViewController.send_background_image(img[0])
+                App.get_running_app().view_controller.send_background_image(
+                    img[0])
             if knspace.gui_remote_view.state == 'down':
                 from ceed.view.remote_view import RemoteViewerListener
                 RemoteViewerListener.send_image(img[0])

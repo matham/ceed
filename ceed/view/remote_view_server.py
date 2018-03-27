@@ -375,7 +375,7 @@ class CeedRemoteViewApp(CPLComApp):
             err = exception
         else:
             err = '{} from {}'.format(exception, obj)
-            # ViewController.handle_exception(err, exc_info)
+            # handle_exception(err, exc_info)
 
     def _ask_close(self, *largs, **kwargs):
         return False

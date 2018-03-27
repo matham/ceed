@@ -30,7 +30,6 @@ from ceed.graphics import WidgetList, ShowMoreSelection, BoxSelector, \
 from ceed.stage import StageFactory, CeedStage
 from ceed.function.func_widgets import FuncWidget, FuncWidgetGroup, \
     FunctionFactory
-from ceed.view.controller import ViewController
 from ceed.shape import get_painter
 
 from cplcom.drag_n_drop import DragableLayoutBehavior
@@ -649,8 +648,8 @@ class StageGraph(Factory.FlatSplitter):
 
         '''
         frame_rate = self.frame_rate = float(frame_rate)
-        vals = self.plot_values = ViewController.get_all_shape_values(
-            stage, frame_rate)
+        vals = self.plot_values = App.get_running_app(
+            ).view_controller.get_all_shape_values(stage, frame_rate)
         N = len(list(vals.values())[0]) if vals else 0
 
         plots = self.plots
