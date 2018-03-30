@@ -23,10 +23,12 @@ from cplcom.drag_n_drop import DragableLayoutBehavior
 
 from ceed.utils import fix_name
 from ceed.graphics import WidgetList, ShowMoreSelection, ShowMoreBehavior
-from ceed.function import FunctionFactory, FuncGroup
+from ceed.function import FuncGroup
 
 __all__ = ('FuncList', 'FuncWidget', 'FuncWidgetGroup', 'FuncPropTextWidget',
            'FuncNamePropTextWidget')
+
+_get_app = App.get_running_app
 
 
 class FuncDragableLayoutBehavior(DragableLayoutBehavior):
@@ -39,7 +41,8 @@ class FuncDragableLayoutBehavior(DragableLayoutBehavior):
             if drag_widget.drag_copy:
                 func = deepcopy(func)
         else:
-            func = deepcopy(FunctionFactory.funcs_inst[drag_widget.text])
+            func = deepcopy(
+                _get_app().function_factory.funcs_inst[drag_widget.text])
         self.controller.add_func(func, index=len(self.children) - index)
 
 
@@ -63,16 +66,16 @@ class FuncList(FuncDragableLayoutBehavior, ShowMoreSelection, WidgetList,
                 after = widget.func
                 parent = after.parent_func
 
-        src_func = FunctionFactory.funcs_inst[name]
+        src_func = _get_app().function_factory.funcs_inst[name]
         if parent:
             if not parent.parent_in_other_children(src_func):
                 parent.add_func(deepcopy(src_func), after=after)
         else:
-            FunctionFactory.add_func(deepcopy(src_func))
+            _get_app().function_factory.add_func(deepcopy(src_func))
 
     def get_selectable_nodes(self):
         return list(reversed([
-            f.display for func in FunctionFactory.funcs_user for
+            f.display for func in _get_app().function_factory.funcs_user for
             f in func.get_funcs()]))
 
 
@@ -102,7 +105,7 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
 
     func_controller = ObjectProperty(None)
     '''The controller to which the function is added or removed from.
-    This is e.g. :attr:`ceed.function.FunctionFactory` in the function list
+    This is e.g. :attr:`ceed.function.FunctionFactoryBase` in the function list
     case or the stage to which the function is attached.
     '''
 
@@ -112,7 +115,7 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
     '''
 
     def __init__(self, **kwargs):
-        kwargs.setdefault('func_controller', FunctionFactory)
+        kwargs.setdefault('func_controller', _get_app().function_factory)
         kwargs.setdefault('display_parent', knspace.funcs)
         kwargs.setdefault('selection_controller', knspace.funcs)
 
@@ -374,7 +377,8 @@ class FuncNamePropTextWidget(FuncPropTextWidget):
             return
 
         if text != self.func.name:
-            self.func.name = fix_name(text, FunctionFactory.funcs_inst)
+            self.func.name = fix_name(
+                text, _get_app().function_factory.funcs_inst)
 
 
 class TrackOptionsSpinner(Factory.SizedCeedFlatSpinner):

@@ -11,7 +11,6 @@ from os import remove
 import os
 from tempfile import NamedTemporaryFile
 from shutil import copy2
-from collections import defaultdict
 from math import ceil
 from threading import Thread, RLock
 try:
@@ -23,21 +22,16 @@ from ffpyplayer.pic import Image
 
 from kivy.event import EventDispatcher
 from kivy.properties import StringProperty, NumericProperty, ListProperty, \
-    DictProperty, BooleanProperty
+    DictProperty, BooleanProperty, ObjectProperty
 from kivy.app import App
 from kivy.clock import Clock
 from kivy.uix.behaviors.knspace import knspace
 from kivy.logger import Logger
-from kivy.compat import clock
 
 from cplcom.app import app_error
 from cplcom.utils import yaml_dumps, yaml_loads
 
-from ceed.function import FunctionFactory, FuncBase
-from ceed.stage import StageFactory
-from ceed.shape import get_painter
-
-__all__ = ('CeedData', 'CeedDataBase', 'DataSerializer')
+__all__ = ('CeedDataBase', )
 
 
 class CeedDataBase(EventDispatcher):
@@ -64,6 +58,12 @@ class CeedDataBase(EventDispatcher):
 
     data_lock = None
 
+    function_factory = ObjectProperty(None)
+
+    shape_factory = ObjectProperty(None)
+
+    stage_factory = ObjectProperty(None)
+
     def __init__(self, **kwargs):
         super(CeedDataBase, self).__init__(**kwargs)
         if (not os.environ.get('KIVY_DOC_INCLUDE', None) and
@@ -71,46 +71,53 @@ class CeedDataBase(EventDispatcher):
             Clock.schedule_interval(self.write_changes, self.backup_interval)
 
     @staticmethod
-    def gather_config_data_dict():
+    def gather_config_data_dict(
+            shape_factory, function_factory, stage_factory,
+            get_app_settings=True):
         data = {}
-        data['shape'] = get_painter().save_state()
+        data['shape'] = shape_factory.save_state()
         func_id_map = {}
-        data['function'] = FunctionFactory.save_funcs(func_id_map)[0]
-        data['stage'] = StageFactory.save_stages(func_id_map)[0]
+        data['function'] = function_factory.save_funcs(func_id_map)[0]
+        data['stage'] = stage_factory.save_stages(func_id_map)[0]
         data['func_id_map'] = func_id_map
 
-        App.get_running_app().dump_app_settings_to_file()
-        App.get_running_app().load_app_settings_from_file()
-        data['app_settings'] = App.get_running_app().app_settings
+        if get_app_settings:
+            App.get_running_app().dump_app_settings_to_file()
+            App.get_running_app().load_app_settings_from_file()
+            data['app_settings'] = App.get_running_app().app_settings
 
         return data
 
     @staticmethod
-    def clear_existing_config_data():
-        StageFactory.clear_stages()
-        get_painter().remove_all_groups()
-        get_painter().delete_all_shapes(keep_locked_shapes=False)
-        FunctionFactory.clear_funcs()
+    def clear_existing_config_data(
+            shape_factory, function_factory, stage_factory):
+        stage_factory.clear_stages()
+        shape_factory.remove_all_groups()
+        shape_factory.delete_all_shapes(keep_locked_shapes=False)
+        function_factory.clear_funcs()
 
     @staticmethod
-    def apply_config_data_dict(data):
-        app = App.get_running_app()
-        app_settings = data['app_settings']
-        # filter classes that are not of this app
-        classes = app.get_config_classes()
-        app.app_settings = {cls: app_settings[cls] for cls in classes}
-        app.apply_app_settings()
+    def apply_config_data_dict(
+            data, shape_factory, function_factory, stage_factory,
+            set_app_settings=True):
+        if set_app_settings:
+            app = App.get_running_app()
+            app_settings = data['app_settings']
+            # filter classes that are not of this app
+            classes = app.get_config_classes()
+            app.app_settings = {cls: app_settings[cls] for cls in classes}
+            app.apply_app_settings()
 
         old_to_new_name_shape_map = {}
-        get_painter().set_state(data['shape'], old_to_new_name_shape_map)
+        shape_factory.set_state(data['shape'], old_to_new_name_shape_map)
 
         id_to_func_map = {}
         old_id_map = {}
         old_to_new_name = {}
 
-        f1 = FunctionFactory.recover_funcs(
+        f1 = function_factory.recover_funcs(
             data['function'], id_to_func_map, old_id_map, old_to_new_name)
-        f2 = StageFactory.recover_stages(
+        f2 = stage_factory.recover_stages(
             data['stage'], id_to_func_map, old_id_map=old_id_map,
             old_to_new_name_shape_map=old_to_new_name_shape_map)
 
@@ -145,7 +152,10 @@ class CeedDataBase(EventDispatcher):
                             return
                         if clear_data:
                             self.close_file(force_remove_autosave=True)
-                            self.clear_existing_config_data()
+                            self.clear_existing_config_data(
+                                self.shape_factory, self.function_factory,
+                                self.stage_factory
+                            )
                         func(fname, overwrite)
 
                     yesno = App.get_running_app().yesno_prompt
@@ -356,7 +366,8 @@ class CeedDataBase(EventDispatcher):
         if exists(filename) and not overwrite:
             raise ValueError('{} already exists'.format(filename))
 
-        data = yaml_dumps(self.gather_config_data_dict())
+        data = yaml_dumps(self.gather_config_data_dict(
+            self.shape_factory, self.function_factory, self.stage_factory))
         with open(filename, 'w') as fh:
             fh.write(data)
 
@@ -369,7 +380,8 @@ class CeedDataBase(EventDispatcher):
 
     def write_config(self, config_section=None):
         config = config_section or self.nix_file.sections['app_config']
-        data = self.gather_config_data_dict()
+        data = self.gather_config_data_dict(
+            self.shape_factory, self.function_factory, self.stage_factory)
         for k, v in data.items():
             config[k] = yaml_dumps(v)
 
@@ -530,7 +542,7 @@ class CeedDataBase(EventDispatcher):
             self.write_fluorescent_image(block, knspace.player.last_image)
 
         shapes = {}
-        for shape in get_painter().shapes:
+        for shape in App.get_running_app().shape_factory.shapes:
             shapes[shape.name] = block.create_data_array(
                 'shape_{}'.format(shape.name), 'shape_data', dtype=np.float16,
                 data=np.zeros((0, 4)))
@@ -654,10 +666,3 @@ class DataSerializerBase(EventDispatcher):
                 yield value
             else:
                 pass
-
-
-CeedData = CeedDataBase()
-'''The singleton which controls the loading and saving of configuration and
-experimental data. It is a :class:`CeedDataBase` instance.
-'''
-DataSerializer = DataSerializerBase()

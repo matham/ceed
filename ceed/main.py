@@ -34,12 +34,12 @@ import ceed.stage.stage_widgets
 import ceed.shape.shape_widgets
 import ceed.view.view_widgets
 
-from ceed.function import FunctionFactory
-from ceed.stage import StageFactory
+from ceed.function import FunctionFactoryBase, register_all_functions
+from ceed.stage import StageFactoryBase, _bind_remove
 from ceed.view.controller import ControllerSideViewControllerBase
-from ceed.storage.controller import CeedData, DataSerializer
+from ceed.storage.controller import CeedDataBase, DataSerializerBase
 from ceed.graphics import CeedDragNDrop
-from ceed.view.remote_view import RemoteViewerListener
+from ceed.view.remote_view import RemoteViewerListenerBase
 
 if ceed.has_gui_control:
     from kivy.core.window import Window
@@ -51,6 +51,8 @@ class CeedApp(CPLComApp):
     '''The app which runs the GUI.
     '''
 
+    function_factory = None
+
     player = None
 
     view_controller = None
@@ -59,9 +61,11 @@ class CeedApp(CPLComApp):
 
     data_serializer = None
 
-    function_factory = None
-
     remote_viewer = None
+
+    stage_factory = None
+
+    shape_factory = None
 
     agreed_discard = False
 
@@ -72,30 +76,41 @@ class CeedApp(CPLComApp):
     @classmethod
     def get_config_classes(cls):
         d = super(CeedApp, cls).get_config_classes()
+        d['function'] = FunctionFactoryBase
         d['view'] = ControllerSideViewControllerBase
-        d['data'] = CeedData
-        d['serializer'] = DataSerializer
+        d['data'] = CeedDataBase
+        d['serializer'] = DataSerializerBase
         d['player'] = CeedPlayer
         d['point_gray_cam'] = CeedPTGrayPlayer
         d['video_file_playback'] = CeedFFmpegPlayer
-        d['function'] = FunctionFactory
-        d['remote_viewer'] = RemoteViewerListener
+        d['remote_viewer'] = RemoteViewerListenerBase
 
         app = cls.get_running_app()
-        if app:
+        if app is not None:
+            d['function'] = app.function_factory
             d['view'] = app.view_controller
             d['data'] = app.ceed_data
             d['serializer'] = app.data_serializer
             p = d['player'] = app.player
             d['point_gray_cam'] = p.pt_player
             d['video_file_playback'] = p.ff_player
-            d['function'] = app.function_factory
             d['remote_viewer'] = app.remote_viewer
         return d
 
     def __init__(self, **kwargs):
+        self.function_factory = FunctionFactoryBase()
+        register_all_functions(self.function_factory)
+        self.stage_factory = StageFactoryBase(
+            function_factory=self.function_factory)
+        _bind_remove(self.stage_factory, self.shape_factory)
         self.player = CeedPlayer()
         self.view_controller = ControllerSideViewControllerBase()
+        self.ceed_data = CeedDataBase(
+            function_factory=self.function_factory,
+            stage_factory=self.stage_factory,
+            shape_factory=self.shape_factory)
+        self.data_serializer = DataSerializerBase()
+        self.remote_viewer = RemoteViewerListenerBase()
         super(CeedApp, self).__init__(**kwargs)
         self.load_app_settings_from_file()
         self.apply_app_settings()
@@ -118,23 +133,24 @@ class CeedApp(CPLComApp):
         return super(CeedApp, self).build(root)
 
     def on_start(self):
+        self.stage_factory.shape_factory = self.shape_factory = knspace.painter
         knspace.painter.show_widgets = True
-        FunctionFactory.show_widgets = True
-        StageFactory.show_widgets = True
+        self.function_factory.show_widgets = True
+        self.stage_factory.show_widgets = True
 
         HighightButtonBehavior.init_class()
 
-        CeedData.create_file('')
+        self.ceed_data.create_file('')
 
-        StageFactory.fbind('on_changed', self.changed_callback)
-        FunctionFactory.fbind('on_changed', self.changed_callback)
+        self.stage_factory.fbind('on_changed', self.changed_callback)
+        self.function_factory.fbind('on_changed', self.changed_callback)
         knspace.painter.fbind('on_changed', self.changed_callback)
         self.view_controller.fbind('on_changed', self.changed_callback)
 
         self.set_tittle()
-        CeedData.fbind('filename', self.set_tittle)
-        CeedData.fbind('config_changed', self.set_tittle)
-        CeedData.fbind('has_unsaved', self.set_tittle)
+        self.ceed_data.fbind('filename', self.set_tittle)
+        self.ceed_data.fbind('config_changed', self.set_tittle)
+        self.ceed_data.fbind('has_unsaved', self.set_tittle)
 
         try:
             self.view_controller.set_led_mode(self.view_controller.LED_mode_idle)
@@ -145,40 +161,42 @@ class CeedApp(CPLComApp):
         ''' Sets the title of the window using the currently running
         tab. This is called at 1Hz. '''
         star = ''
-        if CeedData.has_unsaved or CeedData.config_changed:
+        if self.ceed_data.has_unsaved or self.ceed_data.config_changed:
             star = '*'
-        if CeedData.filename:
-            filename = ' - {}'.format(CeedData.filename)
+        if self.ceed_data.filename:
+            filename = ' - {}'.format(self.ceed_data.filename)
         else:
             filename = ' - Unnamed File'
         Window.set_title('Ceed v{}, CPL lab{}{}'.format(
             ceed.__version__, star, filename))
 
     def changed_callback(self, *largs, **kwargs):
-        CeedData.config_changed = True
+        self.ceed_data.config_changed = True
 
     def check_close(self):
         if CeedPlayer.is_player_active():
             self._close_message = 'Cannot close while player is active.'
             return False
-        if self.view_controller.stage_active or CeedData.data_thread:
+        if self.view_controller.stage_active or self.ceed_data.data_thread:
             self._close_message = 'Cannot close during an experiment.'
             return False
         self.view_controller.stop_process()
         self.view_controller.finish_stop_process()
-        if not CeedData.ui_close(app_close=True):
+        if not self.ceed_data.ui_close(app_close=True):
             self._close_message = ''
             return False
         return True
 
 
 def _cleanup(app, *largs):
-    RemoteViewerListener.stop_listener()
+    if app.remote_viewer:
+        app.remote_viewer.stop_listener()
     CeedPlayer.exit_players()
     if app.view_controller is not None:
         app.view_controller.stop_process()
         app.view_controller.finish_stop_process()
-    CeedData.stop_experiment()
+    if app.ceed_data is not None:
+        app.ceed_data.stop_experiment()
     app.dump_app_settings_to_file()
 
 run_app = partial(run_cpl_app, CeedApp, _cleanup)

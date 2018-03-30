@@ -6,13 +6,9 @@ with time-varying intensity during the experiemtal :mod:`ceed.stage`.
 
 Shapes are created automatically when the user draws regions in the GUI. The
 controller keeping track of these shapes is a :class:`CeedPaintCanvasBehavior`
-instance and is returned by :func:`get_painter`.
+instance.
 '''
-
-from collections import OrderedDict
-
 from kivy.uix.behaviors.knspace import KNSpaceBehavior, knspace
-from kivy.uix.behaviors.togglebutton import ToggleButtonBehavior
 from kivy.properties import BooleanProperty, NumericProperty, StringProperty, \
     ObjectProperty, DictProperty, ListProperty
 from kivy.event import EventDispatcher
@@ -21,11 +17,10 @@ from kivy.factory import Factory
 from cplcom.painter import PaintCanvasBehavior, PaintCircle, PaintEllipse, \
     PaintPolygon, PaintBezier, PaintShape
 
-import ceed
 from ceed.utils import fix_name
 
 __all__ = (
-    'get_painter', 'CeedPaintCanvasBehavior', 'CeedShape', 'CeedShapeGroup',
+    'CeedPaintCanvasBehavior', 'CeedShape', 'CeedShapeGroup',
     'CeedPaintCircle', 'CeedPaintEllipse', 'CeedPaintPolygon',
     'CeedPaintBezier')
 
@@ -42,8 +37,7 @@ class CeedPaintCanvasBehavior(KNSpaceBehavior, PaintCanvasBehavior):
 
     So when run from the GUI :class:`ceed.shape.shape_widgets.CeedPainter` is
     the class used, while this class used when e.g. running from the
-    interpreter. :func:`get_painter` will return the correct instance for
-    each case.
+    interpreter.
 
     In addition to the :attr:`cplcom.painter.PaintCanvasBehavior.shapes`, the
     class adds :attr:`groups` for grouping shapes; a :class:`CeedShapeGroup`
@@ -380,8 +374,8 @@ class CeedShape(object):
     def __init__(self, **kwargs):
         super(CeedShape, self).__init__(**kwargs)
         self.add_to_canvas = self.paint_widget.show_widgets
-        self.fbind('on_update', get_painter().dispatch, 'on_changed')
-        self.fbind('name', get_painter().dispatch, 'on_changed')
+        self.fbind('on_update', self.paint_widget.dispatch, 'on_changed')
+        self.fbind('name', self.paint_widget.dispatch, 'on_changed')
 
     @property
     def display(self):
@@ -473,7 +467,7 @@ class CeedShapeGroup(EventDispatcher):
             self.name, self.paint_widget.shape_names,
             self.paint_widget.shape_group_names)
         self.fbind('name', self.dispatch, 'on_changed')
-        self.fbind('on_changed', get_painter().dispatch, 'on_changed')
+        self.fbind('on_changed', self.paint_widget.dispatch, 'on_changed')
 
     def on_changed(self, *largs):
         pass
@@ -633,28 +627,10 @@ class CeedPaintBezier(CeedShape, PaintBezier):
     '''
     pass
 
+
 # make sure the classes above is used rather than the defaults.
 CeedPaintCanvasBehavior.shape_cls_map = {
     'circle': CeedPaintCircle, 'ellipse': CeedPaintEllipse,
     'polygon': CeedPaintPolygon, 'freeform': CeedPaintPolygon,
     'bezier': CeedPaintBezier
 }
-
-ceed_painter = False
-if not ceed.has_gui_control:
-    ceed_painter = CeedPaintCanvasBehavior()
-    ceed_painter.knsname = 'painter'
-
-
-def get_painter():
-    '''Returns the controller that stores the shapes etc.
-
-    When running from the GUI, the
-    :class:`ceed.shape.shape_widgets.CeedPainter` is used as the controller
-    and is returned. When running outside the GUI, e.g. imported on the command
-    line widgets are not used and :class:`CeedPaintCanvasBehavior` is used
-    as the controller class.
-    '''
-    if ceed.has_gui_control:
-        return knspace.painter
-    return ceed_painter

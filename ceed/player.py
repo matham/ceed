@@ -43,8 +43,7 @@ class CeedPlayerBase(object):
                 App.get_running_app().view_controller.send_background_image(
                     img[0])
             if knspace.gui_remote_view.state == 'down':
-                from ceed.view.remote_view import RemoteViewerListener
-                RemoteViewerListener.send_image(img[0])
+                App.get_running_app().remote_viewer.send_image(img[0])
 
 
 class CeedPTGrayPlayer(CeedPlayerBase, PTGrayPlayer):
@@ -172,7 +171,6 @@ class CeedPlayer(KNSpaceBehavior, EventDispatcher):
         that when they update, the GUI is also updated.
         '''
         pt_player = self.pt_player
-        from ceed.view.remote_view import RemoteViewerListener
 
         def player_active(*largs):
             self.pt_player_active = bool(self.pt_player.play_state != 'none'
@@ -183,7 +181,8 @@ class CeedPlayer(KNSpaceBehavior, EventDispatcher):
             knspace.pt_settings_opt.values = settings
 
             if knspace.gui_remote_view.state == 'down':
-                RemoteViewerListener.send_cam_settings('cam_settings', settings)
+                App.get_running_app().remote_viewer.send_cam_settings(
+                    'cam_settings', settings)
 
         pt_player.fbind('play_state', player_active)
         pt_player.fbind('config_active', player_active)
@@ -286,10 +285,8 @@ class CeedPlayer(KNSpaceBehavior, EventDispatcher):
             self._update_pt_setting()
 
     def _update_pt_setting_remote(self, *largs):
-        from ceed.view.remote_view import RemoteViewerListener
-
         if knspace.gui_remote_view.state == 'down':
-            RemoteViewerListener.send_cam_settings(
+            App.get_running_app().remote_viewer.send_cam_settings(
                 'cam_setting',
                 (self._pt_settings_remote_last,
                  dict(getattr(self.pt_player, self._pt_settings_remote_last))
@@ -390,8 +387,8 @@ class CeedPlayer(KNSpaceBehavior, EventDispatcher):
         fname = join(path, filename)
 
         if filename.endswith('.h5'):
-            from ceed.storage.controller import CeedData
-            img = CeedData.load_last_fluorescent_image(fname)
+            img = App.get_running_app().ceed_data.load_last_fluorescent_image(
+                fname)
         else:
             images = [m for m in ImageLoader(fname)]
 

@@ -3,10 +3,7 @@
 
 Defines the GUI components used with :mod:`ceed.shape`.
 '''
-from collections import OrderedDict
-
 from kivy.uix.behaviors.knspace import KNSpaceBehavior, knspace
-from kivy.uix.behaviors.togglebutton import ToggleButtonBehavior
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
 from kivy.properties import BooleanProperty, NumericProperty, StringProperty, \
@@ -16,11 +13,8 @@ from kivy.uix.widget import Widget
 from kivy.factory import Factory
 from kivy.clock import Clock
 
-from cplcom.painter import PaintCanvasBehavior, PaintCircle, PaintEllipse, \
-    PaintPolygon, PaintBezier
 from cplcom.drag_n_drop import DragableLayoutBehavior
 
-from ceed.utils import fix_name
 from ceed.graphics import WidgetList, ShowMoreSelection, BoxSelector, \
     ShowMoreBehavior
 from ceed.shape import CeedPaintCanvasBehavior
@@ -32,7 +26,7 @@ __all__ = (
 
 class CeedPainter(CeedPaintCanvasBehavior, Widget):
     '''The shapes controller used when the GUI is present. It is the
-    paint widget itself in this case. See :func:`ceed.shape.get_painter`.
+    paint widget itself in this case.
     '''
 
     show_label = BooleanProperty(False)

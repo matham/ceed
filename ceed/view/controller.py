@@ -40,8 +40,7 @@ from cplcom.app import app_error
 from cplcom.utils import yaml_dumps, yaml_loads
 
 import ceed
-from ceed.stage import StageFactory, StageDoneException
-from ceed.storage.controller import DataSerializer, CeedData
+from ceed.stage import StageDoneException
 
 if ceed.has_gui_control or ceed.is_view_inst:
     from kivy.core.window import Window
@@ -56,6 +55,8 @@ except ImportError:
 __all__ = (
     'ViewControllerBase', 'ViewSideViewControllerBase',
     'view_process_enter', 'ControllerSideViewControllerBase')
+
+_get_app = App.get_running_app
 
 
 class ViewControllerBase(EventDispatcher):
@@ -152,8 +153,8 @@ class ViewControllerBase(EventDispatcher):
     output_count = BooleanProperty(True)
     '''Whether the corner pixel is used to output frame information on the
     PROPixx controller IO pot. If True,
-    :class:`ceed.storage.controller.DataSerializer` is used to set the 24 bits
-    of the corner pixel.
+    :class:`ceed.storage.controller.DataSerializerBase` is used to set the 24 
+    bits of the corner pixel.
     '''
 
     preview = BooleanProperty(True)
@@ -344,7 +345,7 @@ class ViewControllerBase(EventDispatcher):
         '''Adds all the graphics required to visualize the shapes to the
         canvas.
         '''
-        StageFactory.remove_shapes_gl_color_instructions(
+        _get_app().stage_factory.remove_shapes_gl_color_instructions(
             canvas, self.canvas_name)
         self.shape_views = []
         w, h = self.screen_width, self.screen_height
@@ -365,14 +366,16 @@ class ViewControllerBase(EventDispatcher):
                     s = Scale(group=self.canvas_name)
                     s.x = s.y = 0.5
                     s.origin = 0, 0
-                instructs = StageFactory.get_shapes_gl_color_instructions(
-                    canvas, self.canvas_name)
+                instructs = _get_app(
+                    ).stage_factory.get_shapes_gl_color_instructions(
+                        canvas, self.canvas_name)
                 with canvas:
                     PopMatrix(group=self.canvas_name)
                 self.shape_views.append(instructs)
         else:
-            self.shape_views = [StageFactory.get_shapes_gl_color_instructions(
-                canvas, self.canvas_name)]
+            self.shape_views = [
+                _get_app().stage_factory.get_shapes_gl_color_instructions(
+                    canvas, self.canvas_name)]
 
         if self.output_count and not self.serializer_tex:
             with canvas:
@@ -391,7 +394,7 @@ class ViewControllerBase(EventDispatcher):
         '''frame_rate is not :attr:`frame_rate` bur rather the rate at which we
         sample the functions.
         '''
-        tick = StageFactory.tick_stage(stage_name)
+        tick = _get_app().stage_factory.tick_stage(stage_name)
         # the sampling rate at which we sample the functions
         frame_rate = int(frame_rate)
 
@@ -406,7 +409,8 @@ class ViewControllerBase(EventDispatcher):
             except StageDoneException:
                 break
 
-            values = StageFactory.fill_shape_gl_color_values(None, shape_values)
+            values = _get_app().stage_factory.fill_shape_gl_color_values(
+                None, shape_values)
             for name, r, g, b, a in values:
                 obj_values[name].append((r, g, b, a))
         return obj_values
@@ -423,13 +427,13 @@ class ViewControllerBase(EventDispatcher):
         Window.fbind('on_flip', self.flip_callback)
 
         self.current_canvas = canvas
-        self.tick_func = StageFactory.tick_stage(stage_name)
+        self.tick_func = _get_app().stage_factory.tick_stage(stage_name)
 
         self._flip_stats['last_call_t'] = self._cpu_stats['last_call_t'] = \
             self._cpu_stats['tstart'] = clock()
 
         if self.output_count:
-            self.serializer = DataSerializer.get_bits(
+            self.serializer = App.get_running_app().data_serializer.get_bits(
                 -1, list(uuid.uuid4().bytes))
 
         self.add_graphics(canvas)
@@ -443,7 +447,7 @@ class ViewControllerBase(EventDispatcher):
         self.tick_event.cancel()
         Window.funbind('on_flip', self.flip_callback)
         Clock._max_fps = self._original_fps
-        StageFactory.remove_shapes_gl_color_instructions(
+        _get_app().stage_factory.remove_shapes_gl_color_instructions(
             self.current_canvas, self.canvas_name)
 
         self.tick_func = self.tick_event = self.current_canvas = None
@@ -510,7 +514,7 @@ class ViewControllerBase(EventDispatcher):
                 self.serializer_tex.blit_buffer(
                     bytes([r, g, b]), colorfmt='rgb', bufferfmt='ubyte')
 
-            values = StageFactory.fill_shape_gl_color_values(
+            values = _get_app().stage_factory.fill_shape_gl_color_values(
                 shape_views, shape_values, proj)
             self.request_process_data('frame', (self.count, bits, values))
 
@@ -601,11 +605,15 @@ class ViewSideViewControllerBase(ViewControllerBase):
                     App.get_running_app().stop()
                     break
                 elif msg == 'config':
+                    app = App.get_running_app()
                     if self.tick_event:
                         raise Exception('Cannot configure while running stage')
-                    CeedData.clear_existing_config_data()
-                    CeedData.apply_config_data_dict(
-                        yaml_loads(value))
+                    app.ceed_data.clear_existing_config_data(
+                        app.shape_factory, app.function_factory,
+                        app.stage_factory)
+                    app.ceed_data.apply_config_data_dict(
+                        yaml_loads(value), app.shape_factory,
+                        app.function_factory, app.stage_factory)
                 elif msg == 'start_stage':
                     self.start_stage(
                         value, App.get_running_app().get_display_canvas())
@@ -750,22 +758,26 @@ class ControllerSideViewControllerBase(ViewControllerBase):
 
         App.get_running_app().dump_app_settings_to_file()
         App.get_running_app().load_app_settings_from_file()
-        CeedData.prepare_experiment(stage_name)
+        App.get_running_app().ceed_data.prepare_experiment(stage_name)
 
         if self.propixx_lib:
             m = self.LED_mode
             self.set_led_mode(m)
-            CeedData.add_led_state(0, 'R' in m, 'G' in m, 'B' in m)
+            App.get_running_app().ceed_data.add_led_state(
+                0, 'R' in m, 'G' in m, 'B' in m)
             self.set_pixel_mode(True)
         else:
-            CeedData.add_led_state(0, 1, 1, 1)
+            App.get_running_app().ceed_data.add_led_state(0, 1, 1, 1)
 
         if self.preview:
             self.start_stage(stage_name, knspace.painter.canvas)
         elif self.view_process and self.queue_view_read:
+            app = App.get_running_app()
             self.queue_view_read.put_nowait(
                 ('config', yaml_dumps(
-                    CeedData.gather_config_data_dict())))
+                    app.ceed_data.gather_config_data_dict(
+                        app.shape_factory, app.function_factory,
+                        app.stage_factory))))
             self.queue_view_read.put_nowait(('start_stage', stage_name))
 
     @app_error
@@ -784,7 +796,7 @@ class ControllerSideViewControllerBase(ViewControllerBase):
             self.queue_view_read.put_nowait(('end_stage', None))
 
     def stage_end_cleanup(self, state={}):
-        CeedData.stop_experiment()
+        App.get_running_app().ceed_data.stop_experiment()
         self.stage_active = False
 
         # if we need to save the florescent image, stop video cam
@@ -839,10 +851,10 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         elif data_type == 'CPU':
             self.cpu_fps = data
         elif data_type == 'frame':
-            CeedData.add_frame(*data)
+            App.get_running_app().ceed_data.add_frame(*data)
         elif data_type == 'frame_flip':
             if data[0]:  # counts of zero is too early
-                CeedData.add_frame_flip(*data)
+                App.get_running_app().ceed_data.add_frame_flip(*data)
 
     def start_process(self):
         '''Starts the process of the internal window that runs the experiment

@@ -9,7 +9,7 @@ with an underscore in ``ceed/function/plugin``.
 
 Files in ``ceed/function/plugin`` that want to define new function classes
 should register the classes with the function factory
-:attr:`ceed.function.FunctionFactory` using
+:attr:`ceed.function.FunctionFactoryBase` using
 :meth:`~ceed.function.FunctionFactoryBase.register`. See this ``__init__.py``
 file for examples.
 '''
@@ -21,21 +21,24 @@ from math import exp, cos, pi
 
 from kivy.properties import NumericProperty
 
-from ceed.function import CeedFunc, FunctionFactory, FuncDoneException
+from ceed.function import CeedFunc, FuncDoneException
 
-__all__ = ('import_plugins', 'ConstFunc', 'LinearFunc', 'ExponentialFunc',
-           'CosFunc')
+__all__ = ('get_plugin_functions', 'ConstFunc', 'LinearFunc', 'ExponentialFunc',
+           'CosFunc', 'get_ceed_functions')
 
 
-def import_plugins():
+def get_plugin_functions():
     '''Imports all the ``.py`` files that don't start with an underscore in
     ``ceed/function/plugin``.
     '''
+    funcs = list(get_ceed_functions())
     for name in listdir(dirname(__file__)):
         if name.startswith('_') or not name.endswith('.py'):
             continue
         name = name[:-3]
-        importlib.import_module('ceed.function.plugin.{}'.format(name))
+        m = importlib.import_module('ceed.function.plugin.{}'.format(name))
+        funcs.extend(m.get_ceed_functions())
+    return funcs
 
 
 class ConstFunc(CeedFunc):
@@ -184,8 +187,6 @@ class CosFunc(CeedFunc):
         d['th0'] = self.th0
         return d
 
-FunctionFactory.register(ConstFunc)
-FunctionFactory.register(LinearFunc)
-FunctionFactory.register(ExponentialFunc)
-FunctionFactory.register(CosFunc)
-import_plugins()
+
+def get_ceed_functions():
+    return ConstFunc, LinearFunc, ExponentialFunc, CosFunc

@@ -8,32 +8,24 @@ import os
 os.environ['SDL_VIDEO_MINIMIZE_ON_FOCUS_LOSS'] = '0'
 
 from functools import partial
-from os.path import join, dirname, isdir
 
 from cplcom.app import run_app as run_cpl_app, app_error, CPLComApp
-from cplcom.config import populate_dump_config
 
-from kivy.app import App
-from kivy.properties import ObjectProperty
-from kivy.resources import resource_add_path
-from kivy.uix.behaviors.knspace import knspace, KNSpaceBehavior
-from kivy.uix.scatter import Scatter
-from kivy.garden.filebrowser import FileBrowser
 from kivy.lang import Builder
 from kivy.graphics import Color, Point, Fbo, Rectangle, Scale, PushMatrix, \
     PopMatrix, Translate, ClearColor, ClearBuffers
 from kivy.uix.widget import Widget
 from kivy.graphics.opengl import glEnable, GL_DITHER, glDisable
 from kivy.logger import Logger
-from kivy.graphics.transformation import Matrix
-from kivy.clock import Clock
 from kivy.compat import string_types
 
 import ceed
+from ceed.function import FunctionFactoryBase, register_all_functions
 from ceed.view.controller import ViewSideViewControllerBase
 from ceed.view.view_widgets import ViewRootFocusBehavior
-from ceed.storage.controller import DataSerializer
-from ceed.function import FunctionFactory
+from ceed.storage.controller import DataSerializerBase
+from ceed.stage import StageFactoryBase
+from ceed.shape import CeedPaintCanvasBehavior
 
 if ceed.is_view_inst or __name__ == '__main__':
     from kivy.core.window import Window
@@ -89,22 +81,37 @@ class CeedViewApp(CPLComApp):
 
     view_controller = None
 
+    data_serializer = None
+
+    function_factory = None
+
+    stage_factory = None
+
+    shape_factory = None
+
     @classmethod
     def get_config_classes(cls):
         d = super(CeedViewApp, cls).get_config_classes()
         app = cls.get_running_app()
         if app is None:
             d['view'] = ViewSideViewControllerBase
-            d['serializer'] = DataSerializer
-            d['function'] = FunctionFactory
+            d['serializer'] = DataSerializerBase
+            d['function'] = FunctionFactoryBase
         else:
             d['view'] = app.view_controller
-            d['serializer'] = DataSerializer
-            d['function'] = FunctionFactory
+            d['serializer'] = app.data_serializer
+            d['function'] = app.function_factory
         return d
 
     def __init__(self, **kwargs):
         self.view_controller = ViewSideViewControllerBase()
+        self.data_serializer = DataSerializerBase()
+        self.function_factory = FunctionFactoryBase()
+        register_all_functions(self.function_factory)
+        self.shape_factory = CeedPaintCanvasBehavior(knsname='painter')
+        self.stage_factory = StageFactoryBase(
+            function_factory=self.function_factory,
+            shape_factory=self.shape_factory)
 
         super(CeedViewApp, self).__init__(**kwargs)
 
@@ -151,7 +158,7 @@ class CeedViewApp(CPLComApp):
         Window.clearcolor = (0, 0, 0, 1)
         # Window.minimize()
         self.root.focus = True
-        #Window.show_cursor = False
+        Window.show_cursor = False
 
     def _ask_close(self, *largs, **kwargs):
         return False
@@ -192,6 +199,7 @@ class CeedViewApp(CPLComApp):
 
 def _cleanup(app):
     pass
+
 
 run_app = partial(run_cpl_app, CeedViewApp, _cleanup)
 '''The function that starts the GUI and the entry point for

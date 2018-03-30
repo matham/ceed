@@ -14,6 +14,8 @@ import traceback
 import select
 from kivy.logger import Logger
 
+__all__ = ('RemoteViewerListenerBase', )
+
 
 class RemoteViewerListenerBase(EventDispatcher):
 
@@ -204,5 +206,3 @@ class RemoteViewerListenerBase(EventDispatcher):
         self.from_kivy_queue.put(('eof', None))
         self.listener_thread = self.to_kivy_queue = self.from_kivy_queue = None
         self.running = False
-
-RemoteViewerListener = RemoteViewerListenerBase()

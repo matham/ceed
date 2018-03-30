@@ -1,4 +1,3 @@
-#:import FunctionFactory ceed.function.FunctionFactory
 
 <DragableSpinner@DragableObjectBehavior+FlatSpinner>
 
@@ -28,7 +27,7 @@
                     id: func_spin
                     drag_controller: knspace.dragger
                     drag_cls: 'func_spinner'
-                    values: sorted(FunctionFactory.funcs_inst.keys()) if FunctionFactory.funcs_inst else []
+                    values: sorted(app.function_factory.funcs_inst.keys()) if app.function_factory.funcs_inst else []
                     text_autoupdate: True
                     size_hint_min_x: self.minimum_width
                     flat_color: app.theme.text_primary
@@ -48,7 +47,7 @@
                 id: funcs
                 spacer_props: {'size_hint_y': None, 'height': '50dp', 'size_hint_min_x': '40dp'}
                 drag_classes: ['func', 'func_spinner']
-                controller: FunctionFactory
+                controller: app.function_factory
                 knsname: 'funcs'
                 orientation: 'vertical'
                 spacing: '3dp'

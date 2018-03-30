@@ -7,7 +7,9 @@ of the shapes during an experiment.
 A function is inherited from :class:`FuncBase` which returns a
 value when called with a time value. Example function usage is::
 
-    >>> CosFunc = FunctionFactory.get('CosFunc')
+    >>> function_factory = FunctionFactoryBase()
+    >>> register_all_functions(function_factory)
+    >>> CosFunc = function_factory.get('CosFunc')
     >>> f = CosFunc(duration=10, A=10, f=1)
     >>> f
     <ceed.function.plugin.CosFunc at 0x4eadba8>
@@ -24,16 +26,15 @@ line 134, in __call__
          raise FuncDoneException
      FuncDoneException
 
-Function classes registered with :attr:`FunctionFactory` are available to the
-user in the GUI. Similarly, customized function instances can be registered
-with :meth:`FunctionFactoryBase.add_function`.
+Function classes registered with :attr:`FunctionFactoryBase` of app
+are available to the user in the GUI. Similarly, customized function instances
+can be registered with :meth:`FunctionFactoryBase.add_function`.
 '''
 
 from copy import deepcopy
 import inspect
 from fractions import Fraction
 
-from Cython.Compiler.Naming import self_cname
 from kivy.event import EventDispatcher
 from kivy.properties import StringProperty, NumericProperty, BooleanProperty, \
     ObjectProperty, DictProperty, AliasProperty
@@ -42,8 +43,8 @@ from kivy.factory import Factory
 
 from ceed.utils import fix_name
 
-__all__ = ('FuncDoneException', 'FunctionFactoryBase', 'FuncBase', 'CeedFunc',
-           'FuncGroup', 'FunctionFactory')
+__all__ = ('FuncDoneException', 'FunctionFactoryBase',
+           'FuncBase', 'CeedFunc', 'FuncGroup', 'register_all_functions')
 
 
 class FuncDoneException(Exception):
@@ -58,7 +59,7 @@ class FunctionFactoryBase(EventDispatcher):
     instances.
 
     Plugins register function classes with an instance of
-    (:attr:`FunctionFactory`) using :meth:`register` to make it available to
+    (:attr:`FunctionFactoryBase`) using :meth:`register` to make it available to
     the user in the GUI and in :attr:`funcs_cls`. A instance of the registered
     class is then also created and stored in :attr:`funcs_inst_default` and
     :attr:`funcs_inst`.
@@ -71,7 +72,7 @@ class FunctionFactoryBase(EventDispatcher):
     To get a function class registered with :meth:`register`, e.g.
     :class:`ceed.function.plugin.CosFunc`::
 
-        >>> cls = FunctionFactory.get('CosFunc')  # using class name
+        >>> cls = function_factory.get('CosFunc')  # using class name
         >>> cls
         ceed.function.plugin.CosFunc
 
@@ -79,8 +80,8 @@ class FunctionFactoryBase(EventDispatcher):
     to :attr:`funcs_inst`. Similarly, customized functions added with
     :meth:`add_func` are also added to :attr:`funcs_inst` ::
 
-        >>> cls = FunctionFactory.get('CosFunc')  # get registered class
-        >>> f = FunctionFactory.funcs_inst['Cos']  # get auto created instance
+        >>> cls = function_factory.get('CosFunc')  # get registered class
+        >>> f = function_factory.funcs_inst['Cos']  # get auto created instance
         >>> f
         <ceed.function.plugin.CosFunc at 0x53ada08>
         >>> f.f  # the default rate is 1Hz
@@ -90,10 +91,10 @@ class FunctionFactoryBase(EventDispatcher):
         100
         >>> f2.name  # the default name
         'Cos'
-        >>> FunctionFactory.add_func(f2)  # add it to the list
+        >>> function_factory.add_func(f2)  # add it to the list
         >>> f2.name  # when adding it fixes the name so that it's unique
         'Cos-2'
-        >>> FunctionFactory.funcs_inst['Cos-2']
+        >>> function_factory.funcs_inst['Cos-2']
         <ceed.function.plugin.CosFunc at 0x5141938>
 
     The general usage of the registered instances with :meth:`add_func` is to
@@ -323,7 +324,8 @@ class FunctionFactoryBase(EventDispatcher):
         '''
         for state in funcs:
             name = state.get('name', None)
-            f = CeedFunc.make_func(state, clone=True, old_id_map=old_id_map)
+            f = CeedFunc.make_func(
+                state, self, clone=True, old_id_map=old_id_map)
             self.add_func(f)
 
             if name is not None:
@@ -466,7 +468,7 @@ class FuncBase(EventDispatcher):
 
     name = StringProperty('Abstract')
     '''The name of the function instance. The name must be unique when an
-    instance is added to the :attr:`FunctionFactory`, otherwise it's
+    instance is added to the :attr:`FunctionFactoryBase`, otherwise it's
     automatically fixed.
     '''
 
@@ -547,6 +549,8 @@ class FuncBase(EventDispatcher):
     timebase_denominator = NumericProperty(1)
     '''The denominator of the timebase. See :attr:`timebase`.
     '''
+
+    function_factory = ObjectProperty(None)
 
     def _get_timebase(self):
         num = self.timebase_numerator
@@ -634,7 +638,7 @@ class FuncBase(EventDispatcher):
         if not self.timebase_numerator:
             if self.parent_func:
                 return self.parent_func.get_timebase()
-            return FunctionFactory.timebase
+            return self.function_factory.timebase
         return self.timebase
 
     def on_changed(self, *largs, **kwargs):
@@ -664,7 +668,7 @@ class FuncBase(EventDispatcher):
 
         E.g.::
 
-            >>> Cos = FunctionFactory.get('CosFunc')
+            >>> Cos = function_factory.get('CosFunc')
             >>> cos = Cos()
             >>> cos.get_gui_props()
             {'A': None,
@@ -731,7 +735,7 @@ class FuncBase(EventDispatcher):
 
         E.g.::
 
-            >>> Cos = FunctionFactory.get('CosFunc')
+            >>> Cos = function_factory.get('CosFunc')
             >>> cos = Cos()
             >>> cos.get_gui_elements()
             []
@@ -762,7 +766,7 @@ class FuncBase(EventDispatcher):
 
         E.g.::
 
-            >>> Cos = FunctionFactory.get('CosFunc')
+            >>> Cos = function_factory.get('CosFunc')
             >>> cos = Cos()
             >>> cos.get_state()
             {'A': 1.0,
@@ -775,7 +779,7 @@ class FuncBase(EventDispatcher):
              't_offset': 0,
              'th0': 0.0,
              'track_source': True}
-            >>> Group = FunctionFactory.get('FuncGroup')
+            >>> Group = function_factory.get('FuncGroup')
             >>> g = Group()
             >>> g
             <ceed.function.FuncGroup at 0x4f85800>
@@ -857,7 +861,7 @@ class FuncBase(EventDispatcher):
         src_id = id_map[self.func_id]
         if src_id not in id_to_func_map:  # our source not recovered
             if self.track_source:
-                self.source_func = FunctionFactory.get_cls_default_func(
+                self.source_func = self.function_factory.get_cls_default_func(
                     self, registered_funcs_only=True)
             return
         src_f = self.source_func = id_to_func_map[src_id]
@@ -897,7 +901,7 @@ class FuncBase(EventDispatcher):
         src = self.source_func
         no_source = src is None
         if no_source:
-            src = FunctionFactory.get_cls_default_func(self)
+            src = self.function_factory.get_cls_default_func(self)
 
         state = src.get_state()
         if no_source:
@@ -924,9 +928,9 @@ class FuncBase(EventDispatcher):
 
         E.g.::
 
-            >>> Cos = FunctionFactory.get('CosFunc')
+            >>> Cos = function_factory.get('CosFunc')
             >>> cos = Cos()
-            >>> Group = FunctionFactory.get('FuncGroup')
+            >>> Group = function_factory.get('FuncGroup')
             >>> g = Group()
             >>> g.add_func(cos)
             >>> [f for f in cos.get_funcs()]
@@ -954,8 +958,9 @@ class FuncBase(EventDispatcher):
             True when this function or its parent is a sub-child of the
             ``other`` function.
         '''
-        other_names = {o.name for o in other.get_funcs()
-                       if o.name not in FunctionFactory.funcs_inst_default}
+        other_names = {
+            o.name for o in other.get_funcs()
+            if o.name not in self.function_factory.funcs_inst_default}
 
         parent = self
         while parent is not None:
@@ -965,18 +970,18 @@ class FuncBase(EventDispatcher):
         return False
 
     @staticmethod
-    def make_func(state, clone=False, old_id_map=None):
+    def make_func(state, function_factory, clone=False, old_id_map=None):
         '''Instantiates the function from the state and returns it.
 
         This pre-creates the display when appropriate.
         '''
         c = state.pop('cls')
-        cls = FunctionFactory.get(c)
+        cls = function_factory.get(c)
         if cls is None:
             raise Exception('Missing class "{}"'.format(c))
 
         func = cls()
-        if FunctionFactory.show_widgets:
+        if function_factory.show_widgets:
             func.display  # create it before apply
         func.apply_state(state, clone=clone, old_id_map=old_id_map)
         return func
@@ -1147,7 +1152,7 @@ class FuncComposit(CeedFunc):
         super(FuncComposit, self).init_factory(factory)
         self.fbind('f1', self._func_rebind_callback, '_f1_obj', 'f1')
         self.fbind('f2', self._func_rebind_callback, '_f2_obj', 'f2')
-        FunctionFactory.fbind(
+        self.function_factory.fbind(
             'funcs_inst', self._func_factory_rebind_callback, ref=True)
         self.property('f1').dispatch(self)
         self.property('f2').dispatch(self)
@@ -1157,14 +1162,14 @@ class FuncComposit(CeedFunc):
         super(FuncComposit, self).del_factory(factory)
         self.funbind('f1', self._func_rebind_callback, '_f1_obj', 'f1')
         self.funbind('f2', self._func_rebind_callback, '_f2_obj', 'f2')
-        FunctionFactory.funbind(
+        self.function_factory.funbind(
             'funcs_inst', self._func_factory_rebind_callback)
         self.funbind('duration', self._update_duration)
 
     def removing_global_funcs(self):
         super(FuncComposit, self).removing_global_funcs()
         # don't crash when global funcs are removed and their names disappear
-        FunctionFactory.funbind(
+        self.function_factory.funbind(
             'funcs_inst', self._func_factory_rebind_callback)
 
     def check_domain(self, t):
@@ -1213,12 +1218,14 @@ class FuncComposit(CeedFunc):
         d['A'] = None
         d['B'] = None
         d['C'] = None
-        d['f1'] = ('TrackOptionsSpinner',
-                   {'track_obj': FunctionFactory, 'track_prop': 'funcs_inst',
-                    'allow_empty': True, 'update_items_on_press': True})
-        d['f2'] = ('TrackOptionsSpinner',
-                   {'track_obj': FunctionFactory, 'track_prop': 'funcs_inst',
-                    'allow_empty': True, 'update_items_on_press': True})
+        d['f1'] = (
+            'TrackOptionsSpinner',
+            {'track_obj': self.function_factory, 'track_prop': 'funcs_inst',
+             'allow_empty': True, 'update_items_on_press': True})
+        d['f2'] = (
+            'TrackOptionsSpinner',
+            {'track_obj': self.function_factory, 'track_prop': 'funcs_inst',
+             'allow_empty': True, 'update_items_on_press': True})
         return d
 
     def get_state(self, *largs, **kwargs):
@@ -1250,12 +1257,14 @@ class FuncComposit(CeedFunc):
         f1 = self.f1
         if f1:
             if self._f1_obj and (
-                    FunctionFactory.funcs_inst[f1] is not self._f1_obj[0]):
+                    self.function_factory.funcs_inst[f1]
+                    is not self._f1_obj[0]):
                 self.property('f1').dispatch(self)
         f2 = self.f2
         if f2:
             if self._f2_obj and (
-                    FunctionFactory.funcs_inst[f2] is not self._f2_obj[0]):
+                    self.function_factory.funcs_inst[f2]
+                    is not self._f2_obj[0]):
                 self.property('f2').dispatch(self)
 
     def _func_rebind_callback(self, f_bind_attr, f_attr, *largs):
@@ -1265,7 +1274,7 @@ class FuncComposit(CeedFunc):
 
         name = getattr(self, f_attr)
         if name:
-            f = FunctionFactory.funcs_inst[name]
+            f = self.function_factory.funcs_inst[name]
             uid = f.fbind(
                 'duration', self._update_duration, f_bind_attr, f_attr)
             setattr(self, f_bind_attr, (f, uid))
@@ -1295,8 +1304,8 @@ class FuncGroup(FuncBase):
     When the function instance is called it goes through all its sub-functions
     sequentially until they are done. E.g.::
 
-        >>> Group = FunctionFactory.get('FuncGroup')
-        >>> Const = FunctionFactory.get('ConstFunc')
+        >>> Group = function_factory.get('FuncGroup')
+        >>> Const = function_factory.get('ConstFunc')
         >>> g = Group()
         >>> g.add_func(Const(a=1, duration=5))
         >>> g.add_func(Const(a=2, duration=3))
@@ -1454,7 +1463,9 @@ line 934, in __call__
     def apply_state(self, state={}, clone=False, old_id_map=None):
         for opts in state.pop('funcs', []):
             self.add_func(
-                self.make_func(opts, clone=clone, old_id_map=old_id_map))
+                self.make_func(
+                    opts, self.function_factory,
+                    clone=clone, old_id_map=old_id_map))
         super(FuncGroup, self).apply_state(
             state, clone=clone, old_id_map=old_id_map)
 
@@ -1464,9 +1475,10 @@ line 934, in __call__
             for f in func.get_funcs():
                 yield f
 
-FunctionFactory = FunctionFactoryBase()
-'''The global function factory instance where functions are registered.
-'''
-FunctionFactory.register(FuncGroup)
-FunctionFactory.register(FuncComposit)
-from ceed.function.plugin import import_plugins
+
+def register_all_functions(function_factory):
+    function_factory.register(FuncGroup)
+    function_factory.register(FuncComposit)
+    from ceed.function.plugin import get_plugin_functions
+    for f in get_plugin_functions():
+        function_factory.register(f)

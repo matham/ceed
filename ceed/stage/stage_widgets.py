@@ -10,13 +10,10 @@ if not os.environ.get('KIVY_DOC_INCLUDE', None):
 import numpy as np
 
 from kivy.uix.behaviors.knspace import KNSpaceBehavior, knspace
-from kivy.uix.behaviors.togglebutton import ToggleButtonBehavior
 from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.label import Label
 from kivy.clock import Clock
 from kivy.properties import BooleanProperty, NumericProperty, StringProperty, \
     ObjectProperty, DictProperty, ListProperty, OptionProperty
-from kivy.core.window import Window
 from kivy.factory import Factory
 from kivy.garden.graph import MeshLinePlot
 from kivy.metrics import dp
@@ -24,18 +21,18 @@ from kivy.app import App
 from kivy.utils import get_color_from_hex
 from kivy.graphics import Rectangle, Color, Line
 
-from ceed.utils import fix_name
 from ceed.graphics import WidgetList, ShowMoreSelection, BoxSelector, \
     ShowMoreBehavior
-from ceed.stage import StageFactory, CeedStage
-from ceed.function.func_widgets import FuncWidget, FuncWidgetGroup, \
-    FunctionFactory
-from ceed.shape import get_painter
+from ceed.stage import CeedStage
+from ceed.function.func_widgets import FuncWidget, FuncWidgetGroup
 
 from cplcom.drag_n_drop import DragableLayoutBehavior
 
 __all__ = ('StageList', 'StageWidget', 'StageShapeDisplay', 'ShapePlot',
            'StageGraph')
+
+
+_get_app = App.get_running_app
 
 
 class CeedStageDragableLayoutBehavior(DragableLayoutBehavior):
@@ -46,12 +43,13 @@ class CeedStageDragableLayoutBehavior(DragableLayoutBehavior):
         stage = self.drag_target_stage
         if drag_widget.drag_cls == 'stage':
             stage_src = drag_widget.obj_dragged.stage
-            (stage or StageFactory).add_stage(stage_src.duplicate_stage())
+            (stage or _get_app().stage_factory).add_stage(
+                stage_src.duplicate_stage())
             return
 
         if not stage:
-            stage = CeedStage()
-            StageFactory.add_stage(stage)
+            stage = CeedStage(stage_factory=App.get_running_app().stage_factory)
+            _get_app().stage_factory.add_stage(stage)
 
         if drag_widget.drag_cls == 'func':
             func = drag_widget.obj_dragged.func
@@ -60,7 +58,9 @@ class CeedStageDragableLayoutBehavior(DragableLayoutBehavior):
 
             stage.add_func(func)
         elif drag_widget.drag_cls == 'func_spinner':
-            func = deepcopy(FunctionFactory.funcs_inst[drag_widget.text])
+            func = deepcopy(
+                App.get_running_app().function_factory.
+                funcs_inst[drag_widget.text])
 
             stage.add_func(func)
         elif drag_widget.drag_cls == 'shape':
@@ -92,13 +92,13 @@ class StageList(CeedStageDragableLayoutBehavior, ShowMoreSelection, WidgetList,
 
             `name`: str
                 The name of the function instance from the
-                :attr:`ceed.function.FunctionFactory` to use.
+                :attr:`ceed.function.FunctionFactoryBase` to use.
         '''
         after = None
         if not self.selected_nodes:
             return
 
-        src_func = FunctionFactory.funcs_inst[name]
+        src_func = App.get_running_app().function_factory.funcs_inst[name]
         widget = self.selected_nodes[0]
         if isinstance(widget, StageWidget):
             parent = widget.stage
@@ -169,7 +169,7 @@ class StageList(CeedStageDragableLayoutBehavior, ShowMoreSelection, WidgetList,
     def add_stage(self):
         '''Adds a new :class:`ceed.stage.CeedStage` instance to the currently
         selected :class:`ceed.stage.CeedStage` instance or to the root list
-        (:attr:`ceed.stage.StageFactory`).
+        (:attr:`ceed.stage.StageFactoryBase`).
         '''
         parent = None
         if self.selected_nodes:
@@ -178,12 +178,13 @@ class StageList(CeedStageDragableLayoutBehavior, ShowMoreSelection, WidgetList,
                 return
             parent = widget.stage
         else:
-            parent = StageFactory
+            parent = _get_app().stage_factory
 
-        parent.add_stage(CeedStage())
+        parent.add_stage(
+            CeedStage(stage_factory=App.get_running_app().stage_factory))
 
     def get_selectable_nodes(self):
-        return [d for stage in StageFactory.stages
+        return [d for stage in _get_app().stage_factory.stages
                 for d in stage.display.get_visible_children()]
 
 
@@ -238,12 +239,12 @@ class StageWidget(ShowMoreBehavior, BoxLayout):
 
     def remove_from_parent(self):
         '''Removes the stage from the parent stage or from the global
-        :attr:`ceed.stage.StageFactory` if it doesn't have a parent.
+        :attr:`ceed.stage.StageFactoryBase` if it doesn't have a parent.
         '''
         if self.stage.parent_stage:
             self.stage.parent_stage.remove_stage(self.stage)
         else:
-            StageFactory.remove_stage(self.stage)
+            _get_app().stage_factory.remove_stage(self.stage)
 
     def show_stage(self):
         '''Adds the stage's widget in the GUI.

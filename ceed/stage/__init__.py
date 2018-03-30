@@ -8,24 +8,19 @@ intensity values for the shapes during an experimental stage.
 
 See :class:`StageFactoryBase` and :class:`CeedStage` for details.
 '''
-import numpy as np
-import os
 from copy import deepcopy
 
 from kivy.properties import OptionProperty, ListProperty, ObjectProperty, \
     StringProperty, NumericProperty, DictProperty, BooleanProperty
 from kivy.factory import Factory
-from kivy.clock import Clock
 from kivy.event import EventDispatcher
-from kivy.graphics import Color
 
 from ceed.function import CeedFunc, FuncDoneException
 from ceed.utils import fix_name
-from ceed.shape import get_painter
 from ceed.shape import CeedShapeGroup
 
 __all__ = ('StageDoneException', 'StageFactoryBase', 'CeedStage', 'StageShape',
-           'StageFactory')
+           '_bind_remove')
 
 
 class StageDoneException(Exception):
@@ -36,9 +31,6 @@ class StageDoneException(Exception):
 
 class StageFactoryBase(EventDispatcher):
     '''The stage controller.
-
-    The :attr:`StageFactory` is the singleton instance that tracks the stages
-    and makes them available in the GUI.
 
     :Events:
 
@@ -61,10 +53,15 @@ class StageFactoryBase(EventDispatcher):
     and whose values are the corresponding :class:`CeedStage`.
     '''
 
+    function_factory = ObjectProperty(None)
+
+    shape_factory = ObjectProperty(None)
+
     __events__ = ('on_changed', )
 
-    def __init__(self, **kwargs):
-        super(StageFactoryBase, self).__init__(**kwargs)
+    def __init__(self, function_factory=None, **kwargs):
+        super(StageFactoryBase, self).__init__(
+            function_factory=function_factory, **kwargs)
         self.stages = []
 
     def on_changed(self, *largs, **kwargs):
@@ -140,7 +137,7 @@ class StageFactoryBase(EventDispatcher):
             created, or passed in.
         '''
         for state in stages:
-            stage = CeedStage()
+            stage = CeedStage(stage_factory=self)
             if self.show_widgets:
                 stage.display
             stage.apply_state(
@@ -239,7 +236,7 @@ class StageFactoryBase(EventDispatcher):
         E.g. to get the shape values for time 0, .1, .2, ..., 1.0 for the
         stage named ``'my_stage'``::
 
-            >>> tick = StageFactory.tick_stage('my_stage')  # get iterator
+            >>> tick = stage_factory.tick_stage('my_stage')  # get iterator
             >>> for t in [0, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1.]:
             >>>     try:
             >>>         tick.next()
@@ -277,7 +274,7 @@ class StageFactoryBase(EventDispatcher):
                 When done with the stage (time is out of bounds).
         '''
         stage = self.stage_names[stage_name]
-        shapes = {s.name: [] for s in get_painter().shapes}
+        shapes = {s.name: [] for s in self.shape_factory.shapes}
         tick_stage = stage.tick_stage(shapes)
         next(tick_stage)
         while True:
@@ -314,7 +311,7 @@ class StageFactoryBase(EventDispatcher):
             shape.
         '''
         shape_views = {}
-        for shape in get_painter().shapes:
+        for shape in self.shape_factory.shapes:
             instructions = shape.add_shape_instructions(
                 (0, 0, 0, 1), name, canvas)
             if not instructions:
@@ -358,16 +355,16 @@ class StageFactoryBase(EventDispatcher):
         the stage named ``'my_stage'`` in real time::
 
             >>> import time
-            >>> tick = StageFactory.tick_stage('my_stage')  # get iterator
+            >>> tick = stage_factory.tick_stage('my_stage')  # get iterator
             >>> # get the color objects
-            >>> colors = StageFactory.get_shapes_gl_color_instructions(
+            >>> colors = stage_factory.get_shapes_gl_color_instructions(
             >>>     widget_canvas, 'my_canvas_instructs')
             >>> for t in [0, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1.]:
             >>>     try:
             >>>         tick.next()
             >>>         shape_values = tick.send(t)  # current color values
             >>>         # update the colors and print it
-            >>>         values = StageFactory.fill_shape_gl_color_values(
+            >>>         values = stage_factory.fill_shape_gl_color_values(
             >>>>            colors, shape_values)
             >>>         print(values)
             >>>         time.sleep(0.1)  # wait until next time
@@ -375,7 +372,7 @@ class StageFactoryBase(EventDispatcher):
             >>>         # if we're here the stage has completed
             >>>         break
             >>> # now remove the shapes
-            >>> StageFactory.remove_shapes_gl_color_instructions(
+            >>> stage_factory.remove_shapes_gl_color_instructions(
             >>>     widget_canvas, 'my_canvas_instructs')
         '''
         result = []
@@ -548,6 +545,8 @@ class CeedStage(EventDispatcher):
     this is ignored.
     '''
 
+    stage_factory = ObjectProperty(None)
+
     _display = None
 
     __events__ = ('on_changed', )
@@ -641,7 +640,7 @@ class CeedStage(EventDispatcher):
             setattr(self, k, v)
 
         for data in stages:
-            s = CeedStage()
+            s = CeedStage(stage_factory=self.stage_factory)
             if self._display:
                 s.display
             s.apply_state(
@@ -651,10 +650,12 @@ class CeedStage(EventDispatcher):
 
         for data in functions:
             self.add_func(
-                CeedFunc.make_func(data, clone=True, old_id_map=old_id_map))
+                CeedFunc.make_func(
+                    data, self.stage_factory.function_factory,
+                    clone=True, old_id_map=old_id_map))
 
-        shapes = get_painter().shape_names
-        groups = get_painter().shape_group_names
+        shapes = self.stage_factory.shape_factory.shape_names
+        groups = self.stage_factory.shape_factory.shape_group_names
         for name in shapes_state:
             if name not in old_to_new_name_shape_map:
                 continue
@@ -666,7 +667,7 @@ class CeedStage(EventDispatcher):
                 self.add_shape(groups[name])
 
     def duplicate_stage(self):
-        stage = CeedStage()
+        stage = CeedStage(stage_factory=self.stage_factory)
         if self._display:
             stage.display
 
@@ -811,7 +812,7 @@ class CeedStage(EventDispatcher):
         stage::
 
             >>> # get dict of shapes using the painter controller
-            >>> shapes = {s.name: [] for s in get_painter().shapes}
+            >>> shapes = {s.name: [] for s in shape_factory.shapes}
             >>> tick_stage = stage.tick_stage(shapes)  # create iterator
             >>> next(tick_stage)
             >>> for t in [0, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1.]:
@@ -950,16 +951,6 @@ class StageShape(EventDispatcher):
         return w
 
 
-StageFactory = StageFactoryBase()
-'''The singleton :class:`StageFactoryBase` instance through which all stage
-operations are accessed.
-'''
-
-
-def _bind_remove(*largs):
-    get_painter().fbind('on_remove_shape', StageFactory.remove_shape_from_all)
-    get_painter().fbind('on_remove_group', StageFactory.remove_shape_from_all)
-
-
-if not os.environ.get('KIVY_DOC_INCLUDE', None):
-    Clock.schedule_once(_bind_remove, 0)
+def _bind_remove(stage_factory, shape_factory):
+    shape_factory.fbind('on_remove_shape', stage_factory.remove_shape_from_all)
+    shape_factory.fbind('on_remove_group', stage_factory.remove_shape_from_all)

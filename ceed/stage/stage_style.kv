@@ -1,6 +1,4 @@
 #:import knspace kivy.uix.behaviors.knspace.knspace
-#:import StageFactory ceed.stage.StageFactory
-#:import FunctionFactory ceed.function.FunctionFactory
 #:import get_color_from_hex kivy.utils.get_color_from_hex
 #:import ceil math.ceil
 
@@ -126,7 +124,7 @@
                     id: name_input
                     background_color: settings_root.flat_color
                     text: root.stage.name if root.stage else ''
-                    on_focus: if not self.focus: self.text = StageFactory._change_stage_name(root.stage, self.text)
+                    on_focus: if not self.focus: self.text = app.stage_factory._change_stage_name(root.stage, self.text)
                 BoxLayout:
                     size_hint_y: None
                     height: '34dp'
@@ -488,7 +486,7 @@
                 spacing: '5dp'
                 FlatSpinner:
                     id: stage_spinner
-                    values: sorted(StageFactory.stage_names.keys()) if StageFactory.stage_names else []
+                    values: sorted(app.stage_factory.stage_names.keys()) if app.stage_factory.stage_names else []
                     text_autoupdate: True
                     size_hint_x: None
                     width: self.minimum_width

@@ -1,4 +1,3 @@
-#:import CeedData ceed.storage.controller.CeedData
 #:import Clock kivy.clock.Clock
 
 <DataBar@BoxLayout>:
@@ -17,11 +16,11 @@
             source: 'flat_save.png'
             flat_color: app.theme.accent
             on_release:
-                if CeedData.filename: CeedData.save()
-                if not CeedData.filename: app.filebrowser.target = CeedData.root_path
-                if not CeedData.filename: app.filebrowser.dirselect =  app.filebrowser.multiselect = False
-                if not CeedData.filename: app.filebrowser.callback = CeedData.get_filebrowser_callback(CeedData.save_as, True)
-                if not CeedData.filename: app.filebrowser.open()
+                if app.ceed_data.filename: app.ceed_data.save()
+                if not app.ceed_data.filename: app.filebrowser.target = app.ceed_data.root_path
+                if not app.ceed_data.filename: app.filebrowser.dirselect =  app.filebrowser.multiselect = False
+                if not app.ceed_data.filename: app.filebrowser.callback = app.ceed_data.get_filebrowser_callback(app.ceed_data.save_as, True)
+                if not app.ceed_data.filename: app.filebrowser.open()
         FlatImageButton:
             scale_down_color: True
             source: 'flat_menu_down.png'
@@ -38,9 +37,9 @@
                 scale_down_color: True
                 flat_color: app.theme.text_primary
                 on_release:
-                    app.filebrowser.target = CeedData.root_path
+                    app.filebrowser.target = app.ceed_data.root_path
                     app.filebrowser.dirselect =  app.filebrowser.multiselect = False
-                    app.filebrowser.callback = CeedData.get_filebrowser_callback(CeedData.save_as, True)
+                    app.filebrowser.callback = app.ceed_data.get_filebrowser_callback(app.ceed_data.save_as, True)
                     app.filebrowser.open()
             FlatButton:
                 text: 'Create'
@@ -49,9 +48,9 @@
                 scale_down_color: True
                 flat_color: app.theme.text_primary
                 on_release:
-                    app.filebrowser.target = CeedData.root_path
+                    app.filebrowser.target = app.ceed_data.root_path
                     app.filebrowser.dirselect =  app.filebrowser.multiselect = False
-                    app.filebrowser.callback = CeedData.get_filebrowser_callback(CeedData.create_file, True, True)
+                    app.filebrowser.callback = app.ceed_data.get_filebrowser_callback(app.ceed_data.create_file, True, True)
                     app.filebrowser.open()
             FlatButton:
                 text: 'Open'
@@ -60,9 +59,9 @@
                 scale_down_color: True
                 flat_color: app.theme.text_primary
                 on_release:
-                    app.filebrowser.target = CeedData.root_path
+                    app.filebrowser.target = app.ceed_data.root_path
                     app.filebrowser.dirselect =  app.filebrowser.multiselect = False
-                    app.filebrowser.callback = CeedData.get_filebrowser_callback(CeedData.open_file, clear_data=True)
+                    app.filebrowser.callback = app.ceed_data.get_filebrowser_callback(app.ceed_data.open_file, clear_data=True)
                     app.filebrowser.open()
             FlatButton:
                 text: 'Import'
@@ -71,9 +70,9 @@
                 scale_down_color: True
                 flat_color: app.theme.text_primary
                 on_release:
-                    app.filebrowser.target = CeedData.root_path
+                    app.filebrowser.target = app.ceed_data.root_path
                     app.filebrowser.dirselect =  app.filebrowser.multiselect = False
-                    app.filebrowser.callback = CeedData.get_filebrowser_callback(CeedData.import_file)
+                    app.filebrowser.callback = app.ceed_data.get_filebrowser_callback(app.ceed_data.import_file)
                     app.filebrowser.open()
             FlatButton:
                 text: 'Close'
@@ -81,14 +80,14 @@
                 size: self.texture_size
                 scale_down_color: True
                 flat_color: app.theme.text_primary
-                on_release: CeedData.ui_close()
+                on_release: app.ceed_data.ui_close()
             FlatButton:
                 text: 'Discard'
                 size_hint: None, None
                 size: self.texture_size
                 scale_down_color: True
                 flat_color: app.theme.text_primary
-                on_release: CeedData.discard_file()
+                on_release: app.ceed_data.discard_file()
             FlatButton:
                 text: 'Load YAML'
                 size_hint: None, None
@@ -96,9 +95,9 @@
                 scale_down_color: True
                 flat_color: app.theme.text_primary
                 on_release:
-                    app.filebrowser.target = CeedData.root_path
+                    app.filebrowser.target = app.ceed_data.root_path
                     app.filebrowser.dirselect =  app.filebrowser.multiselect = False
-                    app.filebrowser.callback = CeedData.get_filebrowser_callback(CeedData.read_yaml_config)
+                    app.filebrowser.callback = app.ceed_data.get_filebrowser_callback(app.ceed_data.read_yaml_config)
                     app.filebrowser.open()
             FlatButton:
                 text: 'Save YAML'
@@ -107,7 +106,7 @@
                 scale_down_color: True
                 flat_color: app.theme.text_primary
                 on_release:
-                    app.filebrowser.target = CeedData.root_path
+                    app.filebrowser.target = app.ceed_data.root_path
                     app.filebrowser.dirselect =  app.filebrowser.multiselect = False
-                    app.filebrowser.callback = CeedData.get_filebrowser_callback(CeedData.write_yaml_config, True)
+                    app.filebrowser.callback = app.ceed_data.get_filebrowser_callback(app.ceed_data.write_yaml_config, True)
                     app.filebrowser.open()

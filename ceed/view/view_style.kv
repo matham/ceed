@@ -1,7 +1,4 @@
-#:import Factory kivy.factory.Factory
-#:import FunctionFactory ceed.function.FunctionFactory
 #:import Clock kivy.clock.Clock
-#:import RemoteViewerListener ceed.view.remote_view.RemoteViewerListener
 
 <ControlDisplay>:
     on_size:
@@ -65,7 +62,7 @@
     spacing: '5dp'
     ThemedSpinner:
         id: stage_spinner
-        values: sorted(StageFactory.stage_names.keys()) if StageFactory.stage_names else []
+        values: sorted(app.stage_factory.stage_names.keys()) if app.stage_factory.stage_names else []
         text_autoupdate: True
         on_text: app.view_controller.selected_stage_name = self.text
         size_hint_x: None
@@ -104,8 +101,8 @@
         hover_text: 'preview' if self.state == 'normal' else '[b]preview[/b]'
     FlatImageToggleButton:
         knsname: 'gui_remote_view'
-        on_release: RemoteViewerListener.start_listener() if self.state == 'down' else RemoteViewerListener.stop_listener()
-        state: 'down' if RemoteViewerListener.running else 'normal'
+        on_release: app.remote_viewer.start_listener() if self.state == 'down' else app.remote_viewer.stop_listener()
+        state: 'down' if app.remote_viewer.running else 'normal'
         source: 'ic_cast_white_24dp_1x.png' if self.state == 'normal' else 'ic_cast_connected_white_24dp_1x.png'
         scale_down_color: True
         flat_color: app.theme.accent
@@ -185,8 +182,8 @@
             FlatSizedTextInput:
                 #background_color: root.flat_color
                 input_filter: 'float'
-                text: str(FunctionFactory.timebase_numerator)
-                on_text_validate: FunctionFactory.timebase_numerator = float(self.text)
+                text: str(app.function_factory.timebase_numerator)
+                on_text_validate: app.function_factory.timebase_numerator = float(self.text)
             ThemedLabel:
                 size_hint: None, None
                 size: self.texture_size
@@ -194,8 +191,8 @@
             FlatSizedTextInput:
                 #background_color: root.flat_color
                 input_filter: 'float'
-                text: str(FunctionFactory.timebase_denominator)
-                on_text_validate: FunctionFactory.timebase_denominator = float(self.text)
+                text: str(app.function_factory.timebase_denominator)
+                on_text_validate: app.function_factory.timebase_denominator = float(self.text)
             ThemedLabel:
                 size_hint: None, None
                 size: self.texture_size
