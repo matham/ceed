@@ -434,7 +434,7 @@ class ViewControllerBase(EventDispatcher):
 
         if self.output_count:
             self.serializer = App.get_running_app().data_serializer.get_bits(
-                -1, list(uuid.uuid4().bytes))
+                -1, uuid.uuid4().bytes)
 
         self.add_graphics(canvas)
 

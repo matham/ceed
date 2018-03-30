@@ -18,6 +18,7 @@ try:
 except ImportError:
     from queue import Queue, Empty
 import numpy as np
+import struct
 from ffpyplayer.pic import Image
 
 from kivy.event import EventDispatcher
@@ -379,14 +380,18 @@ class CeedDataBase(EventDispatcher):
         self.config_changed = True
 
     def write_config(self, config_section=None):
-        config = config_section or self.nix_file.sections['app_config']
+        config = config_section if config_section is not None else \
+            self.nix_file.sections['app_config']
         data = self.gather_config_data_dict(
             self.shape_factory, self.function_factory, self.stage_factory)
         for k, v in data.items():
             config[k] = yaml_dumps(v)
+        import ceed
+        config['ceed_version'] = ceed.__version__
 
     def read_config(self, config_section=None):
-        config = config_section or self.nix_file.sections['app_config']
+        config = config_section if config_section is not None else \
+            self.nix_file.sections['app_config']
         data = {}
         for prop in config.props:
             data[prop.name] = yaml_loads(prop.values[0].value)
@@ -610,14 +615,14 @@ class DataSerializerBase(EventDispatcher):
 
     clock_idx = NumericProperty(2)
 
-    count_indices = ListProperty([11, 12, 18, 19, 20])
+    count_indices = ListProperty([19, 20])
 
-    short_count_indices = ListProperty([3, 4, 10])
+    short_count_indices = ListProperty([3, 4, 10, 11, 12, 18])
 
     projector_to_aquisition_map = DictProperty(
         {2: 0, 3: 1, 4: 2, 10: 3, 11: 4, 12: 5, 18: 6, 19: 7, 20: 8})
 
-    def get_bits(self, last_count, config_bytes=[]):
+    def get_bits(self, last_count, config_bytes=b''):
         clock_base = 1 << self.clock_idx
         clock = 0
 
@@ -633,7 +638,10 @@ class DataSerializerBase(EventDispatcher):
             count_iters.append(list(enumerate(count_i, i * len(count_i))))
             count_iters.append(list(enumerate(count_i, i * len(count_i))))
 
-        config_bytes = list(config_bytes)
+        config_bytes = [
+            len(config_bytes)] + \
+            list(struct.unpack('<{}L'.format(len(config_bytes) // 4),
+                               config_bytes))
         sending_config = bool(config_bytes)
 
         while True:
