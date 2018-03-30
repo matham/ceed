@@ -9,18 +9,13 @@ if __name__ == '__main__':
     ceed.has_gui_control = True
 
 from functools import partial
-from os.path import join, dirname, isdir
+from os.path import join, dirname
 
 from cplcom.app import CPLComApp, run_app as run_cpl_app
-from cplcom.config import populate_dump_config
 from cplcom.graphics import HighightButtonBehavior
 
-from kivy.properties import ObjectProperty, NumericProperty, BooleanProperty
-from kivy.resources import resource_add_path
 from kivy.uix.behaviors.knspace import knspace
-from kivy.garden.filebrowser import FileBrowser
 from kivy.lang import Builder
-from kivy.clock import Clock
 from kivy.factory import Factory
 
 import ceed.graphics
@@ -39,7 +34,7 @@ from ceed.stage import StageFactoryBase, _bind_remove
 from ceed.view.controller import ControllerSideViewControllerBase
 from ceed.storage.controller import CeedDataBase, DataSerializerBase
 from ceed.graphics import CeedDragNDrop
-from ceed.view.remote_view import RemoteViewerListenerBase
+from ceed.remote.remote_view import RemoteViewerListenerBase
 
 if ceed.has_gui_control:
     from kivy.core.window import Window
@@ -119,7 +114,7 @@ class CeedApp(CPLComApp):
         base = dirname(__file__)
         # Builder.load_file(join(base, 'graphics', 'graphics.kv'))
         Builder.load_file(join(base, 'ceed_style.kv'))
-        Builder.load_file(join(base, 'player_style.kv'))
+        Builder.load_file(join(base, 'player', 'player_style.kv'))
         Builder.load_file(join(base, 'shape', 'shape_style.kv'))
         Builder.load_file(join(base, 'function', 'func_style.kv'))
         Builder.load_file(join(base, 'stage', 'stage_style.kv'))
