@@ -1,4 +1,5 @@
 import datetime
+import numbers
 import os.path
 from math import ceil
 from shutil import copy2
@@ -11,7 +12,7 @@ from cplcom.utils import yaml_dumps, yaml_loads
 McsPy.McsData.VERBOSE = False
 
 
-class CeedMCSData(object):
+class CeedMCSDataMerger(object):
 
     ceed_config_orig = {}
 
@@ -52,8 +53,8 @@ class CeedMCSData(object):
     def read_ceed_digital_data(self, filename, experiment):
         f = nix.File.open(filename, nix.FileMode.ReadOnly)
 
-        section = f.sections['experiment{}_metadata'.format(experiment)]
         block = f.blocks['experiment{}'.format(experiment)]
+        section = block.metadata
         start_t = datetime.datetime(1970, 1, 1) + \
             datetime.timedelta(seconds=block.created_at)
 
@@ -63,13 +64,13 @@ class CeedMCSData(object):
                 config = section.sections['app_config']
             except KeyError:
                 raise Exception('Did not find config in experiment info')
-            config = f.sections['app_config']
-            metadata['serializer'] = {
-                'counter_bit_width': 16, 'clock_idx': 2,
-                'count_indices': [11, 12, 18, 19, 20],
-                'short_count_indices': [3, 4, 10],
-                'projector_to_aquisition_map': {
-                    2: 0, 3: 1, 4: 2, 10: 3, 11: 4, 12: 5, 18: 6, 19: 7, 20: 8}}
+            # config = f.sections['app_config']
+            # metadata['serializer'] = {
+            #     'counter_bit_width': 16, 'clock_idx': 2,
+            #     'count_indices': [11, 12, 18, 19, 20],
+            #     'short_count_indices': [3, 4, 10],
+            #     'projector_to_aquisition_map': {
+            #         2: 0, 3: 1, 4: 2, 10: 3, 11: 4, 12: 5, 18: 6, 19: 7, 20: 8}}
 
             for prop in config:
                 metadata[prop.name] = yaml_loads(prop.values[0].value)
@@ -134,7 +135,7 @@ class CeedMCSData(object):
         mcs_map['count'] = mcs_counter_map
 
     def parse_digital_data(
-            self, ceed_file, mcs_file, ceed_experiment, find_by_time):
+            self, ceed_file, mcs_file, ceed_experiment, find_by='uuid'):
         self.read_mcs_digital_data(mcs_file)
         self.read_ceed_digital_data(ceed_file, ceed_experiment)
         self.create_dig_mappings()
@@ -157,9 +158,9 @@ class CeedMCSData(object):
         mcs_map = self.mcs_mapping
 
         mcs_offset = 0
-        if find_by_time is not None:
+        if find_by is not None and isinstance(find_by, numbers.Number):
             mcs_offset = (ceed_t_start - mcs_t_start).total_seconds() - \
-                         find_by_time
+                float(find_by)
             if mcs_offset < 0:
                 raise Exception('Ceed data is not in the mcs data')
             mcs_offset = int(mcs_offset * mcs_f)
@@ -199,16 +200,36 @@ class CeedMCSData(object):
         return (
             mcs_idx_start, mcs_clock_data,
             mcs_short_counter_data, mcs_counter_bits_data, ceed_clock_data,
-            ceed_short_counter_data, ceed_counter_bits_data, find_by_time)
+            ceed_short_counter_data, ceed_counter_bits_data, find_by)
 
     def get_alignment(
             self, mcs_idx_start, mcs_clock_data,
             mcs_short_counter_data, mcs_counter_bits_data, ceed_clock_data,
-            ceed_short_counter_data, ceed_counter_bits_data, find_by_time):
+            ceed_short_counter_data, ceed_counter_bits_data, find_by):
 
-        counter_bit_width = self.ceed_config_orig['serializer']['counter_bit_width']
-        if find_by_time is None:  # find by uuid
-            pass
+        # counter_bit_width = 32
+        if find_by == 'uuid':  # find by uuid
+            ceed_d = ceed_counter_bits_data
+            mcs_d = mcs_counter_bits_data
+
+            strides = mcs_d.strides + (mcs_d.strides[-1], )
+            shape = mcs_d.shape[-1] - 40 + 1, 40
+            strided = np.lib.stride_tricks.as_strided(
+                mcs_counter_bits_data, shape=shape, strides=strides)
+            res = np.all(strided == ceed_d[:40], axis=1)
+            indices = np.mgrid[0:len(res)][res]
+
+            if not len(indices):
+                raise Exception('Could not find alignment')
+            if len(indices) > 1:
+                raise Exception(
+                    'Found multiple Ceed-mcs alignment ({})'.format(indices))
+
+            i = indices[0]
+            mcs_idx_start = mcs_idx_start[i:]
+            mcs_clock_data = mcs_clock_data[i:]
+            mcs_short_counter_data = mcs_short_counter_data[i:]
+            mcs_counter_bits_data = mcs_counter_bits_data[i:]
 
         ceed_clock_data = ceed_clock_data[:-1]
         ceed_short_counter_data = ceed_short_counter_data[:-1]
@@ -260,6 +281,8 @@ class CeedMCSData(object):
                 data=indices)
 
         block = f.create_block('mcs_data', 'mcs_raw_experiment_data')
+        block.metadata = section = f.create_section(
+            'mcs_metadata', 'Associated metadata for the mcs data')
         for stream_id in mcs_f.recordings[0].analog_streams:
             stream = mcs_f.recordings[0].analog_streams[stream_id]
             if 128 in stream.channel_infos:
@@ -270,27 +293,31 @@ class CeedMCSData(object):
                 for i in stream.channel_infos:
                     print('writing channel {}'.format(i))
                     info = stream.channel_infos[i].info
+
+                    elec_sec = section.create_section(
+                        'electrode_{}'.format(info['Label']),
+                        'metadata for this electrode')
+                    for key, val in info.items():
+                        elec_sec[key] = yaml_dumps(val)
+                    elec_sec['sampling_frequency'] = yaml_dumps(
+                        info.sampling_frequency)
+                    elec_sec['sampling_tick'] = yaml_dumps(info.sampling_tick)
+
                     data = np.array(stream.channel_data[i, :])
-                    data = (data - info['ADZero']) * float(info['ConversionFactor']) * 10. ** info['Exponent']
                     block.create_data_array(
                         'electrode_{}'.format(info['Label']), 'electrode_data',
                         data=data)
         f.close()
 
+
 if __name__ == '__main__':
     ceed_file = r'E:\31618_first_vacuum_day.h5'
     mcs_file = r'E:\2018-03-16T16-43-48McsRecording.h5'
     output_file = r'E:\test.h5'
-    data = CeedMCSData()
+    data = CeedMCSDataMerger()
 
     alignment = {}
     for experiment in [12, 13, 15, 17, 18, 19, 20]:
         vals = data.parse_digital_data(ceed_file, mcs_file, experiment, find_by_time=25)
         alignment[experiment] = data.get_alignment(*vals)
     data.merge_data(output_file, ceed_file, mcs_file, alignment)
-
-    # print((len(mcs_indices) - 1) / ((mcs_indices[-1] - mcs_indices[0]) / 10000))
-    # dt = mcs_indices[1:] - mcs_indices[:-1]
-    # print(dt)
-    # print(np.max(dt))
-    # print(np.histogram(dt))
