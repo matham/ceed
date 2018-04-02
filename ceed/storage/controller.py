@@ -32,10 +32,10 @@ from kivy.logger import Logger
 from cplcom.app import app_error
 from cplcom.utils import yaml_dumps, yaml_loads
 
-__all__ = ('CeedDataBase', )
+__all__ = ('CeedDataWriterBase', 'DataSerializerBase')
 
 
-class CeedDataBase(EventDispatcher):
+class CeedDataWriterBase(EventDispatcher):
 
     __settings_attrs__ = ('root_path', 'backup_interval')
 
@@ -59,80 +59,47 @@ class CeedDataBase(EventDispatcher):
 
     data_lock = None
 
-    function_factory = ObjectProperty(None)
-
-    shape_factory = ObjectProperty(None)
-
-    stage_factory = ObjectProperty(None)
-
     def __init__(self, **kwargs):
-        super(CeedDataBase, self).__init__(**kwargs)
+        super(CeedDataWriterBase, self).__init__(**kwargs)
         if (not os.environ.get('KIVY_DOC_INCLUDE', None) and
                 self.backup_interval):
             Clock.schedule_interval(self.write_changes, self.backup_interval)
 
     @staticmethod
-    def gather_config_data_dict(
-            shape_factory, function_factory, stage_factory,
-            get_app_settings=True):
+    def gather_config_data_dict():
+        app = App.get_running_app()
         data = {}
-        data['shape'] = shape_factory.save_state()
+        data['shape'] = app.shape_factory.save_state()
         func_id_map = {}
-        data['function'] = function_factory.save_funcs(func_id_map)[0]
-        data['stage'] = stage_factory.save_stages(func_id_map)[0]
+        data['function'] = app.function_factory.save_funcs(func_id_map)[0]
+        data['stage'] = app.stage_factory.save_stages(func_id_map)[0]
         data['func_id_map'] = func_id_map
 
-        if get_app_settings:
-            App.get_running_app().dump_app_settings_to_file()
-            App.get_running_app().load_app_settings_from_file()
-            data['app_settings'] = App.get_running_app().app_settings
-
+        App.get_running_app().dump_app_settings_to_file()
+        App.get_running_app().load_app_settings_from_file()
+        data['app_settings'] = App.get_running_app().app_settings
         return data
 
     @staticmethod
-    def clear_existing_config_data(
-            shape_factory, function_factory, stage_factory):
-        stage_factory.clear_stages()
-        shape_factory.remove_all_groups()
-        shape_factory.delete_all_shapes(keep_locked_shapes=False)
-        function_factory.clear_funcs()
+    def clear_existing_config_data():
+        app = App.get_running_app()
+        app.stage_factory.clear_stages()
+        app.shape_factory.remove_all_groups()
+        app.shape_factory.delete_all_shapes(keep_locked_shapes=False)
+        app.function_factory.clear_funcs()
 
     @staticmethod
-    def apply_config_data_dict(
-            data, shape_factory, function_factory, stage_factory,
-            set_app_settings=True):
-        if set_app_settings:
-            app = App.get_running_app()
-            app_settings = data['app_settings']
-            # filter classes that are not of this app
-            classes = app.get_config_classes()
-            app.app_settings = {cls: app_settings[cls] for cls in classes}
-            app.apply_app_settings()
+    def apply_config_data_dict(data):
+        app = App.get_running_app()
+        app_settings = data['app_settings']
+        # filter classes that are not of this app
+        classes = app.get_config_classes()
+        app.app_settings = {cls: app_settings[cls] for cls in classes}
+        app.apply_app_settings()
 
-        old_to_new_name_shape_map = {}
-        shape_factory.set_state(data['shape'], old_to_new_name_shape_map)
-
-        id_to_func_map = {}
-        old_id_map = {}
-        old_to_new_name = {}
-
-        f1 = function_factory.recover_funcs(
-            data['function'], id_to_func_map, old_id_map, old_to_new_name)
-        f2 = stage_factory.recover_stages(
-            data['stage'], id_to_func_map, old_id_map=old_id_map,
-            old_to_new_name_shape_map=old_to_new_name_shape_map)
-
-        old_to_new_id_map = {v: k for k, v in old_id_map.items()}
-
-        id_map = data['func_id_map']
-        id_map_new = {old_to_new_id_map[a]: old_to_new_id_map[b]
-                      for a, b in id_map.items()
-                      if a in old_to_new_id_map and b in old_to_new_id_map}
-
-        for f in f1[0] + f2[0]:
-            for func in f.get_funcs():
-                func.finalize_func_state(
-                    id_map_new, id_to_func_map, old_to_new_name)
+        from ceed.analysis import CeedDataReader
+        CeedDataReader.populate_config(
+            data, app.shape_factory, app.function_factory, app.stage_factory)
 
     def get_filebrowser_callback(
             self, func, check_exists=False, clear_data=False):
@@ -153,10 +120,7 @@ class CeedDataBase(EventDispatcher):
                             return
                         if clear_data:
                             self.close_file(force_remove_autosave=True)
-                            self.clear_existing_config_data(
-                                self.shape_factory, self.function_factory,
-                                self.stage_factory
-                            )
+                            self.clear_existing_config_data()
                         func(fname, overwrite)
 
                     yesno = App.get_running_app().yesno_prompt
@@ -367,8 +331,7 @@ class CeedDataBase(EventDispatcher):
         if exists(filename) and not overwrite:
             raise ValueError('{} already exists'.format(filename))
 
-        data = yaml_dumps(self.gather_config_data_dict(
-            self.shape_factory, self.function_factory, self.stage_factory))
+        data = yaml_dumps(self.gather_config_data_dict())
         with open(filename, 'w') as fh:
             fh.write(data)
 
@@ -382,12 +345,9 @@ class CeedDataBase(EventDispatcher):
     def write_config(self, config_section=None):
         config = config_section if config_section is not None else \
             self.nix_file.sections['app_config']
-        data = self.gather_config_data_dict(
-            self.shape_factory, self.function_factory, self.stage_factory)
+        data = self.gather_config_data_dict()
         for k, v in data.items():
             config[k] = yaml_dumps(v)
-        import ceed
-        config['ceed_version'] = ceed.__version__
 
     def read_config(self, config_section=None):
         config = config_section if config_section is not None else \
@@ -398,6 +358,7 @@ class CeedDataBase(EventDispatcher):
         return data
 
     def load_last_fluorescent_image(self, filename):
+        from ceed.analysis import CeedDataReader
         f = nix.File.open(filename, nix.FileMode.ReadOnly)
         Logger.debug(
             'Ceed Controller (storage): Importing fluorescent image from '
@@ -408,7 +369,7 @@ class CeedDataBase(EventDispatcher):
                 raise ValueError('Image not found in {}'.format(filename))
 
             for block in reversed(f.blocks):
-                img = self.read_fluorescent_image(block)
+                img = CeedDataReader.read_fluorescent_image_from_block(block)
                 if img is not None:
                     return img
 
@@ -432,17 +393,6 @@ class CeedDataBase(EventDispatcher):
                     'fluorescent_image_plane_{}'.format(i), 'image',
                     dtype=np.uint8, data=plane)
             group.data_arrays.append(image_data)
-
-    def read_fluorescent_image(self, block):
-        try:
-            group = block.groups['fluorescent_image']
-        except KeyError:
-            return None
-
-        planes = [np.array(d).tobytes() for d in group.data_arrays]
-        img = Image(plane_buffers=planes, pix_fmt=group.metadata['pix_fmt'],
-                    size=yaml_loads(group.metadata['size']))
-        return img
 
     def ensure_array_size(self, used, allocated, added=1):
         required = used + added
@@ -538,6 +488,10 @@ class CeedDataBase(EventDispatcher):
         sec = self.nix_file.create_section(
             'experiment{}_metadata'.format(i), 'metadata')
         sec['stage'] = stage_name
+
+        import ceed
+        sec['ceed_version'] = ceed.__version__
+
         config = sec.create_section('app_config', 'configuration')
         self.write_config(config)
 

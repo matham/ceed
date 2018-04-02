@@ -608,12 +608,8 @@ class ViewSideViewControllerBase(ViewControllerBase):
                     app = App.get_running_app()
                     if self.tick_event:
                         raise Exception('Cannot configure while running stage')
-                    app.ceed_data.clear_existing_config_data(
-                        app.shape_factory, app.function_factory,
-                        app.stage_factory)
-                    app.ceed_data.apply_config_data_dict(
-                        yaml_loads(value), app.shape_factory,
-                        app.function_factory, app.stage_factory)
+                    app.ceed_data.clear_existing_config_data()
+                    app.ceed_data.apply_config_data_dict(yaml_loads(value))
                 elif msg == 'start_stage':
                     self.start_stage(
                         value, App.get_running_app().get_display_canvas())
@@ -774,10 +770,7 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         elif self.view_process and self.queue_view_read:
             app = App.get_running_app()
             self.queue_view_read.put_nowait(
-                ('config', yaml_dumps(
-                    app.ceed_data.gather_config_data_dict(
-                        app.shape_factory, app.function_factory,
-                        app.stage_factory))))
+                ('config', yaml_dumps(app.ceed_data.gather_config_data_dict())))
             self.queue_view_read.put_nowait(('start_stage', stage_name))
 
     @app_error

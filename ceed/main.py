@@ -32,7 +32,7 @@ import ceed.view.view_widgets
 from ceed.function import FunctionFactoryBase, register_all_functions
 from ceed.stage import StageFactoryBase, _bind_remove
 from ceed.view.controller import ControllerSideViewControllerBase
-from ceed.storage.controller import CeedDataBase, DataSerializerBase
+from ceed.storage.controller import CeedDataWriterBase, DataSerializerBase
 from ceed.graphics import CeedDragNDrop
 from ceed.remote.remote_view import RemoteViewerListenerBase
 
@@ -73,7 +73,7 @@ class CeedApp(CPLComApp):
         d = super(CeedApp, cls).get_config_classes()
         d['function'] = FunctionFactoryBase
         d['view'] = ControllerSideViewControllerBase
-        d['data'] = CeedDataBase
+        d['data'] = CeedDataWriterBase
         d['serializer'] = DataSerializerBase
         d['player'] = CeedPlayer
         d['point_gray_cam'] = CeedPTGrayPlayer
@@ -100,10 +100,7 @@ class CeedApp(CPLComApp):
         _bind_remove(self.stage_factory, self.shape_factory)
         self.player = CeedPlayer()
         self.view_controller = ControllerSideViewControllerBase()
-        self.ceed_data = CeedDataBase(
-            function_factory=self.function_factory,
-            stage_factory=self.stage_factory,
-            shape_factory=self.shape_factory)
+        self.ceed_data = CeedDataWriterBase()
         self.data_serializer = DataSerializerBase()
         self.remote_viewer = RemoteViewerListenerBase()
         super(CeedApp, self).__init__(**kwargs)
@@ -129,7 +126,8 @@ class CeedApp(CPLComApp):
 
     def on_start(self):
         self.stage_factory.shape_factory = self.shape_factory = knspace.painter
-        knspace.painter.show_widgets = True
+        knspace.painter.add_shapes_to_canvas = \
+            knspace.painter.show_widgets = True
         self.function_factory.show_widgets = True
         self.stage_factory.show_widgets = True
 

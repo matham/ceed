@@ -373,7 +373,6 @@ class CeedShape(object):
 
     def __init__(self, **kwargs):
         super(CeedShape, self).__init__(**kwargs)
-        self.add_to_canvas = self.paint_widget.show_widgets
         self.fbind('on_update', self.paint_widget.dispatch, 'on_changed')
         self.fbind('name', self.paint_widget.dispatch, 'on_changed')
 
