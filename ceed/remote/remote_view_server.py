@@ -51,80 +51,103 @@ kv = '''
 BoxLayout:
     orientation: 'vertical'
     spacing: '15dp'
-    padding: '5dp', 
-    GridLayout:
-        size_hint: None, None
-        size: self.minimum_size
-        height: '50dp'
-        spacing: ['5dp']
-        rows: 1
-        disabled: not app.connected
-        Widget
-        Spinner:
-            id: pt_settings_opt
-            size_hint_x: None
-            width: '100dp'
-            values: ['brightness', 'exposure', 'sharpness', 'hue', 'saturation', 'gamma', 'shutter', 'gain', 'iris', 'frame_rate', 'pan', 'tilt']
-            on_text: 
-                app.send_client_cam_request('track_cam_setting', self.text)
-                app.cam_setting = self.text
-            controllable: gui_pt_settings_opt_disable.state == 'normal'
-        ToggleButton:
-            id: gui_pt_settings_opt_auto
-            text: 'Auto'
-            padding: '5dp', '5dp'
-            size_hint: None, None
-            size: self.texture_size
-            on_release: app.send_client_cam_request('set_cam_setting', (pt_settings_opt.text, 'auto', self.state == 'down'))
-            disabled: not pt_settings_opt.controllable
-        Button:
-            id: gui_pt_settings_opt_push
-            text: 'One push'
-            size_hint: None, None
-            size: self.texture_size
-            padding: '5dp', '5dp'
-            on_release: app.send_client_cam_request('set_cam_setting', (pt_settings_opt.text, 'one_push', True))
-            disabled: not pt_settings_opt.controllable
-        ToggleButton:
-            id: gui_pt_settings_opt_disable
-            text: 'Disable'
-            padding: '5dp', '5dp'
-            size_hint: None, None
-            size: self.texture_size
-            on_release: app.send_client_cam_request('set_cam_setting', (pt_settings_opt.text, 'controllable', self.state == 'normal'))
-        Label:
-            id: gui_pt_settings_opt_min
-            padding: '5dp', '5dp'
-            size_hint: None, None
-            size: self.texture_size
-            disabled: not pt_settings_opt.controllable
-        TextInput:
-            id: gui_pt_settings_opt_value
-            size_hint: None, None
-            size: '50dp', self.minimum_height
-            on_focus: if not self.focus: app.send_client_cam_request('set_cam_setting', (pt_settings_opt.text, 'value', float(self.text or 0)))
-            input_filter: 'float'
-            disabled: not pt_settings_opt.controllable
-        Label:
-            id: gui_pt_settings_opt_max
-            padding: '5dp', '5dp'
-            size_hint: None, None
-            size: self.texture_size
-            disabled: not pt_settings_opt.controllable
-        Button:
-            id: gui_pt_settings_opt_reload
-            text: 'Reload'
-            padding: '5dp', '5dp'
-            size_hint: None, None
-            size: self.texture_size
-            on_release: app.send_client_cam_request('reload_cam_setting', pt_settings_opt.text)
-        Widget
-    UpSlider:
-        id: gui_pt_settings_opt_slider
+    padding: '5dp',
+    Spinner:
+        id: cam_selection
+        values: ['ThorLabs camera', 'Point Gray camera']
+        text: 'ThorLabs camera' 
         size_hint_y: None
-        height: '50dp'
-        on_release: app.send_client_cam_request('set_cam_setting', (pt_settings_opt.text, 'value', self.value))
-        disabled: not pt_settings_opt.controllable
+        height: '40dp'
+    ScreenManager:
+        size_hint: None, None
+        size: self.current_screen.size if self.current_screen else (100, 100)
+        current: cam_selection.text
+        Screen:
+            name: 'ThorLabs camera'
+            size_hint: None, None
+            size: pt_grid.size
+        Screen:
+            name: 'Point Gray camera'
+            size_hint: None, None
+            size: pt_grid.size
+            GridLayout:
+                id: pt_grid
+                size_hint: None, None
+                size: self.minimum_size
+                cols: 1
+                GridLayout:
+                    size_hint: None, None
+                    size: self.minimum_size
+                    height: '50dp'
+                    spacing: ['5dp']
+                    rows: 1
+                    disabled: not app.connected
+                    Widget
+                    Spinner:
+                        id: pt_settings_opt
+                        size_hint_x: None
+                        width: '100dp'
+                        values: ['brightness', 'exposure', 'sharpness', 'hue', 'saturation', 'gamma', 'shutter', 'gain', 'iris', 'frame_rate', 'pan', 'tilt']
+                        on_text: 
+                            app.send_client_cam_request('track_cam_setting', self.text)
+                            app.cam_setting = self.text
+                        controllable: gui_pt_settings_opt_disable.state == 'normal'
+                    ToggleButton:
+                        id: gui_pt_settings_opt_auto
+                        text: 'Auto'
+                        padding: '5dp', '5dp'
+                        size_hint: None, None
+                        size: self.texture_size
+                        on_release: app.send_client_cam_request('set_cam_setting', (pt_settings_opt.text, 'auto', self.state == 'down'))
+                        disabled: not pt_settings_opt.controllable
+                    Button:
+                        id: gui_pt_settings_opt_push
+                        text: 'One push'
+                        size_hint: None, None
+                        size: self.texture_size
+                        padding: '5dp', '5dp'
+                        on_release: app.send_client_cam_request('set_cam_setting', (pt_settings_opt.text, 'one_push', True))
+                        disabled: not pt_settings_opt.controllable
+                    ToggleButton:
+                        id: gui_pt_settings_opt_disable
+                        text: 'Disable'
+                        padding: '5dp', '5dp'
+                        size_hint: None, None
+                        size: self.texture_size
+                        on_release: app.send_client_cam_request('set_cam_setting', (pt_settings_opt.text, 'controllable', self.state == 'normal'))
+                    Label:
+                        id: gui_pt_settings_opt_min
+                        padding: '5dp', '5dp'
+                        size_hint: None, None
+                        size: self.texture_size
+                        disabled: not pt_settings_opt.controllable
+                    TextInput:
+                        id: gui_pt_settings_opt_value
+                        size_hint: None, None
+                        size: '50dp', self.minimum_height
+                        on_focus: if not self.focus: app.send_client_cam_request('set_cam_setting', (pt_settings_opt.text, 'value', float(self.text or 0)))
+                        input_filter: 'float'
+                        disabled: not pt_settings_opt.controllable
+                    Label:
+                        id: gui_pt_settings_opt_max
+                        padding: '5dp', '5dp'
+                        size_hint: None, None
+                        size: self.texture_size
+                        disabled: not pt_settings_opt.controllable
+                    Button:
+                        id: gui_pt_settings_opt_reload
+                        text: 'Reload'
+                        padding: '5dp', '5dp'
+                        size_hint: None, None
+                        size: self.texture_size
+                        on_release: app.send_client_cam_request('reload_cam_setting', pt_settings_opt.text)
+                    Widget
+                UpSlider:
+                    id: gui_pt_settings_opt_slider
+                    size_hint_y: None
+                    height: '50dp'
+                    on_release: app.send_client_cam_request('set_cam_setting', (pt_settings_opt.text, 'value', self.value))
+                    disabled: not pt_settings_opt.controllable
     BufferImage:
         canvas.before:
             Color:
@@ -139,6 +162,8 @@ BoxLayout:
         do_scale: True
         do_translation: True, True
         do_rotation: True
+
+<ScreenGrid@Screen+GridLayout>
 '''
 
 
@@ -204,6 +229,8 @@ class CeedRemoteViewApp(CPLComApp):
             planes = [bin_data[s:e] for s, e in zip(starts, ends)]
 
             value = planes, pix_fmt, size, linesize
+        else:
+            assert not n_bin
         return msg, value
 
     def read_msg_from_client(

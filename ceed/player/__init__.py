@@ -58,6 +58,29 @@ class CeedFFmpegPlayer(CeedPlayerBase, FFmpegPlayer):
     pass
 
 
+class CeedRemotePlayer(CeedPlayerBase):
+
+    last_image = None
+
+    display_trigger = None
+
+    def __init__(self, **kwargs):
+        super(CeedRemotePlayer, self).__init__(**kwargs)
+        self.display_trigger = Clock.create_trigger(self.display_frame, 0)
+
+    def display_frame(self, *largs):
+        '''The displays the last image to the user.
+        '''
+        widget = knspace.central_display
+        img = self.last_image
+        if widget is not None and img is not None:
+            widget.update_img(img)
+            knspace.player.last_image = img
+            if knspace.gui_save_cam_stage.state == 'down':
+                App.get_running_app().view_controller.send_background_image(
+                    img[0])
+
+
 class CeedPlayer(KNSpaceBehavior, EventDispatcher):
     '''Controls the media player/recorder in ceed.
 

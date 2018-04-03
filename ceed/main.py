@@ -35,6 +35,7 @@ from ceed.view.controller import ControllerSideViewControllerBase
 from ceed.storage.controller import CeedDataWriterBase, DataSerializerBase
 from ceed.graphics import CeedDragNDrop
 from ceed.remote.remote_view import RemoteViewerListenerBase
+from ceed.player import CeedRemotePlayer
 
 if ceed.has_gui_control:
     from kivy.core.window import Window
@@ -61,6 +62,8 @@ class CeedApp(CPLComApp):
     stage_factory = None
 
     shape_factory = None
+
+    remote_player = None
 
     agreed_discard = False
 
@@ -102,6 +105,7 @@ class CeedApp(CPLComApp):
         self.ceed_data = CeedDataWriterBase()
         self.data_serializer = DataSerializerBase()
         self.remote_viewer = RemoteViewerListenerBase()
+        self.remote_player = CeedRemotePlayer()
         super(CeedApp, self).__init__(**kwargs)
         self.load_app_settings_from_file()
         self.apply_app_settings()

@@ -2,6 +2,8 @@ from threading import Thread
 import socket
 import sys
 import struct
+from itertools import accumulate
+from ffpyplayer.pic import Image
 from kivy.event import EventDispatcher
 from kivy.properties import StringProperty, NumericProperty, BooleanProperty
 from kivy.clock import Clock
@@ -67,7 +69,16 @@ class RemoteViewerListenerBase(EventDispatcher):
         data = msg_buff[:n].decode('utf8')
         msg, value = yaml_loads(data)
 
-        assert not bin_n
+        if msg == 'image':
+            bin_data = msg_buff[n:]
+            planes_sizes, pix_fmt, size, linesize = value
+            starts = list(accumulate([0] + list(planes_sizes[:-1])))
+            ends = accumulate(planes_sizes)
+            planes = [bin_data[s:e] for s, e in zip(starts, ends)]
+
+            value = planes, pix_fmt, size, linesize
+        else:
+            assert not bin_n
         return msg, value
 
     def read_msg_from_server(
@@ -193,6 +204,13 @@ class RemoteViewerListenerBase(EventDispatcher):
                     player = knspace.player
                     if player is not None:
                         player.reload_pt_setting_opt(value)
+                elif msg == 'remote_image':
+                    remote_player = App.get_running_app().remote_player
+                    plane_buffers, pix_fmt, size, linesize = value
+                    remote_player.last_image = Image(
+                        plane_buffers=plane_buffers, pix_fmt=pix_fmt,
+                        size=size, linesize=linesize)
+                    remote_player.display_trigger()
                 else:
                     print('got', msg, value)
             except Empty:

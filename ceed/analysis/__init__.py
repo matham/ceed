@@ -1,11 +1,14 @@
 import numpy as np
+from fractions import Fraction
 import nixio as nix
 from cplcom.utils import yaml_dumps, yaml_loads
 from cplcom.config import apply_config
+from cplcom.player import Player
 from ffpyplayer.pic import Image
+from ffpyplayer.writer import MediaWriter
 
 from ceed.function import FunctionFactoryBase, register_all_functions
-from ceed.stage import StageFactoryBase
+from ceed.stage import StageFactoryBase, StageDoneException
 from ceed.shape import CeedPaintCanvasBehavior
 from ceed.storage.controller import DataSerializerBase
 from ceed.view.controller import ViewControllerBase
@@ -116,6 +119,10 @@ class CeedDataReader(object):
 
     def get_fluorescent_image(self):
         return self.read_fluorescent_image_from_block(self._block)
+
+    def save_flourescent_image(self, filename, img, codec='bmp'):
+        Player.save_image(
+            filename, img, codec='bmp', pix_fmt=img.get_pixel_format())
 
     def get_electrode_offset_scale(self, electrode):
         metadata = self.electrodes_metadata[electrode]
