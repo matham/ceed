@@ -86,7 +86,7 @@ class CeedMCSDataMerger(object):
         self.ceed_data = {
             'frame_bits': frame_bits, 'frame_counter': frame_counter,
             'start_t': start_t}
-        self.ceed_config_orig = metadata
+        self.ceed_config_orig = metadata['app_settings']
 
     def create_dig_mappings(self):
         config = self.ceed_config_orig['serializer']
@@ -107,10 +107,10 @@ class CeedMCSDataMerger(object):
 
         for i, k in enumerate(ceed_short_count_indices):
             if k <= 15:
-                ceed_short_counter_map_l |= (indices & (1 << k)) >> (k - i)
+                ceed_short_counter_map_l |= ((indices & (1 << k)) >> k) << i
             else:
                 ceed_short_counter_map_u |= (
-                    indices & (1 << (k % 16))) >> ((k % 16) - i)
+                    (indices & (1 << (k % 16))) >> (k % 16) << i)
             k_mcs = ceed_mcs_map[k]
             mcs_short_counter_map |= (indices & (1 << k_mcs)) >> (k_mcs - i)
         ceed_map['short_count_l'] = ceed_short_counter_map_l
@@ -124,10 +124,10 @@ class CeedMCSDataMerger(object):
 
         for i, k in enumerate(ceed_count_indices):
             if k <= 15:
-                ceed_counter_map_l |= (indices & (1 << k)) >> (k - i)
+                ceed_counter_map_l |= ((indices & (1 << k)) >> k) << i
             else:
                 ceed_counter_map_u |= (
-                    indices & (1 << (k % 16))) >> ((k % 16) - i)
+                    (indices & (1 << (k % 16))) >> (k % 16) << i)
             k_mcs = ceed_mcs_map[k]
             mcs_counter_map |= (indices & (1 << k_mcs)) >> (k_mcs - i)
         ceed_map['count_l'] = ceed_counter_map_l
@@ -298,10 +298,18 @@ class CeedMCSDataMerger(object):
                         'electrode_{}'.format(info['Label']),
                         'metadata for this electrode')
                     for key, val in info.items():
+                        #print(key, val, type(key), type(val))
+                        if isinstance(val, np.generic):
+                            val = val.item()
                         elec_sec[key] = yaml_dumps(val)
-                    elec_sec['sampling_frequency'] = yaml_dumps(
-                        info.sampling_frequency)
-                    elec_sec['sampling_tick'] = yaml_dumps(info.sampling_tick)
+
+                    freq = stream.channel_infos[i].sampling_frequency
+                    freq = freq.m_as(ureg.hertz).item()
+                    ts = stream.channel_infos[i].sampling_tick
+                    ts = ts.m_as(ureg.second).item()
+
+                    elec_sec['sampling_frequency'] = yaml_dumps(freq)
+                    elec_sec['sampling_tick'] = yaml_dumps(ts)
 
                     data = np.array(stream.channel_data[i, :])
                     block.create_data_array(
@@ -311,13 +319,13 @@ class CeedMCSDataMerger(object):
 
 
 if __name__ == '__main__':
-    ceed_file = r'E:\31618_first_vacuum_day.h5'
-    mcs_file = r'E:\2018-03-16T16-43-48McsRecording.h5'
-    output_file = r'E:\test.h5'
+    ceed_file = r'/home/cpl/Desktop/experiment/data/test_align.h5'
+    mcs_file = r'/home/cpl/Desktop/experiment/data/2018-04-02T19-30-59McsRecording.h5'
+    output_file = r'/home/cpl/Desktop/experiment/data/test.h5'
     data = CeedMCSDataMerger()
 
     alignment = {}
-    for experiment in [12, 13, 15, 17, 18, 19, 20]:
-        vals = data.parse_digital_data(ceed_file, mcs_file, experiment, find_by_time=25)
+    for experiment in range(5):
+        vals = data.parse_digital_data(ceed_file, mcs_file, experiment)
         alignment[experiment] = data.get_alignment(*vals)
     data.merge_data(output_file, ceed_file, mcs_file, alignment)

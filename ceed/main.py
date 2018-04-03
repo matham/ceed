@@ -97,7 +97,6 @@ class CeedApp(CPLComApp):
         register_all_functions(self.function_factory)
         self.stage_factory = StageFactoryBase(
             function_factory=self.function_factory)
-        _bind_remove(self.stage_factory, self.shape_factory)
         self.player = CeedPlayer()
         self.view_controller = ControllerSideViewControllerBase()
         self.ceed_data = CeedDataWriterBase()
@@ -126,6 +125,7 @@ class CeedApp(CPLComApp):
 
     def on_start(self):
         self.stage_factory.shape_factory = self.shape_factory = knspace.painter
+        _bind_remove(self.stage_factory, self.shape_factory)
         knspace.painter.add_shapes_to_canvas = \
             knspace.painter.show_widgets = True
         self.function_factory.show_widgets = True

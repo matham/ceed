@@ -5,10 +5,8 @@ Defines the GUI components used with :mod:`ceed.function`.
 '''
 from collections import defaultdict
 from copy import deepcopy
-import re
 
 from kivy.uix.behaviors.knspace import KNSpaceBehavior, knspace
-from kivy.uix.behaviors.togglebutton import ToggleButtonBehavior
 from kivy.uix.boxlayout import BoxLayout
 from kivy.properties import BooleanProperty, NumericProperty, StringProperty, \
     ObjectProperty, ListProperty, DictProperty
@@ -23,7 +21,6 @@ from cplcom.drag_n_drop import DragableLayoutBehavior
 
 from ceed.utils import fix_name
 from ceed.graphics import WidgetList, ShowMoreSelection, ShowMoreBehavior
-from ceed.function import FuncGroup
 
 __all__ = ('FuncList', 'FuncWidget', 'FuncWidgetGroup', 'FuncPropTextWidget',
            'FuncNamePropTextWidget')

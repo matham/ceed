@@ -668,7 +668,7 @@ def view_process_enter(read, write, settings, app_settings):
     '''Called by the second internal view process when it is created.
     This calls :meth:`ViewSideViewControllerBase.view_process_enter`.
     '''
-    from cplcom.app import run_cpl_app
+    from cplcom.app import run_app
     from ceed.view.main import CeedViewApp, _cleanup
 
     app = None
@@ -688,7 +688,7 @@ def view_process_enter(read, write, settings, app_settings):
         Clock.schedule_interval(viewer.view_read, .25)
         Clock.schedule_once(viewer.prepare_view_window, 0)
 
-        run_cpl_app(app, _cleanup)
+        run_app(app, _cleanup)
     except Exception as e:
         if app is not None:
             app.handle_exception(e, exc_info=sys.exc_info())

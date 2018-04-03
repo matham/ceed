@@ -52,7 +52,7 @@ class CeedDataReader(object):
         self.filename = filename
 
     def open_h5(self):
-        if self._h5_file is not None:
+        if self._nix_file is not None:
             raise Exception('File already open')
 
         self._nix_file = nix.File.open(
@@ -81,7 +81,7 @@ class CeedDataReader(object):
         stage = self.stage_factory = StageFactoryBase(
             function_factory=func, shape_factory=shape)
 
-        apply_config(config_data, {
+        apply_config(config_data['app_settings'], {
             'view': view, 'serializer': ser, 'function': func})
         self.populate_config(config_data, shape, func, stage)
 
@@ -106,8 +106,9 @@ class CeedDataReader(object):
         electrode_data = self.electrodes_data = {}
         electrodes_metadata = self.electrodes_metadata = {}
         for item in mcs_block.data_arrays:
-            if item.name.startswith('electrode_'):
-                electrode_data[item.name[10:]] = item
+            if not item.name.startswith('electrode_'):
+                continue
+            electrode_data[item.name[10:]] = item
 
             electrodes_metadata[item.name[10:]] = electrode_metadata = {}
             for prop in mcs_metadata.sections[item.name].props:
@@ -163,3 +164,9 @@ class CeedDataReader(object):
                     size=yaml_loads(group.metadata['size']))
         return img
 
+
+if __name__ == '__main__':
+    f = CeedDataReader('/home/cpl/Desktop/experiment/data/test.h5')
+    f.open_h5()
+    for exp in range(5):
+        f.read_experiment(exp)

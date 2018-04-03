@@ -23,7 +23,7 @@ import ceed
 from ceed.function import FunctionFactoryBase, register_all_functions
 from ceed.view.controller import ViewSideViewControllerBase
 from ceed.view.view_widgets import ViewRootFocusBehavior
-from ceed.storage.controller import DataSerializerBase
+from ceed.storage.controller import DataSerializerBase, CeedDataWriterBase
 from ceed.stage import StageFactoryBase
 from ceed.shape import CeedPaintCanvasBehavior
 
@@ -89,22 +89,27 @@ class CeedViewApp(CPLComApp):
 
     shape_factory = None
 
+    ceed_data = None
+
     @classmethod
     def get_config_classes(cls):
         d = super(CeedViewApp, cls).get_config_classes()
         app = cls.get_running_app()
         if app is None:
             d['view'] = ViewSideViewControllerBase
+            d['data'] = CeedDataWriterBase
             d['serializer'] = DataSerializerBase
             d['function'] = FunctionFactoryBase
         else:
             d['view'] = app.view_controller
+            d['data'] = app.ceed_data
             d['serializer'] = app.data_serializer
             d['function'] = app.function_factory
         return d
 
     def __init__(self, **kwargs):
         self.view_controller = ViewSideViewControllerBase()
+        self.ceed_data = CeedDataWriterBase()
         self.data_serializer = DataSerializerBase()
         self.function_factory = FunctionFactoryBase()
         register_all_functions(self.function_factory)

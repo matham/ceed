@@ -197,7 +197,7 @@ class FunctionFactoryBase(EventDispatcher):
 
         funcs = self.funcs_inst
         for cls in self.get_classes():
-            f = cls()
+            f = cls(function_factory=self)
             funcs[f.name] = f
             cls_inst[cls] = f
 
@@ -225,7 +225,9 @@ class FunctionFactoryBase(EventDispatcher):
             Logger.warn('"{}" is already a registered function'.format(name))
         funcs[name] = cls
 
-        f = cls() if instance is None else instance
+        f = cls(function_factory=self) if instance is None else instance
+        if f.function_factory is None:
+            raise Exception('Somehow function_factory was not set')
         self.funcs_inst[f.name] = f
         self._cls_inst_funcs[cls] = f
         self.funcs_inst_default[f.name] = f
@@ -419,7 +421,7 @@ class FunctionFactoryBase(EventDispatcher):
         if cls in cls_funcs:
             return cls_funcs[cls]
 
-        f = cls_funcs[cls] = cls()
+        f = cls_funcs[cls] = cls(function_factory=self)
         return f
 
 
@@ -611,6 +613,8 @@ class FuncBase(EventDispatcher):
         for prop in self.get_state(recurse=False):
             self.fbind(prop, self.dispatch, 'on_changed', prop)
             self.dispatch('on_changed', prop)
+        if self.function_factory is None:
+            self.function_factory = factory
 
         # self.fbind('track_source', self._track_source_callback)
         self.fbind('on_changed', factory.dispatch, 'on_changed')
@@ -980,7 +984,7 @@ class FuncBase(EventDispatcher):
         if cls is None:
             raise Exception('Missing class "{}"'.format(c))
 
-        func = cls()
+        func = cls(function_factory=function_factory)
         if function_factory.show_widgets:
             func.display  # create it before apply
         func.apply_state(state, clone=clone, old_id_map=old_id_map)
