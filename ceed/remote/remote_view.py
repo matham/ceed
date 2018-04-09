@@ -69,7 +69,7 @@ class RemoteViewerListenerBase(EventDispatcher):
         data = msg_buff[:n].decode('utf8')
         msg, value = yaml_loads(data)
 
-        if msg == 'image':
+        if msg == 'image' or msg == 'remote_image':
             bin_data = msg_buff[n:]
             planes_sizes, pix_fmt, size, linesize = value
             starts = list(accumulate([0] + list(planes_sizes[:-1])))
