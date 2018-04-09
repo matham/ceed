@@ -131,6 +131,62 @@ class CeedDataReader(object):
             float(metadata['ConversionFactor']) *
             10. ** float(metadata['Exponent']))
 
+    def generate_movie(
+            self, filename, out_fmt='yuv420p', codec='libx264',
+            lib_opts={'crf': '0'}, start=None, end=None):
+        from kivy.graphics import (
+            Canvas, Translate, Fbo, ClearColor, ClearBuffers, Scale)
+        from kivy.core.window import Window
+
+        count = 0
+        rate = float(self.view_controller.frame_rate)
+        rate_int = int(rate)
+        w, h = Window.size = (
+            self.view_controller.screen_width,
+            self.view_controller.screen_height)
+
+        stream = {
+            'pix_fmt_in': 'rgba', 'pix_fmt_out': out_fmt,
+            'width_in': w, 'height_in': h, 'width_out': w,
+            'height_out': h, 'codec': codec, 'frame_rate': (rate_int, 1)}
+        writer = MediaWriter(filename, [stream], fmt='mp4', lib_opts=lib_opts)
+
+        fbo = Fbo(size=(w, h), with_stencilbuffer=True)
+
+        with fbo:
+            ClearColor(0, 0, 0, 1)
+            ClearBuffers()
+            Scale(1, -1, 1)
+            Translate(0, -h, 0)
+
+        fbo.draw()
+        img = Image(plane_buffers=[fbo.pixels], pix_fmt='rgba', size=(w, h))
+        writer.write_frame(img, count / rate)
+
+        tick = self.stage_factory.tick_stage(self.experiment_stage_name)
+        shape_views = self.stage_factory.get_shapes_gl_color_instructions(
+            fbo, 'stage_replay')
+
+        while True:
+            count += 1
+            try:
+                next(tick)
+                t = Fraction(count, rate_int)
+                if end is not None and end < t:
+                    break
+                shape_values = tick.send(t)
+            except StageDoneException:
+                break
+
+            if start is not None and start < t:
+                continue
+            self.stage_factory.fill_shape_gl_color_values(
+                shape_views, shape_values)
+
+            fbo.draw()
+            img = Image(plane_buffers=[fbo.pixels], pix_fmt='rgba', size=(w, h))
+            writer.write_frame(img, count / rate)
+
     @staticmethod
     def populate_config(
             settings, shape_factory, function_factory, stage_factory):
@@ -173,7 +229,7 @@ class CeedDataReader(object):
 
 
 if __name__ == '__main__':
-    f = CeedDataReader('/home/cpl/Desktop/experiment/data/test.h5')
+    f = CeedDataReader(r'E:\test.h5')
     f.open_h5()
-    for exp in range(5):
-        f.read_experiment(exp)
+    f.read_experiment(0)
+    f.generate_movie(r'E:\test.mp4')
