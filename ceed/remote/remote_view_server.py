@@ -8,6 +8,8 @@ import os
 from ffpyplayer.pic import Image
 from functools import partial
 from itertools import accumulate
+import os
+import numpy as np
 from os.path import join, dirname, isdir
 from threading import Thread
 import socket
@@ -21,10 +23,12 @@ from cplcom.app import run_app as run_cpl_app, app_error, CPLComApp
 from cplcom.utils import yaml_dumps, yaml_loads
 
 from kivy.app import App
-from kivy.properties import ObjectProperty, NumericProperty, StringProperty, BooleanProperty
+from kivy.properties import ObjectProperty, NumericProperty, StringProperty, \
+    BooleanProperty, ListProperty
 from kivy.uix.slider import Slider
 from kivy.lang import Builder
 from kivy.logger import Logger
+from kivy.event import EventDispatcher
 from kivy.clock import Clock
 from kivy.compat import string_types
 
@@ -60,21 +64,81 @@ BoxLayout:
         height: '40dp'
     ScreenManager:
         size_hint: None, None
-        size: self.current_screen.size if self.current_screen else (100, 100)
+        size: tsi_grid.parent.size if self.current == 'ThorLabs camera' else pt_grid.parent.size
         current: cam_selection.text
         Screen:
             name: 'ThorLabs camera'
             size_hint: None, None
-            size: pt_grid.size
+            size: tsi_grid.size
+            disabled: app.tsi_sdk is None
+            GridLayout:
+                id: tsi_grid
+                size_hint: None, None
+                size: self.minimum_size
+                cols: 1
+                BoxLayout:
+                    size_hint: None, None
+                    size: self.minimum_size
+                    spacing: '5dp'
+                    SizedButton:
+                        text: 'Refresh'
+                        on_release: tsi_cams_spinner.values = app.get_tsi_cams()
+                    Spinner:
+                        id: tsi_cams_spinner
+                        text_autoupdate: True
+                        size_hint_x: None
+                        width: '60dp'
+                    SizedToggleButton:
+                        disabled: not tsi_cams_spinner.text
+                        text: 'Open' if self.state == 'normal' else 'Close'
+                        on_release: app.open_tsi_cam(tsi_cams_spinner.text, root.ids) if self.state == 'down' else app.close_tsi_cam()
+                    SizedToggleButton:
+                        disabled: app.tsi_cam is None
+                        text: 'Play' if self.state == 'normal' else 'Stop'
+                        on_release: app.tsi_cam.send_message('play') if self.state == 'down' else app.tsi_cam.send_message('stop')
+                BoxLayout:
+                    disabled: app.tsi_cam is None
+                    size_hint: None, None
+                    size: self.minimum_size
+                    spacing: '5dp'
+                    SizedLabel:
+                        text: 'Speed:'
+                    Spinner:
+                        text_autoupdate: True
+                        size_hint_x: None
+                        width: '80dp'
+                        values: app.tsi_cam.supported_freqs if app.tsi_cam else []
+                        text: app.tsi_cam.freq if app.tsi_cam else '20 MHz'
+                        on_text: if app.tsi_cam: app.tsi_cam.send_message('setting', ('freq', self.text))
+                    SizedLabel:
+                        text: 'Taps:'
+                    Spinner:
+                        text_autoupdate: True
+                        size_hint_x: None
+                        width: '60dp'
+                        values: app.tsi_cam.supported_taps if app.tsi_cam else []
+                        text: app.tsi_cam.taps if app.tsi_cam else '1'
+                        on_text: if app.tsi_cam: app.tsi_cam.send_message('setting', ('taps', self.text))
+                    SizedLabel:
+                        text: 'Exposure [{}ms, {}ms]:'.format(*(app.tsi_cam.exposure_range if app.tsi_cam else (0, 100)))
+                    TextInput:
+                        id: tsi_value
+                        size_hint: None, None
+                        size: '80dp', self.minimum_height
+                        text: str(app.tsi_cam.exposure_ms) if app.tsi_cam else '0'
+                        multiline: False
+                        on_focus:
+                            if not self.focus and app.tsi_cam: app.tsi_cam.send_message('setting', ('exposure_ms', float(self.text)))
+                        input_filter: 'float'
         Screen:
             name: 'Point Gray camera'
             size_hint: None, None
             size: pt_grid.size
             GridLayout:
                 id: pt_grid
-                size_hint: None, None
-                size: self.minimum_size
                 cols: 1
+                size_hint: None, None
+                size: pt_grid.size
                 GridLayout:
                     size_hint: None, None
                     size: self.minimum_size
@@ -92,34 +156,22 @@ BoxLayout:
                             app.send_client_cam_request('track_cam_setting', self.text)
                             app.cam_setting = self.text
                         controllable: gui_pt_settings_opt_disable.state == 'normal'
-                    ToggleButton:
+                    SizedToggleButton:
                         id: gui_pt_settings_opt_auto
                         text: 'Auto'
-                        padding: '5dp', '5dp'
-                        size_hint: None, None
-                        size: self.texture_size
                         on_release: app.send_client_cam_request('set_cam_setting', (pt_settings_opt.text, 'auto', self.state == 'down'))
                         disabled: not pt_settings_opt.controllable
-                    Button:
+                    SizedButton:
                         id: gui_pt_settings_opt_push
                         text: 'One push'
-                        size_hint: None, None
-                        size: self.texture_size
-                        padding: '5dp', '5dp'
                         on_release: app.send_client_cam_request('set_cam_setting', (pt_settings_opt.text, 'one_push', True))
                         disabled: not pt_settings_opt.controllable
-                    ToggleButton:
+                    SizedToggleButton:
                         id: gui_pt_settings_opt_disable
                         text: 'Disable'
-                        padding: '5dp', '5dp'
-                        size_hint: None, None
-                        size: self.texture_size
                         on_release: app.send_client_cam_request('set_cam_setting', (pt_settings_opt.text, 'controllable', self.state == 'normal'))
-                    Label:
+                    SizedLabel:
                         id: gui_pt_settings_opt_min
-                        padding: '5dp', '5dp'
-                        size_hint: None, None
-                        size: self.texture_size
                         disabled: not pt_settings_opt.controllable
                     TextInput:
                         id: gui_pt_settings_opt_value
@@ -128,18 +180,13 @@ BoxLayout:
                         on_focus: if not self.focus: app.send_client_cam_request('set_cam_setting', (pt_settings_opt.text, 'value', float(self.text or 0)))
                         input_filter: 'float'
                         disabled: not pt_settings_opt.controllable
-                    Label:
+                        multiline: False
+                    SizedLabel:
                         id: gui_pt_settings_opt_max
-                        padding: '5dp', '5dp'
-                        size_hint: None, None
-                        size: self.texture_size
                         disabled: not pt_settings_opt.controllable
-                    Button:
+                    SizedButton:
                         id: gui_pt_settings_opt_reload
                         text: 'Reload'
-                        padding: '5dp', '5dp'
-                        size_hint: None, None
-                        size: self.texture_size
                         on_release: app.send_client_cam_request('reload_cam_setting', pt_settings_opt.text)
                     Widget
                 UpSlider:
@@ -164,11 +211,249 @@ BoxLayout:
         do_rotation: True
 
 <ScreenGrid@Screen+GridLayout>
+<SizedLabel@Label>:
+    size_hint: None, None
+    size: self.texture_size
+    padding: '5dp', '5dp'
+<SizedButton@Button>:
+    size_hint: None, None
+    size: self.texture_size
+    padding: '5dp', '5dp'
+<SizedToggleButton@ToggleButton>:
+    size_hint: None, None
+    size: self.texture_size
+    padding: '5dp', '5dp'
 '''
 
 
 class EndConnection(Exception):
     pass
+
+
+class TSICamera(EventDispatcher):
+
+    supported_freqs = ListProperty(['20 MHz', ])
+
+    freq = StringProperty('20 MHz')
+
+    supported_taps = ListProperty(['1', ])
+
+    taps = StringProperty('1')
+
+    supports_color = BooleanProperty(False)
+
+    exposure_range = ListProperty([0, 100])
+
+    exposure_ms = NumericProperty(5)
+
+    tsi_sdk = None
+
+    tsi_interface = None
+
+    serial = ''
+
+    ids = {}
+
+    _kivy_trigger = None
+
+    from_kivy_queue = None
+
+    to_kivy_queue = None
+
+    camera_thread = None
+
+    _freqs_to_str_map = {}
+
+    _str_to_freqs_map = {}
+
+    _taps_to_str_map = {}
+
+    _str_to_taps_map = {}
+
+    def __init__(self, tsi_sdk, tsi_interface, serial, ids):
+        self.tsi_sdk = tsi_sdk
+        self.tsi_interface = tsi_interface
+        self.serial = serial
+        self.ids = ids
+        self._freqs_to_str_map = {
+            tsi_interface.DataRate.ReadoutSpeed20MHz: '20 MHz',
+            tsi_interface.DataRate.ReadoutSpeed40MHz: '40 MHz',
+            tsi_interface.DataRate.FPS50: '50 FPS',
+            tsi_interface.DataRate.FPS30: '30 FPS',
+        }
+        self._str_to_freqs_map = {v: k for k, v in self._freqs_to_str_map.items()}
+        self._taps_to_str_map = {
+            tsi_interface.Taps.QuadTap: '4',
+            tsi_interface.Taps.DualTap: '2',
+            tsi_interface.Taps.SingleTap: '1',
+        }
+        self._str_to_taps_map = {v: k for k, v in self._taps_to_str_map.items()}
+
+        self._kivy_trigger = Clock.create_trigger(self.process_in_kivy_thread)
+        from_kivy_queue = self.from_kivy_queue = Queue()
+        to_kivy_queue = self.to_kivy_queue = Queue()
+        thread = self.camera_thread = Thread(
+            target=self.camera_run, args=(from_kivy_queue, to_kivy_queue))
+        thread.start()
+
+    def send_message(self, msg, value=None):
+        if self.from_kivy_queue:
+            self.from_kivy_queue.put((msg, value))
+
+    def read_settings(self, cam):
+        d = {}
+        rang = cam.get_ExposureTimeRange_us()
+        d['exposure_range'] = rang.Minimum / 1000., rang.Maximum / 1000.
+        d['exposure_ms'] = cam.get_ExposureTime_us() / 1000.
+        if cam.GetIsDataRateSupported(self.tsi_interface.DataRate.ReadoutSpeed20MHz):
+            if cam.GetIsDataRateSupported(self.tsi_interface.DataRate.ReadoutSpeed40MHz):
+                d['supported_freqs'] = ['20 MHz', '40 MHz']
+            else:
+                d['supported_freqs'] = ['20 MHz', ]
+        else:
+            if cam.GetIsDataRateSupported(self.tsi_interface.DataRate.FPS50):
+                d['supported_freqs'] = ['30 FPS', '50 FPS']
+            else:
+                d['supported_freqs'] = ['30 FPS', ]
+        d['freq'] = self._freqs_to_str_map[cam.get_DataRate()]
+
+        if cam.GetIsTapsSupported(self.tsi_interface.Taps.QuadTap):
+            d['supported_taps'] = ['1', '2', '4']
+        elif cam.GetIsTapsSupported(self.tsi_interface.Taps.DualTap):
+            d['supported_taps'] = ['1', '2']
+        elif cam.GetIsTapsSupported(self.tsi_interface.Taps.SingleTap):
+            d['supported_taps'] = ['1', ]
+        else:
+            d['supported_taps'] = []
+
+        if cam.GetIsTapsSupported(self.tsi_interface.Taps.SingleTap):
+            d['taps'] = self._taps_to_str_map[cam.get_Taps()]
+        else:
+            d['taps'] = ''
+        return d
+
+    def write_setting(self, cam, setting, value):
+        if setting == 'exposure_ms':
+            value = int(max(min(value, self.exposure_range[1]),
+                        self.exposure_range[0]) * 1000)
+            cam.set_ExposureTime_us(value)
+            print(value, cam.get_ExposureTime_us(), cam.ExposureTime_us)
+            value = value / 1000.
+        elif setting == 'freq':
+            cam.set_DataRate(self._str_to_freqs_map[value])
+        elif setting == 'taps' and value:
+            cam.set_Taps(self._str_to_taps_map[value])
+        return setting, value
+
+    def read_frame(self, cam, asNumpyArray):
+        if cam.get_NumberOfQueuedFrames() <= 0:
+            return
+
+        frame = cam.GetPendingFrameOrNull()
+        if not frame:
+            return
+
+        count = frame.FrameNumber
+        h = frame.ImageDataUShort1D.Height_pixels
+        w = frame.ImageDataUShort1D.Width_pixels
+        color = frame.ImageDataUShort1D.NumberOfChannels == 3
+        data = asNumpyArray(frame.ImageDataUShort1D.ImageData_monoOrBGR)
+        img = Image(
+            plane_buffers=[data.tobytes()],
+            pix_fmt='bgr48le' if color else 'gray16le', size=(w, h))
+        return img, count
+
+    def camera_run(self, from_kivy_queue, to_kivy_queue):
+        from ceed.remote.net_data import asNumpyArray
+        trigger = self._kivy_trigger
+        send_image = App.get_running_app().send_client_cam_request
+        cam = None
+        playing = False
+        msg = ''
+        try:
+            cam = self.tsi_sdk.OpenCamera(self.serial, False)
+            settings = self.read_settings(cam)
+            to_kivy_queue.put(('settings', settings))
+            trigger()
+
+            while msg != 'eof':
+                if playing:
+                    while True:
+                        try:
+                            msg, value = from_kivy_queue.get(block=False)
+                            if msg == 'eof':
+                                break
+                            elif msg == 'stop':
+                                cam.Disarm()
+                                playing = False
+                                break
+                            elif msg == 'setting':
+                                to_kivy_queue.put((msg, self.write_setting(cam, *value)))
+                                trigger()
+                        except Empty:
+                            break
+
+                    if not playing or msg == 'eof':
+                        continue
+                    data = self.read_frame(cam, asNumpyArray)
+                    if data is None:
+                        continue
+                    img, count = data
+                    to_kivy_queue.put(('image', img))
+                    trigger()
+                    send_image('remote_image', img, max_qsize=2)
+
+                else:
+                    msg, value = from_kivy_queue.get(block=True)
+                    if msg == 'eof':
+                        break
+                    elif msg == 'play':
+                        cam.Arm()
+                        if cam.get_OperationMode() != self.tsi_interface.OperationMode.HardwareTriggered:
+                            cam.IssueSoftwareTrigger()
+                        playing = True
+                    elif msg == 'setting':
+                        to_kivy_queue.put((msg, self.write_setting(cam, *value)))
+                        trigger()
+
+            if cam.IsArmed:
+                cam.Disarm()
+            cam.Dispose()
+        except Exception as e:
+            exc_info = ''.join(traceback.format_exception(*sys.exc_info()))
+            to_kivy_queue.put(
+                ('exception', (str(e), exc_info)))
+            trigger()
+
+            try:
+                if cam is not None:
+                    if cam.IsArmed:
+                        cam.Disarm()
+                    cam.Dispose()
+            except:
+                pass
+
+    @app_error
+    def process_in_kivy_thread(self, *largs):
+        while self.to_kivy_queue is not None:
+            try:
+                msg, value = self.to_kivy_queue.get(block=False)
+
+                if msg == 'exception':
+                    e, exec_info = value
+                    App.get_running_app().handle_exception(
+                        e, exc_info=exec_info)
+                elif msg == 'image':
+                    self.ids.img.update_img(value)
+                elif msg == 'settings':
+                    print('got', value)
+                    for key, val in value.items():
+                        setattr(self, key, val)
+                elif msg == 'setting':
+                    print('setarrt', value)
+                    setattr(self, *value)
+            except Empty:
+                break
 
 
 class CeedRemoteViewApp(CPLComApp):
@@ -193,6 +478,12 @@ class CeedRemoteViewApp(CPLComApp):
 
     server_thread = None
 
+    tsi_sdk = ObjectProperty(None)
+
+    tsi_interface = ObjectProperty(None)
+
+    tsi_cam = ObjectProperty(None, rebind=True, allownone=True)
+
     def init_load(self):
         pass
 
@@ -206,13 +497,55 @@ class CeedRemoteViewApp(CPLComApp):
         thread = self.server_thread = Thread(
             target=self.server_run, args=(from_kivy_queue, to_kivy_queue))
         thread.start()
+        self.load_tsi(r'E:\MATLAB')
+
+    @app_error
+    def load_tsi(self, dll_path):
+        os.environ['PATH'] += os.pathsep + dll_path
+        import clr
+        clr.AddReference(join(dll_path, 'Thorlabs.TSI.TLCamera.dll'))
+        clr.AddReference(join(dll_path, 'Thorlabs.TSI.TLCameraInterfaces.dll'))
+        from Thorlabs.TSI.TLCamera import TLCameraSDK
+        import Thorlabs.TSI.TLCameraInterfaces as tsi_interface
+        self.tsi_sdk = TLCameraSDK.OpenTLCameraSDK()
+        self.tsi_interface = tsi_interface
+        tsi_interface.CameraSensorType
+
+    @app_error
+    def get_tsi_cams(self):
+        cams = self.tsi_sdk.DiscoverAvailableCameras()
+        names = []
+        for i in range(cams.get_Count()):
+            names.append(cams.get_Item(i))
+        return list(sorted(cams))
+
+    def open_tsi_cam(self, serial, ids):
+        self.tsi_cam = TSICamera(
+            tsi_sdk=self.tsi_sdk, tsi_interface=self.tsi_interface,
+            serial=serial, ids=ids)
+
+    def close_tsi_cam(self):
+        if self.tsi_cam:
+            self.tsi_cam.send_message('eof')
+            self.tsi_cam = None
 
     def send_msg_to_client(self, sock, msg, value):
-        data = yaml_dumps((msg, value))
-        data = data.encode('utf8')
+        if msg == 'remote_image':
+            bin_data = value.to_bytearray()
+            data = yaml_dumps((
+                'remote_image', (
+                    list(map(len, bin_data)), value.get_pixel_format(),
+                    value.get_size(), value.get_linesizes())))
+            data = data.encode('utf8')
+        else:
+            data = yaml_dumps((msg, value))
+            data = data.encode('utf8')
+            bin_data = []
 
-        data = struct.pack('>II', len(data), 0) + data
+        sock.sendall(struct.pack('>II', len(data), sum(map(len, bin_data))))
         sock.sendall(data)
+        for item in bin_data:
+            sock.sendall(item)
 
     def decode_data(self, msg_buff, msg_len):
         n, n_bin = msg_len
@@ -329,11 +662,12 @@ class CeedRemoteViewApp(CPLComApp):
             sock.close()
 
     @app_error
-    def send_client_cam_request(self, msg, value):
+    def send_client_cam_request(self, msg, value, max_qsize=0):
         if self.from_kivy_queue is None:
             return
 
-        self.from_kivy_queue.put((msg, value))
+        if not max_qsize or self.from_kivy_queue.qsize() < max_qsize:
+            self.from_kivy_queue.put((msg, value))
 
     def populate_settings(self, setting, opts):
         ids = self.root.ids
