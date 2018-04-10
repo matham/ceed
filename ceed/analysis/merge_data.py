@@ -2,6 +2,7 @@ import datetime
 import numbers
 import os.path
 from math import ceil
+import re
 from shutil import copy2
 from McsPy import ureg
 import McsPy.McsData
@@ -10,6 +11,10 @@ import nixio as nix
 from cplcom.utils import yaml_dumps, yaml_loads
 
 McsPy.McsData.VERBOSE = False
+
+
+class AlignmentException(Exception):
+    pass
 
 
 class CeedMCSDataMerger(object):
@@ -25,6 +30,21 @@ class CeedMCSDataMerger(object):
     mcs_mapping = {}
 
     ceed_mapping = {}
+
+    _experiment_pat = re.compile('^experiment([0-9]+)$')
+
+    @staticmethod
+    def get_experiment_names(filename):
+        nix_file = nix.File.open(filename, nix.FileMode.ReadOnly)
+        experiments = []
+
+        for block in nix_file.blocks:
+            m = re.match(CeedMCSDataMerger._experiment_pat, block.name)
+            if m is not None:
+                experiments.append(m.group(1))
+
+        nix_file.close()
+        return list(sorted(experiments, key=int))
 
     def read_mcs_digital_data(self, filename):
         data = McsPy.McsData.RawData(filename)
@@ -64,13 +84,6 @@ class CeedMCSDataMerger(object):
                 config = section.sections['app_config']
             except KeyError:
                 raise Exception('Did not find config in experiment info')
-            # config = f.sections['app_config']
-            # metadata['serializer'] = {
-            #     'counter_bit_width': 16, 'clock_idx': 2,
-            #     'count_indices': [11, 12, 18, 19, 20],
-            #     'short_count_indices': [3, 4, 10],
-            #     'projector_to_aquisition_map': {
-            #         2: 0, 3: 1, 4: 2, 10: 3, 11: 4, 12: 5, 18: 6, 19: 7, 20: 8}}
 
             for prop in config:
                 metadata[prop.name] = yaml_loads(prop.values[0].value)
@@ -87,6 +100,29 @@ class CeedMCSDataMerger(object):
             'frame_bits': frame_bits, 'frame_counter': frame_counter,
             'start_t': start_t}
         self.ceed_config_orig = metadata['app_settings']
+
+    @staticmethod
+    def _clean_array_repeat(data):
+        if not len(data):
+            return np.array([], dtype=np.uint64), np.array([], dtype=data.dtype)
+        data2 = data.astype(np.int32)
+        diff = data2[1:] - data2[:-1]
+        indices = np.concatenate((np.array([True], dtype=np.bool), diff != 0))
+        return np.arange(len(data))[indices], data[indices]
+
+    @staticmethod
+    def _stitch_bits_in_array(data, bits_per_item, even_only=True):
+        if even_only:
+            data = data[::2]
+        data = data.astype(np.uint32)
+
+        n_items_per_val = int(ceil(32 / float(bits_per_item)))
+        n = len(data) // n_items_per_val
+        data = data[:n * n_items_per_val]
+        values = np.zeros((n, ), dtype=np.uint32)
+        for i in range(n_items_per_val):
+            values |= data[i::n_items_per_val] << (i * bits_per_item)
+        return values
 
     def create_dig_mappings(self):
         config = self.ceed_config_orig['serializer']
@@ -198,12 +234,12 @@ class CeedMCSDataMerger(object):
         mcs_counter_bits_data = mcs_counter_bits_data[mcs_indices]
 
         return (
-            mcs_idx_start, mcs_clock_data,
+            config, mcs_idx_start, mcs_clock_data,
             mcs_short_counter_data, mcs_counter_bits_data, ceed_clock_data,
             ceed_short_counter_data, ceed_counter_bits_data, find_by)
 
     def get_alignment(
-            self, mcs_idx_start, mcs_clock_data,
+            self, config, mcs_idx_start, mcs_clock_data,
             mcs_short_counter_data, mcs_counter_bits_data, ceed_clock_data,
             ceed_short_counter_data, ceed_counter_bits_data, find_by):
 
@@ -211,16 +247,18 @@ class CeedMCSDataMerger(object):
         if find_by == 'uuid':  # find by uuid
             ceed_d = ceed_counter_bits_data
             mcs_d = mcs_counter_bits_data
+            print(self._stitch_bits_in_array(ceed_d, 2))[:5]
+            n = int(ceil(32 / float(len(config['count_indices'])))) * 5
 
             strides = mcs_d.strides + (mcs_d.strides[-1], )
-            shape = mcs_d.shape[-1] - 40 + 1, 40
+            shape = mcs_d.shape[-1] - n + 1, n
             strided = np.lib.stride_tricks.as_strided(
                 mcs_counter_bits_data, shape=shape, strides=strides)
-            res = np.all(strided == ceed_d[:40], axis=1)
+            res = np.all(strided == ceed_d[:n], axis=1)
             indices = np.mgrid[0:len(res)][res]
 
             if not len(indices):
-                raise Exception('Could not find alignment')
+                raise AlignmentException('Could not find alignment')
             if len(indices) > 1:
                 raise Exception(
                     'Found multiple Ceed-mcs alignment ({})'.format(indices))
@@ -228,6 +266,7 @@ class CeedMCSDataMerger(object):
             i = indices[0]
             mcs_idx_start = mcs_idx_start[i:]
             mcs_clock_data = mcs_clock_data[i:]
+
             mcs_short_counter_data = mcs_short_counter_data[i:]
             mcs_counter_bits_data = mcs_counter_bits_data[i:]
 
@@ -245,7 +284,7 @@ class CeedMCSDataMerger(object):
                 np.all(mcs_counter_bits_data == ceed_counter_bits_data):
             return mcs_idx_start
 
-        raise Exception('Could not align the data')
+        raise AlignmentException('Could not align the data')
 
         e = 20
         # print(mcs_idx_start[:e])
@@ -325,7 +364,13 @@ if __name__ == '__main__':
     data = CeedMCSDataMerger()
 
     alignment = {}
-    for experiment in range(5):
+    for experiment in data.get_experiment_names(ceed_file):
         vals = data.parse_digital_data(ceed_file, mcs_file, experiment)
-        alignment[experiment] = data.get_alignment(*vals)
-    data.merge_data(output_file, ceed_file, mcs_file, alignment)
+        try:
+            alignment[experiment] = data.get_alignment(*vals)
+            print(experiment)
+        except AlignmentException:
+            print("Couldn't align {}".format(experiment))
+        except Exception as e:
+            print("{}: {}".format(e, experiment))
+    #data.merge_data(output_file, ceed_file, mcs_file, alignment)

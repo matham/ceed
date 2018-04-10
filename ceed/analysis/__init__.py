@@ -1,6 +1,7 @@
 import numpy as np
 from fractions import Fraction
 import nixio as nix
+import re
 from cplcom.utils import yaml_dumps, yaml_loads
 from cplcom.config import apply_config
 from cplcom.player import Player
@@ -50,6 +51,8 @@ class CeedDataReader(object):
 
     _block = None
 
+    _experiment_pat = re.compile('^experiment([0-9]+)$')
+
     def __init__(self, filename, **kwargs):
         super(CeedDataReader, self).__init__(**kwargs)
         self.filename = filename
@@ -60,6 +63,14 @@ class CeedDataReader(object):
 
         self._nix_file = nix.File.open(
             self.filename, nix.FileMode.ReadOnly)
+
+    def get_experiments(self):
+        experiments = []
+        for block in self._nix_file.blocks:
+            m = re.match(self._experiment_pat, block.name)
+            if m is not None:
+                experiments.append(m.group(1))
+        return list(sorted(experiments, key=int))
 
     def read_experiment(self, experiment):
         self._block = block = self._nix_file.blocks[
@@ -120,9 +131,11 @@ class CeedDataReader(object):
     def get_fluorescent_image(self):
         return self.read_fluorescent_image_from_block(self._block)
 
-    def save_flourescent_image(self, filename, img, codec='bmp'):
+    def save_flourescent_image(self, filename, img=None, codec='bmp'):
+        if img is None:
+            img = self.get_fluorescent_image()
         Player.save_image(
-            filename, img, codec='bmp', pix_fmt=img.get_pixel_format())
+            filename, img, codec=codec, pix_fmt=img.get_pixel_format())
 
     def get_electrode_offset_scale(self, electrode):
         metadata = self.electrodes_metadata[electrode]
