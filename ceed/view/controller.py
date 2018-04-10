@@ -907,7 +907,8 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         elif key == 'c' and self.stage_active:
             self.request_stage_end()
         elif key == 's':
-            self.request_stage_start(self.selected_stage_name)
+            if not self.stage_active:
+                self.request_stage_start(self.selected_stage_name)
         elif key == 'f':
             self.request_fullscreen(not self.fullscreen)
         elif key == 'r':
