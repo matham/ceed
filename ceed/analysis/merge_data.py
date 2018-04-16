@@ -247,7 +247,6 @@ class CeedMCSDataMerger(object):
         if find_by == 'uuid':  # find by uuid
             ceed_d = ceed_counter_bits_data
             mcs_d = mcs_counter_bits_data
-            print(self._stitch_bits_in_array(ceed_d, 2))[:5]
             n = int(ceil(32 / float(len(config['count_indices'])))) * 5
 
             strides = mcs_d.strides + (mcs_d.strides[-1], )
