@@ -1,4 +1,5 @@
 import math
+import scipy.io
 import numpy as np
 from fractions import Fraction
 import nixio as nix
@@ -6,7 +7,8 @@ import re
 from cplcom.utils import yaml_dumps, yaml_loads
 from cplcom.config import apply_config
 from cplcom.player import Player
-from ffpyplayer.pic import Image
+from ffpyplayer.pic import Image, SWScale
+from ffpyplayer.tools import get_best_pix_fmt
 from ffpyplayer.writer import MediaWriter
 
 from ceed.function import FunctionFactoryBase, register_all_functions
@@ -71,6 +73,23 @@ class CeedDataReader(object):
     _block = None
 
     _experiment_pat = re.compile('^experiment([0-9]+)$')
+
+    _YUV_RGB_FS = '''
+    $HEADER$
+    uniform sampler2D tex_y;
+    uniform sampler2D tex_u;
+    uniform sampler2D tex_v;
+
+    void main(void) {
+        float y = texture2D(tex_y, tex_coord0).r;
+        float u = texture2D(tex_u, tex_coord0).r - 0.5;
+        float v = texture2D(tex_v, tex_coord0).r - 0.5;
+        float r = y + 1.402 * v;
+        float g = y - 0.344 * u - 0.714 * v;
+        float b = y + 1.772 * u;
+        gl_FragColor = vec4(r, g, b, 1.0);
+    }
+    '''
 
     def __init__(self, filename, **kwargs):
         super(CeedDataReader, self).__init__(**kwargs)
@@ -184,6 +203,77 @@ class CeedDataReader(object):
             float(metadata['ConversionFactor']) *
             10. ** float(metadata['Exponent']))
 
+    @staticmethod
+    def _show_image(canvas, pos, size, img, scale, translation, rotation):
+        from kivy.graphics.texture import Texture
+        from kivy.graphics.fbo import Fbo
+        from kivy.graphics import (
+            Mesh, StencilPush, StencilUse, StencilUnUse, StencilPop, Rectangle,
+            Color)
+        from kivy.graphics.context_instructions import (
+            PushMatrix, PopMatrix, Rotate, Translate, Scale, MatrixInstruction,
+            BindTexture)
+        from kivy.graphics.transformation import Matrix
+        img_fmt = img.get_pixel_format()
+        img_w, img_h = img.get_size()
+
+        if img_fmt not in ('yuv420p', 'rgba', 'rgb24', 'gray', 'bgr24', 'bgra'):
+            ofmt = get_best_pix_fmt(
+                img_fmt, ('yuv420p', 'rgba', 'rgb24', 'gray', 'bgr24', 'bgra'))
+            swscale = SWScale(
+                iw=img_w, ih=img_h, ifmt=img_fmt, ow=0, oh=0, ofmt=ofmt)
+            img = swscale.scale(img)
+            img_fmt = img.get_pixel_format()
+
+        kivy_ofmt = {
+            'yuv420p': 'yuv420p', 'rgba': 'rgba', 'rgb24': 'rgb',
+            'gray': 'luminance', 'bgr24': 'bgr', 'bgra': 'bgra'}[img_fmt]
+
+        if kivy_ofmt == 'yuv420p':
+            w2 = int(img_w / 2)
+            h2 = int(img_h / 2)
+            tex_y = Texture.create(size=(img_w, img_h), colorfmt='luminance')
+            tex_u = Texture.create(size=(w2, h2), colorfmt='luminance')
+            tex_v = Texture.create(size=(w2, h2), colorfmt='luminance')
+
+            with canvas:
+                fbo = Fbo(size=(img_w, img_h))
+            with fbo:
+                BindTexture(texture=tex_u, index=1)
+                BindTexture(texture=tex_v, index=2)
+                Rectangle(size=fbo.size, texture=tex_y)
+            fbo.shader.fs = CeedDataReader._YUV_RGB_FS
+            fbo['tex_y'] = 0
+            fbo['tex_u'] = 1
+            fbo['tex_v'] = 2
+
+            tex = fbo.texture
+            dy, du, dv, _ = img.to_memoryview()
+            tex_y.blit_buffer(dy, colorfmt='luminance')
+            tex_u.blit_buffer(du, colorfmt='luminance')
+            tex_v.blit_buffer(dv, colorfmt='luminance')
+        else:
+            tex = Texture.create(size=(img_w, img_h), colorfmt=kivy_ofmt)
+            tex.blit_buffer(img.to_memoryview()[0], colorfmt=kivy_ofmt)
+        tex.flip_vertical()
+
+        with canvas:
+            StencilPush()
+            Rectangle(pos=pos, size=size)
+            StencilUse()
+
+            PushMatrix()
+            center = pos[0] + size[0] / 2, pos[1] + size[1] / 2
+            Rotate(angle=rotation, axis=(0, 0, 1), origin=center)
+            Scale(scale, scale, 1, origin=center)
+            Translate(*translation)
+            Rectangle(size=(img_w, img_h), texture=tex, pos=pos)
+            PopMatrix()
+
+            StencilUnUse()
+            Rectangle(pos=pos, size=size)
+            StencilPop()
+
     @callable_gen
     def paint_electrodes_data(
             self, pos, size, orig_size, fbo, rate, electrodes, cols=1, rows=None,
@@ -221,23 +311,23 @@ class CeedDataReader(object):
         graphics = [None, ] * len(electrodes)
         i = 0
         fbo.add(Color(1, 215 / 255, 0, 1))
-        for col in range(cols):
+        for row in range(rows):
             if i >= len(electrodes):
                 break
-            ex = x
-            if col:
-                ex += (ew + spacing) * col
+            ey = y
+            if row:
+                ey += (eh + spacing) * row
 
-            for row in range(rows):
+            for col in range(cols):
                 if i >= len(electrodes):
                     break
                 if electrodes[i] is None:
                     i += 1
                     continue
 
-                ey = y
-                if row:
-                    ey += (eh + spacing) * row
+                ex = x
+                if col:
+                    ex += (ew + spacing) * col
 
                 positions[i] = ex, ey
                 fbo.add(StencilPush())
@@ -309,7 +399,7 @@ class CeedDataReader(object):
             lib_opts={'crf': '0'}, start=None, end=None, canvas_size=(0, 0),
             canvas_size_hint=(1, 1), shape_pos=(0, 0),
             shape_pos_hint=(None, None), metadata_funcs=[], alpha=1, lum=1,
-            speed=1):
+            speed=1, background=None):
         from kivy.graphics import (
             Canvas, Translate, Fbo, ClearColor, ClearBuffers, Scale)
         from kivy.core.window import Window
@@ -368,6 +458,12 @@ class CeedDataReader(object):
             f((x, y), (w, h), (orig_w, orig_h), fbo, rate)
             for f in metadata_funcs]
 
+        if background is not None:
+            background(
+                fbo, (x, y),
+                (self.view_controller.screen_width,
+                 self.view_controller.screen_height))
+
         fbo.draw()
         img = Image(plane_buffers=[fbo.pixels], pix_fmt='rgba', size=(w, h))
         writer.write_frame(img, 0.)
@@ -380,6 +476,8 @@ class CeedDataReader(object):
         for i in range(start, end):
             for name, intensity in intensities.items():
                 r, g, b, a = intensity[i]
+                if not r and not g and not b:
+                    a = 0
                 shape_views[name].rgba = r * lum, g * lum, b * lum, a * alpha
             for f in metadata_funcs:
                 f(i)
@@ -428,15 +526,46 @@ class CeedDataReader(object):
                     size=yaml_loads(group.metadata['size']))
         return img
 
+    def dump_electrode_data_matlab(self, filename, integer_format=False):
+        data = self.electrodes_data
+        if not integer_format:
+            scaled_data = {}
+            for name, value in data.items():
+                offset, scale = self.get_electrode_offset_scale(name)
+                scaled_data[name] = (np.array(value) - offset) * scale
+            data = scaled_data
+
+        scipy.io.savemat(filename, data)
+
 
 if __name__ == '__main__':
-    f = CeedDataReader(r'E:\test.h5')
+    from functools import partial
+    f = CeedDataReader(r'E:\4_4_2018_slice3_merged.h5')
+    print(f.get_128_electrode_names())
+    exit()
     f.open_h5()
-    f.read_experiment(1)
+    # for exp in f.get_experiments():
+    #     f.read_experiment(exp)
+    #     f.generate_movie(
+    #         r'E:\experiment{}.mp4'.format(exp), lum=3, speed=.25)
+    f.read_experiment(4)
+    img = f.get_fluorescent_image()
+    background = partial(
+        f._show_image, img=img, scale=f.view_controller.cam_scale,
+        translation=(
+            f.view_controller.cam_center_x - img.get_size()[0] / 2,
+            f.view_controller.cam_center_y - img.get_size()[1] / 2
+        ),
+        rotation=f.view_controller.cam_rotation)
+
+    # f.generate_movie(
+    #     r'E:\test.mp4', lum=3, speed=.1, background=background)
+
     f.generate_movie(
-        r'E:\test.mp4', end=4, lum=2, canvas_size_hint=(2, 1), speed=1,
+        r'E:\test.mp4', lum=3, canvas_size_hint=(2, 1), speed=.2,
         metadata_funcs=[f.paint_electrodes_data(
             electrodes=CeedDataReader.get_128_electrode_names(),
-            draw_pos_hint=(1, 0), volt_axis=50, cols=12)]
+            draw_pos_hint=(1, 0), volt_axis=50, cols=12)],
+        background=background
     )
     f.close_h5()
