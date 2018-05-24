@@ -1,0 +1,297 @@
+
+<FormulaRoot@BoxLayout>:
+    canvas:
+        Color:
+            rgba: app.theme.primary
+        Rectangle:
+            pos: self.pos
+            size: self.size
+    ScrollView:
+        scroll_type: ['bars']
+        bar_width: 10
+        BoxLayout:
+            orientation: 'vertical'
+            size_hint_min_y: self.minimum_height
+            size_hint_min_x: self.minimum_width
+
+
+<VariableDisplay@PropertyDisplayBinding+FormulaVariableBehavior+BoxLayout>:
+    size_hint: 1, None
+    height: self.minimum_height
+    size_hint_min_x: self.minimum_width
+    spacing: '5dp'
+    FlatLabel:
+        size_hint: 1, None
+        height: self.texture_size[1]
+        size_hint_min_x: self.texture_size[0]
+        center_texture: False
+        padding: '5dp', '5dp'
+        text: root.name
+        flat_color: app.theme.text_primary
+        font_size: '13sp'
+    FlatTextInput:
+        size_hint: None, None
+        size: '50dp', self.minimum_height
+        font_size: '13sp'
+        multiline: False
+        write_tab: False
+        readonly: root.read_only
+        input_filter: 'float'
+        text: root.prop_value
+        on_focus: if not self.focus: root.set_obj_property(self.text)
+        canvas.after:
+            Color:
+                rgba: [1, 1, 1, .5] if self.readonly else [1, 1, 1, 0]
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
+
+<FormulaWidget>:
+    props_container_x: props_x
+    props_container_y: props_y
+    plots_container: plots
+    spacing: '5dp'
+    padding: '5dp',
+    size_hint: 1, None
+    height: self.minimum_height
+    canvas:
+        Color:
+            rgba: app.theme.divider
+        Line:
+            width: 1
+            points: [self.x, self.y, self.x + self.width, self.y, self.x + self.width, self.y + self.height, self.x, self.y + self.height, self.x, self.y]
+    BoxLayout:
+        orientation: 'vertical'
+        size_hint: None, None
+        size: self.minimum_size
+        spacing: '1dp'
+        FlatLabel:
+            size_hint: 1, None
+            height: self.texture_size[1]
+            text_size: self.parent.width, None
+            padding: '5dp', '5dp'
+            text: root.description
+            flat_color: app.theme.text_primary
+            font_size: '13sp'
+            halign: 'center'
+        BoxLayout:
+            id: props_x
+            orientation: 'vertical'
+            size_hint: 1, None
+            height: self.minimum_height
+            size_hint_min_x: self.minimum_width
+            spacing: '1dp'
+        BoxLayout:
+            size_hint_y: None
+            height: self.minimum_height
+            size_hint_min_x: self.minimum_width
+            FlatLabel:
+                size_hint: 1, None
+                height: self.texture_size[1]
+                size_hint_min_x: self.texture_size[0]
+                padding: '5dp', '5dp'
+                text: 'Output'
+                flat_color: app.theme.text_primary
+                font_size: '13sp'
+                halign: 'center'
+            FlatButton:
+                text: 'Add graph'
+                size_hint: None, None
+                size: self.texture_size
+                padding: '5dp', '5dp'
+                font_size: '13sp'
+                scale_down_color: True
+                flat_background_color: app.theme.accent
+                on_release: root.add_plot()
+        BoxLayout:
+            id: props_y
+            orientation: 'vertical'
+            size_hint: 1, None
+            height: self.minimum_height
+            size_hint_min_x: self.minimum_width
+            spacing: '1dp'
+    GridLayout:
+        id: plots
+        cols: 2
+        spacing: '5dp'
+        size_hint_min: self.minimum_size
+
+
+<PlotWidget>:
+    orientation: 'vertical'
+    size_hint_min_x: self.minimum_width
+    size_hint_min_y: max(self.minimum_height, self.graph_min_height)
+    FormulaGraph:
+        id: graph
+        on_parent: root.plot.graph = self.__self__
+        precision: '%.2f'
+        plot_widget: root.__self__
+
+        FlatLabel:
+            size_hint: None, None
+            size: self.texture_size
+            padding: '5dp', '5dp'
+            text: '{:0.2f}, {:0.2f}'.format(root.mouse_x_val, root.mouse_y_val)
+            flat_color: app.theme.text_primary
+            font_size: '13sp'
+            pos: self.parent.pos
+    GridLayout:
+        cols: 4
+        size_hint: None, None
+        size: self.minimum_size
+        FlatLabel:
+            size_hint: None, None
+            size: self.texture_size
+            padding: '5dp', '5dp'
+            text: 'X:'
+            flat_color: app.theme.text_primary
+            font_size: '13sp'
+        FlatSpinner:
+            values: sorted(v for v in root.plot.formula.x_variables if v not in root.formula_widget.hidden_variables) if root.plot else []
+            on_text: root.plot.x_variable = self.text
+            text_autoupdate: False
+            size_hint_min_x: self.minimum_width
+            font_size: '13sp'
+            flat_color: app.theme.text_primary
+            flat_menu_color: app.theme.accent
+            flat_drop_background_color: app.theme.primary_text
+            flat_drop_text_color: app.theme.text_primary
+            flat_border_color: app.theme.divider
+        BoxLayout:
+            size_hint: None, None
+            size: self.minimum_size
+            FlatLabel:
+                size_hint: None, None
+                size: self.texture_size
+                padding: '5dp', '5dp'
+                text: 'X-axis:'
+                flat_color: app.theme.text_primary
+                font_size: '13sp'
+            FlatTextInput:
+                size_hint: None, None
+                size: '50dp', self.minimum_height
+                font_size: '13sp'
+                multiline: False
+                write_tab: False
+                input_filter: 'float'
+                text: '{:0.2f}'.format(root.plot.start) if root.plot else '0'
+                on_focus: if not self.focus: root.plot.start = float(self.text)
+            FlatLabel:
+                size_hint: None, None
+                size: self.texture_size
+                padding: '5dp', '5dp'
+                text: '--'
+                flat_color: app.theme.text_primary
+                font_size: '13sp'
+            FlatTextInput:
+                size_hint: None, None
+                size: '50dp', self.minimum_height
+                font_size: '13sp'
+                multiline: False
+                write_tab: False
+                input_filter: 'float'
+                text: '{:0.2f}'.format(root.plot.end) if root.plot else '0'
+                on_focus: if not self.focus: root.plot.end = float(self.text) if self.text else '0.'
+        BoxLayout:
+            size_hint: None, None
+            size: self.minimum_size
+            spacing: '5dp'
+            FlatLabel:
+                size_hint: None, None
+                size: self.texture_size
+                padding: '5dp', '5dp'
+                text: 'Height'
+                flat_color: app.theme.text_primary
+                font_size: '13sp'
+            FlatTextInput:
+                size_hint: None, None
+                size: '50dp', self.minimum_height
+                font_size: '13sp'
+                multiline: False
+                write_tab: False
+                input_filter: 'int'
+                text: str(root.graph_min_height)
+                on_focus: if not self.focus: root.graph_min_height = int(self.text) if self.text else '200'
+        FlatLabel:
+            size_hint: None, None
+            size: self.texture_size
+            padding: '5dp', '5dp'
+            text: 'Y:'
+            flat_color: app.theme.text_primary
+            font_size: '13sp'
+        FlatSpinner:
+            values: sorted(v for v in root.plot.formula.y_variables if v not in root.formula_widget.hidden_variables) if root.plot else []
+            on_text: root.plot.y_variable = self.text
+            text_autoupdate: False
+            size_hint_min_x: self.minimum_width
+            font_size: '13sp'
+            flat_color: app.theme.text_primary
+            flat_menu_color: app.theme.accent
+            flat_drop_background_color: app.theme.primary_text
+            flat_drop_text_color: app.theme.text_primary
+            flat_border_color: app.theme.divider
+        BoxLayout:
+            size_hint: None, None
+            size: self.minimum_size
+            FlatLabel:
+                size_hint: None, None
+                size: self.texture_size
+                padding: '5dp', '5dp'
+                text: 'Y-axis:'
+                flat_color: app.theme.text_primary
+                font_size: '13sp'
+            FlatTextInput:
+                size_hint: None, None
+                size: '50dp', self.minimum_height
+                font_size: '13sp'
+                multiline: False
+                write_tab: False
+                input_filter: 'float'
+                text: '{:0.2f}'.format(root.plot.graph.ymin) if root.plot and root.plot.graph else '0'
+                on_focus: if not self.focus: root.plot.graph.ymin = float(self.text)
+            FlatLabel:
+                size_hint: None, None
+                size: self.texture_size
+                padding: '5dp', '5dp'
+                text: '--'
+                flat_color: app.theme.text_primary
+                font_size: '13sp'
+            FlatTextInput:
+                size_hint: None, None
+                size: '50dp', self.minimum_height
+                font_size: '13sp'
+                multiline: False
+                write_tab: False
+                input_filter: 'float'
+                text: '{:0.2f}'.format(root.plot.graph.ymax) if root.plot and root.plot.graph else '0'
+                on_focus: if not self.focus: root.plot.graph.ymax = float(self.text)
+        BoxLayout:
+            size_hint: None, None
+            size: self.minimum_size
+            spacing: '5dp'
+            FlatLabel:
+                size_hint: None, None
+                size: self.texture_size
+                padding: '5dp', '5dp'
+                text: 'N:'
+                flat_color: app.theme.text_primary
+                font_size: '13sp'
+            FlatTextInput:
+                size_hint: None, None
+                size: '50dp', self.minimum_height
+                font_size: '13sp'
+                multiline: False
+                write_tab: False
+                input_filter: 'int'
+                text: str(root.plot.num_points) if root.plot else '100'
+                on_focus: if not self.focus: root.plot.num_points = int(self.text) if self.text else '100'
+            FlatButton:
+                text: 'Delete'
+                size_hint: None, None
+                size: self.texture_size
+                padding: '5dp', '5dp'
+                font_size: '13sp'
+                scale_down_color: True
+                flat_background_color: app.theme.accent
+                on_release: root.formula_widget.remove_plot(root)
