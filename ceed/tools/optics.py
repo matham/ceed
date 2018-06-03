@@ -131,6 +131,8 @@ class FormulaPlot(EventDispatcher):
 
     _yvals = None
 
+    _y_range = None
+
     colors = itertools.cycle([
         rgb('7dac9f'), rgb('dc7062'), rgb('66a8d4'), rgb('e5b060')])
 
@@ -139,7 +141,7 @@ class FormulaPlot(EventDispatcher):
         self.fbind('start', self._update_from_params)
         self.fbind('end', self._update_from_params)
         self.fbind('x2_start', self._update_from_params)
-        self.fbind('X2_end', self._update_from_params)
+        self.fbind('x2_end', self._update_from_params)
         self.fbind('num_points', self._update_from_params)
         self.fbind('x_variable', self._update_from_params)
         self.fbind('x2_variable', self._update_from_params)
@@ -248,8 +250,13 @@ class FormulaPlot(EventDispatcher):
             graph.xmax = end
             graph.ymin = x2_start
             graph.ymax = x2_end
-            self.y_start = float(np.min(yvals))
-            self.y_end = float(np.max(yvals))
+
+            if self._y_range is None:
+                self.y_start, self.y_end = self._y_range = \
+                    float(np.min(yvals)), float(np.max(yvals))
+            else:
+                self._y_range = float(np.min(yvals)), float(np.max(yvals))
+
             graph.x_ticks_major = (end - start) / 10
             graph.y_ticks_major = (x2_end - x2_start) / 4
             graph.xlabel = self.formula.variable_descriptions.get(
@@ -259,26 +266,8 @@ class FormulaPlot(EventDispatcher):
 
             plot.xrange = (start, end)
             plot.yrange = (x2_start, x2_end)
-            plot.data = yvals.T
+            plot.data = np.clip(yvals.T, self.y_start, self.y_end)
             self._yvals = yvals
-
-            # import matplotlib.pyplot as plt
-            # from skimage import measure
-            #
-            # # Find contours at a constant value of 0.8
-            # contours = measure.find_contours(yvals, 0.8)
-            #
-            # # Display the image and plot all contours found
-            # fig, ax = plt.subplots()
-            # ax.imshow(yvals, interpolation='nearest', cmap=plt.cm.gray)
-            #
-            # for n, contour in enumerate(contours):
-            #     ax.plot(contour[:, 1], contour[:, 0], linewidth=2)
-            #
-            # ax.axis('image')
-            # ax.set_xticks([])
-            # ax.set_yticks([])
-            # plt.show()
         else:
             xvals = np.linspace(start, end, n)
             yfunc = getattr(formula, 'compute_{}'.format(self.y_variable))
@@ -295,8 +284,14 @@ class FormulaPlot(EventDispatcher):
 
             graph.xmin = start
             graph.xmax = end
-            self.y_start = float(ymin - ydiff)
-            self.y_end = float(ymax + ydiff)
+            if self._y_range is None:
+                self.y_start, self.y_end = self._y_range = \
+                    float(ymin - ydiff), float(ymax + ydiff)
+            else:
+                self._y_range = float(ymin - ydiff), float(ymax + ydiff)
+            graph.ymin = self.y_start
+            graph.ymax = self.y_end
+
             graph.x_ticks_major = (end - start) / 10
             graph.y_ticks_major = (graph.ymax - graph.ymin) / 4
             graph.xlabel = self.formula.variable_descriptions.get(
@@ -305,6 +300,12 @@ class FormulaPlot(EventDispatcher):
                 self.y_variable, self.y_variable)
 
             plot.points = list(zip(xvals, yvals))
+
+    def reset_y_axis(self):
+        if not self.graph or not self.plot or self._y_range is None:
+            return
+
+        self.y_start, self.y_end = self._y_range
 
 
 class CeedFormula(EventDispatcher):
@@ -532,6 +533,7 @@ class FormulaWidget(BoxLayout):
             src = '{}_src'.format(var)
             if hasattr(formula, src):
                 formula.fbind(src, update, display, src)
+                update(display, src)
 
         for var in sorted(formula.y_variables):
             if var in hidden_variables:
