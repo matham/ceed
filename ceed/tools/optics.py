@@ -40,7 +40,7 @@ class FormulaGraph(Graph):
         plot = plot_widget.plot
         if plot is None:
             return
-        pos = self.to_widget(*pos)
+        pos = self.to_widget(*pos, relative=True)
 
         if not self.collide_plot(*pos):
             return
@@ -64,7 +64,8 @@ class FormulaGraph(Graph):
                 plot_widget.mouse_y_val = float(plot._yvals[xi, yi])
 
     def on_touch_down(self, touch):
-        if not self.collide_plot(*touch.pos):
+        pos = self.to_local(*touch.pos, relative=True)
+        if not self.collide_plot(*pos):
             return super(FormulaGraph, self).on_touch_down(touch)
         if super(FormulaGraph, self).on_touch_down(touch):
             return True
@@ -72,7 +73,7 @@ class FormulaGraph(Graph):
         if not touch.is_double_tap:
             return False
 
-        x, y = self.to_data(*touch.pos)
+        x, y = self.to_data(*pos)
         plot = self.plot_widget.plot
         if plot is None:
             return False
