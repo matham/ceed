@@ -1,5 +1,5 @@
 from kivy.event import EventDispatcher
-from kivy.garden.graph import MeshLinePlot, Graph, LinePlot
+from kivy.garden.graph import MeshLinePlot, Graph, LinePlot, ContourPlot
 from kivy.properties import NumericProperty, ObjectProperty, DictProperty, \
     ReferenceListProperty, StringProperty, ListProperty, BooleanProperty
 from kivy.utils import get_color_from_hex as rgb
@@ -46,8 +46,22 @@ class FormulaGraph(Graph):
             return
 
         x, y = self.to_data(*pos)
-        plot_widget.mouse_x_val = x
-        plot_widget.mouse_y_val = y
+        x2var = plot.x2_variable
+
+        if not x2var:
+            plot_widget.mouse_x_val = x
+            plot_widget.mouse_y_val = y
+            plot_widget.mouse_x2_val = None
+        else:
+            plot_widget.mouse_x_val = x
+            plot_widget.mouse_x2_val = y
+            if plot._yvals is None:
+                plot_widget.mouse_y_val = 0
+            else:
+                n = plot.num_points
+                xi = max(min(int(n * (x - plot.start) / (plot.end - plot.start)), n - 1), 0)
+                yi = max(min(int(n * (y - plot.x2_start) / (plot.x2_end - plot.x2_start)), n - 1), 0)
+                plot_widget.mouse_y_val = float(plot._yvals[xi, yi])
 
     def on_touch_down(self, touch):
         if not self.collide_plot(*touch.pos):
@@ -65,9 +79,21 @@ class FormulaGraph(Graph):
 
         formula = plot.formula
         xvar = plot.x_variable
-        if getattr(formula, '{}_src'.format(xvar), False):
-            return False
-        setattr(formula, xvar, x)
+        x2var = plot.x2_variable
+
+        if not x2var:
+            if getattr(formula, '{}_src'.format(xvar), False):
+                return False
+            setattr(formula, xvar, x)
+        else:
+            if getattr(formula, '{}_src'.format(xvar), False) and \
+                    getattr(formula, '{}_src'.format(x2var), False):
+                return False
+
+            if not getattr(formula, '{}_src'.format(xvar), False):
+                setattr(formula, xvar, x)
+            if not getattr(formula, '{}_src'.format(x2var), False):
+                setattr(formula, x2var, y)
         return True
 
 
@@ -81,19 +107,29 @@ class FormulaPlot(EventDispatcher):
 
     end = NumericProperty(100)
 
-    num_points = NumericProperty(100)
+    x2_start = NumericProperty(0)
 
-    bounds = ReferenceListProperty(start, end)
+    x2_end = NumericProperty(100)
+
+    y_start = NumericProperty(0)
+
+    y_end = NumericProperty(100)
+
+    num_points = NumericProperty(100)
 
     formula = ObjectProperty(None, rebind=True)
 
     x_variable = StringProperty('')
+
+    x2_variable = StringProperty('')
 
     x_variable_formula = ObjectProperty(None)
 
     y_variable = StringProperty('')
 
     _last_values = {}
+
+    _yvals = None
 
     colors = itertools.cycle([
         rgb('7dac9f'), rgb('dc7062'), rgb('66a8d4'), rgb('e5b060')])
@@ -102,14 +138,43 @@ class FormulaPlot(EventDispatcher):
         super(FormulaPlot, self).__init__(**kwargs)
         self.fbind('start', self._update_from_params)
         self.fbind('end', self._update_from_params)
+        self.fbind('x2_start', self._update_from_params)
+        self.fbind('X2_end', self._update_from_params)
         self.fbind('num_points', self._update_from_params)
         self.fbind('x_variable', self._update_from_params)
+        self.fbind('x2_variable', self._update_from_params)
         self.fbind('y_variable', self._update_from_params)
+
+        self.fbind('y_start', self._update_y_vals)
+        self.fbind('y_end', self._update_y_vals)
 
     def _update_from_params(self, *largs):
         self.refresh_plot(from_variables=False)
 
+    def _update_y_vals(self, *largs):
+        graph = self.graph
+        if graph is None:
+            return
+
+        if self.x2_variable:
+            if not self.plot or self._yvals is None:
+                return
+            self.plot.data = np.clip(self._yvals.T, self.y_start, self.y_end)
+        else:
+            graph.ymin = self.y_start
+            graph.ymax = self.y_end
+
     def create_plot(self):
+        x2 = self.x2_variable
+        plot = self.plot
+        if plot is not None:
+            if (x2 and isinstance(plot, ContourPlot)
+                    or not x2 and isinstance(plot, LinePlot)):
+                return
+            self.graph.remove_plot(plot)
+
+        self._yvals = None
+        yvar = x2 or self.y_variable
         graph_theme = {
             'label_options': {
                 'color': rgb('444444'),
@@ -120,7 +185,7 @@ class FormulaPlot(EventDispatcher):
             'xlabel': self.formula.variable_descriptions.get(
                 self.x_variable, self.x_variable),
             'ylabel': self.formula.variable_descriptions.get(
-                self.y_variable, self.y_variable),
+                yvar, yvar),
             'x_ticks_minor': 5,
             #'y_ticks_minor': 5,
             'y_grid_label': True,
@@ -134,21 +199,23 @@ class FormulaPlot(EventDispatcher):
         for k, v in graph_theme.items():
             setattr(graph, k, v)
 
-        self.plot = plot = LinePlot(color=next(self.colors), line_width=2)
+        if x2:
+            self.plot = plot = ContourPlot(color=next(self.colors))
+        else:
+            self.plot = plot = LinePlot(color=next(self.colors), line_width=2)
         graph.add_plot(plot)
 
     def refresh_plot(self, from_variables=True):
         if self.graph is None or not self.x_variable or not self.y_variable:
             return
-
-        if not self.plot:
-            self.create_plot()
+        self.create_plot()
 
         formula = self.formula
         xvar = self.x_variable
+        x2var = self.x2_variable
         new_vals = {
             var: getattr(formula, var) for var in formula.x_variables
-            if var != xvar}
+            if var != xvar and var != x2var}
 
         if from_variables and new_vals == self._last_values:
             return
@@ -159,33 +226,85 @@ class FormulaPlot(EventDispatcher):
         n = self.num_points
         plot = self.plot
         graph = self.graph
+        self._yvals = None
 
-        xvals = np.linspace(start, end, n)
-        yfunc = getattr(formula, 'compute_{}'.format(self.y_variable))
-        yvals = yfunc(variables={self.x_variable: xvals})
-        if not isinstance(
-                yvals, (np.ndarray, np.generic)) or n > 1 and len(yvals) == 1:
-            yvals = np.zeros((n, )) + float(yvals)
+        if x2var:
+            x2_start = self.x2_start
+            x2_end = self.x2_end
 
-        ymin, ymax = np.min(yvals), np.max(yvals)
-        if math.isclose(ymin, ymax):
-            ydiff = abs(ymin) * 0.2
+            xvals = np.linspace(start, end, n)
+            xvals = np.repeat(np.expand_dims(xvals, 1), n, 1)
+
+            x2vals = np.linspace(x2_start, x2_end, n)
+            x2vals = np.repeat(np.expand_dims(x2vals, 1), n, 1).T
+
+            yfunc = getattr(formula, 'compute_{}'.format(self.y_variable))
+            yvals = yfunc(variables={xvar: xvals, x2var: x2vals})
+            if not isinstance(
+                    yvals, np.ndarray) or n > 1 and yvals.shape != (n, n):
+                yvals = np.zeros((n, n)) + float(yvals)
+
+            graph.xmin = start
+            graph.xmax = end
+            graph.ymin = x2_start
+            graph.ymax = x2_end
+            self.y_start = float(np.min(yvals))
+            self.y_end = float(np.max(yvals))
+            graph.x_ticks_major = (end - start) / 10
+            graph.y_ticks_major = (x2_end - x2_start) / 4
+            graph.xlabel = self.formula.variable_descriptions.get(
+                xvar, xvar)
+            graph.ylabel = self.formula.variable_descriptions.get(
+                x2var, x2var)
+
+            plot.xrange = (start, end)
+            plot.yrange = (x2_start, x2_end)
+            plot.data = yvals.T
+            self._yvals = yvals
+
+            # import matplotlib.pyplot as plt
+            # from skimage import measure
+            #
+            # # Find contours at a constant value of 0.8
+            # contours = measure.find_contours(yvals, 0.8)
+            #
+            # # Display the image and plot all contours found
+            # fig, ax = plt.subplots()
+            # ax.imshow(yvals, interpolation='nearest', cmap=plt.cm.gray)
+            #
+            # for n, contour in enumerate(contours):
+            #     ax.plot(contour[:, 1], contour[:, 0], linewidth=2)
+            #
+            # ax.axis('image')
+            # ax.set_xticks([])
+            # ax.set_yticks([])
+            # plt.show()
         else:
-            ydiff = (ymax - ymin) * .02
+            xvals = np.linspace(start, end, n)
+            yfunc = getattr(formula, 'compute_{}'.format(self.y_variable))
+            yvals = yfunc(variables={xvar: xvals})
+            if not isinstance(
+                    yvals, (np.ndarray, np.generic)) or n > 1 and len(yvals) == 1:
+                yvals = np.zeros((n, )) + float(yvals)
 
-        graph.xmin = start
-        graph.xmax = end
-        graph.ymin = float(ymin - ydiff)
-        graph.ymax = float(ymax + ydiff)
-        graph.x_ticks_major = (end - start) / 10
-        graph.y_ticks_major = (graph.ymax - graph.ymin) / 4
-        graph.xlabel = self.formula.variable_descriptions.get(
-            self.x_variable, self.x_variable)
-        graph.ylabel = self.formula.variable_descriptions.get(
-            self.y_variable, self.y_variable)
+            ymin, ymax = np.min(yvals), np.max(yvals)
+            if math.isclose(ymin, ymax):
+                ydiff = abs(ymin) * 0.2
+            else:
+                ydiff = (ymax - ymin) * .02
 
-        plot.points = list(zip(xvals, yvals))
-        graph._redraw_all()
+            graph.xmin = start
+            graph.xmax = end
+            self.y_start = float(ymin - ydiff)
+            self.y_end = float(ymax + ydiff)
+            graph.x_ticks_major = (end - start) / 10
+            graph.y_ticks_major = (graph.ymax - graph.ymin) / 4
+            graph.xlabel = self.formula.variable_descriptions.get(
+                xvar, xvar)
+            graph.ylabel = self.formula.variable_descriptions.get(
+                self.y_variable, self.y_variable)
+
+            plot.points = list(zip(xvals, yvals))
 
 
 class CeedFormula(EventDispatcher):
@@ -299,7 +418,7 @@ class LensFixedObjectFormula(CeedFormula):
     def compute_magnification(self, variables={}):
         lens_pos = variables.get('lens_pos', self.lens_pos)
         object_pos = variables.get('object_pos', self.object_pos)
-        image_pos = variables.get('image_pos', self.image_pos)
+        image_pos = variables.get('image_pos', self.compute_image_pos(variables))
         object_dist = lens_pos - object_pos
         image_dist = image_pos - lens_pos
 
@@ -392,7 +511,7 @@ class FormulaWidget(BoxLayout):
 
         def to_float(x):
             return float(x) if x else 0.
-        to_str = lambda x: '{:0.2f}'.format(x) if x else '0'
+        to_str = lambda x: '{:0.4f}'.format(x) if x else '0'
         descriptions = self.formula.variable_descriptions
 
         def update(widget, src_name, *largs):
@@ -497,6 +616,8 @@ class PlotWidget(BoxLayout):
 
     mouse_x_val = NumericProperty(0)
 
+    mouse_x2_val = NumericProperty(None, allownone=True)
+
     mouse_y_val = NumericProperty(0)
 
     graph_min_height = NumericProperty(200)
@@ -522,6 +643,8 @@ class OpticsApp(App):
 
     cam_lens_closer = ObjectProperty(None)
 
+    cam_lens_closer2 = ObjectProperty(None)
+
     def __init__(self, **kwargs):
         super(OpticsApp, self).__init__(**kwargs)
         self.focal_len_from_io_f = LensFocalLengthFormula()
@@ -530,14 +653,18 @@ class OpticsApp(App):
         self.objective_lens = LensFixedObjectFormula()
         self.cam_lens_further = LensFixedObjectFormula()
         self.cam_lens_closer = LensFixedObjectFormula()
+        self.cam_lens_closer2 = LensFixedObjectFormula()
 
         self.cam_lens_further.object_pos_src = self.objective_lens, 'image_pos'
         self.cam_lens_closer.object_pos_src = self.cam_lens_further, 'image_pos'
+        self.cam_lens_closer2.object_pos_src = self.cam_lens_closer, 'image_pos'
 
         self.cam_lens_further.base_magnification_src = (
             self.objective_lens, 'magnification')
         self.cam_lens_closer.base_magnification_src = (
             self.cam_lens_further, 'magnification')
+        self.cam_lens_closer2.base_magnification_src = (
+            self.cam_lens_closer, 'magnification')
 
     def build(self):
         root = Factory.FormulaRoot()
@@ -570,6 +697,12 @@ class OpticsApp(App):
         widget = FormulaWidget(
             formula=self.cam_lens_closer,
             description='(3/3) Compute cam lens final')
+        widget.populate_widget()
+        container.add_widget(widget)
+
+        widget = FormulaWidget(
+            formula=self.cam_lens_closer2,
+            description='(4/3) Compute cam lens final+1')
         widget.populate_widget()
         container.add_widget(widget)
 
