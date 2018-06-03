@@ -357,9 +357,9 @@ class CeedMCSDataMerger(object):
 
 
 if __name__ == '__main__':
-    ceed_file = r'/home/cpl/Desktop/experiment/data/test_align.h5'
-    mcs_file = r'/home/cpl/Desktop/experiment/data/2018-04-02T19-30-59McsRecording.h5'
-    output_file = r'/home/cpl/Desktop/experiment/data/test.h5'
+    ceed_file = r'/home/cpl/Desktop/test.h5'
+    mcs_file = r'/home/cpl/share/2018-04-13T11-43-20McsRecording.h5'
+    output_file = r'/home/cpl/Desktop/test_out.h5'
     data = CeedMCSDataMerger()
 
     alignment = {}
@@ -372,4 +372,4 @@ if __name__ == '__main__':
             print("Couldn't align {}".format(experiment))
         except Exception as e:
             print("{}: {}".format(e, experiment))
-    #data.merge_data(output_file, ceed_file, mcs_file, alignment)
+    data.merge_data(output_file, ceed_file, mcs_file, alignment)

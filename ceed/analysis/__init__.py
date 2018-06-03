@@ -569,3 +569,8 @@ if __name__ == '__main__':
         background=background
     )
     f.close_h5()
+
+    f = CeedDataReader(r'/home/cpl/Desktop/test_out.h5')
+    f.open_h5()
+    f.read_experiment(0)
+    f.save_flourescent_image(r'/home/cpl/Desktop/test_out.bmp')

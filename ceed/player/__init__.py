@@ -39,9 +39,9 @@ class CeedPlayerBase(object):
         if widget is not None and img is not None:
             widget.update_img(img[0])
             knspace.player.last_image = img[0]
-            if knspace.gui_save_cam_stage.state == 'down':
-                App.get_running_app().view_controller.send_background_image(
-                    img[0])
+            # if knspace.gui_save_cam_stage.state == 'down':
+            #     App.get_running_app().view_controller.send_background_image(
+            #         img[0])
             if knspace.gui_remote_view.state == 'down':
                 App.get_running_app().remote_viewer.send_image(img[0])
 
@@ -76,9 +76,9 @@ class CeedRemotePlayer(CeedPlayerBase):
         if widget is not None and img is not None:
             widget.update_img(img)
             knspace.player.last_image = img
-            if knspace.gui_save_cam_stage.state == 'down':
-                App.get_running_app().view_controller.send_background_image(
-                    img[0])
+            # if knspace.gui_save_cam_stage.state == 'down':
+            #     App.get_running_app().view_controller.send_background_image(
+            #         img[0])
 
 
 class CeedPlayer(KNSpaceBehavior, EventDispatcher):

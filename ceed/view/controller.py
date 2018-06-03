@@ -747,10 +747,10 @@ class ControllerSideViewControllerBase(ViewControllerBase):
             raise Exception("No window to run experiment")
 
         # if we need to save the florescent image, start video cam
-        if knspace.gui_save_cam_stage.state == 'down':
-            video_btn = knspace.gui_play
-            if video_btn.state == 'normal':
-                video_btn.trigger_action(0)
+        # if knspace.gui_save_cam_stage.state == 'down':
+        #     video_btn = knspace.gui_play
+        #     if video_btn.state == 'normal':
+        #         video_btn.trigger_action(0)
 
         App.get_running_app().dump_app_settings_to_file()
         App.get_running_app().load_app_settings_from_file()
@@ -785,6 +785,8 @@ class ControllerSideViewControllerBase(ViewControllerBase):
                 video_btn = knspace.gui_play
                 if video_btn.state == 'down':
                     video_btn.trigger_action(0)
+                if knspace.gui_remote_view.state == 'down':
+                    knspace.gui_remote_view.trigger_action(0)
 
             self.queue_view_read.put_nowait(('end_stage', None))
 
@@ -797,6 +799,8 @@ class ControllerSideViewControllerBase(ViewControllerBase):
             video_btn = knspace.gui_play
             if video_btn.state == 'down':
                 video_btn.trigger_action(0)
+            if knspace.gui_remote_view.state == 'down':
+                knspace.gui_remote_view.trigger_action(0)
             knspace.gui_save_cam_stage.state = 'normal'
 
             if state:
