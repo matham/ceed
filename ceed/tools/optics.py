@@ -126,6 +126,8 @@ class FormulaPlot(EventDispatcher):
 
     x_variable_formula = ObjectProperty(None)
 
+    x2_variable_formula = ObjectProperty(None)
+
     y_variable = StringProperty('')
 
     _last_values = {}
@@ -147,6 +149,9 @@ class FormulaPlot(EventDispatcher):
         self.fbind('x_variable', self._update_from_params)
         self.fbind('x2_variable', self._update_from_params)
         self.fbind('y_variable', self._update_from_params)
+        self.fbind('formula', self._update_from_params)
+        self.fbind('x_variable_formula', self._update_from_params)
+        self.fbind('x2_variable_formula', self._update_from_params)
 
         self.fbind('y_start', self._update_y_vals)
         self.fbind('y_end', self._update_y_vals)
@@ -185,8 +190,10 @@ class FormulaPlot(EventDispatcher):
             #'background_color': rgb('f8f8f2'),
             'tick_color': rgb('808080'),
             'border_color': rgb('808080'),
-            'xlabel': self.formula.variable_descriptions.get(
-                self.x_variable, self.x_variable),
+            'xlabel': '{} -- {}'.format(
+                self.x_variable_formula.widget.name,
+                self.formula.variable_descriptions.get(
+                    self.x_variable, self.x_variable)),
             'ylabel': self.formula.variable_descriptions.get(
                 yvar, yvar),
             'x_ticks_minor': 5,
@@ -241,11 +248,21 @@ class FormulaPlot(EventDispatcher):
             x2vals = np.linspace(x2_start, x2_end, n)
             x2vals = np.repeat(np.expand_dims(x2vals, 1), n, 1).T
 
-            yfunc = getattr(formula, 'compute_{}'.format(self.y_variable))
-            yvals = yfunc(variables={xvar: xvals, x2var: x2vals})
+            input_variables = [
+                (self.x_variable_formula, xvar),
+                (self.x2_variable_formula, x2var)]
+            variables = {input_variables[0]: xvals, input_variables[1]: x2vals}
+
+            yvals = formula.infer_variable_value(
+                self.y_variable, variables, in_subtree={},
+                input_variables=input_variables)
             if not isinstance(
                     yvals, np.ndarray) or n > 1 and yvals.shape != (n, n):
                 yvals = np.zeros((n, n)) + float(yvals)
+            else:
+                yvals[np.logical_or(np.logical_or(
+                    np.isnan(yvals), np.isinf(yvals)),
+                    np.isneginf(yvals))] = -1000
 
             graph.xmin = start
             graph.xmax = end
@@ -260,10 +277,12 @@ class FormulaPlot(EventDispatcher):
 
             graph.x_ticks_major = (end - start) / 10
             graph.y_ticks_major = (x2_end - x2_start) / 4
-            graph.xlabel = self.formula.variable_descriptions.get(
-                xvar, xvar)
-            graph.ylabel = self.formula.variable_descriptions.get(
-                x2var, x2var)
+            graph.xlabel = '{} -- {}'.format(
+                self.x_variable_formula.widget.name,
+                self.formula.variable_descriptions.get(xvar, xvar))
+            graph.ylabel = '{} -- {}'.format(
+                self.x2_variable_formula.widget.name,
+                self.formula.variable_descriptions.get(x2var, x2var))
 
             plot.xrange = (start, end)
             plot.yrange = (x2_start, x2_end)
@@ -271,11 +290,20 @@ class FormulaPlot(EventDispatcher):
             self._yvals = yvals
         else:
             xvals = np.linspace(start, end, n)
-            yfunc = getattr(formula, 'compute_{}'.format(self.y_variable))
-            yvals = yfunc(variables={xvar: xvals})
+
+            input_variables = [(self.x_variable_formula, xvar)]
+            variables = {input_variables[0]: xvals}
+            yvals = formula.infer_variable_value(
+                self.y_variable, variables, in_subtree={},
+                input_variables=input_variables)
+
             if not isinstance(
                     yvals, (np.ndarray, np.generic)) or n > 1 and len(yvals) == 1:
                 yvals = np.zeros((n, )) + float(yvals)
+            else:
+                yvals[np.logical_or(np.logical_or(
+                    np.isnan(yvals), np.isinf(yvals)),
+                    np.isneginf(yvals))] = -1000
 
             ymin, ymax = np.min(yvals), np.max(yvals)
             if math.isclose(ymin, ymax):
@@ -295,8 +323,9 @@ class FormulaPlot(EventDispatcher):
 
             graph.x_ticks_major = (end - start) / 10
             graph.y_ticks_major = (graph.ymax - graph.ymin) / 4
-            graph.xlabel = self.formula.variable_descriptions.get(
-                xvar, xvar)
+            graph.xlabel = '{} -- {}'.format(
+                self.x_variable_formula.widget.name,
+                self.formula.variable_descriptions.get(xvar, xvar))
             graph.ylabel = self.formula.variable_descriptions.get(
                 self.y_variable, self.y_variable)
 
@@ -317,7 +346,17 @@ class CeedFormula(EventDispatcher):
 
     plots = ListProperty([])
 
+    widget = ObjectProperty(None)
+
     variable_descriptions = DictProperty({})
+
+    dependency_graph = {}
+    '''Only y variables are listed here. '''
+
+    y_dependency_ordered = []
+    '''y variables ordered from leaf to dependant variables, such that
+    any variable is only dependant on other y variables that are listed
+    previously in `y_dependency_ordered`. '''
 
     def __init__(self, **kwargs):
         super(CeedFormula, self).__init__(**kwargs)
@@ -328,6 +367,31 @@ class CeedFormula(EventDispatcher):
             if not hasattr(self, var_src):
                 continue
             self.bind_variable_to_src(var, var_src)
+
+        yvars = self.y_variables
+        deps = self.dependency_graph
+        deps = {
+            var: [v for v in dep_vars if v in yvars and v in deps]
+            for var, dep_vars in deps.items() if var in yvars}
+        y_ordered = self.y_dependency_ordered = [
+            v for v in yvars if v not in deps]
+
+        while deps:
+            found = ''
+            for var, dep_vars in deps.items():
+                if not dep_vars:
+                    y_ordered.append(var)
+                    found = var
+                    break
+
+            if not found:
+                raise Exception(
+                    'Found y variables that depend on each other, so we cannot'
+                    ' compute their dependency structure')
+
+            deps = {
+                var: [v for v in dep_vars if v != found]
+                for var, dep_vars in deps.items() if var != found}
 
     def bind_variable_to_src(self, variable, variable_src):
         uid = [None, None, None]
@@ -354,7 +418,7 @@ class CeedFormula(EventDispatcher):
         watch_variable_src()
 
     def update_result(self, variable, *largs):
-        for var in self.y_variables:
+        for var in self.y_dependency_ordered:
             func = 'compute_{}'.format(var)
             setattr(self, var, getattr(self, func)())
 
@@ -365,12 +429,89 @@ class CeedFormula(EventDispatcher):
         src = '{}_src'.format(variable)
         return getattr(self, src, None)
 
-    def get_formula_dep_chains(self):
-        current_tree = deque()
-        paths = []
+    def variables_in_subtree(self, variable, in_subtree, input_variables):
+        '''We also check if the variable itself is a input variable. '''
+        key = (self, variable)
+        if key in in_subtree:
+            return in_subtree[key]
 
-        #for y_vae
-        pass
+        if key in input_variables:
+            in_subtree[key] = True
+            return True
+
+        if variable in self.x_variables:
+            var_src = self._get_src(variable)
+            if not var_src:
+                in_subtree[key] = False
+                return False
+
+            obj, prop = var_src
+            in_subtree[key] = obj.variables_in_subtree(
+                prop, in_subtree, input_variables)
+            return in_subtree[key]
+
+        assert variable in self.y_variables
+        in_subtree[key] = any(
+            self.variables_in_subtree(var, in_subtree, input_variables)
+            for var in self.dependency_graph.get(variable, []))
+        return in_subtree[key]
+
+    def infer_variable_value(
+            self, variable, variables, in_subtree, input_variables):
+        '''Variables accumulates the values of veriables.
+        in_subtree stores whether a variable contains any of the
+        input_vars in it's dependency tree.'''
+        key = (self, variable)
+        if key in variables:
+            return variables[key]
+
+        if not self.variables_in_subtree(variable, in_subtree, input_variables):
+            variables[key] = getattr(self, variable)
+            return variables[key]
+
+        if variable in self.x_variables:
+            assert key not in input_variables
+            formula, prop = self._get_src(variable)
+            variables[key] = formula.infer_variable_value(
+                prop, variables, in_subtree, input_variables)
+            return variables[key]
+
+        assert variable in self.y_variables
+        for var in self.dependency_graph.get(variable, []):
+            self.infer_variable_value(
+                var, variables, in_subtree, input_variables)
+        yfunc = getattr(self, 'compute_{}'.format(variable))
+        variables[key] = yfunc(variables)
+        return variables[key]
+
+    def get_variable_dep_leaves(self, variable):
+        deps_graph = self.dependency_graph
+        yvars = self.y_variables
+        xvars = self.x_variables
+        leaves = set()
+        dep_x_vars = set()
+
+        if variable in yvars:
+            deps_vars = deque(deps_graph.get(variable, []))
+
+            # go through all the deps of all yvars that depend on the variable
+            while deps_vars:
+                dep_var = deps_vars.popleft()
+                if dep_var in xvars:
+                    dep_x_vars.add(dep_var)
+                else:
+                    deps_vars.extend(deps_graph.get(dep_var, []))
+        else:
+            dep_x_vars.add(variable)
+
+        for var in dep_x_vars:
+            src = self._get_src(var)
+            if not src:
+                leaves.add((self, var))
+            else:
+                formula, prop = src
+                leaves.update(formula.get_variable_dep_leaves(prop))
+        return leaves
 
 
 class LensFixedObjectFormula(CeedFormula):
@@ -399,36 +540,34 @@ class LensFixedObjectFormula(CeedFormula):
         self.x_variables.extend(
             ['focal_length', 'object_pos', 'lens_pos', 'base_magnification'])
         self.y_variables.extend(['image_pos', 'magnification'])
+        self.dependency_graph = {
+            'image_pos': ['lens_pos', 'object_pos', 'focal_length'],
+            'magnification': ['lens_pos', 'object_pos', 'image_pos']
+        }
         super(LensFixedObjectFormula, self).__init__(**kwargs)
 
     def compute_image_pos(self, variables={}):
-        lens_pos = variables.get('lens_pos', self.lens_pos)
-        object_pos = variables.get('object_pos', self.object_pos)
-        focal_length = variables.get('focal_length', self.focal_length)
+        lens_pos = variables.get((self, 'lens_pos'), self.lens_pos)
+        object_pos = variables.get((self, 'object_pos'), self.object_pos)
+        focal_length = variables.get((self, 'focal_length'), self.focal_length)
         object_dist = lens_pos - object_pos
 
         try:
             res = object_dist * focal_length / (
                     object_dist - focal_length) + lens_pos
-            if isinstance(res, (np.ndarray, np.generic)):
-                res[np.logical_or(np.logical_or(
-                    np.isnan(res), np.isinf(res)), np.isneginf(res))] = -1000
         except ZeroDivisionError:
             res = -1000
         return res
 
     def compute_magnification(self, variables={}):
-        lens_pos = variables.get('lens_pos', self.lens_pos)
-        object_pos = variables.get('object_pos', self.object_pos)
-        image_pos = variables.get('image_pos', self.compute_image_pos(variables))
+        lens_pos = variables.get((self, 'lens_pos'), self.lens_pos)
+        object_pos = variables.get((self, 'object_pos'), self.object_pos)
+        image_pos = variables.get((self, 'image_pos'), self.image_pos)
         object_dist = lens_pos - object_pos
         image_dist = image_pos - lens_pos
 
         try:
             res = -image_dist / object_dist * self.base_magnification
-            if isinstance(res, (np.ndarray, np.generic)):
-                res[np.logical_or(np.logical_or(
-                    np.isnan(res), np.isinf(res)), np.isneginf(res))] = -1000
         except ZeroDivisionError:
             res = -1000
         return res
@@ -457,35 +596,33 @@ class LensFocalLengthFormula(CeedFormula):
     def __init__(self, **kwargs):
         self.x_variables.extend(['image_pos', 'object_pos', 'lens_pos'])
         self.y_variables.extend(['focal_length', 'magnification'])
+        self.dependency_graph = {
+            'focal_length': ['lens_pos', 'object_pos', 'image_pos'],
+            'magnification': ['lens_pos', 'object_pos', 'image_pos']
+        }
         super(LensFocalLengthFormula, self).__init__(**kwargs)
 
     def compute_focal_length(self, variables={}):
-        lens_pos = variables.get('lens_pos', self.lens_pos)
-        object_pos = variables.get('object_pos', self.object_pos)
-        image_pos = variables.get('image_pos', self.image_pos)
+        lens_pos = variables.get((self, 'lens_pos'), self.lens_pos)
+        object_pos = variables.get((self, 'object_pos'), self.object_pos)
+        image_pos = variables.get((self, 'image_pos'), self.image_pos)
         object_dist = lens_pos - object_pos
         image_dist = image_pos - lens_pos
 
         try:
             res = 1 / (1 / image_dist + 1 / object_dist)
-            if isinstance(res, (np.ndarray, np.generic)):
-                res[np.logical_or(np.logical_or(
-                    np.isnan(res), np.isinf(res)), np.isneginf(res))] = -1000
         except ZeroDivisionError:
             res = -1000
         return res
 
     def compute_magnification(self, variables={}):
-        lens_pos = variables.get('lens_pos', self.lens_pos)
-        object_pos = variables.get('object_pos', self.object_pos)
-        image_pos = variables.get('image_pos', self.image_pos)
+        lens_pos = variables.get((self, 'lens_pos'), self.lens_pos)
+        object_pos = variables.get((self, 'object_pos'), self.object_pos)
+        image_pos = variables.get((self, 'image_pos'), self.image_pos)
         object_dist = lens_pos - object_pos
         image_dist = image_pos - lens_pos
         try:
             res = -image_dist / object_dist
-            if isinstance(res, (np.ndarray, np.generic)):
-                res[np.logical_or(np.logical_or(
-                    np.isnan(res), np.isinf(res)), np.isneginf(res))] = -1000
         except ZeroDivisionError:
             res = -1000
         return res
@@ -502,6 +639,8 @@ class FormulaWidget(BoxLayout):
     plots_container = ObjectProperty(None)
 
     description = StringProperty('')
+
+    name = StringProperty('')
 
     hidden_variables = ObjectProperty(set(['base_magnification', ]))
 
@@ -555,6 +694,7 @@ class FormulaWidget(BoxLayout):
         widget = PlotWidget(plot=plot, formula_widget=self)
         self.plots_container.add_widget(widget)
         plot.refresh_plot(from_variables=False)
+        widget.populate_x_variables()
 
     def remove_plot(self, plot_widget):
         self.formula.plots.remove(plot_widget.plot)
@@ -625,6 +765,31 @@ class PlotWidget(BoxLayout):
 
     graph_min_height = NumericProperty(200)
 
+    _names_to_x_variables = DictProperty({})
+
+    def select_x_variable(self, x_prop, variable_name):
+        formula_prop = '{}_variable_formula'.format(x_prop)
+        variable_prop = '{}_variable'.format(x_prop)
+
+        if not variable_name:
+            setattr(self.plot, formula_prop, self.plot.formula)
+            setattr(self.plot, variable_prop, '')
+        else:
+            formula, var = self._names_to_x_variables[variable_name]
+            setattr(self.plot, formula_prop, formula)
+            setattr(self.plot, variable_prop, var)
+
+    def populate_x_variables(self):
+        formula = self.formula_widget.formula
+        deps = set()
+        for var in formula.y_variables:
+            deps.update(formula.get_variable_dep_leaves(var))
+
+        self._names_to_x_variables = {
+            '{}: {}'.format(f.widget.name, var): (f, var) for (f, var) in deps
+            if var not in f.widget.hidden_variables
+        }
+
 
 Factory.register('PropertyDisplayBinding', cls=PropertyDisplayBinding)
 Factory.register('FormulaVariableBehavior', cls=FormulaVariableBehavior)
@@ -673,39 +838,45 @@ class OpticsApp(App):
         root = Factory.FormulaRoot()
         container = self.formula_container_widget = root.children[0].children[0]
 
-        widget = FormulaWidget(
+        self.focal_len_from_io_f.widget = widget = FormulaWidget(
             formula=self.focal_len_from_io_f,
-            description='Compute f from object/image distance')
+            description='Compute f from object/image distance',
+            name='Lf')
         widget.populate_widget()
         container.add_widget(widget)
 
-        widget = FormulaWidget(
+        self.image_from_f.widget = widget = FormulaWidget(
             formula=self.image_from_f,
-            description='Compute image from fixed f/object distance')
+            description='Compute image from fixed f/object distance',
+            name='Li')
         widget.populate_widget()
         container.add_widget(widget)
 
-        widget = FormulaWidget(
+        self.objective_lens.widget = widget = FormulaWidget(
             formula=self.objective_lens,
-            description='(1/3) Compute objective from slice')
+            description='(1/3) Compute objective from slice',
+            name='L1')
         widget.populate_widget()
         container.add_widget(widget)
 
-        widget = FormulaWidget(
+        self.cam_lens_further.widget = widget = FormulaWidget(
             formula=self.cam_lens_further,
-            description='(2/3) Compute cam lens 1 after objective')
+            description='(2/3) Compute cam lens 1 after objective',
+            name='L2')
         widget.populate_widget()
         container.add_widget(widget)
 
-        widget = FormulaWidget(
+        self.cam_lens_closer.widget = widget = FormulaWidget(
             formula=self.cam_lens_closer,
-            description='(3/3) Compute cam lens final')
+            description='(3/3) Compute cam lens final',
+            name='L3')
         widget.populate_widget()
         container.add_widget(widget)
 
-        widget = FormulaWidget(
+        self.cam_lens_closer2.widget = widget = FormulaWidget(
             formula=self.cam_lens_closer2,
-            description='(4/3) Compute cam lens final+1')
+            description='(4/3) Compute cam lens final+1',
+            name='L4')
         widget.populate_widget()
         container.add_widget(widget)
 

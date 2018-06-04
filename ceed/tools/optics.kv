@@ -71,7 +71,7 @@
             height: self.texture_size[1]
             text_size: self.parent.width, None
             padding: '5dp', '5dp'
-            text: root.description
+            text: '{} -- {}'.format(root.name, root.description)
             flat_color: app.theme.text_primary
             font_size: '13sp'
             halign: 'center'
@@ -149,8 +149,8 @@
             font_size: '13sp'
         FlatSpinner:
             id: x_selector
-            values: sorted(v for v in root.plot.formula.x_variables if v not in root.formula_widget.hidden_variables and v != x2_selector.text) if root.plot else []
-            on_text: root.plot.x_variable = self.text
+            values: sorted([v for v in root._names_to_x_variables if v != x2_selector.text])
+            on_text: root.select_x_variable('x', self.text)
             text_autoupdate: False
             size_hint_min_x: self.minimum_width
             font_size: '13sp'
@@ -220,8 +220,8 @@
             font_size: '13sp'
         FlatSpinner:
             id: x2_selector
-            values: sorted(v for v in (root.plot.formula.x_variables + ['<>']) if v not in root.formula_widget.hidden_variables and v != x_selector.text) if root.plot else []
-            on_text: root.plot.x2_variable = '' if self.text == '<>' else self.text
+            values: [' '] + sorted([v for v in root._names_to_x_variables if v != x_selector.text])
+            on_text: root.select_x_variable('x2', '' if self.text == ' ' else self.text)
             text_autoupdate: False
             size_hint_min_x: self.minimum_width
             font_size: '13sp'
