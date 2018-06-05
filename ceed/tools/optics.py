@@ -542,7 +542,8 @@ class LensFixedObjectFormula(CeedFormula):
         self.y_variables.extend(['image_pos', 'magnification'])
         self.dependency_graph = {
             'image_pos': ['lens_pos', 'object_pos', 'focal_length'],
-            'magnification': ['lens_pos', 'object_pos', 'image_pos']
+            'magnification': ['lens_pos', 'object_pos', 'image_pos',
+                              'base_magnification']
         }
         super(LensFixedObjectFormula, self).__init__(**kwargs)
 
@@ -563,11 +564,12 @@ class LensFixedObjectFormula(CeedFormula):
         lens_pos = variables.get((self, 'lens_pos'), self.lens_pos)
         object_pos = variables.get((self, 'object_pos'), self.object_pos)
         image_pos = variables.get((self, 'image_pos'), self.image_pos)
+        base_mag = variables.get((self, 'image_pos'), self.base_magnification)
         object_dist = lens_pos - object_pos
         image_dist = image_pos - lens_pos
 
         try:
-            res = -image_dist / object_dist * self.base_magnification
+            res = -image_dist / object_dist * base_mag
         except ZeroDivisionError:
             res = -1000
         return res
