@@ -534,15 +534,18 @@ class LensFixedObjectFormula(CeedFormula):
 
     image_pos = NumericProperty(0)
 
+    img_lens_pos = NumericProperty(0)
+
     magnification = NumericProperty(0)
 
     def __init__(self, **kwargs):
         self.x_variables.extend(
             ['focal_length', 'object_pos', 'lens_pos', 'base_magnification'])
-        self.y_variables.extend(['image_pos', 'magnification'])
+        self.y_variables.extend(['image_pos', 'magnification', 'img_lens_pos'])
         self.dependency_graph = {
             'image_pos': ['lens_pos', 'object_pos', 'focal_length'],
-            'magnification': ['lens_pos', 'object_pos', 'image_pos']
+            'magnification': ['lens_pos', 'object_pos', 'image_pos'],
+            'img_lens_pos': ['image_pos', 'lens_pos']
         }
         super(LensFixedObjectFormula, self).__init__(**kwargs)
 
@@ -571,6 +574,11 @@ class LensFixedObjectFormula(CeedFormula):
         except ZeroDivisionError:
             res = -1000
         return res
+
+    def compute_img_lens_pos(self, variables={}):
+        image_pos = variables.get((self, 'image_pos'), self.image_pos)
+        lens_pos = variables.get((self, 'lens_pos'), self.lens_pos)
+        return image_pos - lens_pos
 
 
 class LensFocalLengthFormula(CeedFormula):
