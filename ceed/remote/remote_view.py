@@ -3,7 +3,7 @@ import socket
 import sys
 import struct
 from itertools import accumulate
-from ffpyplayer.pic import Image
+from ffpyplayer.pic import Image, SWScale
 from kivy.event import EventDispatcher
 from kivy.properties import StringProperty, NumericProperty, BooleanProperty
 from kivy.clock import Clock
@@ -69,7 +69,7 @@ class RemoteViewerListenerBase(EventDispatcher):
         data = msg_buff[:n].decode('utf8')
         msg, value = yaml_loads(data)
 
-        if msg == 'image':
+        if msg == 'image' or msg == 'remote_image':
             bin_data = msg_buff[n:]
             planes_sizes, pix_fmt, size, linesize = value
             starts = list(accumulate([0] + list(planes_sizes[:-1])))
@@ -207,9 +207,11 @@ class RemoteViewerListenerBase(EventDispatcher):
                 elif msg == 'remote_image':
                     remote_player = App.get_running_app().remote_player
                     plane_buffers, pix_fmt, size, linesize = value
-                    remote_player.last_image = Image(
+                    sws = SWScale(*size, pix_fmt, ofmt=pix_fmt)
+                    img = Image(
                         plane_buffers=plane_buffers, pix_fmt=pix_fmt,
                         size=size, linesize=linesize)
+                    remote_player.last_image = sws.scale(img, flip=True)
                     remote_player.display_trigger()
                 else:
                     print('got', msg, value)

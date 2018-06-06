@@ -620,27 +620,27 @@ class ViewSideViewControllerBase(ViewControllerBase):
                 elif msg == 'image':
                     plane_buffers, pix_fmt, size, linesize = value
 
-                    img = Image(
-                        plane_buffers=plane_buffers, pix_fmt=pix_fmt,
-                        size=size, linesize=linesize)
-                    sws = SWScale(*size, pix_fmt, ofmt='gray', ow=size[0], oh=size[1])
-                    img = sws.scale(img)
-
-                    if self.filter_background:
-                        buffer = np.array(img.to_bytearray()[0], dtype=np.uint8).reshape((size[1], size[0]))
-                        blur = cv2.GaussianBlur(buffer, (5, 5), 0)
-                        binarized = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
-                        data = cv2.Canny(binarized, 100, 200).reshape((size[1] * size[0], ))
-                    else:
-                        data = np.array(img.to_bytearray()[0], dtype=np.uint8)
-
-                    rgba = np.zeros((size[1] * size[0], 4), dtype=np.uint8)
-                    rgba[:, 3] = rgba[:, 0] = data
-                    img = Image(
-                        plane_buffers=[rgba.tobytes(), 0, 0, 0], pix_fmt='rgba',
-                        size=size)
-
-                    App.get_running_app().get_background_widget().update_img(img)
+                    # img = Image(
+                    #     plane_buffers=plane_buffers, pix_fmt=pix_fmt,
+                    #     size=size, linesize=linesize)
+                    # sws = SWScale(*size, pix_fmt, ofmt='gray', ow=size[0], oh=size[1])
+                    # img = sws.scale(img)
+                    #
+                    # if self.filter_background:
+                    #     buffer = np.array(img.to_bytearray()[0], dtype=np.uint8).reshape((size[1], size[0]))
+                    #     blur = cv2.GaussianBlur(buffer, (5, 5), 0)
+                    #     binarized = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
+                    #     data = cv2.Canny(binarized, 100, 200).reshape((size[1] * size[0], ))
+                    # else:
+                    #     data = np.array(img.to_bytearray()[0], dtype=np.uint8)
+                    #
+                    # rgba = np.zeros((size[1] * size[0], 4), dtype=np.uint8)
+                    # rgba[:, 3] = rgba[:, 0] = data
+                    # img = Image(
+                    #     plane_buffers=[rgba.tobytes(), 0, 0, 0], pix_fmt='rgba',
+                    #     size=size)
+                    #
+                    # App.get_running_app().get_background_widget().update_img(img)
                 elif msg == 'get_pixels_register':
                     pixels, size = App.get_running_app().get_root_pixels()
                     write.put_nowait(('get_pixels_register', (pixels, tuple(size))))
@@ -747,10 +747,10 @@ class ControllerSideViewControllerBase(ViewControllerBase):
             raise Exception("No window to run experiment")
 
         # if we need to save the florescent image, start video cam
-        if knspace.gui_save_cam_stage.state == 'down':
-            video_btn = knspace.gui_play
-            if video_btn.state == 'normal':
-                video_btn.trigger_action(0)
+        # if knspace.gui_save_cam_stage.state == 'down':
+        #     video_btn = knspace.gui_play
+        #     if video_btn.state == 'normal':
+        #         video_btn.trigger_action(0)
 
         App.get_running_app().dump_app_settings_to_file()
         App.get_running_app().load_app_settings_from_file()
@@ -785,6 +785,8 @@ class ControllerSideViewControllerBase(ViewControllerBase):
                 video_btn = knspace.gui_play
                 if video_btn.state == 'down':
                     video_btn.trigger_action(0)
+                if knspace.gui_remote_view.state == 'down':
+                    knspace.gui_remote_view.trigger_action(0)
 
             self.queue_view_read.put_nowait(('end_stage', None))
 
@@ -797,6 +799,8 @@ class ControllerSideViewControllerBase(ViewControllerBase):
             video_btn = knspace.gui_play
             if video_btn.state == 'down':
                 video_btn.trigger_action(0)
+            if knspace.gui_remote_view.state == 'down':
+                knspace.gui_remote_view.trigger_action(0)
             knspace.gui_save_cam_stage.state = 'normal'
 
             if state:
@@ -907,7 +911,8 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         elif key == 'c' and self.stage_active:
             self.request_stage_end()
         elif key == 's':
-            self.request_stage_start(self.selected_stage_name)
+            if not self.stage_active:
+                self.request_stage_start(self.selected_stage_name)
         elif key == 'f':
             self.request_fullscreen(not self.fullscreen)
         elif key == 'r':
