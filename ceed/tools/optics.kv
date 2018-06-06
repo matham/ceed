@@ -295,7 +295,7 @@
             size_hint: None, None
             size: self.texture_size
             padding: '5dp', '5dp'
-            text: 'Z:' if x2_selector.text else 'Y:'
+            text: 'Z:' if x2_selector.text and x2_selector.text != ' ' else 'Y:'
             flat_color: app.theme.text_primary
             font_size: '13sp'
         FlatSpinner:

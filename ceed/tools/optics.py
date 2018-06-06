@@ -20,6 +20,7 @@ import sys
 import numpy as np
 from os.path import dirname, join, isdir
 from collections import deque
+from skimage import measure
 
 resource_add_path(join(dirname(cplcom.app.__file__), 'media'))
 resource_add_path(join(dirname(cplcom.app.__file__), 'media', 'flat'))
@@ -136,6 +137,8 @@ class FormulaPlot(EventDispatcher):
 
     _y_range = None
 
+    _contour_plots = []
+
     colors = itertools.cycle([
         rgb('7dac9f'), rgb('dc7062'), rgb('66a8d4'), rgb('e5b060')])
 
@@ -168,9 +171,38 @@ class FormulaPlot(EventDispatcher):
             if not self.plot or self._yvals is None:
                 return
             self.plot.data = np.clip(self._yvals.T, self.y_start, self.y_end)
+            self.compute_contours()
         else:
             graph.ymin = self.y_start
             graph.ymax = self.y_end
+            graph.y_ticks_major = abs(graph.ymax - graph.ymin) / 4
+
+    def compute_contours(self):
+        graph = self.graph
+        if graph is None or not self.x2_variable:
+            return
+
+        for plot in self._contour_plots:
+            self.graph.remove_plot(plot)
+
+        plots = self._contour_plots = []
+        data = np.clip(self._yvals, self.y_start, self.y_end)
+        xscale = (self.end - self.start) / self.num_points
+        x2scale = (self.x2_end - self.x2_start) / self.num_points
+        color = next(self.colors)
+
+        for val in np.linspace(self.y_start, self.y_end, 5):
+            contours = measure.find_contours(data, val)
+            for contour in contours:
+                contour[:, 0] *= xscale
+                contour[:, 0] += self.start
+                contour[:, 1] *= x2scale
+                contour[:, 1] += self.x2_start
+
+                plot = MeshLinePlot(color=color)
+                plots.append(plot)
+                graph.add_plot(plot)
+                plot.points = contour
 
     def create_plot(self):
         x2 = self.x2_variable
@@ -180,6 +212,10 @@ class FormulaPlot(EventDispatcher):
                     or not x2 and isinstance(plot, LinePlot)):
                 return
             self.graph.remove_plot(plot)
+
+        for plot in self._contour_plots:
+            self.graph.remove_plot(plot)
+            self._contour_plots = []
 
         self._yvals = None
         yvar = x2 or self.y_variable
@@ -223,13 +259,13 @@ class FormulaPlot(EventDispatcher):
         formula = self.formula
         xvar = self.x_variable
         x2var = self.x2_variable
-        new_vals = {
-            var: getattr(formula, var) for var in formula.x_variables
-            if var != xvar and var != x2var}
+        # new_vals = {
+        #     var: getattr(formula, var) for var in formula.x_variables
+        #     if var != xvar and var != x2var}
 
-        if from_variables and new_vals == self._last_values:
-            return
-        self._last_values = new_vals
+        # if from_variables and new_vals == self._last_values:
+        #     return
+        # self._last_values = new_vals
 
         start = self.start
         end = self.end
@@ -275,8 +311,8 @@ class FormulaPlot(EventDispatcher):
             else:
                 self._y_range = float(np.min(yvals)), float(np.max(yvals))
 
-            graph.x_ticks_major = (end - start) / 10
-            graph.y_ticks_major = (x2_end - x2_start) / 4
+            graph.x_ticks_major = 0
+            graph.y_ticks_major = 0
             graph.xlabel = '{} -- {}'.format(
                 self.x_variable_formula.widget.name,
                 self.formula.variable_descriptions.get(xvar, xvar))
@@ -288,6 +324,8 @@ class FormulaPlot(EventDispatcher):
             plot.yrange = (x2_start, x2_end)
             plot.data = np.clip(yvals.T, self.y_start, self.y_end)
             self._yvals = yvals
+
+            self.compute_contours()
         else:
             xvals = np.linspace(start, end, n)
 
@@ -321,8 +359,8 @@ class FormulaPlot(EventDispatcher):
             graph.ymin = self.y_start
             graph.ymax = self.y_end
 
-            graph.x_ticks_major = (end - start) / 10
-            graph.y_ticks_major = (graph.ymax - graph.ymin) / 4
+            graph.x_ticks_major = abs(end - start) / 10
+            graph.y_ticks_major = abs(graph.ymax - graph.ymin) / 4
             graph.xlabel = '{} -- {}'.format(
                 self.x_variable_formula.widget.name,
                 self.formula.variable_descriptions.get(xvar, xvar))
@@ -463,10 +501,12 @@ class CeedFormula(EventDispatcher):
         input_vars in it's dependency tree.'''
         key = (self, variable)
         if key in variables:
+            # print('cached', id(self), variable, np.mean(variables[key]))
             return variables[key]
 
         if not self.variables_in_subtree(variable, in_subtree, input_variables):
             variables[key] = getattr(self, variable)
+            # print('const', id(self), variable, np.mean(variables[key]))
             return variables[key]
 
         if variable in self.x_variables:
@@ -474,6 +514,7 @@ class CeedFormula(EventDispatcher):
             formula, prop = self._get_src(variable)
             variables[key] = formula.infer_variable_value(
                 prop, variables, in_subtree, input_variables)
+            # print('x_var', id(self), variable, np.mean(variables[key]))
             return variables[key]
 
         assert variable in self.y_variables
@@ -482,6 +523,7 @@ class CeedFormula(EventDispatcher):
                 var, variables, in_subtree, input_variables)
         yfunc = getattr(self, 'compute_{}'.format(variable))
         variables[key] = yfunc(variables)
+        # print('y_var', id(self), variable, np.mean(variables[key]))
         return variables[key]
 
     def get_variable_dep_leaves(self, variable):
@@ -567,7 +609,8 @@ class LensFixedObjectFormula(CeedFormula):
         lens_pos = variables.get((self, 'lens_pos'), self.lens_pos)
         object_pos = variables.get((self, 'object_pos'), self.object_pos)
         image_pos = variables.get((self, 'image_pos'), self.image_pos)
-        base_mag = variables.get((self, 'image_pos'), self.base_magnification)
+        base_mag = variables.get(
+            (self, 'base_magnification'), self.base_magnification)
         object_dist = lens_pos - object_pos
         image_dist = image_pos - lens_pos
 
