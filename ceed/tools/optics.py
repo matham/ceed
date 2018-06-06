@@ -1,5 +1,6 @@
 from kivy.event import EventDispatcher
-from kivy.garden.graph import MeshLinePlot, Graph, LinePlot, ContourPlot
+from kivy.garden.graph import MeshLinePlot, Graph, LinePlot, ContourPlot, \
+    PointsPlot
 from kivy.properties import NumericProperty, ObjectProperty, DictProperty, \
     ReferenceListProperty, StringProperty, ListProperty, BooleanProperty
 from kivy.utils import get_color_from_hex as rgb
@@ -131,6 +132,10 @@ class FormulaPlot(EventDispatcher):
 
     y_variable = StringProperty('')
 
+    num_contours = NumericProperty(5)
+
+    track_ylim = BooleanProperty(False)
+
     _last_values = {}
 
     _yvals = None
@@ -138,6 +143,8 @@ class FormulaPlot(EventDispatcher):
     _y_range = None
 
     _contour_plots = []
+
+    _value_plot = None
 
     colors = itertools.cycle([
         rgb('7dac9f'), rgb('dc7062'), rgb('66a8d4'), rgb('e5b060')])
@@ -158,6 +165,7 @@ class FormulaPlot(EventDispatcher):
 
         self.fbind('y_start', self._update_y_vals)
         self.fbind('y_end', self._update_y_vals)
+        self.fbind('num_contours', self._update_y_vals)
 
     def _update_from_params(self, *largs):
         self.refresh_plot(from_variables=False)
@@ -191,7 +199,7 @@ class FormulaPlot(EventDispatcher):
         x2scale = (self.x2_end - self.x2_start) / self.num_points
         color = next(self.colors)
 
-        for val in np.linspace(self.y_start, self.y_end, 5):
+        for val in np.linspace(self.y_start, self.y_end, self.num_contours):
             contours = measure.find_contours(data, val)
             for contour in contours:
                 contour[:, 0] *= xscale
@@ -251,6 +259,9 @@ class FormulaPlot(EventDispatcher):
             self.plot = plot = LinePlot(color=next(self.colors), line_width=2)
         graph.add_plot(plot)
 
+        self._value_plot = PointsPlot(color=next(self.colors), point_size=3)
+        graph.add_plot(self._value_plot)
+
     def refresh_plot(self, from_variables=True):
         if self.graph is None or not self.x_variable or not self.y_variable:
             return
@@ -305,14 +316,14 @@ class FormulaPlot(EventDispatcher):
             graph.ymin = x2_start
             graph.ymax = x2_end
 
-            if self._y_range is None:
+            if self._y_range is None or self.track_ylim:
                 self.y_start, self.y_end = self._y_range = \
                     float(np.min(yvals)), float(np.max(yvals))
             else:
                 self._y_range = float(np.min(yvals)), float(np.max(yvals))
 
-            graph.x_ticks_major = 0
-            graph.y_ticks_major = 0
+            graph.x_ticks_major = (end - start) / 10
+            graph.y_ticks_major = (x2_end - x2_start) / 10
             graph.xlabel = '{} -- {}'.format(
                 self.x_variable_formula.widget.name,
                 self.formula.variable_descriptions.get(xvar, xvar))
@@ -326,6 +337,9 @@ class FormulaPlot(EventDispatcher):
             self._yvals = yvals
 
             self.compute_contours()
+            self._value_plot.points = [(
+                getattr(self.x_variable_formula, xvar),
+                getattr(self.x2_variable_formula, x2var))]
         else:
             xvals = np.linspace(start, end, n)
 
@@ -351,7 +365,7 @@ class FormulaPlot(EventDispatcher):
 
             graph.xmin = start
             graph.xmax = end
-            if self._y_range is None:
+            if self._y_range is None or self.track_ylim:
                 self.y_start, self.y_end = self._y_range = \
                     float(ymin - ydiff), float(ymax + ydiff)
             else:
@@ -368,6 +382,9 @@ class FormulaPlot(EventDispatcher):
                 self.y_variable, self.y_variable)
 
             plot.points = list(zip(xvals, yvals))
+            self._value_plot.points = [(
+                getattr(self.x_variable_formula, xvar),
+                getattr(formula, self.y_variable))]
 
     def reset_y_axis(self):
         if not self.graph or not self.plot or self._y_range is None:

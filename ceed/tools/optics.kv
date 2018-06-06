@@ -355,3 +355,29 @@
                 scale_down_color: True
                 flat_background_color: app.theme.accent
                 on_release: root.plot.reset_y_axis()
+            FlatLabel:
+                size_hint: None, None
+                size: self.texture_size
+                padding: '5dp', '5dp'
+                text: 'Contours:'
+                flat_color: app.theme.text_primary
+                font_size: '13sp'
+            FlatTextInput:
+                size_hint: None, None
+                size: '40dp', self.minimum_height
+                font_size: '13sp'
+                multiline: False
+                write_tab: False
+                input_filter: 'int'
+                text: str(root.plot.num_contours) if root.plot else '5'
+                on_focus: if not self.focus: root.plot.num_contours = int(self.text) if self.text else '5'
+            FlatToggleButton:
+                text: 'Track'
+                size_hint: None, None
+                size: self.texture_size
+                padding: '5dp', '5dp'
+                font_size: '13sp'
+                scale_down_color: True
+                flat_background_color: app.theme.accent
+                state: 'down' if root.plot and root.plot.track_ylim else 'normal'
+                on_state: root.plot.track_ylim = self.state == 'down'
