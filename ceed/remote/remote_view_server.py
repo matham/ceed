@@ -731,7 +731,7 @@ class CeedRemoteViewApp(CPLComApp):
             assert 8 - len(msg_buff)
             data = sock.recv(8 - len(msg_buff))
             if not data:
-                raise EndConnection('Remote server was closed')
+                raise EndConnection('Remote client was closed')
 
             msg_buff += data
             if len(msg_buff) == 8:
@@ -742,7 +742,7 @@ class CeedRemoteViewApp(CPLComApp):
             assert total - len(msg_buff)
             data = sock.recv(total - len(msg_buff))
             if not data:
-                raise EndConnection('Remote server was closed')
+                raise EndConnection('Remote client was closed')
 
             msg_buff += data
             if len(msg_buff) == total:
@@ -804,7 +804,7 @@ class CeedRemoteViewApp(CPLComApp):
                                     self.send_msg_to_client(connection, msg, value)
                         except Empty:
                             pass
-                except EndConnection:
+                except (EndConnection, ConnectionResetError):
                     pass
                 finally:
                     Logger.info('closing client connection')
