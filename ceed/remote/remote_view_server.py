@@ -31,9 +31,9 @@ from kivy.lang import Builder
 from kivy.logger import Logger
 from kivy.event import EventDispatcher
 from kivy.clock import Clock
-from kivy.compat import string_types
 
 if __name__ == '__main__':
+    # needed to be imported before iron python
     from kivy.core.window import Window
 
 __all__ = ('CeedRemoteViewApp',)
@@ -50,291 +50,6 @@ class UpSlider(Slider):
             if touch.grab_current == self:
                 self.dispatch('on_release', self)
             return True
-
-
-kv = '''
-BoxLayout:
-    orientation: 'vertical'
-    spacing: '15dp'
-    padding: '5dp',
-    BoxLayout:
-        size_hint_y: None
-        height: '40dp'
-        spacing: '10dp'
-        Spinner:
-            id: cam_selection
-            values: ['ThorLabs camera', 'Point Gray camera']
-            text: 'ThorLabs camera'
-            size_hint_max_x: '200dp'
-        FlatErrorIndicatorPopup:
-            scale_down_color: True
-            source: 'flat_alert.png'
-            #flat_color: app.theme.accent
-            size_hint_x: None
-            width: '55dp'
-            on_parent: app.error_indicator = self
-        Label:
-            text: 'Connected' if app.connected else "Disconnected"
-            size_hint_x: None
-            width: '150dp'
-            canvas.before:
-                Color:
-                    rgba: (0, 153 / 255, 0, 1) if app.connected else (1, 51 / 255, 51 / 255, 1)
-                Rectangle:
-                    size: self.size
-                    pos: self.pos
-    ScreenManager:
-        size_hint: None, None
-        size: tsi_grid.parent.size if self.current == 'ThorLabs camera' else pt_grid.parent.size
-        current: cam_selection.text
-        Screen:
-            name: 'ThorLabs camera'
-            size_hint: None, None
-            size: tsi_grid.size
-            disabled: app.tsi_sdk is None
-            GridLayout:
-                id: tsi_grid
-                size_hint: None, None
-                size: self.minimum_size
-                cols: 1
-                BoxLayout:
-                    size_hint: None, None
-                    size: self.minimum_size
-                    spacing: '5dp'
-                    SizedButton:
-                        text: 'Refresh'
-                        on_release: tsi_cams_spinner.values = app.get_tsi_cams()
-                    Spinner:
-                        id: tsi_cams_spinner
-                        text_autoupdate: True
-                        size_hint_x: None
-                        width: '60dp'
-                    SizedToggleButton:
-                        disabled: not tsi_cams_spinner.text
-                        text: 'Open' if self.state == 'normal' else 'Close'
-                        on_release: app.open_tsi_cam(tsi_cams_spinner.text, root.ids) if self.state == 'down' else app.close_tsi_cam()
-                    SizedToggleButton:
-                        disabled: app.tsi_cam is None
-                        text: 'Play' if self.state == 'normal' else 'Stop'
-                        on_release: app.tsi_cam.send_message('play') if self.state == 'down' else app.tsi_cam.send_message('stop')
-                BoxLayout:
-                    size_hint: None, None
-                    size: self.minimum_size
-                    spacing: '5dp'
-                    SizedLabel:
-                        text: 'Speed:'
-                    Spinner:
-                        disabled: app.tsi_cam is not None
-                        text_autoupdate: True
-                        size_hint_x: None
-                        width: '80dp'
-                        values: app.tsi_cam.supported_freqs if app.tsi_cam else []
-                        text: app.tsi_cam.freq if app.tsi_cam else '20 MHz'
-                        on_text: if app.tsi_cam: app.tsi_cam.send_message('setting', ('freq', self.text))
-                    SizedLabel:
-                        text: 'Taps:'
-                    Spinner:
-                        disabled: app.tsi_cam is not None
-                        text_autoupdate: True
-                        size_hint_x: None
-                        width: '60dp'
-                        values: app.tsi_cam.supported_taps if app.tsi_cam else []
-                        text: app.tsi_cam.taps if app.tsi_cam else '1'
-                        on_text: if app.tsi_cam: app.tsi_cam.send_message('setting', ('taps', self.text))
-                    SizedLabel:
-                        text: 'Exposure [{}ms, {}ms]:'.format(*(app.tsi_cam.exposure_range if app.tsi_cam else (0, 0)))
-                    TextInput:
-                        disabled: app.tsi_cam is None
-                        id: tsi_value
-                        size_hint: None, None
-                        size: '80dp', self.minimum_height
-                        text: str(app.tsi_cam.exposure_ms) if app.tsi_cam else '0'
-                        multiline: False
-                        on_focus:
-                            if not self.focus and app.tsi_cam: app.tsi_cam.send_message('setting', ('exposure_ms', float(self.text)))
-                        input_filter: 'float'
-                BoxLayout:
-                    disabled: app.tsi_cam is None
-                    size_hint: None, None
-                    size: self.minimum_size
-                    spacing: '5dp'
-                    SizedLabel:
-                        text: 'Gain [{}, {}]:'.format(*(app.tsi_cam.gain_range if app.tsi_cam else (0, 0)))
-                    TextInput:
-                        disabled: self.parent.disabled or not app.tsi_cam.gain_range[1]
-                        size_hint: None, None
-                        size: '80dp', self.minimum_height
-                        text: str(app.tsi_cam.gain) if app.tsi_cam else '0'
-                        multiline: False
-                        on_focus:
-                            if not self.focus and app.tsi_cam: app.tsi_cam.send_message('setting', ('gain', int(self.text)))
-                        input_filter: 'int'
-                    SizedLabel:
-                        text: 'BlackLevel [{}, {}]:'.format(*(app.tsi_cam.black_level_range if app.tsi_cam else (0, 0)))
-                    TextInput:
-                        disabled: self.parent.disabled or not app.tsi_cam.black_level_range[1]
-                        size_hint: None, None
-                        size: '80dp', self.minimum_height
-                        text: str(app.tsi_cam.black_level) if app.tsi_cam else '0'
-                        multiline: False
-                        on_focus:
-                            if not self.focus and app.tsi_cam: app.tsi_cam.send_message('setting', ('black_level', int(self.text)))
-                        input_filter: 'int'
-                GridLayout:
-                    disabled: app.tsi_cam is None
-                    rows: 1
-                    size_hint_y: None
-                    height: self.minimum_height
-                    spacing: '5dp'
-                    padding: '10dp'
-                    UpSlider:
-                        id: thor_r_slider
-                        size_hint_y: None
-                        height: '50dp'
-                        on_release: if app.tsi_cam: app.tsi_cam.send_message('setting', ('color_gain', [thor_r_slider.value, thor_g_slider.value, thor_b_slider.value]))
-                        min: 0.
-                        max: 1.
-                        value: 1.
-                        canvas.before:
-                            Color:
-                                rgba: 1, 0, 0, 1
-                            Rectangle:
-                                size: self.size
-                                pos: self.pos
-                    UpSlider:
-                        id: thor_g_slider
-                        size_hint_y: None
-                        height: '50dp'
-                        on_release: if app.tsi_cam: app.tsi_cam.send_message('setting', ('color_gain', [thor_r_slider.value, thor_g_slider.value, thor_b_slider.value]))
-                        min: 0.
-                        max: 1.
-                        value: 1.
-                        canvas.before:
-                            Color:
-                                rgba: 0, 1, 0, 1
-                            Rectangle:
-                                size: self.size
-                                pos: self.pos
-                    UpSlider:
-                        id: thor_b_slider
-                        size_hint_y: None
-                        height: '50dp'
-                        on_release: if app.tsi_cam: app.tsi_cam.send_message('setting', ('color_gain', [thor_r_slider.value, thor_g_slider.value, thor_b_slider.value]))
-                        min: 0.
-                        max: 1.
-                        value: 1.
-                        canvas.before:
-                            Color:
-                                rgba: 0, 0, 1, 1
-                            Rectangle:
-                                size: self.size
-                                pos: self.pos
-        Screen:
-            name: 'Point Gray camera'
-            size_hint: None, None
-            size: pt_grid.size
-            GridLayout:
-                id: pt_grid
-                cols: 1
-                size_hint: None, None
-                size: pt_grid.size
-                GridLayout:
-                    size_hint: None, None
-                    size: self.minimum_size
-                    height: '50dp'
-                    spacing: ['5dp']
-                    rows: 1
-                    disabled: not app.connected
-                    Widget
-                    Spinner:
-                        id: pt_settings_opt
-                        size_hint_x: None
-                        width: '100dp'
-                        values: ['brightness', 'exposure', 'sharpness', 'hue', 'saturation', 'gamma', 'shutter', 'gain', 'iris', 'frame_rate', 'pan', 'tilt']
-                        on_text: 
-                            app.send_client_cam_request('track_cam_setting', self.text)
-                            app.cam_setting = self.text
-                        controllable: gui_pt_settings_opt_disable.state == 'normal'
-                    SizedToggleButton:
-                        id: gui_pt_settings_opt_auto
-                        text: 'Auto'
-                        on_release: app.send_client_cam_request('set_cam_setting', (pt_settings_opt.text, 'auto', self.state == 'down'))
-                        disabled: not pt_settings_opt.controllable
-                    SizedButton:
-                        id: gui_pt_settings_opt_push
-                        text: 'One push'
-                        on_release: app.send_client_cam_request('set_cam_setting', (pt_settings_opt.text, 'one_push', True))
-                        disabled: not pt_settings_opt.controllable
-                    SizedToggleButton:
-                        id: gui_pt_settings_opt_disable
-                        text: 'Disable'
-                        on_release: app.send_client_cam_request('set_cam_setting', (pt_settings_opt.text, 'controllable', self.state == 'normal'))
-                    SizedLabel:
-                        id: gui_pt_settings_opt_min
-                        disabled: not pt_settings_opt.controllable
-                    TextInput:
-                        id: gui_pt_settings_opt_value
-                        size_hint: None, None
-                        size: '50dp', self.minimum_height
-                        on_focus: if not self.focus: app.send_client_cam_request('set_cam_setting', (pt_settings_opt.text, 'value', float(self.text or 0)))
-                        input_filter: 'float'
-                        disabled: not pt_settings_opt.controllable
-                        multiline: False
-                    SizedLabel:
-                        id: gui_pt_settings_opt_max
-                        disabled: not pt_settings_opt.controllable
-                    SizedButton:
-                        id: gui_pt_settings_opt_reload
-                        text: 'Reload'
-                        on_release: app.send_client_cam_request('reload_cam_setting', pt_settings_opt.text)
-                    Widget
-                UpSlider:
-                    id: gui_pt_settings_opt_slider
-                    size_hint_y: None
-                    height: '50dp'
-                    on_release: app.send_client_cam_request('set_cam_setting', (pt_settings_opt.text, 'value', self.value))
-                    disabled: not pt_settings_opt.controllable
-    BoxLayout:
-        size_hint_y: None
-        height: self.minimum_height
-        disabled: app.last_image is None
-        TextInput:
-            id: save_image_name
-            size_hint_y: None
-            height: self.minimum_height
-            multiline: False
-        SizedButton:
-            text: 'Save'
-            on_release: app.save_last_image(save_image_name.text)
-    BufferImage:
-        canvas.before:
-            Color:
-                rgba: [0, 0, 0, 1]
-            Rectangle:
-                pos: self.pos
-                size: self.size
-        id: img
-        auto_bring_to_front: False
-        available_size: self.size 
-
-        do_scale: True
-        do_translation: True, True
-        do_rotation: True
-
-<ScreenGrid@Screen+GridLayout>
-<SizedLabel@Label>:
-    size_hint: None, None
-    size: self.texture_size
-    padding: '5dp', '5dp'
-<SizedButton@Button>:
-    size_hint: None, None
-    size: self.texture_size
-    padding: '5dp', '5dp'
-<SizedToggleButton@ToggleButton>:
-    size_hint: None, None
-    size: self.texture_size
-    padding: '5dp', '5dp'
-'''
 
 
 class EndConnection(Exception):
@@ -364,6 +79,18 @@ class TSICamera(EventDispatcher):
     black_level_range = ListProperty([0, 100])
 
     black_level = NumericProperty(0)
+
+    frame_queue_size = NumericProperty(1)
+
+    supported_triggers = ListProperty(['SW Trigger', 'HW Trigger'])
+
+    trigger_type = StringProperty('SW Trigger')
+
+    trigger_count = NumericProperty(1)
+
+    num_queued_frames = NumericProperty(0)
+
+    playing = BooleanProperty(False)
 
     color_gain = [1, 1, 1]
 
@@ -430,6 +157,11 @@ class TSICamera(EventDispatcher):
         d['exposure_range'] = rang.Minimum / 1000., rang.Maximum / 1000.
         d['exposure_ms'] = cam.get_ExposureTime_us() / 1000.
 
+        d['frame_queue_size'] = cam.get_MaximumNumberOfFramesToQueue()
+        d['trigger_count'] = cam.get_FramesPerTrigger_zeroForUnlimited()
+        hw_mode = cam.get_OperationMode() == self.tsi_interface.OperationMode.HardwareTriggered
+        d['trigger_type'] = self.supported_triggers[1 if hw_mode else 0]
+
         rang = cam.get_GainRange()
         d['gain_range'] = rang.Minimum, rang.Maximum
         d['gain'] = cam.get_Gain()
@@ -473,6 +205,15 @@ class TSICamera(EventDispatcher):
                         self.exposure_range[0]) * 1000)
             cam.set_ExposureTime_us(value)
             value = value / 1000.
+        elif setting == 'trigger_type':
+            hw_mode = value == self.supported_triggers[1]
+            cam.set_OperationMode(
+                self.tsi_interface.OperationMode.HardwareTriggered if hw_mode else
+                self.tsi_interface.OperationMode.SoftwareTriggered)
+        elif setting == 'trigger_count':
+            cam.set_FramesPerTrigger_zeroForUnlimited(max(0, value))
+        elif setting == 'frame_queue_size':
+            cam.set_MaximumNumberOfFramesToQueue(max(1, value))
         elif setting == 'gain':
             value = int(max(min(value, self.gain_range[1]), self.gain_range[0]))
             cam.set_Gain(value)
@@ -494,7 +235,8 @@ class TSICamera(EventDispatcher):
         return setting, value
 
     def read_frame(self, cam, asNumpyArray):
-        if cam.get_NumberOfQueuedFrames() <= 0:
+        queued_count = cam.get_NumberOfQueuedFrames()
+        if queued_count <= 0:
             return
 
         frame = cam.GetPendingFrameOrNull()
@@ -509,7 +251,7 @@ class TSICamera(EventDispatcher):
         img = Image(
             plane_buffers=[data.tobytes()],
             pix_fmt='bgr48le' if color else 'gray16le', size=(w, h))
-        return img, count
+        return img, count, queued_count
 
     def camera_run(self, from_kivy_queue, to_kivy_queue):
         from ceed.remote.net_data import asNumpyArray
@@ -535,6 +277,8 @@ class TSICamera(EventDispatcher):
                             elif msg == 'stop':
                                 cam.Disarm()
                                 playing = False
+                                to_kivy_queue.put(('setting', ('playing', False)))
+                                trigger()
                                 break
                             elif msg == 'setting':
                                 to_kivy_queue.put((msg, self.write_setting(cam, *value)))
@@ -547,9 +291,9 @@ class TSICamera(EventDispatcher):
                     data = self.read_frame(cam, asNumpyArray)
                     if data is None:
                         continue
-                    print('frame')
-                    img, count = data
-                    to_kivy_queue.put(('image', img))
+
+                    img, _, _ = data
+                    to_kivy_queue.put(('image', data))
                     trigger()
                     send_image('remote_image', img, max_qsize=2)
 
@@ -559,9 +303,11 @@ class TSICamera(EventDispatcher):
                         break
                     elif msg == 'play':
                         cam.Arm()
-                        if cam.get_OperationMode() != self.tsi_interface.OperationMode.HardwareTriggered:
+                        if self.trigger_type == self.supported_triggers[0]:
                             cam.IssueSoftwareTrigger()
                         playing = True
+                        to_kivy_queue.put(('setting', ('playing', True)))
+                        trigger()
                     elif msg == 'setting':
                         to_kivy_queue.put((msg, self.write_setting(cam, *value)))
                         trigger()
@@ -585,6 +331,7 @@ class TSICamera(EventDispatcher):
 
     @app_error
     def process_in_kivy_thread(self, *largs):
+        first_image = True
         while self.to_kivy_queue is not None:
             try:
                 msg, value = self.to_kivy_queue.get(block=False)
@@ -594,14 +341,17 @@ class TSICamera(EventDispatcher):
                     App.get_running_app().handle_exception(
                         e, exc_info=exec_info)
                 elif msg == 'image':
-                    self.app.last_image = value
-                    self.ids.img.update_img(value)
+                    img, App.get_running_app().num_images_received, \
+                        self.num_queued_frames = value
+                    if first_image:
+                        self.app.last_image = img
+                        self.ids.img.update_img(img)
+                        first_image = False
                 elif msg == 'settings':
-                    print('got', value)
+                    App.get_running_app().num_images_sent = 0
                     for key, val in value.items():
                         setattr(self, key, val)
                 elif msg == 'setting':
-                    print('setarrt', value)
                     setattr(self, *value)
             except Empty:
                 break
@@ -637,11 +387,17 @@ class CeedRemoteViewApp(CPLComApp):
 
     last_image = ObjectProperty(None, allownone=True)
 
+    num_images_received = NumericProperty(0)
+
+    num_images_sent = NumericProperty(0)
+
+    thor_api_binaries = r'D:\daghda-to-tuatha\thor_api_binaries'
+
     def init_load(self):
         pass
 
     def build(self):
-        return Builder.load_string(kv)
+        return Builder.load_file(os.path.join(os.path.dirname(__file__), 'ceed_server.kv'))
 
     def on_start(self, *largs):
         self._kivy_trigger = Clock.create_trigger(self.process_in_kivy_thread)
@@ -650,7 +406,11 @@ class CeedRemoteViewApp(CPLComApp):
         thread = self.server_thread = Thread(
             target=self.server_run, args=(from_kivy_queue, to_kivy_queue))
         thread.start()
-        self.load_tsi(r'E:\MATLAB')
+        if not os.path.exists(self.thor_api_binaries):
+            raise Exception(
+                'Could not find the path to the thor binaries at {}'
+                    .format(self.thor_api_binaries))
+        self.load_tsi(self.thor_api_binaries)
 
     @app_error
     def load_tsi(self, dll_path):
@@ -665,8 +425,13 @@ class CeedRemoteViewApp(CPLComApp):
         tsi_interface.CameraSensorType
         tsi_interface.ColorPipeline
 
+    def increment_images_sent(self, *largs):
+        self.num_images_sent += 1
+
     @app_error
     def save_last_image(self, filename):
+        if not filename.endswith('.bmp'):
+            filename += '.bmp'
         cplcom_player.save_image(filename, self.last_image)
 
     @app_error
@@ -682,13 +447,17 @@ class CeedRemoteViewApp(CPLComApp):
             tsi_sdk=self.tsi_sdk, tsi_interface=self.tsi_interface,
             serial=serial, ids=ids, app=self)
 
-    def close_tsi_cam(self):
-        if self.tsi_cam:
-            self.tsi_cam.send_message('eof')
+    def close_tsi_cam(self, join=False):
+        tsi_cam = self.tsi_cam
+        if tsi_cam:
             self.tsi_cam = None
+            tsi_cam.send_message('eof')
+            if join and tsi_cam.camera_thread is not None:
+                tsi_cam.camera_thread.join()
 
     def send_msg_to_client(self, sock, msg, value):
         if msg == 'remote_image':
+            Clock.schedule_once(App.get_running_app().increment_images_sent)
             bin_data = value.to_bytearray()
             data = yaml_dumps((
                 'remote_image', (
@@ -784,7 +553,11 @@ class CeedRemoteViewApp(CPLComApp):
 
                 connection, client_address = sock.accept()
                 msg_len, msg_buff = (), b''
-                Clock.schedule_once(lambda x: setattr(self, 'connected', True))
+
+                def connected(*largs):
+                    App.get_running_app().increment_images_sent = 0
+                    self.connected = True
+                Clock.schedule_once(connected)
                 from_kivy_queue.put(('get_cam_settings', ''))
                 from_kivy_queue.put(('track_cam_setting', self.cam_setting))
 
@@ -879,6 +652,7 @@ def _cleanup(app):
         app.from_kivy_queue.put(('eof', None))
         if app.server_thread is not None:
             app.server_thread.join()
+        app.close_tsi_cam(join=True)
 
 
 run_app = partial(run_cpl_app, CeedRemoteViewApp, _cleanup)

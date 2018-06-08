@@ -23,7 +23,7 @@ setup(
                  'Operating System :: Microsoft :: Windows',
                  'Intended Audience :: Developers'],
     packages=find_packages(),
-    install_requires=['pyflycap2', 'ffpyplayer', 'cplcom'],
+    install_requires=['pyflycap2', 'ffpyplayer', 'cplcom', 'kivy', 'numpy', 'scikit-image'],
     package_data={'ceed': ['data/*', '*.kv']},
     entry_points={'console_scripts': ['ceed=ceed.main:run_app']},
     )
