@@ -64,7 +64,9 @@ BoxLayout:
                     SizedToggleButton:
                         disabled: app.tsi_cam is None
                         text: 'Play' if self.state == 'normal' else 'Stop'
-                        on_release: app.play_tsi_cam() if self.state == 'down' else app.tsi_cam.send_message('stop')
+                        on_release:
+                            app.play_tsi_cam() if self.state == 'down' else app.tsi_cam.send_message('stop')
+                            if self.state == 'normal': stream_btn.state = 'normal'
                     SizedLabel:
                         text: 'Frame: {}'.format(app.num_images_received)
                     SizedLabel:
@@ -356,9 +358,16 @@ BoxLayout:
             height: self.minimum_height
             multiline: False
             on_text: app.image_save_path = self.text
-        SizedLabel:
-            text: '_#.tiff'
         Spinner:
+            id: img_sequence_type
+            text_autoupdate: True
+            size_hint_x: None
+            width: '60dp'
+            values: ['_#.tiff', '_#.mp4']
+            text: app.image_suffix_save
+            on_text: app.image_suffix_save = self.text
+        Spinner:
+            disabled: img_sequence_type.text == '_#.mp4'
             id: compression_option
             text_autoupdate: True
             size_hint_x: None
@@ -367,13 +376,15 @@ BoxLayout:
             text: app.image_compression_save
             on_text: app.image_compression_save = self.text
         SizedButton:
-            disabled: stream_btn.state == 'down' or app.last_image is None
+            disabled: stream_btn.state == 'down' or app.last_image is None or img_sequence_type.text == '_#.mp4'
             text: 'Save'
             on_release: app.save_last_image()
         SizedToggleButton:
             id: stream_btn
-            text: 'Save sequence ({})'.format(app.image_queue_len)
-            on_state: app.stream_image_save = self.state == 'down'
+            text: 'Save {} ({})'.format('movie' if img_sequence_type.text == '_#.mp4' else 'sequence', app.image_queue_len)
+            on_state:
+                app.stream_image_save = self.state == 'down'
+                if self.state == 'normal': app.stop_streaming_disk()
     BufferImage:
         canvas.before:
             Color:

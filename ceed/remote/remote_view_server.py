@@ -6,6 +6,8 @@ projector. This is run in a seperate process than the main server side GUI.
 '''
 import os
 from ffpyplayer.pic import Image
+from ffpyplayer.tools import get_supported_pixfmts
+from ffpyplayer.writer import MediaWriter
 from functools import partial
 from itertools import accumulate
 import os
@@ -170,11 +172,6 @@ class TSICamera(EventDispatcher):
             self.from_kivy_queue.put((msg, value))
 
     def read_settings(self, cam):
-        update_group = self._update_group = {}
-        g = ('binning_x', 'binning_y', 'roi_x', 'roi_y', 'roi_width', 'roi_height')
-        for val in g:
-            update_group[val] = g
-
         d = {}
         rang = cam.get_ExposureTimeRange_us()
         d['exposure_range'] = rang.Minimum / 1000., rang.Maximum / 1000.
@@ -479,6 +476,8 @@ class CeedRemoteViewApp(CPLComApp):
 
     stream_image_save = BooleanProperty(False)
 
+    image_suffix_save = StringProperty('_#.tiff')
+
     image_queue_len = NumericProperty(0)
 
     max_play_rate = 4
@@ -569,7 +568,7 @@ class CeedRemoteViewApp(CPLComApp):
             self.image_save_queue.put((
                 'image',
                 (image, self.image_save_path,
-                 frame_number, self.image_compression_save, True)
+                 frame_number, self.image_compression_save, True, self.image_suffix_save)
             ))
             self.image_queue_len += 1
 
@@ -578,35 +577,83 @@ class CeedRemoteViewApp(CPLComApp):
         self.image_save_queue.put((
             'image',
             (self.last_image, self.image_save_path,
-             self.num_images_received, self.image_compression_save, False)
+             self.num_images_received, self.image_compression_save, False, '_#.tiff')
         ))
+
+    @app_error
+    def stop_streaming_disk(self):
+        self.image_save_queue.put(('stop_stream', None))
 
     def image_save_run(self, image_save_queue, to_kivy_queue):
         trigger = self._kivy_trigger
         exists = os.path.exists
         save_image = cplcom_player.save_image
+        media_writer = None
+        last_suffix = ''
+        movie_base_frame = 0
 
         try:
             while True:
                 msg, value = image_save_queue.get(block=True)
                 if msg == 'eof':
                     break
+                elif msg == 'stop_stream':
+                    if media_writer is not None:
+                        media_writer.close()
+                        media_writer = None
+                    last_suffix = ''
                 elif msg == 'image':
-                    image, root_filename, frame_num, compression, inc = value
+                    image, root_filename, frame_num, compression, seq, suffix = value
 
-                    ending = '_{}.tiff'.format(frame_num)
-                    filename = root_filename + ending
-                    counter = 0
-                    while exists(filename):
-                        counter += 1
-                        filename = '{}-{}{}'.format(root_filename, counter, ending)
+                    # we're streaming a sequence or movie now, but the type of stream changed
+                    if seq and suffix != last_suffix:
+                        if suffix.endswith('tiff'):  # we stopped the movie and are instead streaming the tiffs
+                            if media_writer is not None:
+                                media_writer.close()
+                                media_writer = None
+                        else:  # we started streaming a movie
+                            lib_opts = {'crf': '0'}
+                            codec = 'libx264'
+                            ifmt = image.get_pixel_format()
+                            w, h = image.get_size()
+                            out_fmt = get_supported_pixfmts(codec, ifmt)[0]
+                            stream = {
+                                'pix_fmt_in': ifmt, 'pix_fmt_out': out_fmt,
+                                'width_in': w, 'height_in': h, 'width_out': w,
+                                'height_out': h, 'codec': codec,
+                                'frame_rate': (1, 1)}
 
-                    save_image(
-                        filename, image, codec='tiff',
-                        pix_fmt=image.get_pixel_format(),
-                        lib_opts={'compression_algo': 'deflate'
-                                  if compression == 'zip' else compression})
-                    if inc:
+                            ending = '_{}.mp4'.format(frame_num)
+                            filename = root_filename + ending
+                            counter = 0
+                            while exists(filename):
+                                counter += 1
+                                filename = '{}-{}{}'.format(root_filename, counter, ending)
+
+                            movie_base_frame = frame_num
+                            media_writer = MediaWriter(filename, [stream], fmt='mp4', lib_opts=lib_opts)
+
+                        last_suffix = suffix
+
+                    # we're saving a tiff, either a seq or single
+                    if suffix.endswith('tiff'):
+                        ending = '_{}.tiff'.format(frame_num)
+                        filename = root_filename + ending
+                        counter = 0
+                        while exists(filename):
+                            counter += 1
+                            filename = '{}-{}{}'.format(root_filename, counter, ending)
+
+                        save_image(
+                            filename, image, codec='tiff',
+                            pix_fmt=image.get_pixel_format(),
+                            lib_opts={'compression_algo': 'deflate'
+                                      if compression == 'zip' else compression})
+                    else:  # we're streaming a movie
+                        media_writer.write_frame(img=image, pts=frame_num - movie_base_frame, stream=0)
+
+                    # we're streaming seq of tiff or movie so we counted the frames
+                    if seq:
                         to_kivy_queue.put(('decrement_image_save', None))
                         trigger()
                 else:
