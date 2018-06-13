@@ -1,6 +1,6 @@
 BoxLayout:
     orientation: 'vertical'
-    spacing: '15dp'
+    spacing: '5dp'
     padding: '5dp',
     BoxLayout:
         size_hint_y: None
@@ -42,10 +42,13 @@ BoxLayout:
                 size_hint: None, None
                 size: self.minimum_size
                 cols: 1
+                spacing: '2dp'
                 BoxLayout:
                     size_hint: None, None
                     size: self.minimum_size
                     spacing: '5dp'
+                    SizedLabel:
+                        text: 'Camera:'
                     SizedButton:
                         text: 'Refresh'
                         on_release: tsi_cams_spinner.values = app.get_tsi_cams()
@@ -57,21 +60,23 @@ BoxLayout:
                     SizedToggleButton:
                         disabled: not tsi_cams_spinner.text
                         text: 'Open' if self.state == 'normal' else 'Close'
-                        on_release: app.open_tsi_cam(tsi_cams_spinner.text, root.ids) if self.state == 'down' else app.close_tsi_cam()
+                        on_release: app.open_tsi_cam(tsi_cams_spinner.text) if self.state == 'down' else app.close_tsi_cam()
                     SizedToggleButton:
                         disabled: app.tsi_cam is None
                         text: 'Play' if self.state == 'normal' else 'Stop'
-                        on_release: app.tsi_cam.send_message('play') if self.state == 'down' else app.tsi_cam.send_message('stop')
+                        on_release:
+                            app.play_tsi_cam() if self.state == 'down' else app.tsi_cam.send_message('stop')
+                            if self.state == 'normal': stream_btn.state = 'normal'
                     SizedLabel:
-                        text: 'Frames: {}'.format(app.num_images_received)
+                        text: 'Frame: {}'.format(app.num_images_received)
                     SizedLabel:
-                        text: 'Frames sent: {}'.format(app.num_images_sent)
+                        text: 'Frames shared: {}'.format(app.num_images_sent)
                 BoxLayout:
                     size_hint: None, None
                     size: self.minimum_size
                     spacing: '5dp'
                     SizedLabel:
-                        text: 'Speed:'
+                        text: 'Rate ({:0.0f}):'.format(app.estimated_frame_rate)
                     Spinner:
                         disabled: app.tsi_cam is None or app.tsi_cam.playing
                         text_autoupdate: True
@@ -148,8 +153,9 @@ BoxLayout:
                             if not self.focus and app.tsi_cam: app.tsi_cam.send_message('setting', ('black_level', int(self.text)))
                         input_filter: 'int'
                     SizedLabel:
-                        text: 'Frame queue ({}) [1, ...):'.format(app.tsi_cam.num_queued_frames if app.tsi_cam else 0)
+                        text: 'Frame queue ({}/{}) [1, ...):'.format(app.tsi_cam.num_queued_frames if app.tsi_cam else 0, queue_size.text)
                     TextInput:
+                        id: queue_size
                         disabled: app.tsi_cam is None or app.tsi_cam.playing
                         size_hint: None, None
                         size: '80dp', self.minimum_height
@@ -157,6 +163,77 @@ BoxLayout:
                         multiline: False
                         on_focus:
                             if not self.focus and app.tsi_cam: app.tsi_cam.send_message('setting', ('frame_queue_size', int(self.text)))
+                        input_filter: 'int'
+                BoxLayout:
+                    disabled: app.tsi_cam is None
+                    size_hint: None, None
+                    size: self.minimum_size
+                    spacing: '5dp'
+                    SizedLabel:
+                        text: 'X bins [{}, {}]:'.format(*(app.tsi_cam.binning_x_range if app.tsi_cam else (0, 0)))
+                    TextInput:
+                        disabled: app.tsi_cam is None or not app.tsi_cam.binning_x_range[1] or app.tsi_cam.playing
+                        size_hint: None, None
+                        size: '80dp', self.minimum_height
+                        text: str(app.tsi_cam.binning_x) if app.tsi_cam else '0'
+                        multiline: False
+                        on_focus:
+                            if not self.focus and app.tsi_cam: app.tsi_cam.send_message('setting', ('binning_x', int(self.text)))
+                        input_filter: 'int'
+                    SizedLabel:
+                        text: 'Y bins [{}, {}]:'.format(*(app.tsi_cam.binning_y_range if app.tsi_cam else (0, 0)))
+                    TextInput:
+                        disabled: app.tsi_cam is None or not app.tsi_cam.binning_y_range[1] or app.tsi_cam.playing
+                        size_hint: None, None
+                        size: '80dp', self.minimum_height
+                        text: str(app.tsi_cam.binning_y) if app.tsi_cam else '0'
+                        multiline: False
+                        on_focus:
+                            if not self.focus and app.tsi_cam: app.tsi_cam.send_message('setting', ('binning_y', int(self.text)))
+                        input_filter: 'int'
+                    SizedLabel:
+                        text: 'X [0, {}]:'.format(app.tsi_cam.sensor_size[0] - 1 if app.tsi_cam else 0)
+                    TextInput:
+                        disabled: app.tsi_cam is None or not app.tsi_cam.sensor_size[0] or app.tsi_cam.playing
+                        size_hint: None, None
+                        size: '80dp', self.minimum_height
+                        text: str(app.tsi_cam.roi_x) if app.tsi_cam else '0'
+                        multiline: False
+                        on_focus:
+                            if not self.focus and app.tsi_cam: app.tsi_cam.send_message('setting', ('roi_x', int(self.text)))
+                        input_filter: 'int'
+                    SizedLabel:
+                        text: 'W [1, {}]:'.format((app.tsi_cam.sensor_size[0] - app.tsi_cam.roi_x) if app.tsi_cam else 0)
+                    TextInput:
+                        disabled: app.tsi_cam is None or not app.tsi_cam.sensor_size[0] or app.tsi_cam.playing
+                        size_hint: None, None
+                        size: '80dp', self.minimum_height
+                        text: str(app.tsi_cam.roi_width) if app.tsi_cam else '0'
+                        multiline: False
+                        on_focus:
+                            if not self.focus and app.tsi_cam: app.tsi_cam.send_message('setting', ('roi_width', int(self.text)))
+                        input_filter: 'int'
+                    SizedLabel:
+                        text: 'Y [0, {}]:'.format(app.tsi_cam.sensor_size[1] - 1 if app.tsi_cam else 0)
+                    TextInput:
+                        disabled: app.tsi_cam is None or not app.tsi_cam.sensor_size[1] or app.tsi_cam.playing
+                        size_hint: None, None
+                        size: '80dp', self.minimum_height
+                        text: str(app.tsi_cam.roi_y) if app.tsi_cam else '0'
+                        multiline: False
+                        on_focus:
+                            if not self.focus and app.tsi_cam: app.tsi_cam.send_message('setting', ('roi_y', int(self.text)))
+                        input_filter: 'int'
+                    SizedLabel:
+                        text: 'H [1, {}]:'.format((app.tsi_cam.sensor_size[1] - app.tsi_cam.roi_y) if app.tsi_cam else 0)
+                    TextInput:
+                        disabled: app.tsi_cam is None or not app.tsi_cam.sensor_size[1] or app.tsi_cam.playing
+                        size_hint: None, None
+                        size: '80dp', self.minimum_height
+                        text: str(app.tsi_cam.roi_height) if app.tsi_cam else '0'
+                        multiline: False
+                        on_focus:
+                            if not self.focus and app.tsi_cam: app.tsi_cam.send_message('setting', ('roi_height', int(self.text)))
                         input_filter: 'int'
                 GridLayout:
                     disabled: app.tsi_cam is None
@@ -168,7 +245,7 @@ BoxLayout:
                     UpSlider:
                         id: thor_r_slider
                         size_hint_y: None
-                        height: '50dp'
+                        height: '30dp'
                         on_release: if app.tsi_cam: app.tsi_cam.send_message('setting', ('color_gain', [thor_r_slider.value, thor_g_slider.value, thor_b_slider.value]))
                         min: 0.
                         max: 1.
@@ -182,7 +259,7 @@ BoxLayout:
                     UpSlider:
                         id: thor_g_slider
                         size_hint_y: None
-                        height: '50dp'
+                        height: '30dp'
                         on_release: if app.tsi_cam: app.tsi_cam.send_message('setting', ('color_gain', [thor_r_slider.value, thor_g_slider.value, thor_b_slider.value]))
                         min: 0.
                         max: 1.
@@ -196,7 +273,7 @@ BoxLayout:
                     UpSlider:
                         id: thor_b_slider
                         size_hint_y: None
-                        height: '50dp'
+                        height: '30dp'
                         on_release: if app.tsi_cam: app.tsi_cam.send_message('setting', ('color_gain', [thor_r_slider.value, thor_g_slider.value, thor_b_slider.value]))
                         min: 0.
                         max: 1.
@@ -275,15 +352,39 @@ BoxLayout:
     BoxLayout:
         size_hint_y: None
         height: self.minimum_height
-        disabled: app.last_image is None
+        spacing: '8dp'
         TextInput:
-            id: save_image_name
             size_hint_y: None
             height: self.minimum_height
             multiline: False
+            on_text: app.image_save_path = self.text
+        Spinner:
+            id: img_sequence_type
+            text_autoupdate: True
+            size_hint_x: None
+            width: '60dp'
+            values: ['_#.tiff', '_#.mp4']
+            text: app.image_suffix_save
+            on_text: app.image_suffix_save = self.text
+        Spinner:
+            disabled: img_sequence_type.text == '_#.mp4'
+            id: compression_option
+            text_autoupdate: True
+            size_hint_x: None
+            width: '60dp'
+            values: ['raw', 'lzw', 'zip']
+            text: app.image_compression_save
+            on_text: app.image_compression_save = self.text
         SizedButton:
+            disabled: stream_btn.state == 'down' or app.last_image is None or img_sequence_type.text == '_#.mp4'
             text: 'Save'
-            on_release: app.save_last_image(save_image_name.text)
+            on_release: app.save_last_image()
+        SizedToggleButton:
+            id: stream_btn
+            text: 'Save {} ({})'.format('movie' if img_sequence_type.text == '_#.mp4' else 'sequence', app.image_queue_len)
+            on_state:
+                app.stream_image_save = self.state == 'down'
+                if self.state == 'normal': app.stop_streaming_disk()
     BufferImage:
         canvas.before:
             Color:
