@@ -15,6 +15,7 @@ from threading import Thread
 import socket
 import sys
 import struct
+from time import clock
 from queue import Queue, Empty
 import traceback
 import select
@@ -72,6 +73,24 @@ class TSICamera(EventDispatcher):
 
     exposure_ms = NumericProperty(5)
 
+    binning_x_range = ListProperty([0, 0])
+
+    binning_x = NumericProperty(0)
+
+    binning_y_range = ListProperty([0, 0])
+
+    binning_y = NumericProperty(0)
+
+    sensor_size = ListProperty([0, 0])
+
+    roi_x = NumericProperty(0)
+
+    roi_y = NumericProperty(0)
+
+    roi_width = NumericProperty(0)
+
+    roi_height = NumericProperty(0)
+
     gain_range = ListProperty([0, 100])
 
     gain = NumericProperty(0)
@@ -100,8 +119,6 @@ class TSICamera(EventDispatcher):
 
     serial = ''
 
-    ids = {}
-
     app = None
 
     _kivy_trigger = None
@@ -120,11 +137,12 @@ class TSICamera(EventDispatcher):
 
     _str_to_taps_map = {}
 
-    def __init__(self, tsi_sdk, tsi_interface, serial, ids, app):
+    _update_group = {}
+
+    def __init__(self, tsi_sdk, tsi_interface, serial, app):
         self.tsi_sdk = tsi_sdk
         self.tsi_interface = tsi_interface
         self.serial = serial
-        self.ids = ids
         self.app = app
         self._freqs_to_str_map = {
             tsi_interface.DataRate.ReadoutSpeed20MHz: '20 MHz',
@@ -152,10 +170,33 @@ class TSICamera(EventDispatcher):
             self.from_kivy_queue.put((msg, value))
 
     def read_settings(self, cam):
+        update_group = self._update_group = {}
+        g = ('binning_x', 'binning_y', 'roi_x', 'roi_y', 'roi_width', 'roi_height')
+        for val in g:
+            update_group[val] = g
+
         d = {}
         rang = cam.get_ExposureTimeRange_us()
         d['exposure_range'] = rang.Minimum / 1000., rang.Maximum / 1000.
         d['exposure_ms'] = cam.get_ExposureTime_us() / 1000.
+
+        roi_bin = cam.get_ROIAndBin()
+
+        rang = cam.get_BinXRange()
+        d['binning_x_range'] = rang.Minimum, rang.Maximum
+        d['binning_x'] = roi_bin.BinX
+
+        rang = cam.get_BinYRange()
+        d['binning_y_range'] = rang.Minimum, rang.Maximum
+        d['binning_y'] = roi_bin.BinY
+
+        d['sensor_size'] = [
+            cam.get_SensorWidth_pixels(), cam.get_SensorHeight_pixels()]
+
+        d['roi_x'] = roi_bin.ROIOriginX_pixels
+        d['roi_y'] = roi_bin.ROIOriginY_pixels
+        d['roi_width'] = roi_bin.ROIWidth_pixels
+        d['roi_height'] = roi_bin.ROIHeight_pixels
 
         d['frame_queue_size'] = cam.get_MaximumNumberOfFramesToQueue()
         d['trigger_count'] = cam.get_FramesPerTrigger_zeroForUnlimited()
@@ -200,11 +241,54 @@ class TSICamera(EventDispatcher):
         return d
 
     def write_setting(self, cam, setting, value):
+        values = {}
         if setting == 'exposure_ms':
             value = int(max(min(value, self.exposure_range[1]),
                         self.exposure_range[0]) * 1000)
             cam.set_ExposureTime_us(value)
             value = value / 1000.
+        elif setting == 'binning_x':
+            value = max(min(value, self.binning_x_range[1]), self.binning_x_range[0])
+            roi_bin = cam.get_ROIAndBin()
+            roi_bin.BinX = value
+            cam.set_ROIAndBin(roi_bin)
+        elif setting == 'binning_y':
+            value = max(min(value, self.binning_y_range[1]), self.binning_y_range[0])
+            roi_bin = cam.get_ROIAndBin()
+            roi_bin.BinY = value
+            cam.set_ROIAndBin(roi_bin)
+        elif setting == 'roi_x':
+            x = value = max(0, min(value, self.sensor_size[0] - 1))
+            roi_bin = cam.get_ROIAndBin()
+            width = min(self.sensor_size[0] - x, roi_bin.ROIWidth_pixels)
+
+            roi_bin.ROIOriginX_pixels = x
+            roi_bin.ROIWidth_pixels = width
+            cam.set_ROIAndBin(roi_bin)
+            values['roi_width'] = width
+        elif setting == 'roi_y':
+            y = value = max(0, min(value, self.sensor_size[1] - 1))
+            roi_bin = cam.get_ROIAndBin()
+            height = min(self.sensor_size[1] - y, roi_bin.ROIHeight_pixels)
+
+            roi_bin.ROIOriginY_pixels = y
+            roi_bin.ROIHeight_pixels = height
+            cam.set_ROIAndBin(roi_bin)
+            values['roi_height'] = height
+        elif setting == 'roi_width':
+            roi_bin = cam.get_ROIAndBin()
+            x = roi_bin.ROIOriginX_pixels
+            value = max(1, min(value, self.sensor_size[0] - x))
+            roi_bin.ROIWidth_pixels = value
+            cam.set_ROIAndBin(roi_bin)
+            values['roi_x'] = x
+        elif setting == 'roi_height':
+            roi_bin = cam.get_ROIAndBin()
+            y = roi_bin.ROIOriginY_pixels
+            value = max(1, min(value, self.sensor_size[1] - y))
+            roi_bin.ROIHeight_pixels = value
+            cam.set_ROIAndBin(roi_bin)
+            values['roi_y'] = y
         elif setting == 'trigger_type':
             hw_mode = value == self.supported_triggers[1]
             cam.set_OperationMode(
@@ -232,7 +316,8 @@ class TSICamera(EventDispatcher):
             color_pipeline.InsertColorTransformMatrix(0, mat)
             color_pipeline.InsertColorTransformMatrix(1, cam.GetCameraColorCorrectionMatrix())
             cam.set_ColorPipelineOrNull(color_pipeline)
-        return setting, value
+        values[setting] = value
+        return values
 
     def read_frame(self, cam, asNumpyArray):
         queued_count = cam.get_NumberOfQueuedFrames()
@@ -240,6 +325,7 @@ class TSICamera(EventDispatcher):
             return
 
         frame = cam.GetPendingFrameOrNull()
+        t = clock()
         if not frame:
             return
 
@@ -251,7 +337,7 @@ class TSICamera(EventDispatcher):
         img = Image(
             plane_buffers=[data.tobytes()],
             pix_fmt='bgr48le' if color else 'gray16le', size=(w, h))
-        return img, count, queued_count
+        return img, count, queued_count, t
 
     def camera_run(self, from_kivy_queue, to_kivy_queue):
         from ceed.remote.net_data import asNumpyArray
@@ -264,6 +350,7 @@ class TSICamera(EventDispatcher):
             cam = self.tsi_sdk.OpenCamera(self.serial, False)
             settings = self.read_settings(cam)
             to_kivy_queue.put(('settings', settings))
+            to_kivy_queue.put(('open', None))
             trigger()
             self.write_setting(cam, 'c_gain', (10, 0, 0))
 
@@ -277,11 +364,11 @@ class TSICamera(EventDispatcher):
                             elif msg == 'stop':
                                 cam.Disarm()
                                 playing = False
-                                to_kivy_queue.put(('setting', ('playing', False)))
+                                to_kivy_queue.put(('settings', {'playing': False}))
                                 trigger()
                                 break
                             elif msg == 'setting':
-                                to_kivy_queue.put((msg, self.write_setting(cam, *value)))
+                                to_kivy_queue.put(('settings', self.write_setting(cam, *value)))
                                 trigger()
                         except Empty:
                             break
@@ -292,10 +379,9 @@ class TSICamera(EventDispatcher):
                     if data is None:
                         continue
 
-                    img, _, _ = data
                     to_kivy_queue.put(('image', data))
                     trigger()
-                    send_image('remote_image', img, max_qsize=2)
+                    send_image('remote_image', data[0], max_qsize=2)
 
                 else:
                     msg, value = from_kivy_queue.get(block=True)
@@ -306,10 +392,10 @@ class TSICamera(EventDispatcher):
                         if self.trigger_type == self.supported_triggers[0]:
                             cam.IssueSoftwareTrigger()
                         playing = True
-                        to_kivy_queue.put(('setting', ('playing', True)))
+                        to_kivy_queue.put(('settings', {'playing': True}))
                         trigger()
                     elif msg == 'setting':
-                        to_kivy_queue.put((msg, self.write_setting(cam, *value)))
+                        to_kivy_queue.put(('settings', self.write_setting(cam, *value)))
                         trigger()
 
             if cam.IsArmed:
@@ -331,7 +417,6 @@ class TSICamera(EventDispatcher):
 
     @app_error
     def process_in_kivy_thread(self, *largs):
-        first_image = True
         while self.to_kivy_queue is not None:
             try:
                 msg, value = self.to_kivy_queue.get(block=False)
@@ -341,18 +426,15 @@ class TSICamera(EventDispatcher):
                     App.get_running_app().handle_exception(
                         e, exc_info=exec_info)
                 elif msg == 'image':
-                    img, App.get_running_app().num_images_received, \
-                        self.num_queued_frames = value
-                    if first_image:
-                        self.app.last_image = img
-                        self.ids.img.update_img(img)
-                        first_image = False
-                elif msg == 'settings':
+                    img, frame_num, self.num_queued_frames, t = value
+                    App.get_running_app().process_acquired_image(img, frame_num, t)
+                elif msg == 'open':
                     App.get_running_app().num_images_sent = 0
+                elif msg == 'settings':
                     for key, val in value.items():
                         setattr(self, key, val)
-                elif msg == 'setting':
-                    setattr(self, *value)
+                else:
+                    assert False
             except Empty:
                 break
 
@@ -391,6 +473,30 @@ class CeedRemoteViewApp(CPLComApp):
 
     num_images_sent = NumericProperty(0)
 
+    image_compression_save = StringProperty('raw')
+
+    image_save_path = StringProperty('')
+
+    stream_image_save = BooleanProperty(False)
+
+    image_queue_len = NumericProperty(0)
+
+    max_play_rate = 4
+
+    _last_frame_play_time = 0
+
+    estimated_frame_rate = NumericProperty(0)
+
+    _fps_frame_time_buffer = None
+
+    _fps_buffer_next_frame_index = 0
+
+    _fps_buffer_num_used = 0
+
+    image_save_thread = None
+
+    image_save_queue = None
+
     thor_api_binaries = r'D:\daghda-to-tuatha\thor_api_binaries'
 
     def init_load(self):
@@ -406,6 +512,13 @@ class CeedRemoteViewApp(CPLComApp):
         thread = self.server_thread = Thread(
             target=self.server_run, args=(from_kivy_queue, to_kivy_queue))
         thread.start()
+
+        image_save_queue = self.image_save_queue = Queue()
+        thread = self.image_save_thread = Thread(
+            target=self.image_save_run,
+            args=(image_save_queue, to_kivy_queue))
+        thread.start()
+
         if not os.path.exists(self.thor_api_binaries):
             raise Exception(
                 'Could not find the path to the thor binaries at {}'
@@ -428,11 +541,83 @@ class CeedRemoteViewApp(CPLComApp):
     def increment_images_sent(self, *largs):
         self.num_images_sent += 1
 
+    def process_acquired_image(self, image, frame_number, frame_time):
+        self.num_images_received = frame_number
+        self.last_image = image
+
+        i = self._fps_buffer_next_frame_index
+        buffer = self._fps_frame_time_buffer
+        n = len(buffer)
+        if self._fps_buffer_num_used == n:
+            fps = n / (frame_time - buffer[i])
+            buffer[i] = frame_time
+        else:
+            fps = i / (frame_time - buffer[0]) if i else 0
+            buffer[i] = frame_time
+            self._fps_buffer_num_used += 1
+
+        i += 1
+        self._fps_buffer_next_frame_index = 0 if i == n else i
+        self.estimated_frame_rate = fps
+
+        t = clock()
+        if t - self._last_frame_play_time > 1 / self.max_play_rate:
+            self._last_frame_play_time = t
+            self.root.ids.img.update_img(image)
+
+        if self.stream_image_save:
+            self.image_save_queue.put((
+                'image',
+                (image, self.image_save_path,
+                 frame_number, self.image_compression_save, True)
+            ))
+            self.image_queue_len += 1
+
     @app_error
-    def save_last_image(self, filename):
-        if not filename.endswith('.bmp'):
-            filename += '.bmp'
-        cplcom_player.save_image(filename, self.last_image)
+    def save_last_image(self):
+        self.image_save_queue.put((
+            'image',
+            (self.last_image, self.image_save_path,
+             self.num_images_received, self.image_compression_save, False)
+        ))
+
+    def image_save_run(self, image_save_queue, to_kivy_queue):
+        trigger = self._kivy_trigger
+        exists = os.path.exists
+        save_image = cplcom_player.save_image
+
+        try:
+            while True:
+                msg, value = image_save_queue.get(block=True)
+                if msg == 'eof':
+                    break
+                elif msg == 'image':
+                    image, root_filename, frame_num, compression, inc = value
+
+                    ending = '_{}.tiff'.format(frame_num)
+                    filename = root_filename + ending
+                    counter = 0
+                    while exists(filename):
+                        counter += 1
+                        filename = '{}-{}{}'.format(root_filename, counter, ending)
+
+                    save_image(
+                        filename, image, codec='tiff',
+                        pix_fmt=image.get_pixel_format(),
+                        lib_opts={'compression_algo': 'deflate'
+                                  if compression == 'zip' else compression})
+                    if inc:
+                        to_kivy_queue.put(('decrement_image_save', None))
+                        trigger()
+                else:
+                    assert False
+        except Exception as e:
+            exc_info = ''.join(traceback.format_exception(*sys.exc_info()))
+            to_kivy_queue.put(
+                ('exception', (str(e), exc_info)))
+            trigger()
+        finally:
+            Logger.info('closing image saving thread')
 
     @app_error
     def get_tsi_cams(self):
@@ -442,10 +627,16 @@ class CeedRemoteViewApp(CPLComApp):
             names.append(cams.get_Item(i))
         return list(sorted(cams))
 
-    def open_tsi_cam(self, serial, ids):
+    def play_tsi_cam(self):
+        self._fps_buffer_next_frame_index = 0
+        self._fps_buffer_num_used = 0
+        self._fps_frame_time_buffer = [None, ] * 30
+        self.tsi_cam.send_message('play')
+
+    def open_tsi_cam(self, serial):
         self.tsi_cam = TSICamera(
             tsi_sdk=self.tsi_sdk, tsi_interface=self.tsi_interface,
-            serial=serial, ids=ids, app=self)
+            serial=serial, app=self)
 
     def close_tsi_cam(self, join=False):
         tsi_cam = self.tsi_cam
@@ -635,8 +826,11 @@ class CeedRemoteViewApp(CPLComApp):
                     self.root.ids['pt_settings_opt'].values = value
                 elif msg == 'cam_setting':
                     self.populate_settings(*value)
+                elif msg == 'decrement_image_save':
+                    self.image_queue_len -= 1
                 else:
                     print('got', msg, value)
+                    assert False
             except Empty:
                 break
 
@@ -652,7 +846,14 @@ def _cleanup(app):
         app.from_kivy_queue.put(('eof', None))
         if app.server_thread is not None:
             app.server_thread.join()
-        app.close_tsi_cam(join=True)
+
+    app.close_tsi_cam(join=True)
+
+    if app.image_save_queue is not None:
+        app.image_save_queue.put(('eof', None))
+        if app.image_save_thread is not None:
+            app.image_save_thread.join()
+
 
 
 run_app = partial(run_cpl_app, CeedRemoteViewApp, _cleanup)
