@@ -793,7 +793,7 @@ class CeedRemoteViewApp(CPLComApp):
                 msg_len, msg_buff = (), b''
 
                 def connected(*largs):
-                    App.get_running_app().increment_images_sent = 0
+                    App.get_running_app().num_images_sent = 0
                     self.connected = True
                 Clock.schedule_once(connected)
                 from_kivy_queue.put(('get_cam_settings', ''))
