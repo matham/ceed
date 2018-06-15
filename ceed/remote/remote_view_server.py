@@ -35,6 +35,13 @@ from kivy.logger import Logger
 from kivy.event import EventDispatcher
 from kivy.clock import Clock
 
+try:
+    from pypixxlib import _libdpx as libdpx
+    from pypixxlib.propixx import PROPixx
+    from pypixxlib.propixx import PROPixxCTRL
+except ImportError:
+    libdpx = PROPixx = PROPixxCTRL = None
+
 if __name__ == '__main__':
     # needed to be imported before iron python
     from kivy.core.window import Window
@@ -498,6 +505,10 @@ class CeedRemoteViewApp(CPLComApp):
 
     thor_api_binaries = r'D:\daghda-to-tuatha\thor_api_binaries'
 
+    vpixx_thread = None
+
+    vpixx_thread_queue = None
+
     def init_load(self):
         pass
 
@@ -508,15 +519,23 @@ class CeedRemoteViewApp(CPLComApp):
         self._kivy_trigger = Clock.create_trigger(self.process_in_kivy_thread)
         from_kivy_queue = self.from_kivy_queue = Queue()
         to_kivy_queue = self.to_kivy_queue = Queue()
-        thread = self.server_thread = Thread(
-            target=self.server_run, args=(from_kivy_queue, to_kivy_queue))
-        thread.start()
-
         image_save_queue = self.image_save_queue = Queue()
-        thread = self.image_save_thread = Thread(
+        vpixx_thread_queue = self.vpixx_thread_queue = Queue()
+
+        server_thread = self.server_thread = Thread(
+            target=self.server_run, args=(from_kivy_queue, to_kivy_queue, vpixx_thread_queue))
+
+        image_save_thread = self.image_save_thread = Thread(
             target=self.image_save_run,
             args=(image_save_queue, to_kivy_queue))
-        thread.start()
+
+        vpixx_thread = self.vpixx_thread = Thread(
+            target=self.vpixx_run,
+            args=(vpixx_thread_queue, to_kivy_queue, from_kivy_queue))
+
+        server_thread.start()
+        image_save_thread.start()
+        vpixx_thread.start()
 
         if not os.path.exists(self.thor_api_binaries):
             raise Exception(
@@ -693,6 +712,61 @@ class CeedRemoteViewApp(CPLComApp):
             if join and tsi_cam.camera_thread is not None:
                 tsi_cam.camera_thread.join()
 
+    def vpixx_run(self, vpixx_thread_queue, to_kivy_queue, network_response_queue):
+        trigger = self._kivy_trigger
+        if PROPixx is None:
+            try:
+                raise Exception('Could not import the PROPixx library')
+            except Exception as e:
+                lib_exc_info = ''.join(traceback.format_exception(*sys.exc_info()))
+                lib_e = str(e)
+        else:
+            lib_exc_info = lib_e = ''
+
+        try:
+            while True:
+                msg, value = vpixx_thread_queue.get(block=True)
+                if msg == 'eof':
+                    break
+                elif msg == 'vpixx.command':
+                    if PROPixx is None:
+                        network_response_queue.put(
+                            ('server_exception', (lib_e, lib_exc_info)))
+                        continue
+
+                    opt, settings = value
+                    if opt == 'led_mode':
+                        name, mode = settings
+                        libdpx.DPxOpen()
+                        libdpx.DPxSelectDevice(name)
+                        libdpx.DPxSetPPxLedMask(mode)
+                        libdpx.DPxUpdateRegCache()
+                        libdpx.DPxClose()
+                    elif opt == 'video_mode':
+                        mode, = settings
+                        dev = PROPixx()
+                        dev.setDlpSequencerProgram(mode)
+                        dev.updateRegisterCache()
+                        dev.close()
+                    elif opt == 'pixel_mode':
+                        state, = settings
+                        ctrl = PROPixxCTRL()
+                        if state:
+                            ctrl.dout.enablePixelMode()
+                        else:
+                            ctrl.dout.disablePixelMode()
+                        ctrl.updateRegisterCache()
+                        ctrl.close()
+                else:
+                    assert False
+        except Exception as e:
+            exc_info = ''.join(traceback.format_exception(*sys.exc_info()))
+            to_kivy_queue.put(
+                ('exception', (str(e), exc_info)))
+            trigger()
+        finally:
+            Logger.info('closing vpixx thread')
+
     def send_msg_to_client(self, sock, msg, value):
         if msg == 'remote_image':
             Clock.schedule_once(App.get_running_app().increment_images_sent)
@@ -732,7 +806,8 @@ class CeedRemoteViewApp(CPLComApp):
         return msg, value
 
     def read_msg_from_client(
-            self, sock, to_kivy_queue, trigger, msg_len, msg_buff):
+            self, sock, to_kivy_queue, vpixx_thread_queue, trigger,
+            msg_len, msg_buff):
         # still reading msg size
         if not msg_len:
             assert 8 - len(msg_buff)
@@ -753,14 +828,18 @@ class CeedRemoteViewApp(CPLComApp):
 
             msg_buff += data
             if len(msg_buff) == total:
-                to_kivy_queue.put(self.decode_data(msg_buff, msg_len))
-                trigger()
+                msg, value = self.decode_data(msg_buff, msg_len)
+                if msg.startswith('vpixx.'):
+                    vpixx_thread_queue.put((msg, value))
+                else:
+                    to_kivy_queue.put((msg, value))
+                    trigger()
 
                 msg_len = ()
                 msg_buff = b''
         return msg_len, msg_buff
 
-    def server_run(self, from_kivy_queue, to_kivy_queue):
+    def server_run(self, from_kivy_queue, to_kivy_queue, vpixx_thread_queue):
         trigger = self._kivy_trigger
         timeout = self.timeout
 
@@ -804,7 +883,8 @@ class CeedRemoteViewApp(CPLComApp):
                         r, _, _ = select.select([connection], [], [], timeout)
                         if r:
                             msg_len, msg_buff = self.read_msg_from_client(
-                                connection, to_kivy_queue, trigger, msg_len, msg_buff)
+                                connection, to_kivy_queue, vpixx_thread_queue,
+                                trigger, msg_len, msg_buff)
 
                         try:
                             while True:
@@ -900,6 +980,11 @@ def _cleanup(app):
         app.image_save_queue.put(('eof', None))
         if app.image_save_thread is not None:
             app.image_save_thread.join()
+
+    if app.vpixx_thread_queue is not None:
+        app.vpixx_thread_queue.put(('eof', None))
+        if app.vpixx_thread is not None:
+            app.vpixx_thread.join()
 
 
 

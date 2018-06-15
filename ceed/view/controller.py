@@ -94,7 +94,8 @@ class ViewControllerBase(EventDispatcher):
         'screen_width', 'screen_height', 'frame_rate',
         'use_software_frame_rate', 'cam_rotation', 'cam_scale',
         'cam_center_x', 'cam_center_y', 'output_count', 'screen_offset_x',
-        'preview', 'fullscreen', 'video_mode', 'LED_mode', 'LED_mode_idle')
+        'preview', 'fullscreen', 'video_mode', 'LED_mode', 'LED_mode_idle',
+        'vpixx_remote')
 
     screen_width = NumericProperty(1920)
     '''The screen width on which the data is played. This is the full-screen
@@ -180,6 +181,10 @@ class ViewControllerBase(EventDispatcher):
 
     propixx_lib = BooleanProperty(False)
     '''True when the propixx python library is available. Read-only.
+    '''
+
+    vpixx_remote = BooleanProperty(False)
+    '''Whether the vpixx library interactions should happen remotely.
     '''
 
     video_modes = ['RGB', 'RB3D', 'RGB240', 'RGB180', 'QUAD4X', 'QUAD12X',
@@ -956,6 +961,11 @@ class ControllerSideViewControllerBase(ViewControllerBase):
 
     @app_error
     def set_pixel_mode(self, state):
+        if self.vpixx_remote:
+            App.get_running_app().remote_viewer.send_vpixx_command(
+                'pixel_mode', (state, ))
+            return
+
         if PROPixxCTRL is None:
             raise ImportError('Cannot open PROPixx library')
 
@@ -972,6 +982,11 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         '''Sets the projector's LED mode. ``mode`` can be one of
         :attr:`ViewControllerBase.led_modes`.
         '''
+        if self.vpixx_remote:
+            App.get_running_app().remote_viewer.send_vpixx_command(
+                'led_mode', ('PROPixx', self.led_modes[mode]))
+            return
+
         if libdpx is None:
             raise ImportError('Cannot open PROPixx library')
 
@@ -986,6 +1001,11 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         '''Sets the projector's video mode. ``mode`` can be one of
         :attr:`ViewControllerBase.video_modes`.
         '''
+        if self.vpixx_remote:
+            App.get_running_app().remote_viewer.send_vpixx_command(
+                'video_mode', (mode, ))
+            return
+
         if PROPixx is None:
             raise ImportError('Cannot open PROPixx library')
 
