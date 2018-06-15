@@ -35,6 +35,11 @@
                     flat_drop_background_color: app.theme.primary_text
                     flat_drop_text_color: app.theme.text_primary
                     flat_border_color: app.theme.divider
+                DraggingWidget:
+                    drag_controller: knspace.dragger
+                    drag_widget: func_spin.__self__
+                    obj_dragged: func_spin.__self__
+                    drag_cls: 'func_spinner'
                 FlatImageButton:
                     scale_down_color: True
                     source: 'flat_plus.png'

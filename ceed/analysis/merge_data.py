@@ -34,13 +34,14 @@ class CeedMCSDataMerger(object):
     _experiment_pat = re.compile('^experiment([0-9]+)$')
 
     @staticmethod
-    def get_experiment_names(filename):
+    def get_experiment_names(filename, ignore_list=[]):
         nix_file = nix.File.open(filename, nix.FileMode.ReadOnly)
         experiments = []
+        ignore_list = set(map(str, ignore_list))
 
         for block in nix_file.blocks:
             m = re.match(CeedMCSDataMerger._experiment_pat, block.name)
-            if m is not None:
+            if m is not None and m.group(1) not in ignore_list:
                 experiments.append(m.group(1))
 
         nix_file.close()
@@ -83,10 +84,16 @@ class CeedMCSDataMerger(object):
             try:
                 config = section.sections['app_config']
             except KeyError:
-                raise Exception('Did not find config in experiment info')
+                raise Exception(
+                    'Did not find config in experiment info for experiment {}'.
+                        format(experiment))
 
             for prop in config:
                 metadata[prop.name] = yaml_loads(prop.values[0].value)
+
+            if not block.data_arrays['frame_bits'].shape or \
+                    not block.data_arrays['frame_bits'].shape[0]:
+                raise Exception('Experiment {} has no data'.format(experiment))
 
             frame_bits = np.array(block.data_arrays['frame_bits']).squeeze()
             frame_counter = np.array(block.data_arrays['frame_counter']
@@ -241,7 +248,7 @@ class CeedMCSDataMerger(object):
     def get_alignment(
             self, config, mcs_idx_start, mcs_clock_data,
             mcs_short_counter_data, mcs_counter_bits_data, ceed_clock_data,
-            ceed_short_counter_data, ceed_counter_bits_data, find_by):
+            ceed_short_counter_data, ceed_counter_bits_data, find_by, force=False):
 
         # counter_bit_width = 32
         if find_by == 'uuid':  # find by uuid
@@ -281,6 +288,10 @@ class CeedMCSDataMerger(object):
         if np.all(mcs_clock_data == ceed_clock_data) and\
                 np.all(mcs_short_counter_data == ceed_short_counter_data) and \
                 np.all(mcs_counter_bits_data == ceed_counter_bits_data):
+            return mcs_idx_start
+
+        if force:
+            print(min(mcs_idx_start), max(mcs_idx_start))
             return mcs_idx_start
 
         raise AlignmentException('Could not align the data')
@@ -357,19 +368,14 @@ class CeedMCSDataMerger(object):
 
 
 if __name__ == '__main__':
-    ceed_file = r'/home/cpl/Desktop/test.h5'
-    mcs_file = r'/home/cpl/share/2018-04-13T11-43-20McsRecording.h5'
-    output_file = r'/home/cpl/Desktop/test_out.h5'
+    ceed_file = r'/home/cpl/Desktop/experiment/data/5-31-2018/test_ceed.h5'
+    mcs_file = r'/home/cpl/Desktop/experiment/data/5-31-2018/2018-06-13T21-23-37McsRecording.h5'
+    output_file = r'/home/cpl/Desktop/experiment/data/5-31-2018/slice_2_merged.h5'
     data = CeedMCSDataMerger()
 
     alignment = {}
-    for experiment in data.get_experiment_names(ceed_file):
+    for experiment in data.get_experiment_names(ceed_file, ignore_list=[]):
         vals = data.parse_digital_data(ceed_file, mcs_file, experiment)
-        try:
-            alignment[experiment] = data.get_alignment(*vals)
-            print(experiment)
-        except AlignmentException:
-            print("Couldn't align {}".format(experiment))
-        except Exception as e:
-            print("{}: {}".format(e, experiment))
-    data.merge_data(output_file, ceed_file, mcs_file, alignment)
+        print('Aligning MCS and ceed data for experiment {}'.format(experiment))
+        alignment[experiment] = data.get_alignment(*vals)
+    # data.merge_data(output_file, ceed_file, mcs_file, alignment)
