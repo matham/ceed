@@ -165,6 +165,11 @@ class RemoteViewerListenerBase(EventDispatcher):
             return
         self.from_kivy_queue.put((key, value))
 
+    def send_vpixx_command(self, opt, settings):
+        if self.from_kivy_queue is None:
+            return
+        self.from_kivy_queue.put(('vpixx.command', (opt, settings)))
+
     @app_error
     def start_listener(self):
         if self.listener_thread is not None:
@@ -188,6 +193,10 @@ class RemoteViewerListenerBase(EventDispatcher):
                     App.get_running_app().handle_exception(
                         e, exc_info=exec_info)
                     self.stop_listener()
+                elif msg == 'server_exception':
+                    e, exec_info = value
+                    App.get_running_app().handle_exception(
+                        e, exc_info=exec_info)
                 elif msg == 'track_cam_setting':
                     player = knspace.player
                     if player is not None:
