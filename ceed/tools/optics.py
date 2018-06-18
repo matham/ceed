@@ -322,8 +322,8 @@ class FormulaPlot(EventDispatcher):
             else:
                 self._y_range = float(np.min(yvals)), float(np.max(yvals))
 
-            graph.x_ticks_major = (end - start) / 10
-            graph.y_ticks_major = (x2_end - x2_start) / 10
+            graph.x_ticks_major = abs(end - start) / 10
+            graph.y_ticks_major = abs(x2_end - x2_start) / 10
             graph.xlabel = '{} -- {}'.format(
                 self.x_variable_formula.widget.name,
                 self.formula.variable_descriptions.get(xvar, xvar))
@@ -924,28 +924,28 @@ class OpticsApp(App):
 
         self.objective_lens.widget = widget = FormulaWidget(
             formula=self.objective_lens,
-            description='(1/3) Compute objective from slice',
+            description='(1/4) First lens in the sequence.',
             name='L1')
         widget.populate_widget()
         container.add_widget(widget)
 
         self.cam_lens_further.widget = widget = FormulaWidget(
             formula=self.cam_lens_further,
-            description='(2/3) Compute cam lens 1 after objective',
+            description='(2/4) Second lens in the sequence.',
             name='L2')
         widget.populate_widget()
         container.add_widget(widget)
 
         self.cam_lens_closer.widget = widget = FormulaWidget(
             formula=self.cam_lens_closer,
-            description='(3/3) Compute cam lens final',
+            description='(3/4) Third lens in the sequence.',
             name='L3')
         widget.populate_widget()
         container.add_widget(widget)
 
         self.cam_lens_closer2.widget = widget = FormulaWidget(
             formula=self.cam_lens_closer2,
-            description='(4/3) Compute cam lens final+1',
+            description='((4/4) Fourth lens in the sequence.',
             name='L4')
         widget.populate_widget()
         container.add_widget(widget)
