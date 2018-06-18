@@ -2,6 +2,8 @@ import math
 import scipy.io
 import numpy as np
 from fractions import Fraction
+import sys
+import logging
 import nixio as nix
 import re
 from cplcom.utils import yaml_dumps, yaml_loads
@@ -166,9 +168,15 @@ class CeedDataReader(object):
 
         self.led_state = block.data_arrays['led_state']
 
-        self.electrode_intensity_alignment = self._nix_file.blocks[
-            'ceed_mcs_alignment'].data_arrays[
-            'experiment_{}'.format(experiment)]
+        if ('experiment_{}'.format(experiment) in
+                self._nix_file.blocks['ceed_mcs_alignment'].data_arrays):
+            self.electrode_intensity_alignment = self._nix_file.blocks[
+                'ceed_mcs_alignment'].data_arrays[
+                'experiment_{}'.format(experiment)]
+        else:
+            self.electrode_intensity_alignment = None
+            logging.warning(
+                'Could not find alignment for experiment {}'.format(experiment))
 
         mcs_block = self._nix_file.blocks['mcs_data']
         mcs_metadata = mcs_block.metadata
@@ -526,22 +534,33 @@ class CeedDataReader(object):
                     size=yaml_loads(group.metadata['size']))
         return img
 
-    def dump_electrode_data_matlab(self, filename, integer_format=False):
+    def dump_electrode_data_matlab(self, filename, chunks=1e9):
+        itemsize = np.array([0.0]).nbytes
         data = self.electrodes_data
-        if not integer_format:
-            scaled_data = {}
+        n_items = int(chunks // (itemsize * len(data)))
+        print(itemsize, n_items)
+
+        with open(filename, 'wb') as fh:
             for name, value in data.items():
                 offset, scale = self.get_electrode_offset_scale(name)
-                scaled_data[name] = (np.array(value) - offset) * scale
-            data = scaled_data
+                i = 0
+                n = len(value)
+                print(value.shape)
 
-        scipy.io.savemat(filename, data)
+                while i * n_items < n:
+                    items = np.array(
+                        value[i * n_items:min((i + 1) * n_items, n)])
+                    scipy.io.savemat(fh, {
+                        '{}_{}'.format(name, i): (items - offset) * scale})
+                    i += 1
 
 
 if __name__ == '__main__':
     from functools import partial
-    f = CeedDataReader(r'E:\4_4_2018_slice3_merged.h5')
-    print(f.get_128_electrode_names())
+    f = CeedDataReader(r'E:\slice_1_merged.h5')
+    f.open_h5()
+    f.read_experiment(0)
+    f.dump_electrode_data_matlab('E:\\out.mat')
     exit()
     f.open_h5()
     # for exp in f.get_experiments():
