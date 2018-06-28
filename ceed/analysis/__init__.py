@@ -1,4 +1,5 @@
 import math
+import sys
 import scipy.io
 import numpy as np
 from fractions import Fraction
@@ -11,6 +12,7 @@ from cplcom.config import apply_config
 from cplcom.player import Player
 from ffpyplayer.pic import Image, SWScale
 from ffpyplayer.tools import get_best_pix_fmt
+from tqdm import tqdm
 from ffpyplayer.writer import MediaWriter
 
 from ceed.function import FunctionFactoryBase, register_all_functions
@@ -538,21 +540,25 @@ class CeedDataReader(object):
         itemsize = np.array([0.0]).nbytes
         data = self.electrodes_data
         n_items = int(chunks // (itemsize * len(data)))
-        print(itemsize, n_items)
+        total_n = sum(len(value) for value in data.values())
+        pbar = tqdm(
+            total=total_n, file=sys.stdout, unit_scale=1, unit='bytes')
 
         with open(filename, 'wb') as fh:
             for name, value in data.items():
+                pbar.desc = 'Electrode {:6}'.format(name)
                 offset, scale = self.get_electrode_offset_scale(name)
                 i = 0
                 n = len(value)
-                print(value.shape)
 
                 while i * n_items < n:
                     items = np.array(
                         value[i * n_items:min((i + 1) * n_items, n)])
                     scipy.io.savemat(fh, {
                         '{}_{}'.format(name, i): (items - offset) * scale})
+                    pbar.update(len(items))
                     i += 1
+        pbar.close()
 
 
 if __name__ == '__main__':
