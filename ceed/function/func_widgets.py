@@ -39,7 +39,7 @@ class FuncDragableLayoutBehavior(DragableLayoutBehavior):
                 func = deepcopy(func)
         else:
             func = deepcopy(
-                _get_app().function_factory.funcs_inst[drag_widget.text])
+                _get_app().function_factory.funcs_inst[drag_widget.drag_widget.text])
         self.controller.add_func(func, index=len(self.children) - index)
 
 
