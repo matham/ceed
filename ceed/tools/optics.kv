@@ -131,7 +131,7 @@
             size_hint: None, None
             size: self.texture_size
             padding: '5dp', '5dp'
-            text: '{:0.2f}, {:0.2f}'.format(root.mouse_x_val, root.mouse_y_val) if root.mouse_x2_val is None else '{:0.2f}, {:0.2f}, {:0.2f}'.format(root.mouse_x_val, root.mouse_x2_val, root.mouse_y_val)
+            text: '{:0.2f}, {:0.6f}'.format(root.mouse_x_val, root.mouse_y_val) if root.mouse_x2_val is None else '{:0.2f}, {:0.2f}, {:0.6f}'.format(root.mouse_x_val, root.mouse_x2_val, root.mouse_y_val)
             flat_color: app.theme.text_primary
             font_size: '13sp'
             pos: self.parent.pos

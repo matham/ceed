@@ -23,7 +23,9 @@ setup(
                  'Operating System :: Microsoft :: Windows',
                  'Intended Audience :: Developers'],
     packages=find_packages(),
-    install_requires=['ffpyplayer', 'cplcom', 'kivy', 'numpy', 'scikit-image', 'psutil', 'nixio'],
+    install_requires=[
+        'ffpyplayer', 'cplcom', 'kivy', 'numpy', 'scikit-image', 'psutil',
+        'nixio', 'tqdm'],
     package_data={'ceed': ['data/*', '*.kv']},
     entry_points={'console_scripts': ['ceed=ceed.main:run_app']},
     )
