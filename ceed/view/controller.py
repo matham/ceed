@@ -243,6 +243,11 @@ class ViewControllerBase(EventDispatcher):
     '''The kivy clock event that updates the colors on every frame.
     '''
 
+    tick_delay_event = None
+    '''The delay event that triggers tick_event after an initial delay to
+    ensure everything is ready before we start showing actual frames.
+    '''
+
     tick_func = None
     '''The iterator that updates the colors on every frame.
     '''
@@ -427,7 +432,9 @@ class ViewControllerBase(EventDispatcher):
             raise TypeError('Cannot start new stage while stage is active')
 
         Clock._max_fps = 0
-        self.tick_event = Clock.schedule_interval(self.tick_callback, 0)
+        self.tick_event = Clock.create_trigger(
+            self.tick_callback, 0, interval=True)
+        self.tick_delay_event = Clock.schedule_once(self.tick_event, .25)
         Window.fbind('on_flip', self.flip_callback)
 
         self.current_canvas = canvas
@@ -449,12 +456,15 @@ class ViewControllerBase(EventDispatcher):
             return
 
         self.tick_event.cancel()
+        if self.tick_delay_event is not None:
+            self.tick_delay_event.cancel()
         Window.funbind('on_flip', self.flip_callback)
         Clock._max_fps = self._original_fps
         _get_app().stage_factory.remove_shapes_gl_color_instructions(
             self.current_canvas, self.canvas_name)
 
         self.tick_func = self.tick_event = self.current_canvas = None
+        self.tick_delay_event = None
         self.shape_views = []
         self.count = 0
         self._cpu_stats['count'] = 0
@@ -528,6 +538,7 @@ class ViewControllerBase(EventDispatcher):
         Window.on_flip()
 
         t = clock()
+        # count of zero is discarded
         self.request_process_data('frame_flip', (self.count, t))
 
         stats = self._flip_stats

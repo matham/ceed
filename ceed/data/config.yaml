@@ -1,7 +1,7 @@
 app: {inspect: true}
-data: {backup_interval: 5.0, root_path: /home/cpl/Desktop/experiment/data/5-31-2018}
+data: {backup_interval: 5.0, root_path: /home/cpl/Desktop/data}
 function: {timebase_denominator: 1, timebase_numerator: 1}
-player: {browse_path: /home/cpl/Desktop/experiment/data/5-8-2018}
+player: {browse_path: /home/cpl/Desktop/data/7-16-2018}
 point_gray_cam:
   brightness: {abs: true, auto: false, controllable: true, max: 12.4755859375, min: 0.0,
     one_push: false, present: true, relative_value: 880, value: 5.76171875}
@@ -41,7 +41,7 @@ point_gray_cam:
     one_push: false, present: true, relative_value: 2177, value: 0.12402534484863281}
   tilt: {abs: false, auto: false, controllable: false, max: 0.0, min: 0.0, one_push: false,
     present: false, relative_value: 0, value: 0.0}
-remote_viewer: {port: 10000, server: 192.168.114.231, timeout: 0.1}
+remote_viewer: {port: 10000, server: 192.168.114.10, timeout: 0.1}
 serializer:
   clock_idx: 2
   count_indices: [19, 20]
@@ -63,7 +63,7 @@ video_file_playback:
   record_directory: ''
   record_fname: video{}.avi
   record_fname_count: '32'
-view: {LED_mode: RGB, LED_mode_idle: none, cam_center_x: 937.6492799364116, cam_center_y: 800.7236274440468,
-  cam_rotation: 270.9184932234725, cam_scale: 1.3385487898715513, frame_rate: 120.0,
+view: {LED_mode: RGB, LED_mode_idle: none, cam_center_x: 946.2206040536023, cam_center_y: 131.93107831078748,
+  cam_rotation: 90.03436444463864, cam_scale: 1.0952277895189546, frame_rate: 120.0,
   fullscreen: true, output_count: true, preview: false, screen_height: 1080, screen_offset_x: 0,
-  screen_width: 1920, use_software_frame_rate: false, video_mode: RGB}
+  screen_width: 1920, use_software_frame_rate: false, video_mode: RGB, vpixx_remote: true}
