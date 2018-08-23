@@ -17,19 +17,205 @@ class AlignmentException(Exception):
     pass
 
 
+class DigitalDataStore(object):
+
+    short_count_indices = None
+
+    short_count_data = None
+
+    count_indices = None
+
+    count_data = None
+
+    clock_index = None
+
+    clock_data = None
+
+    data = None
+    '''raw data.
+    
+    maps the values from data at indices_center using the maps at xxx_map
+    for each array item and saves it into xxx_data. xxx_map is formed from
+    xxx_indices.
+    
+    data_indices_xxx are the indices in data where each xxx_data array item
+    came from.
+    '''
+
+    def __init__(self, short_count_indices, count_indices, clock_index):
+        '''indices are first mapped with projector_to_aquisition_map. '''
+        super(DigitalDataStore, self).__init__()
+        self.short_count_indices = short_count_indices
+        self.count_indices = count_indices
+        self.clock_index = clock_index
+        self.populate_indices()
+
+    def populate_indices(self):
+        pass
+
+    def compare_indices(self, short_count_indices, count_indices, clock_index):
+        if self.short_count_indices is None and \
+                short_count_indices is not None:
+            return False
+        if self.short_count_indices is not None \
+                and short_count_indices is None:
+            return False
+        if self.short_count_indices is not None:
+            if not np.array_equal(
+                    self.short_count_indices, short_count_indices):
+                return False
+
+        if self.count_indices is None and count_indices is not None:
+            return False
+        if self.count_indices is not None and count_indices is None:
+            return False
+        if self.count_indices is not None:
+            if not np.array_equal(self.count_indices, count_indices):
+                return False
+
+        if self.clock_index != clock_index:
+            return False
+        return True
+
+    def __eq__(self, other):
+        if not isinstance(other, MCSDigitalData):
+            return False
+
+        return self.compare_indices(
+            other.short_count_indices, other.count_indices, other.clock_index)
+
+
+class MCSDigitalData(DigitalDataStore):
+
+    short_count_map = None
+
+    count_map = None
+
+    data_indices_center = None
+
+    data_indices_start = None
+
+    data_indices_end = None
+
+    def populate_indices(self):
+        indices = np.arange(2**16, dtype=np.uint16)
+
+        short_count_map = np.zeros((2 ** 16, ), dtype=np.uint16)
+        for i, k in enumerate(self.short_count_indices):
+            short_count_map |= (indices & (1 << k)) >> (k - i)
+        self.short_count_map = short_count_map
+
+        count_map = np.zeros((2 ** 16, ), dtype=np.uint16)
+        for i, k in enumerate(self.count_indices):
+            count_map |= (indices & (1 << k)) >> (k - i)
+        self.count_map = count_map
+
+    def parse_data(
+            self, data, t_start, f, find_offset=None,  estimated_start=None):
+        self.data = data
+        clock_index = self.clock_index
+        clock_bit = 1 << clock_index
+
+        offset = 0
+        if isinstance(find_offset, numbers.Number):
+            offset = (estimated_start - t_start).total_seconds() - \
+                float(find_offset)
+            if offset < 0:
+                raise Exception('Ceed data is not in the mcs data')
+
+            offset = int(offset * f)
+            data = data[offset:]
+
+        if len(data) < 10:
+            raise Exception('There is not enough data in the mcs file')
+
+        clock_data = (data & clock_bit) >> clock_index
+        short_count_data = self.short_count_map[data]
+        count_data = self.count_map[data]
+
+        clock_change = np.argwhere(clock_data[1:] - clock_data[:-1]).squeeze()
+        idx_start = np.array([0], dtype=clock_change.dtype)
+        idx_end = np.array([len(clock_data)], dtype=clock_change.dtype)
+        if len(clock_change):
+            idx_start = np.concatenate((idx_start, clock_change + 1))
+            idx_end = np.concatenate((clock_change, idx_end))
+
+        indices = (idx_start + idx_end) // 2
+        s = 0 if clock_data[0] else 1
+        indices = indices[s:]
+
+        self.data_indices_start = idx_start[s:] + offset
+        self.data_indices_center = indices + offset
+        self.data_indices_end = idx_end[s:] + offset
+        self.clock_data = clock_data[indices]
+        self.short_count_data = short_count_data[indices]
+        self.count_data = count_data[indices]
+
+
+class CeedDigitalData(DigitalDataStore):
+
+    short_count_l_map = None
+
+    short_count_u_map = None
+
+    count_l_map = None
+
+    count_u_map = None
+
+    def populate_indices(self):
+        indices = np.arange(2 ** 16, dtype=np.uint16)
+
+        short_map_l = np.zeros((2 ** 16, ), dtype=np.uint16)
+        short_map_u = np.zeros((2 ** 16, ), dtype=np.uint16)
+
+        for i, k in enumerate(self.short_count_indices):
+            if k <= 15:
+                short_map_l |= ((indices & (1 << k)) >> k) << i
+            else:
+                short_map_u |= (indices & (1 << (k % 16))) >> (k % 16) << i
+
+        self.short_count_l_map = short_map_l
+        self.short_count_u_map = short_map_u
+
+        counter_map_l = np.zeros((2 ** 16, ), dtype=np.uint16)
+        counter_map_u = np.zeros((2 ** 16, ), dtype=np.uint16)
+
+        for i, k in enumerate(self.count_indices):
+            if k <= 15:
+                counter_map_l |= ((indices & (1 << k)) >> k) << i
+            else:
+                counter_map_u |= (indices & (1 << (k % 16))) >> (k % 16) << i
+
+        self.count_l_map = counter_map_l
+        self.count_u_map = counter_map_u
+
+    def parse_data(self, data):
+        self.data = data
+        clock_index = self.clock_index
+        clock_bit = 1 << clock_index
+
+        self.clock_data = (data & clock_bit) >> clock_index
+        self.short_count_data = (
+            self.short_count_l_map[data & 0xFFFF] |
+            self.short_count_u_map[(data & 0xFFFF0000) >> 16])
+        self.count_data = (
+            self.count_l_map[data & 0xFFFF] |
+            self.count_u_map[(data & 0xFFFF0000) >> 16])
+
+
 class CeedMCSDataMerger(object):
 
     ceed_config_orig = {}
 
     ceed_data = {}
 
+    ceed_data_container = None
+
     mcs_dig_data = []
 
     mcs_dig_config = {}
 
-    mcs_mapping = {}
-
-    ceed_mapping = {}
+    mcs_data_container = None
 
     _experiment_pat = re.compile('^experiment([0-9]+)$')
 
@@ -131,183 +317,88 @@ class CeedMCSDataMerger(object):
             values |= data[i::n_items_per_val] << (i * bits_per_item)
         return values
 
-    def create_dig_mappings(self):
+    def create_or_reuse_ceed_data_container(self):
         config = self.ceed_config_orig['serializer']
-        if 'config' in self.ceed_mapping and \
-                config == self.ceed_mapping['config']:
-            return
+        short_count_indices = config['short_count_indices']
+        count_indices = config['count_indices']
+        clock_index = config['clock_idx']
 
-        ceed_mcs_map = config['projector_to_aquisition_map']
+        if self.ceed_data_container is None or not self.ceed_data_container.\
+            compare_indices(
+                short_count_indices, count_indices, clock_index):
+            self.ceed_data_container = CeedDigitalData(
+                short_count_indices, count_indices, clock_index)
+        return self.ceed_data_container
 
-        ceed_map = self.ceed_mapping = {}
-        mcs_map = self.mcs_mapping = {}
-        indices = np.arange(2**16, dtype=np.uint16)
-
-        ceed_short_count_indices = config['short_count_indices']
-        ceed_short_counter_map_l = np.zeros((2 ** 16, ), dtype=np.uint16)
-        ceed_short_counter_map_u = np.zeros((2 ** 16, ), dtype=np.uint16)
-        mcs_short_counter_map = np.zeros((2 ** 16, ), dtype=np.uint16)
-
-        for i, k in enumerate(ceed_short_count_indices):
-            if k <= 15:
-                ceed_short_counter_map_l |= ((indices & (1 << k)) >> k) << i
-            else:
-                ceed_short_counter_map_u |= (
-                    (indices & (1 << (k % 16))) >> (k % 16) << i)
-            k_mcs = ceed_mcs_map[k]
-            mcs_short_counter_map |= (indices & (1 << k_mcs)) >> (k_mcs - i)
-        ceed_map['short_count_l'] = ceed_short_counter_map_l
-        ceed_map['short_count_u'] = ceed_short_counter_map_u
-        mcs_map['short_count'] = mcs_short_counter_map
-
-        ceed_count_indices = config['count_indices']
-        ceed_counter_map_l = np.zeros((2 ** 16, ), dtype=np.uint16)
-        ceed_counter_map_u = np.zeros((2 ** 16, ), dtype=np.uint16)
-        mcs_counter_map = np.zeros((2 ** 16, ), dtype=np.uint16)
-
-        for i, k in enumerate(ceed_count_indices):
-            if k <= 15:
-                ceed_counter_map_l |= ((indices & (1 << k)) >> k) << i
-            else:
-                ceed_counter_map_u |= (
-                    (indices & (1 << (k % 16))) >> (k % 16) << i)
-            k_mcs = ceed_mcs_map[k]
-            mcs_counter_map |= (indices & (1 << k_mcs)) >> (k_mcs - i)
-        ceed_map['count_l'] = ceed_counter_map_l
-        ceed_map['count_u'] = ceed_counter_map_u
-        mcs_map['count'] = mcs_counter_map
-
-    def parse_digital_data(
-            self, ceed_file, mcs_file, ceed_experiment, find_by='uuid'):
-        self.read_mcs_digital_data(mcs_file)
-        self.read_ceed_digital_data(ceed_file, ceed_experiment)
-        self.create_dig_mappings()
-
+    def create_or_reuse_mcs_data_container(self):
         config = self.ceed_config_orig['serializer']
         ceed_mcs_map = config['projector_to_aquisition_map']
-        ceed_clock_idx = config['clock_idx']
-        ceed_clock_bit = 1 << config['clock_idx']
-        mcs_clock_idx = ceed_mcs_map[config['clock_idx']]
-        mcs_clock_bit = 1 << ceed_mcs_map[config['clock_idx']]
+        map_f = np.vectorize(lambda x: ceed_mcs_map[x])
 
-        mcs_dig = self.mcs_dig_data
-        mcs_t_start = self.mcs_dig_config['t_start']
-        mcs_f = self.mcs_dig_config['f']
+        short_count_indices = map_f(config['short_count_indices'])
+        count_indices = map_f(config['count_indices'])
+        clock_index = map_f(config['clock_idx'])
 
-        ceed_t_start = self.ceed_data['start_t']
-        ceed_bits = self.ceed_data['frame_bits']
+        if self.mcs_data_container is None or not self.mcs_data_container.\
+            compare_indices(
+                short_count_indices, count_indices, clock_index):
+            self.mcs_data_container = MCSDigitalData(
+                short_count_indices, count_indices, clock_index)
+        return self.mcs_data_container
 
-        ceed_map = self.ceed_mapping
-        mcs_map = self.mcs_mapping
+    def parse_ceed_digital_data(self):
+        self.create_or_reuse_ceed_data_container()
+        self.ceed_data_container.parse_data(self.ceed_data['frame_bits'])
 
-        mcs_offset = 0
-        if find_by is not None and isinstance(find_by, numbers.Number):
-            mcs_offset = (ceed_t_start - mcs_t_start).total_seconds() - \
-                float(find_by)
-            if mcs_offset < 0:
-                raise Exception('Ceed data is not in the mcs data')
-            mcs_offset = int(mcs_offset * mcs_f)
-            mcs_dig = mcs_dig[mcs_offset:]
+    def parse_mcs_digital_data(self, find_by=None):
+        self.create_or_reuse_mcs_data_container()
+        self.mcs_data_container.parse_data(
+            self.mcs_dig_data, self.mcs_dig_config['t_start'],
+            self.mcs_dig_config['f'],
+            find_offset=find_by, estimated_start=self.ceed_data['start_t'])
 
-        if len(mcs_dig) < 10:
-            raise Exception('There is not enough data in the mcs file')
+    def get_alignment(self, find_by=None, force=False):
+        ceed_ = self.ceed_data_container
+        mcs = self.mcs_data_container
 
-        ceed_clock_data = (ceed_bits & ceed_clock_bit) >> ceed_clock_idx
-        mcs_clock_data = (mcs_dig & mcs_clock_bit) >> mcs_clock_idx
-
-        ceed_short_counter_data = (
-                ceed_map['short_count_l'][ceed_bits & 0xFFFF] |
-                ceed_map['short_count_u'][(ceed_bits & 0xFFFF0000) >> 16])
-        mcs_short_counter_data = mcs_map['short_count'][mcs_dig]
-        ceed_counter_bits_data = (
-                ceed_map['count_l'][ceed_bits & 0xFFFF] |
-                ceed_map['count_u'][(ceed_bits & 0xFFFF0000) >> 16])
-        mcs_counter_bits_data = mcs_map['count'][mcs_dig]
-
-        clock_change = np.argwhere(
-            mcs_clock_data[1:] - mcs_clock_data[:-1]).squeeze()
-        mcs_idx_start = np.array([0], dtype=clock_change.dtype)
-        end = np.array([len(mcs_clock_data)], dtype=clock_change.dtype)
-        if len(clock_change):
-            mcs_idx_start = np.concatenate((mcs_idx_start, clock_change + 1))
-            end = np.concatenate((clock_change, end))
-        mcs_indices = (mcs_idx_start + end) // 2
-
-        s = 0 if mcs_clock_data[0] else 1
-        mcs_indices = mcs_indices[s:]
-        mcs_idx_start = mcs_idx_start[s:] + mcs_offset
-        mcs_clock_data = mcs_clock_data[mcs_indices]
-        mcs_short_counter_data = mcs_short_counter_data[mcs_indices]
-        mcs_counter_bits_data = mcs_counter_bits_data[mcs_indices]
-
-        return (
-            config, mcs_idx_start, mcs_clock_data,
-            mcs_short_counter_data, mcs_counter_bits_data, ceed_clock_data,
-            ceed_short_counter_data, ceed_counter_bits_data, find_by)
-
-    def get_alignment(
-            self, config, mcs_idx_start, mcs_clock_data,
-            mcs_short_counter_data, mcs_counter_bits_data, ceed_clock_data,
-            ceed_short_counter_data, ceed_counter_bits_data, find_by, force=False):
-
+        s = 0
         # counter_bit_width = 32
-        if find_by == 'uuid':  # find by uuid
-            ceed_d = ceed_counter_bits_data
-            mcs_d = mcs_counter_bits_data
-            n = int(ceil(32 / float(len(config['count_indices'])))) * 5
+        if find_by is None:  # find by uuid
+            # n is number of frames we need to send uuid
+            n = int(ceil(32 / float(len(ceed_.count_indices)))) * 5
 
-            strides = mcs_d.strides + (mcs_d.strides[-1], )
-            shape = mcs_d.shape[-1] - n + 1, n
+            # following searches for the uuid in the mcs data
+            strides = mcs.count_data.strides + (mcs.count_data.strides[-1], )
+            shape = mcs.count_data.shape[-1] - n + 1, n
             strided = np.lib.stride_tricks.as_strided(
-                mcs_counter_bits_data, shape=shape, strides=strides)
-            res = np.all(strided == ceed_d[:n], axis=1)
+                mcs.count_data, shape=shape, strides=strides)
+            res = np.all(strided == ceed_.count_data[:n], axis=1)
             indices = np.mgrid[0:len(res)][res]
 
             if not len(indices):
                 raise AlignmentException('Could not find alignment')
             if len(indices) > 1:
                 raise Exception(
-                    'Found multiple Ceed-mcs alignment ({})'.format(indices))
+                    'Found multiple Ceed-mcs alignments ({})'.format(indices))
 
-            i = indices[0]
-            mcs_idx_start = mcs_idx_start[i:]
-            mcs_clock_data = mcs_clock_data[i:]
+            s = indices[0]
 
-            mcs_short_counter_data = mcs_short_counter_data[i:]
-            mcs_counter_bits_data = mcs_counter_bits_data[i:]
+        e = len(ceed_.clock_data) - 1 + s
+        mcs_indices = mcs.data_indices_start[s:e]
 
-        ceed_clock_data = ceed_clock_data[:-1]
-        ceed_short_counter_data = ceed_short_counter_data[:-1]
-        ceed_counter_bits_data = ceed_counter_bits_data[:-1]
-
-        mcs_idx_start = mcs_idx_start[:len(ceed_clock_data)]
-        mcs_clock_data = mcs_clock_data[:len(ceed_clock_data)]
-        mcs_short_counter_data = mcs_short_counter_data[:len(ceed_clock_data)]
-        mcs_counter_bits_data = mcs_counter_bits_data[:len(ceed_clock_data)]
-
-        if np.all(mcs_clock_data == ceed_clock_data) and\
-                np.all(mcs_short_counter_data == ceed_short_counter_data) and \
-                np.all(mcs_counter_bits_data == ceed_counter_bits_data):
-            return mcs_idx_start
+        if np.all(mcs.clock_data[s:e] == ceed_.clock_data[:-1]) and \
+            np.all(mcs.short_count_data[s:e] == ceed_.short_count_data[:-1]) \
+                and np.all(mcs.count_data[s:e] == ceed_.count_data[:-1]):
+            return mcs_indices
 
         if force:
-            print(min(mcs_idx_start), max(mcs_idx_start))
-            return mcs_idx_start
+            print(min(mcs_indices), max(mcs_indices))
+            return mcs_indices
 
         raise AlignmentException('Could not align the data')
 
-        e = 20
-        # print(mcs_idx_start[:e])
-        # print(mcs_clock_data[:e])
-        # print(mcs_short_counter_data[:e])
-        # print(mcs_counter_bits_data[:e])
-        # print(ceed_clock_data[:e])
-        # print(ceed_short_counter_data[:e])
-        # print(ceed_counter_bits_data[:e])
-        # print(len(ceed_short_counter_data), len(mcs_short_counter_data))
-
-    def merge_data(
-            self, filename, ceed_filename, mcs_filename, alignment_indices):
+    @staticmethod
+    def merge_data(filename, ceed_filename, mcs_filename, alignment_indices):
         if os.path.exists(filename):
             raise Exception('{} already exists'.format(filename))
 
@@ -368,14 +459,33 @@ class CeedMCSDataMerger(object):
 
 
 if __name__ == '__main__':
-    ceed_file = r'/home/cpl/Desktop/experiment/data/5-31-2018/test_ceed.h5'
-    mcs_file = r'/home/cpl/Desktop/experiment/data/5-31-2018/2018-06-13T21-23-37McsRecording.h5'
-    output_file = r'/home/cpl/Desktop/experiment/data/5-31-2018/slice_2_merged.h5'
-    data = CeedMCSDataMerger()
+    ceed_file = r'/home/cpl/Desktop/data/temp.h5'
+    mcs_file = r'/home/cpl/Desktop/data/tempc.h5'
+    output_file = r'/home/cpl/Desktop/data/temp_merged.h5'
+    align_by = None
+    merger = CeedMCSDataMerger()
+
+    merger.read_mcs_digital_data(mcs_file)
+    init = False
 
     alignment = {}
-    for experiment in data.get_experiment_names(ceed_file, ignore_list=[]):
-        vals = data.parse_digital_data(ceed_file, mcs_file, experiment)
-        print('Aligning MCS and ceed data for experiment {}'.format(experiment))
-        alignment[experiment] = data.get_alignment(*vals)
-    # data.merge_data(output_file, ceed_file, mcs_file, alignment)
+    for experiment in merger.get_experiment_names(ceed_file, ignore_list=[]):
+        merger.read_ceed_digital_data(ceed_file, experiment)
+        merger.parse_ceed_digital_data()
+
+        if not init or align_by is not None:
+            merger.parse_mcs_digital_data(find_by=align_by)
+            init = True
+
+        try:
+            align = alignment[experiment] = merger.get_alignment(
+                find_by=align_by)
+            print(
+                'Aligned MCS and ceed data for experiment {} at MCS samples '
+                '[{} - {}] ({} frames)'.format(
+                    experiment, align[0], align[-1], len(align)))
+        except Exception as e:
+            print(
+                "Couldn't align MCS and ceed data for experiment "
+                "{} ({})".format(experiment, e))
+    merger.merge_data(output_file, ceed_file, mcs_file, alignment)
