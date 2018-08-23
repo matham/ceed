@@ -14,7 +14,6 @@ from functools import partial
 from threading import Thread
 # import cv2
 import numpy as np
-import imreg_dft as ird
 from matplotlib import pyplot as plt
 from scipy.ndimage import zoom
 try:
@@ -1039,6 +1038,7 @@ class ControllerSideViewControllerBase(ViewControllerBase):
     def register_cam_to_projector(self, proj_pixels, cam_image, proj_size):
         try:
             import time
+            import imreg_dft as ird
             ts = time.clock()
             cam = cam_image
             cam_size = cam.get_size()

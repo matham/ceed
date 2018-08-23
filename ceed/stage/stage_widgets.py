@@ -60,7 +60,7 @@ class CeedStageDragableLayoutBehavior(DragableLayoutBehavior):
         elif drag_widget.drag_cls == 'func_spinner':
             func = deepcopy(
                 App.get_running_app().function_factory.
-                funcs_inst[drag_widget.text])
+                funcs_inst[drag_widget.drag_widget.text])
 
             stage.add_func(func)
         elif drag_widget.drag_cls == 'shape':
