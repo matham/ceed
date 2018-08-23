@@ -66,6 +66,9 @@ class EndConnection(Exception):
     pass
 
 
+connection_errors = (EndConnection, ConnectionAbortedError, ConnectionResetError)
+
+
 class TSICamera(EventDispatcher):
 
     supported_freqs = ListProperty(['20 MHz', ])
@@ -895,7 +898,7 @@ class CeedRemoteViewApp(CPLComApp):
                                     self.send_msg_to_client(connection, msg, value)
                         except Empty:
                             pass
-                except (EndConnection, ConnectionResetError):
+                except connection_errors:
                     pass
                 finally:
                     Logger.info('closing client connection')
