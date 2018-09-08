@@ -1,37 +1,42 @@
 '''Function plugins
 =====================
 
-Defines a plugin architecture so that new functions can be defined at runtime.
+Defines a plugin architecture so that new functions can be defined at runtime
+and made available to the :attr:`ceed.function.FunctionFactoryBase`
+used in the GUI and for later analysis.
 
 When :mod:`ceed.function` is imported, it automatically calls
 :func:`import_plugins` which imports all the ``.py`` files that don't start
 with an underscore in ``ceed/function/plugin``.
 
 Files in ``ceed/function/plugin`` that want to define new function classes
-should register the classes with the function factory
-:attr:`ceed.function.FunctionFactoryBase` using
-:meth:`~ceed.function.FunctionFactoryBase.register`. See this ``__init__.py``
-file for examples.
+should define a function in the file called ``get_ceed_functions`` that returns
+a list of functions that will be automatically registered with the function
+factory :attr:`ceed.function.FunctionFactoryBase` using
+:meth:`~ceed.function.FunctionFactoryBase.register`. See this
+``ceed/function/plugin/__init__.py`` file for an example.
 '''
 
 import importlib
 from os import listdir
-from os.path import dirname, isfile
+from os.path import dirname
 from math import exp, cos, pi
 
 from kivy.properties import NumericProperty
 
 from ceed.function import CeedFunc, FuncDoneException
 
-__all__ = ('get_plugin_functions', 'ConstFunc', 'LinearFunc', 'ExponentialFunc',
-           'CosFunc', 'get_ceed_functions')
+__all__ = (
+    'get_plugin_functions', 'ConstFunc', 'LinearFunc', 'ExponentialFunc',
+    'CosFunc', 'get_ceed_functions')
 
 
 def get_plugin_functions():
     '''Imports all the ``.py`` files that don't start with an underscore in
-    ``ceed/function/plugin``.
+    ``ceed/function/plugin``. This is called by
+    :func:`~ceed.function.register_all_functions`.
     '''
-    funcs = list(get_ceed_functions())
+    funcs = list(get_ceed_functions())  # get functions from this file
     for name in listdir(dirname(__file__)):
         if name.startswith('_') or not name.endswith('.py'):
             continue
@@ -58,8 +63,8 @@ class ConstFunc(CeedFunc):
             raise FuncDoneException
         return self.a
 
-    def get_gui_props(self, attrs=None):
-        d = super(ConstFunc, self).get_gui_props(attrs)
+    def get_gui_props(self, properties=None):
+        d = super(ConstFunc, self).get_gui_props(properties)
         d['a'] = None
         return d
 
@@ -72,7 +77,7 @@ class ConstFunc(CeedFunc):
 class LinearFunc(CeedFunc):
     '''Defines a linearly increasing function.
 
-    The function is defined as ``y(t) = mt + b``, where
+    The function is defined as ``y(t_in) = mt + b``, where
     ``t = (t_in - t_start + t_offset)``.
     '''
 
@@ -91,8 +96,8 @@ class LinearFunc(CeedFunc):
         t = t - self.t_start + self.t_offset
         return self.m * t + self.b
 
-    def get_gui_props(self, attrs=None):
-        d = super(LinearFunc, self).get_gui_props(attrs)
+    def get_gui_props(self, properties=None):
+        d = super(LinearFunc, self).get_gui_props(properties)
         d['m'] = None
         d['b'] = None
         return d
@@ -107,7 +112,7 @@ class LinearFunc(CeedFunc):
 class ExponentialFunc(CeedFunc):
     '''Defines a double exponential function.
 
-    The function is defined as ``y(t) = Ae-t/tau1 + Be-t/tau2``, where
+    The function is defined as ``y(t_in) = Ae^-t/tau1 + Be^-t/tau2``, where
     ``t = (t_in - t_start + t_offset)``.
     '''
 
@@ -123,7 +128,7 @@ class ExponentialFunc(CeedFunc):
         kwargs.setdefault('name', 'Exp')
         kwargs.setdefault(
             'description',
-            'y(t) = Ae-(t + t_offset)/tau1 + Be-(t + t_offset)/tau2')
+            'y(t) = Ae^-(t + t_offset)/tau1 + Be^-(t + t_offset)/tau2')
         super(ExponentialFunc, self).__init__(**kwargs)
 
     def __call__(self, t):
@@ -132,8 +137,8 @@ class ExponentialFunc(CeedFunc):
         t = t - self.t_start + self.t_offset
         return self.A * exp(-t / self.tau1) + self.B * exp(-t / self.tau2)
 
-    def get_gui_props(self, attrs=None):
-        d = super(ExponentialFunc, self).get_gui_props(attrs)
+    def get_gui_props(self, properties=None):
+        d = super(ExponentialFunc, self).get_gui_props(properties)
         d['A'] = None
         d['B'] = None
         d['tau1'] = None
@@ -152,7 +157,7 @@ class ExponentialFunc(CeedFunc):
 class CosFunc(CeedFunc):
     '''Defines a cosine function.
 
-    The function is defined as ``y(t) = Acos(2pi*f*t + th0*pi/180)``, where
+    The function is defined as ``y(t_in) = Acos(2pi*f*t + th0*pi/180)``, where
     ``t = (t_in - t_start + t_offset)``.
     '''
 
@@ -173,8 +178,8 @@ class CosFunc(CeedFunc):
         t = t - self.t_start + self.t_offset
         return self.A * cos(2 * pi * self.f * t + self.th0 * pi / 180.)
 
-    def get_gui_props(self, attrs=None):
-        d = super(CosFunc, self).get_gui_props(attrs)
+    def get_gui_props(self, properties=None):
+        d = super(CosFunc, self).get_gui_props(properties)
         d['f'] = None
         d['A'] = None
         d['th0'] = None
@@ -189,4 +194,6 @@ class CosFunc(CeedFunc):
 
 
 def get_ceed_functions():
+    '''Returns all the functions defined in the file.
+    '''
     return ConstFunc, LinearFunc, ExponentialFunc, CosFunc

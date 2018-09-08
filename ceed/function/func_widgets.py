@@ -15,12 +15,17 @@ from kivy.clock import Clock
 from kivy.factory import Factory
 from kivy.compat import string_types
 from kivy.app import App
+from kivy.lang.compiler import kv, KvContext, KvRule
+from kivy.graphics import Color, Rectangle
+from kivy.metrics import dp
 
 from cplcom.graphics import FlatTextInput
 from cplcom.drag_n_drop import DragableLayoutBehavior
 
 from ceed.utils import fix_name
-from ceed.graphics import WidgetList, ShowMoreSelection, ShowMoreBehavior
+from ceed.graphics import WidgetList, ShowMoreSelection, ShowMoreBehavior, \
+    BoxSelector
+from ceed.function import CeedFuncRef, CeedFunc, FuncGroup
 
 __all__ = ('FuncList', 'FuncWidget', 'FuncWidgetGroup', 'FuncPropTextWidget',
            'FuncNamePropTextWidget')
@@ -28,26 +33,28 @@ __all__ = ('FuncList', 'FuncWidget', 'FuncWidgetGroup', 'FuncPropTextWidget',
 _get_app = App.get_running_app
 
 
-class FuncDragableLayoutBehavior(DragableLayoutBehavior):
-
-    controller = None
-
-    def handle_drag_release(self, index, drag_widget):
-        if drag_widget.drag_cls == 'func':
-            func = drag_widget.obj_dragged.func
-            if drag_widget.drag_copy:
-                func = deepcopy(func)
-        else:
-            func = deepcopy(
-                _get_app().function_factory.funcs_inst[drag_widget.drag_widget.text])
-        self.controller.add_func(func, index=len(self.children) - index)
-
-
-class FuncList(FuncDragableLayoutBehavior, ShowMoreSelection, WidgetList,
+class FuncList(DragableLayoutBehavior, ShowMoreSelection, WidgetList,
                BoxLayout):
     '''Widgets that shows the list of available functions and allows for the
     creation of new functions.
     '''
+
+    function_factory = None
+
+    def handle_drag_release(self, index, drag_widget):
+        if drag_widget.drag_cls == 'func_spinner':
+            func = self.function_factory.funcs_inst[
+                drag_widget.obj_dragged.text]
+        else:
+            func = drag_widget.obj_dragged.func
+
+        func = deepcopy(func)
+        self.function_factory.add_func(func)
+
+        widget = FuncWidget.get_display_cls(func)()
+        widget.initialize_display(
+            func, self.function_factory, self, init_children=True)
+        self.add_widget(widget)
 
     def add_func(self, name):
         '''Adds a copy of the the function with the given ``name`` to the
@@ -56,24 +63,76 @@ class FuncList(FuncDragableLayoutBehavior, ShowMoreSelection, WidgetList,
         parent = None
         after = None
         if self.selected_nodes:
-            widget = self.selected_nodes[0]
+            widget = self.selected_nodes[-1]
             if isinstance(widget, FuncWidgetGroup):
                 parent = widget.func
             else:
                 after = widget.func
                 parent = after.parent_func
 
-        src_func = _get_app().function_factory.funcs_inst[name]
+        src_func = self.function_factory.funcs_inst[name]
+
         if parent:
             if not parent.parent_in_other_children(src_func):
-                parent.add_func(deepcopy(src_func), after=after)
+                func = CeedFuncRef(
+                    function_factory=self.function_factory, func=src_func)
+                parent.add_func(func, after=after)
+
+                widget = FuncWidget.get_display_cls(func)()
+                widget.initialize_display(func, self.function_factory, self)
+                parent.display.add_widget(widget)
         else:
-            _get_app().function_factory.add_func(deepcopy(src_func))
+            func = deepcopy(src_func)
+            self.function_factory.add_func(func)
+
+            widget = FuncWidget.get_display_cls(func)()
+            widget.initialize_display(func, self.function_factory, self)
+            self.add_widget(widget)
 
     def get_selectable_nodes(self):
+        # a ref func will never be in the root list, so get_funcs will not be
+        # called on it
         return list(reversed([
-            f.display for func in _get_app().function_factory.funcs_user for
-            f in func.get_funcs()]))
+            f.display for func in self.function_factory.funcs_user for
+            f in func.get_funcs(step_into_ref=False)]))
+
+
+class GroupFuncList(DragableLayoutBehavior, BoxLayout):
+
+    group_widget = None
+
+    def handle_drag_release(self, index, drag_widget):
+        group_widget = self.group_widget
+        group_func = group_widget.func
+        function_factory = group_func.function_factory
+
+        if drag_widget.drag_cls == 'func_spinner' or \
+                drag_widget.drag_cls == 'func' and \
+                group_widget.func_controller is function_factory and \
+                group_func.parent_func is None:
+            if drag_widget.drag_cls == 'func_spinner':
+                func = function_factory.get_func_ref(
+                    name=drag_widget.obj_dragged.text)
+            else:
+                assert not isinstance(
+                    drag_widget.obj_dragged.func, CeedFuncRef)
+                func = function_factory.get_func_ref(
+                    func=drag_widget.obj_dragged.func)
+
+            group_func.add_func(func, index=len(self.children) - index)
+
+            widget = FuncWidget.get_display_cls(func)()
+            widget.initialize_display(
+                func, function_factory, group_widget.selection_controller)
+            self.add_widget(widget, index=index)
+        else:
+            func = deepcopy(drag_widget.obj_dragged.func)
+            self.function_factory.add_func(func)
+
+            widget = FuncWidget.get_display_cls(func)()
+            widget.initialize_display(
+                func, self.function_factory, self, init_children=True)
+            self.add_widget(widget, index=index)
 
 
 class FuncWidget(ShowMoreBehavior, BoxLayout):
@@ -85,48 +144,45 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
     in stages.
     '''
 
-    func = ObjectProperty(None, rebind=True)
+    func = None
     '''The :class:`ceed.function.BaseFunc` instance associated with this
     widget.
     '''
+
+    ref_func = None
+    '''Whether :attr:`func` came from a :class:`CeedFuncRef`. '''
 
     selected = BooleanProperty(False)
     '''Whether the function is selected in the GUI.
     '''
 
-    selection_controller = ObjectProperty(None)
+    selection_controller = None
     '''The container that gets called to select the widget when the user
     selects it with a touch. E.g. :class:`FuncList` in the function listing
     case.
     '''
 
-    func_controller = ObjectProperty(None)
+    func_controller = None
     '''The controller to which the function is added or removed from.
     This is e.g. :attr:`ceed.function.FunctionFactoryBase` in the function list
     case or the stage to which the function is attached.
     '''
 
-    display_parent = ObjectProperty(None)
-    '''The widget container to which the widget is added or removed when
-    displayed.
-    '''
+    _selector = None
 
-    def __init__(self, **kwargs):
-        kwargs.setdefault('func_controller', _get_app().function_factory)
-        kwargs.setdefault('display_parent', knspace.funcs)
-        kwargs.setdefault('selection_controller', knspace.funcs)
-
-        super(FuncWidget, self).__init__(**kwargs)
-        self.display_properties()
-        self.settings_root.parent.remove_widget(self.settings_root)
-        if not isinstance(self, FuncWidgetGroup):
-            self.expand.parent.remove_widget(self.expand)
+    _settings = None
 
     @property
     def name(self):
-        '''The :attr:`ceed.function.FuncBase.name` of the function.
-        '''
+        if self.ref_func:
+            return self.ref_func.name
         return self.func.name
+
+    @staticmethod
+    def get_display_cls(func):
+        if isinstance(func, FuncGroup):
+            return FuncWidgetGroup
+        return FuncWidget
 
     def display_properties(self):
         '''Constructs the configuration option widgets for the function using
@@ -137,7 +193,7 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
         items = func.get_gui_elements()
         kwargs = func.get_gui_props()
         pretty_names = func.get_prop_pretty_name()
-        add = self.settings.add_widget
+        add = self._settings.add_widget
 
         input_types = {'int': 'int', 'float': 'float', int: 'int',
                         float: 'float', 'str': 'str', str: 'str'}
@@ -200,97 +256,224 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
                 item = Factory.get(item)()
             add(item)
 
-    def link_container(self):
+    def initialize_display(
+            self, func, func_controller, selection_controller,
+            init_children=True):
         '''Fills in the values of :attr:`selection_controller`,
-        :attr:`func_controller`, and :attr:`display_parent` of all the
+        :attr:`func_controller` of all the
         functions and sub-functions of this function.
         '''
-        parent = self.func.parent_func
-        if not parent:
-            return
-        if parent.display.func_controller is self.func_controller:
-            return
-        func_controller = parent.display.func_controller
-        display_parent = parent.display.display_parent
-        selection_controller = parent.display.selection_controller
-        for func in self.func.get_funcs():
-            func.display.func_controller = func_controller
-            func.display.display_parent = display_parent
-            func.display.selection_controller = selection_controller
+        if isinstance(func, CeedFuncRef):
+            self.ref_func = func.func
+        func.display = self
+        self.func = func
 
-    def remove_from_parent(self):
-        '''Removes the function from the its parent or controller if
-        it has no parent.
-        '''
+        self.func_controller = func_controller  # or _get_app().function_factory
+        self.selection_controller = selection_controller  # or knspace.funcs
+
+        self.apply_kv()
+        if self.ref_func is None:
+            self.display_properties()
+
+    def remove_func(self):
         if self.func.parent_func:
             self.func.parent_func.remove_func(self.func)
+            self.parent.remove_widget(self)
         else:
-            self.func_controller.remove_func(self.func)
+            if self.func_controller.remove_func(self.func):
+                self.parent.remove_widget(self)
 
-    def show_func(self, index=None):
-        '''Shows the function's widget in its widget container.
-        '''
-        if self.parent:
-            return
-        self.func.fbind('source_func', self._track_source)
-        self._track_source()
-
-        parent = self.func.parent_func
-        if parent:
-            if index is None:
-                index = 0
-            else:
-                index = len(parent.display.more.children) - index
-
-            parent.display.more.add_widget(self, index=index)
-            self.link_container()
+        if self.ref_func is not None:
+            self.func.function_factory.return_func_ref(self.func)
         else:
-            if index is None:
-                index = 0
-            else:
-                index = len(self.display_parent.children) - index
+            for func in self.func.get_funcs(step_into_ref=False):
+                if isinstance(func, CeedFuncRef):
+                    func.function_factory.return_func_ref(func)
 
-            self.display_parent.add_widget(self, index=index)
-
-    def hide_func(self):
-        '''Removes the function's widget from its widget container.
-        '''
         if self.selected:
             self.selection_controller.deselect_node(self)
-        elif isinstance(self, FuncWidgetGroup):
-            c = self.selected_child()
-            if c is not None:
-                self.selection_controller.deselect_node(c.display)
 
-        if self.parent:
-            self.func.funbind('source_func', self._track_source)
-            self.parent.remove_widget(self)
+    def handle_expand_widget(self, expand):
+        expand.parent.remove_widget(expand)
 
-    def _track_source(self, *largs):
-        if not self.func.source_func:
-            if not self.source_control.parent:
-                return
+    def replace_ref_with_source(self):
+        pass
 
-            w = FuncNamePropTextWidget(func=self.func, prop_name='name')
-            self.settings.add_widget(w, index=len(self.settings.children))
-            if self.func.parent_func:
-                w.disabled = True
-            s = self.source_control
-            s.parent.remove_widget(s)
-        else:
-            if self.source_control.parent:
-                return
-            s = self.source_control
-            parent = self.ids.selector
-            prev = parent.children.index(self.ids.func_label)
-            parent.add_widget(s, index=prev)
+    @kv(proxy='app*')
+    def apply_kv(self):
+        self.size_hint_y = None
+        self.orientation = 'vertical'
+        app = _get_app()
+        func = self.ref_func or self.func
+        func.fbind('on_changed', app.changed_callback)
 
-            self.settings.remove_widget(self.settings.children[-1])
+        with KvContext():
+            self.height @= self.minimum_height
+            self.size_hint_min_x @= self.minimum_width
+
+            with BoxSelector(
+                    parent=self, size_hint_y=None, height='34dp',
+                    orientation='horizontal', spacing='5dp', padding='5dp'
+                    ) as selector:
+                selector.size_hint_min_x @= selector.minimum_width
+                selector.controller @= self.selection_controller
+
+                with selector.canvas:
+                    color = Color()
+                    color.rgba ^= app.theme.primary_light if not \
+                        self.selected else app.theme.primary
+                    rect = Rectangle()
+                    rect.size ^= selector.size
+                    rect.pos ^= selector.pos
+
+                with Factory.DraggingWidget(
+                        parent=selector, drag_widget=selector,
+                        obj_dragged=self, drag_cls='func') as dragger:
+                    dragger.drag_copy = True  # root.func.parent_func is None
+                    # if not self.drag_copy: root.remove_func()
+                    pass
+
+                with Factory.ExpandWidget(parent=selector) as expand:
+                    expand.state = 'down'
+                    self.show_more @= expand.is_open
+                self.handle_expand_widget(expand)
+
+                with Factory.FlatLabel(
+                        parent=selector, center_texture=False,
+                        padding=('5dp', '5dp')) as func_label:
+                    func_label.flat_color = app.theme.text_primary
+
+                    func_label.text @= func.name
+                    func_label.size_hint_min_x @= func_label.texture_size[0]
+
+                with Factory.FlatImageButton(
+                        parent=selector, scale_down_color=True,
+                        source='flat_delete.png') as del_btn:
+                    del_btn.flat_color @= app.theme.accent
+                    with KvRule(del_btn.on_release, triggered_only=True):
+                        self.remove_func()
+
+                if self.ref_func:
+                    with KvContext():
+                        with Factory.FlatImageButton(
+                                parent=selector, scale_down_color=True,
+                                source='call-split.png') as split_btn:
+                            split_btn.flat_color @= app.theme.accent
+
+                            with KvRule(split_btn.on_release, triggered_only=True):
+                                self.replace_ref_with_source()
+                else:
+                    with KvContext():
+                        with Factory.FlatImageButton(
+                                parent=selector, scale_down_color=True,
+                                source='flat_dots_vertical.png') as more_btn:
+                            more_btn.flat_color @= app.theme.accent
+
+                            settings_root, splitter = self.get_settings_dropdown()
+                            with KvRule(more_btn.on_release, triggered_only=True):
+                                assert self.ref_func is None
+                                settings_root.open(selector)
+                                splitter.width = max(selector.width, splitter.width)
+
+    @kv(proxy='app*')
+    def get_settings_dropdown(self):
+        assert self.ref_func is None
+        app = _get_app()
+        with KvContext():
+            with Factory.FlatDropDown(
+                    do_scroll=(False, False)) as settings_root:
+                settings_root.flat_color @= app.theme.primary_text
+                settings_root.flat_border_color @= app.theme.divider
+
+                with Factory.FlatSplitter(
+                    parent=settings_root, size_hint=(None, None),
+                        sizable_from='left') as splitter:
+                    splitter.flat_color @= app.theme.accent
+                    splitter.height @= splitter.minimum_height
+                    splitter.min_size @= splitter.minimum_width
+
+                with BoxLayout(
+                    parent=splitter, size_hint_y=None, orientation='vertical',
+                        spacing='5dp', padding='5dp') as settings:
+                    self._settings = settings
+                    settings.height @= settings.minimum_height
+                    settings.size_hint_min_x @= settings.minimum_width
+
+                    with Factory.FlatLabel(
+                        parent=settings, padding=('5dp', '5dp'),
+                            size_hint_y=None, halign='center') as desc:
+                        desc.flat_color @= app.theme.text_primary
+                        desc.height @= desc.texture_size[1]
+                        desc.text_size @= desc.width, None
+                        desc.text @= self.func.description
+
+        return settings_root, splitter
 
 
 class FuncWidgetGroup(FuncWidget):
     '''The widget associated with :class:`ceed.function.FuncGroup`.
     '''
+
+    children_container = None
+
+    def remove_func(self):
+        c = self.selected_child()
+        if c is not None:
+            self.selection_controller.deselect_node(c.display)
+
+        super(FuncWidgetGroup, self).remove_func()
+
+    def initialize_display(
+            self, func, func_controller, selection_controller,
+            init_children=True):
+        super(FuncWidgetGroup, self).initialize_display(
+            func, func_controller, selection_controller, init_children)
+
+        if self.ref_func:
+            return
+
+        if init_children:
+            for child in func.funcs:
+                display = self.func_controller.get_display_cls(child)()
+                self.children_container.add_widget(display)
+                display.initialize_display(
+                    child, func_controller, selection_controller, True)
+
+    @kv(proxy='app*')
+    def apply_kv(self):
+        FuncWidget.apply_kv(self)
+        if self.ref_func:
+            return
+
+        app = _get_app()
+        with KvContext():
+            with GroupFuncList(
+                    parent=self, spacing='5dp', size_hint_y=None,
+                    orientation='vertical') as more:
+                self.more = self.children_container = more
+                more.group_widget = self
+
+                with KvRule(more.children):
+                    if more.children:
+                        more.padding = '5dp', '5dp', 0, 0
+                    else:
+                        more.padding = '5dp', '5dp', 0, '5dp'
+
+                more.height @= more.minimum_height
+                more.size_hint_min_x @= more.minimum_width
+
+                more.spacer_props = {
+                    'size_hint_y': None, 'height': '50dp',
+                    'size_hint_min_x': '40dp'}
+                more.drag_classes = ['func', 'func_spinner']
+                more.controller @= self.func
+                with more.canvas:
+                    color = Color()
+                    color.rgba ^= app.theme.divider
+
+                    more_rect = Rectangle()
+                    more_rect.pos ^= more.x + dp(1), more.y
+                    more_rect.size ^= dp(2), more.height - dp(5)
 
     def _show_more(self, *largs):
         '''Displays the additional configuration options in the GUI.
@@ -301,26 +484,21 @@ class FuncWidgetGroup(FuncWidget):
             if c is not None:
                 self.selection_controller.deselect_node(c.display)
 
-    def show_func(self, index=None):
-        super(FuncWidgetGroup, self).show_func(index=index)
-        for f in self.func.funcs:
-            f.display.show_func()
-
-    def hide_func(self):
-        super(FuncWidgetGroup, self).hide_func()
-        for f in self.func.funcs:
-            f.display.hide_func()
-
     def selected_child(self):
         '''Returns the child or sub-child etc. :class:`ceed.function.FuncBase`
         that is selected in the GUI or None.
         '''
-        children = self.func.get_funcs()
+        if self.func is None:  # XXX: hack because _show_more calls this
+            return None
+        children = self.func.get_funcs(step_into_ref=False)
         next(children)
         for child in children:
             if child.display.selected:
                 return child
         return None
+
+    def handle_expand_widget(self, expand):
+        pass
 
 
 class FuncPropTextWidget(FlatTextInput):
@@ -394,18 +572,22 @@ class TrackOptionsSpinner(Factory.SizedCeedFlatSpinner):
 
     track_prop = ''
 
+    values_getter = lambda x: x
+
     update_items_on_press = BooleanProperty(False)
 
     _value_trigger = None
 
-    def __init__(self, func=None, prop_name=None, allow_empty=False,
-                 track_obj=None, track_prop='', **kwargs):
+    def __init__(
+            self, func=None, prop_name=None, allow_empty=False, track_obj=None,
+            track_prop='', values_getter=lambda x: x, **kwargs):
         super(TrackOptionsSpinner, self).__init__(**kwargs)
         self.func = func
         self.prop_name = prop_name
         self.allow_empty = allow_empty
         self.track_obj = track_obj
         self.track_prop = track_prop
+        self.values_getter = values_getter
         self._value_trigger = Clock.create_trigger(self._update_values, -1)
 
         if self.update_items_on_press:
@@ -430,7 +612,7 @@ class TrackOptionsSpinner(Factory.SizedCeedFlatSpinner):
             setattr(self.func, self.prop_name, self.text)
 
     def _update_values(self, *largs):
-        vals = list(sorted(getattr(self.track_obj, self.track_prop)))
+        vals = self.values_getter()
 
         if self.allow_empty:
             vals.insert(0, '')
@@ -438,6 +620,3 @@ class TrackOptionsSpinner(Factory.SizedCeedFlatSpinner):
 
         if self.text not in vals:
             self.text = vals[0] if vals else ''
-
-
-Factory.register('FuncDragableLayoutBehavior', cls=FuncDragableLayoutBehavior)

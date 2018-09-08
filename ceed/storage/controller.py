@@ -86,7 +86,7 @@ class CeedDataWriterBase(EventDispatcher):
         app.stage_factory.clear_stages()
         app.shape_factory.remove_all_groups()
         app.shape_factory.delete_all_shapes(keep_locked_shapes=False)
-        app.function_factory.clear_funcs()
+        app.function_factory.clear_added_funcs()
 
     @staticmethod
     def apply_config_data_dict(data):
@@ -189,6 +189,8 @@ class CeedDataWriterBase(EventDispatcher):
             head, tail = split(filename)
             name, ext = splitext(tail)
         else:
+            if not isdir(self.root_path):
+                self.root_path = os.path.expanduser('~')
             head = self.root_path
             ext = '.h5'
             name = 'default'

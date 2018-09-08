@@ -1,6 +1,4 @@
 
-<DragableSpinner@DragableObjectBehavior+FlatSpinner>
-
 <FuncListing@FlatSplitter>:
     size_hint_x: None
     width: '100dp'
@@ -23,10 +21,8 @@
                 size_hint_min_x: self.minimum_width
                 padding: '5dp'
                 spacing: '5dp'
-                DragableSpinner:
+                FlatSpinner:
                     id: func_spin
-                    drag_controller: knspace.dragger
-                    drag_cls: 'func_spinner'
                     values: sorted(app.function_factory.funcs_inst.keys()) if app.function_factory.funcs_inst else []
                     text_autoupdate: True
                     size_hint_min_x: self.minimum_width
@@ -50,9 +46,10 @@
             scroll_type: ['bars']
             FuncList:
                 id: funcs
+                drag_append_end: True
                 spacer_props: {'size_hint_y': None, 'height': '50dp', 'size_hint_min_x': '40dp'}
                 drag_classes: ['func', 'func_spinner']
-                controller: app.function_factory
+                function_factory: app.function_factory
                 knsname: 'funcs'
                 orientation: 'vertical'
                 spacing: '3dp'
@@ -68,124 +65,3 @@
     height: self.minimum_height
     multiline: False
     on_focus: if not self.focus: self._update_attr(self.text)
-
-<WidgetFuncGroupLayout@FuncDragableLayoutBehavior+BoxLayout>
-
-
-<FuncWidget>:
-    size_hint_y: None
-    height: self.minimum_height
-    size_hint_min_x: self.minimum_width
-    orientation: 'vertical'
-    more: more.__self__
-    settings: settings.__self__
-    settings_root: settings_root.__self__
-    show_more: expand.is_open
-    source_control: source_control
-    expand: expand
-    BoxSelector:
-        id: selector
-        size_hint_y: None
-        height: '34dp'
-        size_hint_min_x: self.minimum_width
-        orientation: 'horizontal'
-        controller: root.selection_controller
-        spacing: '5dp'
-        padding: '5dp'
-        canvas:
-            Color:
-                rgba: app.theme.primary_light if not root.selected else app.theme.primary
-            Rectangle:
-                size: self.size
-                pos: self.pos
-        DraggingWidget:
-            drag_widget: selector.__self__
-            obj_dragged: root
-            drag_cls: 'func'
-            #drag_copy: root.func.parent_func is None
-            on_drag_init: if not self.drag_copy: root.remove_from_parent()
-        ExpandWidget:
-            id: expand
-        FlatLabel:
-            id: func_label
-            text: (root.func.source_func.name if root.func.source_func else root.func.name) if root.func else ''
-            size_hint_min_x: self.texture_size[0]
-            padding: '5dp', '5dp'
-            flat_color: app.theme.text_primary
-            center_texture: False
-        BoxLayout:
-            id: source_control
-            orientation: 'horizontal'
-            size_hint_x: None
-            width: self.minimum_width
-            spacing: '5dp'
-            IconSwitchBehavior:
-                source_down: 'autorenew.png'
-                source_normal: 'call-split.png'
-                flat_color: app.theme.accent
-                state: 'down' if root.func and root.func.track_source else 'normal'
-                on_state:
-                    if root.func: root.func.track_source = self.state == 'down'
-                    if root.func and root.func.track_source: root.func.reload_from_source()
-        FlatImageButton:
-            scale_down_color: True
-            source: 'flat_refresh.png'
-            flat_color: app.theme.accent
-            on_release: root.func.reload_from_source()
-        FlatImageButton:
-            scale_down_color: True
-            source: 'flat_delete.png'
-            flat_color: app.theme.accent
-            on_release: root.remove_from_parent()
-        FlatImageButton:
-            scale_down_color: True
-            source: 'flat_dots_vertical.png'
-            flat_color: app.theme.accent
-            on_release:
-                settings_root.open(selector)
-                splitter.width = max(selector.width, splitter.width)
-    FlatDropDown:
-        id: settings_root
-        flat_color: app.theme.primary_text
-        flat_border_color: app.theme.divider
-        do_scroll: False, False
-        FlatSplitter:
-            id: splitter
-            size_hint: None, None
-            height: self.minimum_height
-            min_size: self.minimum_width
-            sizable_from: 'left'
-            flat_color: app.theme.accent
-            BoxLayout:
-                id: settings
-                size_hint_y: None
-                height: self.minimum_height
-                size_hint_min_x: self.minimum_width
-                orientation: 'vertical'
-                spacing: '5dp'
-                padding: '5dp'
-                FlatLabel:
-                    padding: '5dp', '5dp'
-                    size_hint_y: None
-                    height: self.texture_size[1]
-                    text_size: self.width, None
-                    halign: 'center'
-                    text: root.func.description if root.func else ''
-                    flat_color: app.theme.text_primary
-    WidgetFuncGroupLayout:
-        id: more
-        spacing: '5dp'
-        padding: '5dp', '5dp', 0, (0 if self.children else '5dp')
-        size_hint_y: None
-        height: self.minimum_height
-        size_hint_min_x: self.minimum_width
-        orientation: 'vertical'
-        spacer_props: {'size_hint_y': None, 'height': '50dp', 'size_hint_min_x': '40dp'}
-        drag_classes: ['func', 'func_spinner']
-        controller: root.func
-        canvas:
-            Color:
-                rgba: app.theme.divider
-            Rectangle:
-                pos: self.x + dp(1), self.y
-                size: dp(2), self.height - dp(5)

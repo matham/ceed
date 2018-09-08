@@ -1,11 +1,12 @@
-'''Functions
+'''Function Interface
 =========================
 
 Defines the functions used with shapes to create time-varying intensities
 of the shapes during an experiment.
 
-A function is inherited from :class:`FuncBase` which returns a
-value when called with a time value. Example function usage is::
+A function is inherited from :class:`FuncBase` that defines the interface and
+which returns a number when called with a time input. Example function usage
+is::
 
     >>> function_factory = FunctionFactoryBase()
     >>> register_all_functions(function_factory)
@@ -26,12 +27,14 @@ line 134, in __call__
          raise FuncDoneException
      FuncDoneException
 
-Function classes registered with :attr:`FunctionFactoryBase` of app
-are available to the user in the GUI. Similarly, customized function instances
-can be registered with :meth:`FunctionFactoryBase.add_function`.
+Function classes registered with the :class:`FunctionFactoryBase` used in the
+GUI are available to the user in the GUI. During analysis, functions are
+similarly registered with the :class:`FunctionFactoryBase` used in the
+analysis.
 '''
 
 from copy import deepcopy
+from collections import defaultdict
 import inspect
 from fractions import Fraction
 
@@ -59,15 +62,12 @@ class FunctionFactoryBase(EventDispatcher):
     instances.
 
     Plugins register function classes with an instance of
-    (:attr:`FunctionFactoryBase`) using :meth:`register` to make it available to
-    the user in the GUI and in :attr:`funcs_cls`. A instance of the registered
-    class is then also created and stored in :attr:`funcs_inst_default` and
-    :attr:`funcs_inst`.
+    (:attr:`FunctionFactoryBase`) using :meth:`register` to make it available
+    to the user in the GUI or for analysis.
 
     Similarly, function instances that has been customized with values or
-    function groups customized with children functions in the GUI are also
-    added here with :meth:`add_func` making it available for duplication or
-    usage elsewhere in :attr:`funcs_user` and in :attr:`funcs_inst`.
+    function groups customized with children functions are added with
+    :meth:`add_func` making it available for usage in the GUI or analysis.
 
     To get a function class registered with :meth:`register`, e.g.
     :class:`ceed.function.plugin.CosFunc`::
@@ -76,9 +76,7 @@ class FunctionFactoryBase(EventDispatcher):
         >>> cls
         ceed.function.plugin.CosFunc
 
-    When registering a function, an instance is automatically created and added
-    to :attr:`funcs_inst`. Similarly, customized functions added with
-    :meth:`add_func` are also added to :attr:`funcs_inst` ::
+    When registering a class, an instance is automatically created::
 
         >>> cls = function_factory.get('CosFunc')  # get registered class
         >>> f = function_factory.funcs_inst['Cos']  # get auto created instance
@@ -98,15 +96,13 @@ class FunctionFactoryBase(EventDispatcher):
         <ceed.function.plugin.CosFunc at 0x5141938>
 
     The general usage of the registered instances with :meth:`add_func` is to
-    get the instance and then copy and further customize it. See
-    :attr:`FuncBase.source_func`.
+    get the instance and then copy and further customize it.
 
     :events:
 
         on_changed:
             The event is triggered every time a function is added or removed
-            from the factory. It's also triggered whenever a :class:`FuncBase`
-            triggers its ``on_changed`` event.
+            from the factory.
     '''
 
     __settings_attrs__ = ('timebase_numerator', 'timebase_denominator')
@@ -126,7 +122,7 @@ class FunctionFactoryBase(EventDispatcher):
 
     funcs_inst = DictProperty({})
     '''Dict whose keys are the function :attr:`name` and whose values are the
-    corresponding functions.
+    corresponding function instances.
 
     Contains functions added with :meth:`add_func` as well as those
     automatically created and added when :meth:`register` is called on a class.
@@ -134,16 +130,10 @@ class FunctionFactoryBase(EventDispatcher):
 
     funcs_inst_default = {}
     '''Dict whose keys are the function :attr:`name` and whose values are the
-    corresponding functions.
+    corresponding function instances.
 
     Contains only the functions that are automatically created and added when
     :meth:`register` is called on a class.
-    '''
-
-    show_widgets = False
-    '''Whether the function should call the associated widgets functions to
-    display it. This is set to ``True`` only if the code is executed from
-    the GUI.
     '''
 
     timebase_numerator = NumericProperty(1)
@@ -172,15 +162,16 @@ class FunctionFactoryBase(EventDispatcher):
         bind=('timebase_numerator', 'timebase_denominator'))
     '''The default (read-only) timebase scale factor as computed by
     :attr:`timebase_numerator` / :attr:`timebase_denominator`. It returns
-    either a float or a Fraction instance when the numerator and
-    denominator are ints.
+    either a float, or a Fraction instance if the numerator and
+    denominator are both ints.
 
     The timebase is the scaling factor by which some function properties that
     relate to time, e.g. :attr:`FuncBase.duration`, are multiplied to convert
     from timebase units to time.
 
-    This is the default timebase that is used when :attr:`FuncBase.timebase`
-    is 0, otherwise each function uses its :attr:`FuncBase.timebase`.
+    This is the default timebase that is used for a function when 
+    :attr:`FuncBase.timebase` is 0, otherwise each function uses its 
+    :attr:`FuncBase.timebase`.
     '''
 
     _cls_inst_funcs = {}
@@ -188,28 +179,37 @@ class FunctionFactoryBase(EventDispatcher):
     that class.
     '''
 
+    _ref_funcs = {}
+
     def __init__(self, **kwargs):
         super(FunctionFactoryBase, self).__init__(**kwargs)
         self.funcs_cls = {}
         self.funcs_user = []
         self.funcs_inst_default = {}
-        cls_inst = self._cls_inst_funcs = {}
-
-        funcs = self.funcs_inst
-        for cls in self.get_classes():
-            f = cls(function_factory=self)
-            funcs[f.name] = f
-            cls_inst[cls] = f
+        self._cls_inst_funcs = {}
+        self._ref_funcs = defaultdict(int)
 
     def on_changed(self, *largs, **kwargs):
         pass
 
+    def get_func_ref(self, name=None, func=None):
+        """If used, release must be called, even when restored automatically.
+        """
+        func = func or self.funcs_inst[name]
+        ref = CeedFuncRef(function_factory=self, func=func)
+        self._ref_funcs[func] += 1
+        return ref
+
+    def return_func_ref(self, func_ref):
+        self._ref_funcs[func_ref.func] -= 1
+
     def register(self, cls, instance=None):
         '''Registers the class and adds it to :attr:`funcs_cls`. It also
-        creates an instance of the class that is added to :attr:`funcs_inst`
-        and :attr:`funcs_inst_default`.
+        creates an instance (unless ``instance`` is provided) of the class that
+        is added to :attr:`funcs_inst` and :attr:`funcs_inst_default`.
 
-        This function is called to register a new class from a plugin.
+        This function is should be called to register a new class from a
+        plugin.
 
         :Params:
 
@@ -217,7 +217,8 @@ class FunctionFactoryBase(EventDispatcher):
                 The class to register.
             `instance`: instance of `cls`
                 The instance of `cls` to use. If None, a default
-                class instance is stored. Defaults to None.
+                class instance, using the default :attr:`FuncBase.name` is
+                stored. Defaults to None.
         '''
         name = cls.__name__
         funcs = self.funcs_cls
@@ -226,8 +227,10 @@ class FunctionFactoryBase(EventDispatcher):
         funcs[name] = cls
 
         f = cls(function_factory=self) if instance is None else instance
-        if f.function_factory is None:
-            raise Exception('Somehow function_factory was not set')
+        if f.function_factory is not self:
+            raise ValueError('Instance function factory is set incorrectly')
+        f.name = fix_name(f.name, self.funcs_inst)
+
         self.funcs_inst[f.name] = f
         self._cls_inst_funcs[cls] = f
         self.funcs_inst_default[f.name] = f
@@ -252,7 +255,8 @@ class FunctionFactoryBase(EventDispatcher):
         return funcs[name]
 
     def get_names(self):
-        '''Returns the names of all :meth:`register` classes.
+        '''Returns the class names of all classes registered with
+        :meth:`register`.
         '''
         return list(self.funcs_cls.keys())
 
@@ -261,95 +265,21 @@ class FunctionFactoryBase(EventDispatcher):
         '''
         return list(self.funcs_cls.values())
 
-    def save_funcs(self, id_map=None):
-        '''Dumps all the config data from all the :attr:`funcs_user` so that
-        it can be saved and later recovered with :meth:`recover_funcs`.
-
-        :Params:
-
-            `id_map`: dict
-                A dict that will be filled-in as the function state is saved.
-                The keys will be the :attr:`FuncBase.func_id` of each of the
-                saved functions. The corresponding value will be the
-                :attr:`FuncBase.func_id` of the function in
-                :attr:`FuncBase.source_func` if not None. This allows the
-                reconstruction of the function dependencies.
-
-                If None, the default, a dict is created. Otherwise, it's
-                updated in place.
-
-        :returns:
-
-            A two tuple ``(states, id_map)``. ``states`` is a list of all the
-            functions' states. ``id_map`` is the ``id_map`` created or passed
-            in.
-        '''
-        if id_map is None:
-            id_map = {}
-        for f in self.funcs_user:
-            CeedFunc.fill_id_map(f, id_map)
-
-        states = [f.get_state() for f in self.funcs_user]
-        return states, id_map
-
-    def recover_funcs(self, funcs, id_to_func_map, old_id_map, old_to_new_name):
-        '''Restores all the user functions that was saved with
-        :meth:`save_funcs`.
-
-        :Params:
-
-            `funcs`: list
-                The list of function states as returned by :meth:`save_funcs`.
-            `id_to_func_map`: dict
-                A dict that will be filled-in as the functions are re-created.
-                The keys will be the :attr:`FuncBase.func_id` of the new
-                functions created from each state. The corresponding value
-                will be the function created.
-
-                If None, the default, a dict is created. Otherwise, it's
-                updated in place.
-            `old_id_map`: dict
-                A dict that will be filled-in as the functions are re-created.
-                The keys will be the :attr:`FuncBase.func_id` of the new
-                functions created from each state. The corresponding value
-                will be the :attr:`FuncBase.func_id` as saved in the ``funcs``
-                state passed in. :attr:`FuncBase.func_id` is likely to change
-                as the function is re-created; this keeps track of that.
-
-                If None, the default, a dict is created. Otherwise, it's
-                updated in place.
-
-        :returns:
-
-            A two-tuple. The first element is a copy of the :attr:`funcs_user`
-            list. The second is ``id_to_func_map`` created, or passed in.
-        '''
-        for state in funcs:
-            name = state.get('name', None)
-            f = CeedFunc.make_func(
-                state, self, clone=True, old_id_map=old_id_map)
-            self.add_func(f)
-
-            if name is not None:
-                old_to_new_name[name] = f.name
-
-        for name in self.funcs_inst_default:
-            old_to_new_name[name] = name
-
-        id_to_func_map = {} if id_to_func_map is None else id_to_func_map
-        for f in self.funcs_user:
-            CeedFunc.fill_id_to_func_map(f, id_to_func_map)
-
-        return self.funcs_user[:], id_to_func_map
-
-    def add_func(self, func, index=None):
+    def add_func(self, func):
         '''Adds the function to :attr:`funcs_user` and :attr:`funcs_inst`,
-        which makes it available in the GUI as one of the customized
-        functions.
+        which makes it available in the GUI.
+
+        If the :attr:`FuncBase.name` in :attr:`funcs_inst` already exists,
+        :attr:`FuncBase.name` will be set to a unique name based on its
+        original name. Once added until removed, anytime the function's
+        :attr:`FuncBase.name` changes, if it clashes with an existing
+        function's name, it is renamed.
+
+        ``on_changed`` event will be dispatched.
 
         :Params:
 
-            `func`: subclass of :class:`FuncBase`.
+            `func`: a :class:`FuncBase` derived instance.
                 The function to add.
         '''
         func.source_func = None
@@ -357,72 +287,80 @@ class FunctionFactoryBase(EventDispatcher):
 
         func.fbind('name', self._track_func_name, func)
         self.funcs_inst[func.name] = func
-        if index is None:
-            self.funcs_user.append(func)
-        else:
-            self.funcs_user.insert(index, func)
+        self.funcs_user.append(func)
 
-        func.init_factory(self)
-        if self.show_widgets:
-            func.display.show_func(index=index)
+        if func.function_factory is not self:
+            raise ValueError('function factory is incorrect')
         self.dispatch('on_changed')
 
-    def remove_func(self, func):
+    def remove_func(self, func, force=False):
         '''Removes the function added with :meth:`add_func`.
+
+        ``on_changed`` event will be dispatched.
 
         :Params:
 
-            `func`: subclass of :class:`FuncBase`.
-                The function to add.
+            `func`: a :class:`FuncBase` derived instance.
+                The function to remove.
         '''
-        func.del_factory(self)
+        if not force and func in self._ref_funcs and self._ref_funcs[func]:
+            return False
+
         func.funbind('name', self._track_func_name, func)
         del self.funcs_inst[func.name]
-        self.funcs_user.remove(func)
+        for i, f in enumerate(self.funcs_user):
+            if f is func:
+                del self.funcs_user[i]
+                break
+        else:
+            raise ValueError('{} was not found in funcs_user'.format(func))
 
-        if func._display:
-            func._display.hide_func()
         self.dispatch('on_changed')
+        return True
 
     def _track_func_name(self, func, *largs):
         '''Fixes the name of the function instances stored here to ensure it's
         unique.
         '''
+        # get the new name
         for name, f in self.funcs_inst.items():
             if f is func:
                 if func.name == name:
                     return
 
                 del self.funcs_inst[name]
+                # only one change at a time happens because of binding
                 break
+        else:
+            raise ValueError(
+                '{} has not been added to the factory'.format(func))
+
         func.name = fix_name(func.name, self.funcs_inst)
         self.funcs_inst[func.name] = func
 
-    def clear_funcs(self):
+    def clear_added_funcs(self, force=False):
         '''Removes all the functions registered with :meth:`add_func`.
         '''
         for f in self.funcs_user[:]:
-            for func in f.get_funcs():
-                func.removing_global_funcs()
+            self.remove_func(f, force=force)
 
-        for f in self.funcs_user[:]:
-            self.remove_func(f)
-
-    def get_cls_default_func(self, cls, registered_funcs_only=False):
-        '''Takes a :class:`FuncBase` subclass or instance and returns
-        a default function instance of that class.
-
-        The returned instance should not be modified as it's shared globally.
+    def make_func(self, state, clone=False):
+        '''Instantiates the function from the state and returns it.
         '''
-        if not inspect.isclass(cls):
-            cls = cls.__class__
-        cls_funcs = self._cls_inst_funcs
+        state = dict(state)
+        c = state.pop('cls')
+        if c == 'CeedFuncRef':
+            cls = CeedFuncRef
+        else:
+            cls = self.get(c)
+        if cls is None:
+            raise Exception('Missing class "{}"'.format(c))
 
-        if cls in cls_funcs:
-            return cls_funcs[cls]
-
-        f = cls_funcs[cls] = cls(function_factory=self)
-        return f
+        func = cls(function_factory=self)
+        func.apply_state(state, clone=clone)
+        if c == 'CeedFuncRef':
+            self._ref_funcs[func.func] += 1
+        return func
 
 
 class FuncBase(EventDispatcher):
@@ -469,9 +407,9 @@ class FuncBase(EventDispatcher):
     '''
 
     name = StringProperty('Abstract')
-    '''The name of the function instance. The name must be unique when an
-    instance is added to the :attr:`FunctionFactoryBase`, otherwise it's
-    automatically fixed.
+    '''The name of the function instance. The name must be unique within a
+    :attr:`FunctionFactoryBase` once it is added to the 
+    :attr:`FunctionFactoryBase`, otherwise it's automatically renamed.
     '''
 
     description = StringProperty('')
@@ -486,35 +424,21 @@ class FuncBase(EventDispatcher):
     '''How long, after the start of the function the function is valid.
     -1 means go on forever. See class for more details.
 
-    It is in timebase units.
+    Its domain is [:attr:`t_start`,
+    :attr:`t_start` + :attr:`duration` * :meth:`get_timebase`) if not ``-1``,
+    otherwise, it is [:attr:`t_start`, ...).
+
+    The value is in timebase units.
     '''
 
     duration_total = NumericProperty(0)
-    '''The total duration of the function including all the loops.
+    '''The total duration of the function including all the loops, excluding
+    any functions whose :attr:`duration` is ``-1``.
     '''
 
     loop = NumericProperty(1)
     '''The number of times the function loops through. At the end of each loop
     :attr:`loop_count` is incremented until done. See class for more details.
-    '''
-
-    track_source = BooleanProperty(True)
-    '''If True, changes in the :attr:`source_func` will also change this
-    function. See :attr:`source_func` for details.
-    '''
-
-    source_func = ObjectProperty(None, rebind=True, allownone=True)
-    '''When a function is copied (``f2 = deepcopy(f)``) from another function,
-    :attr:`source_func` on the new function, ``f2``, is set automatically to
-    the original function, ``f``. :attr:`track_source` is also automatically
-    set to ``True``.
-
-    When :attr:`track_source` is True and :attr:`source_func` is not None,
-    whenever a configurable property (i.e.
-    it is returned as key in the :meth:`get_state` dict) of the source function
-    :attr:`source_func` is changed, the value in this function will be updated
-    to the new value. It allows keeping function copies up to date with the
-    original template function.
     '''
 
     parent_func = ObjectProperty(None, rebind=True, allownone=True)
@@ -523,26 +447,20 @@ class FuncBase(EventDispatcher):
     points to the parent function.
     '''
 
-    _func_id = 0
-    '''The global :attr:`func_id` counter.
-    '''
+    display = None
 
-    func_id = NumericProperty(0)
-    '''Unique to each function instance and uniquely defines this function.
-    It is automatically assigned.
-    '''
-
-    _display = None
-
-    display_cls = ''
-    '''The name of the widget class that is used to represent this function.
-    See :attr:`display`.
-    '''
-
-    _clone_props = {'cls', 'track_source', 'func_id'}
+    _clone_props = {'cls', 'name'}
     '''props that are specific to the function and should not be copied
-    between different functions.
+    between different functions. They are only copied when a function is
+    cloned, i.e. when it is created from state.
     '''
+
+    function_factory = None
+    """
+    The function factory with which this function is associated.
+    This should be set by whoever creates the function, or when added to
+    the factory.
+    """
 
     timebase_numerator = NumericProperty(0)
     '''The numerator of the timebase. See :attr:`timebase`.
@@ -551,8 +469,6 @@ class FuncBase(EventDispatcher):
     timebase_denominator = NumericProperty(1)
     '''The denominator of the timebase. See :attr:`timebase`.
     '''
-
-    function_factory = ObjectProperty(None)
 
     def _get_timebase(self):
         num = self.timebase_numerator
@@ -601,36 +517,18 @@ class FuncBase(EventDispatcher):
 
     __events__ = ('on_changed', )
 
-    def __init__(self, **kwargs):
+    def __init__(self, function_factory, **kwargs):
+        self.function_factory = function_factory
         super(FuncBase, self).__init__(**kwargs)
-        self.func_id = FuncBase._func_id
-        FuncBase._func_id += 1
+        for prop in self.get_state(recurse=False):
+            self.fbind(prop, self.dispatch, 'on_changed', prop)
+
+        self.fbind('duration', self._update_total_duration)
+        self.fbind('loop', self._update_total_duration)
+        self._update_total_duration()
 
     def __call__(self, t):
         raise NotImplementedError
-
-    def init_factory(self, factory):
-        for prop in self.get_state(recurse=False):
-            self.fbind(prop, self.dispatch, 'on_changed', prop)
-            self.dispatch('on_changed', prop)
-        if self.function_factory is None:
-            self.function_factory = factory
-
-        # self.fbind('track_source', self._track_source_callback)
-        self.fbind('on_changed', factory.dispatch, 'on_changed')
-        self.fbind('duration', self._update_total_duration)
-        self.fbind('loop', self._update_total_duration)
-        # self._track_source_callback()
-        self._update_total_duration()
-
-    def del_factory(self, factory):
-        for prop in self.get_state(recurse=False):
-            self.funbind(prop, self.dispatch, 'on_changed', prop)
-
-        self.funbind('track_srouce', self._track_source_callback)
-        self.funbind('on_changed', factory.dispatch, 'on_changed')
-        self.funbind('duration', self._update_total_duration)
-        self.funbind('loop', self._update_total_duration)
 
     def get_timebase(self):
         '''Returns the function's timebase.
@@ -648,7 +546,7 @@ class FuncBase(EventDispatcher):
     def on_changed(self, *largs, **kwargs):
         pass
 
-    def get_gui_props(self, attrs=None):
+    def get_gui_props(self, properties=None):
         '''Called internally by the GUI to get the properties of the function
         that should be displayed.
 
@@ -683,13 +581,13 @@ class FuncBase(EventDispatcher):
              't_offset': None,
              'th0': None}
         '''
-        if attrs is None:
-            attrs = {}
-        attrs['name'] = None
-        attrs['loop'] = None
-        attrs['timebase_numerator'] = None
-        attrs['timebase_denominator'] = None
-        return attrs
+        if properties is None:
+            properties = {}
+        properties['name'] = None
+        properties['loop'] = None
+        properties['timebase_numerator'] = None
+        properties['timebase_denominator'] = None
+        return properties
 
     def get_prop_pretty_name(self, trans=None):
         '''Called internally by the GUI to get a translation dictionary which
@@ -748,7 +646,7 @@ class FuncBase(EventDispatcher):
             items = []
         return items
 
-    def get_state(self, state=None, recurse=True):
+    def get_state(self, state=None, recurse=True, expand_ref=False):
         '''Returns a dict representation of the function so that it can be
         reconstructed later with :meth:`apply_state`.
 
@@ -777,12 +675,10 @@ class FuncBase(EventDispatcher):
              'cls': 'CosFunc',
              'duration': 0,
              'f': 1.0,
-             'func_id': 5,
              'loop': 1,
              'name': 'Cos',
              't_offset': 0,
-             'th0': 0.0,
-             'track_source': True}
+             'th0': 0.0}
             >>> Group = function_factory.get('FuncGroup')
             >>> g = Group()
             >>> g
@@ -790,30 +686,23 @@ class FuncBase(EventDispatcher):
             >>> g.add_func(cos)
             >>> g.get_state(recurse=True)
             {'cls': 'FuncGroup',
-             'func_id': 6,
              'funcs': [{'A': 1.0,
                'cls': 'CosFunc',
                'duration': 0,
                'f': 1.0,
-               'func_id': 5,
                'loop': 1,
                'name': 'Cos',
                't_offset': 0,
-               'th0': 0.0,
-               'track_source': True}],
+               'th0': 0.0}],
              'loop': 1,
-             'name': 'Group',
-             'track_source': True}
+             'name': 'Group'}
             >>> g.get_state(recurse=False)
             {'cls': 'FuncGroup',
-             'func_id': 6,
              'loop': 1,
-             'name': 'Group',
-             'track_source': True}
+             'name': 'Group'}
         '''
         d = {
             'name': self.name, 'cls': self.__class__.__name__,
-            'track_source': self.track_source, 'func_id': self.func_id,
             'loop': self.loop,
             'timebase_numerator': self.timebase_numerator,
             'timebase_denominator': self.timebase_denominator}
@@ -823,10 +712,10 @@ class FuncBase(EventDispatcher):
             state.update(d)
         return state
 
-    def apply_state(self, state={}, clone=False, old_id_map=None):
+    def apply_state(self, state, clone=False):
         '''Takes the state of the function saved with :meth:`get_state` and
         applies it to this function. it also creates any children function e.g.
-        in the case of a :class:`FuncGroup`.
+        in the case of a :class:`FuncGroup` etc.
 
         It is called internally and should not be used directly. Use
         :meth:`make_func` instead.
@@ -837,98 +726,19 @@ class FuncBase(EventDispatcher):
                 The dict to use to reconstruct the function as returned by
                 :meth:`get_state`.
             `clone`: bool
-                If True will copy all the state, otherwise it doesn't
-                copy internal parameters e.g. :attr:`func_id`.
-            `old_id_map`: dict
-                A dict, which if not None will be filled in as the function
-                is constructed. The keys will be the :attr:`func_id` of the
-                function. The corresponding value will be the :attr:`func_id`
-                as saved in the ``state`` passed in. :attr:`func_id` is likely
-                to change as the function is re-created; this keeps track of
-                that.
+                If True will apply all the state, otherwise it doesn't
+                apply internal parameters listed in :attr:`_clone_props`.
 
         See :meth:`make_func` for an example.
         '''
         p = self._clone_props
         for k, v in state.items():
-            if (clone or k not in p) and k != 'func_id':
+            if clone or k not in p:
                 setattr(self, k, v)
-        if clone and old_id_map is not None and 'func_id' in state:
-            old_id_map[self.func_id] = state['func_id']
 
-    def finalize_func_state(self, id_map, id_to_func_map, old_to_new_name):
-        '''Called after function state has been set for all functions.
-        '''
-        if self.func_id not in id_map:  # we were not saved
-            return
-
-        src_id = id_map[self.func_id]
-        if src_id not in id_to_func_map:  # our source not recovered
-            if self.track_source:
-                self.source_func = self.function_factory.get_cls_default_func(
-                    self, registered_funcs_only=True)
-            return
-        src_f = self.source_func = id_to_func_map[src_id]
-        # name may have changed at source
-        if self.track_source and self.parent_func:
-            # this is only ok here because it's not a unique top level func
-            self.name = src_f.name
-        src_f.fbind('on_changed', self._update_from_source)
-
-    @property
-    def display(self):
-        '''The widget that displays this function and its options. Calling
-        this property will create the widget if it isn't already created.
-
-        The widget class instantiated is gotten from the kivy factory using
-        :attr:`display_cls`.
-        '''
-        if self._display:
-            return self._display
-        if not self.display_cls:
-            return None
-
-        w = self._display = Factory.get(self.display_cls)(func=self)
-        return w
-
-    def _track_source_callback(self, *largs):
-        '''If the function has a parent, :attr:`track_source` is automatically
-        set to True when the parent's :attr:`track_source` is set to True.
-        '''
-        if self.parent_func and self.parent_func.track_source:
-            self.track_source = True
-
-    def reload_from_source(self, *largs):
-        '''If :attr:`source_func` is not None, it applies all the
-        configuration options of :attr:`source_func` to this function.
-        '''
-        src = self.source_func
-        no_source = src is None
-        if no_source:
-            src = self.function_factory.get_cls_default_func(self)
-
-        state = src.get_state()
-        if no_source:
-            state.pop('name', '')
-        self.apply_state(state)
-        self.bind_sources(src, self)
-
-    def _update_from_source(self, *largs):
-        '''Updates the config options of this function to match
-        :attr:`source_func`.
-        '''
-        if largs and largs[0] is not self.source_func:
-            return
-        if len(largs) > 1 and largs[1] in self._clone_props:
-            return
-
-        if self.source_func and self.track_source:
-            self.apply_state(self.source_func.get_state(recurse=False))
-            self.bind_sources(self.source_func, self)
-
-    def get_funcs(self):
+    def get_funcs(self, step_into_ref=True):
         '''Iterator that yields the function and all its children functions
-        if it has any, e.g. for :class:`FuncGroup`.
+        if it has any, e.g. for :class:`FuncGroup`. It's DFS order.
 
         E.g.::
 
@@ -973,93 +783,50 @@ class FuncBase(EventDispatcher):
             parent = parent.parent_func
         return False
 
-    @staticmethod
-    def make_func(state, function_factory, clone=False, old_id_map=None):
-        '''Instantiates the function from the state and returns it.
-
-        This pre-creates the display when appropriate.
-        '''
-        c = state.pop('cls')
-        cls = function_factory.get(c)
-        if cls is None:
-            raise Exception('Missing class "{}"'.format(c))
-
-        func = cls(function_factory=function_factory)
-        if function_factory.show_widgets:
-            func.display  # create it before apply
-        func.apply_state(state, clone=clone, old_id_map=old_id_map)
-        return func
-
-    @staticmethod
-    def fill_id_map(func, ids):
-        '''Converts the object instance <=> object source relationships to a
-        id <=> id relationship of those objects and returns it in a dict.
-        '''
-        for f in func.get_funcs():
-            ids[f.func_id] = \
-                f.source_func.func_id if f.source_func else None
-
-    @staticmethod
-    def fill_id_to_func_map(func, id_to_func_map):
-        for f in func.get_funcs():
-            id_to_func_map[f.func_id] = f
-
-    def bind_sources(self, src, target, skip_root=True):
-        '''Walks through ``src`` and ``target`` recursively with
-        :meth:`get_funcs` and sets the :attr:`source_func` of ``target`` to the
-        corresponding function from ``src``. It also sets
-        :attr:`track_source` to true.
-
-        :Params:
-
-            `src`: :class:`FuncBase`
-                The function that :attr:`source_func` of ``target`` will be set
-                to
-            `target`: :class:`FuncBase`
-                The function on which :attr:`source_func` will be set.
-            `skip_root`: bool
-                Whether to skip the root functions (``src`` and ``target``)
-                when doing this. Defaults to True.
-        '''
-        s, t = src.get_funcs(), target.get_funcs()
-        if skip_root:
-            next(s)
-            next(t)
-        for src_func, new_func in zip(s, t):
-            new_func.source_func = src_func
-            new_func.track_source = True
-            src_func.fbind('on_changed', new_func._update_from_source)
-
     def __deepcopy__(self, memo):
-        src = self
-        obj = src.__class__()
-        obj.apply_state(src.get_state())
-        self.bind_sources(src, obj, skip_root=False)
+        obj = self.__class__(function_factory=self.function_factory)
+        obj.apply_state(self.get_state())
         return obj
 
-    def init_func(self, t_start, loop=False):
-        '''Called with the current time in order to make the
-        function usable.
+    def copy_expand_ref(self):
+        obj = self.__class__(function_factory=self.function_factory)
+        obj.apply_state(self.get_state(expand_ref=True))
 
-        It's called internally at the start of every :attr:`loop` iteration.
+    def init_func(self, t_start):
+        '''Called with the current global function time in order to make the
+        function ready.
+
+        It's called internally at the start of the first :attr:`loop`
+        iteration.
 
         :Params:
 
             `t_start`: float
                 The time in timebase units in global time. :attr:`t_start`
                 will be set to this value.
-            `loop`: bool
-                If it's the first iteration of the loop it should be False,
-                subsequently it should be True. Defaults to False.
         '''
         self.t_start = t_start
-        if not loop:
-            self.loop_count = 0
+        self.loop_count = 0
+
+    def init_loop_iteration(self, t_start):
+        '''Called with the current global function time in order to make the
+        function usable.
+
+        It's called internally at the start of every :attr:`loop` iteration,
+        except the first.
+
+        :Params:
+
+            `t_start`: float
+                The time in timebase units in global time. :attr:`t_start`
+                will be set to this value.
+        '''
+        self.t_start = t_start
 
     def check_domain(self, t):
         '''Returns whether the function is outside its valid domain for
-        time ``t`` in seconds. ``t`` is relative to 0 so :attr:`t_start`
-        must be subtracted internally.
+        time ``t`` in seconds. ``t`` is global so :attr:`t_start` should not
+        have been subtracted before calling.
         '''
         return False
 
@@ -1069,12 +836,13 @@ class FuncBase(EventDispatcher):
         reached.
 
         ``t`` is in seconds and this should only be called
-        when the function time reached the end of its valid domain.
+        when the function time reached the end of its valid domain so that it
+        makes sense to increment the loop.
         '''
         self.loop_count += 1
         if self.loop_count >= self.loop:
             return True
-        self.init_func(t, loop=True)
+        self.init_loop_iteration(t)
         return False
 
     def _update_total_duration(self, *largs):
@@ -1083,8 +851,42 @@ class FuncBase(EventDispatcher):
         else:
             self.duration_total = self.loop * self.duration
 
-    def removing_global_funcs(self):
-        pass
+
+class CeedFuncRef(object):
+    """The function it refers to must be in the factory.
+    """
+
+    func = None
+
+    display = None
+
+    parent_func = None
+
+    function_factory = None
+
+    def __init__(self, function_factory, func=None):
+        super(CeedFuncRef, self).__init__()
+        self.func = func
+        self.function_factory = function_factory
+
+    def get_state(self, state=None, recurse=True, expand_ref=False):
+        if expand_ref:
+            return self.func.get_state(recurse=recurse, expand_ref=True)
+
+        if state is None:
+            state = {}
+        state['ref_name'] = self.func.name
+        state['cls'] = 'CeedFuncRef'
+        return state
+
+    def apply_state(self, state, clone=False):
+        self.func = self.function_factory.funcs_inst[state['ref_name']]
+
+    def __deepcopy__(self, memo):
+        assert self.__class__ is CeedFuncRef
+        obj = CeedFuncRef(
+            function_factory=self.function_factory, func=self.func)
+        return obj
 
 
 class CeedFunc(FuncBase):
@@ -1093,28 +895,30 @@ class CeedFunc(FuncBase):
     '''
 
     t_offset = NumericProperty(0)
-    '''The amount of time in seconds to add the function when computing 
+    '''The amount of time in seconds to add the function time when computing 
     the result.
 
     All functions that inherit from this class must add this time. E.g. the
     :class:`~ceed.function.plugin.LinearFunc` defines its function as
     ``y(t) = mt + b`` with time ``t = (t_in - t_start + t_offset)``.
+    
+    :attr:`duration` starts after the :attr:`t_offset`.
     '''
 
-    display_cls = 'FuncWidget'
-
     def check_domain(self, t):
-        # timebase is factored out.
+        # t_offset is not used because it's irrelevant to duration.
+        if self.duration == -1:
+            return 0 <= t - self.t_start
         return 0 <= t - self.t_start < self.duration * self.get_timebase()
 
-    def get_gui_props(self, attrs=None):
-        d = super(CeedFunc, self).get_gui_props(attrs)
+    def get_gui_props(self, properties=None):
+        d = super(CeedFunc, self).get_gui_props(properties)
         d.update({'duration': None})
         d.update({'t_offset': None})
         return d
 
-    def get_state(self, state=None, recurse=True):
-        d = super(CeedFunc, self).get_state(state, recurse)
+    def get_state(self, state=None, recurse=True, expand_ref=False):
+        d = super(CeedFunc, self).get_state(state, recurse, expand_ref)
         d.update({'duration': self.duration})
         d.update({'t_offset': self.t_offset})
         return d
@@ -1156,8 +960,8 @@ class FuncComposit(CeedFunc):
         super(FuncComposit, self).init_factory(factory)
         self.fbind('f1', self._func_rebind_callback, '_f1_obj', 'f1')
         self.fbind('f2', self._func_rebind_callback, '_f2_obj', 'f2')
-        self.function_factory.fbind(
-            'funcs_inst', self._func_factory_rebind_callback, ref=True)
+        self.function_factory.fbind_proxy(
+            'funcs_inst', self._func_factory_rebind_callback)
         self.property('f1').dispatch(self)
         self.property('f2').dispatch(self)
         self.fbind('duration', self._update_duration)
@@ -1169,12 +973,12 @@ class FuncComposit(CeedFunc):
         self.function_factory.funbind(
             'funcs_inst', self._func_factory_rebind_callback)
         self.funbind('duration', self._update_duration)
-
-    def removing_global_funcs(self):
-        super(FuncComposit, self).removing_global_funcs()
-        # don't crash when global funcs are removed and their names disappear
-        self.function_factory.funbind(
-            'funcs_inst', self._func_factory_rebind_callback)
+    #
+    # def removing_global_funcs(self):
+    #     super(FuncComposit, self).removing_global_funcs()
+    #     # don't crash when global funcs are removed and their names disappear
+    #     self.function_factory.funbind(
+    #         'funcs_inst', self._func_factory_rebind_callback)
 
     def check_domain(self, t):
         raise NotImplemented
@@ -1214,22 +1018,29 @@ class FuncComposit(CeedFunc):
             self._f2_copy.init_func(t_start)
         super(FuncComposit, self).init_func(t_start, loop=loop)
 
-    def get_gui_props(self, attrs=None):
-        d = super(FuncComposit, self).get_gui_props(attrs)
+    def get_gui_props(self, properties=None):
+        d = super(FuncComposit, self).get_gui_props(properties)
         del d['timebase_numerator']
         del d['timebase_denominator']
         del d['t_offset']
         d['A'] = None
         d['B'] = None
         d['C'] = None
+
+        def values_getter(*largs):
+            return list(sorted(
+                item for item in self.function_factory.funcs_inst
+                if item != self.name))
         d['f1'] = (
             'TrackOptionsSpinner',
             {'track_obj': self.function_factory, 'track_prop': 'funcs_inst',
-             'allow_empty': True, 'update_items_on_press': True})
+             'allow_empty': True, 'update_items_on_press': True,
+             'values_getter': values_getter})
         d['f2'] = (
             'TrackOptionsSpinner',
             {'track_obj': self.function_factory, 'track_prop': 'funcs_inst',
-             'allow_empty': True, 'update_items_on_press': True})
+             'allow_empty': True, 'update_items_on_press': True,
+             'values_getter': values_getter})
         return d
 
     def get_state(self, *largs, **kwargs):
@@ -1261,12 +1072,14 @@ class FuncComposit(CeedFunc):
         f1 = self.f1
         if f1:
             if self._f1_obj and (
+                    f1 not in self.function_factory.funcs_inst or
                     self.function_factory.funcs_inst[f1]
                     is not self._f1_obj[0]):
                 self.property('f1').dispatch(self)
         f2 = self.f2
         if f2:
             if self._f2_obj and (
+                    f2 not in self.function_factory.funcs_inst or
                     self.function_factory.funcs_inst[f2]
                     is not self._f2_obj[0]):
                 self.property('f2').dispatch(self)
@@ -1336,36 +1149,30 @@ line 934, in __call__
     '''The list of children functions of this function.
     '''
 
-    display_cls = 'FuncWidgetGroup'
-
     _func_idx = 0
 
     def __init__(self, name='Group', **kwargs):
         super(FuncGroup, self).__init__(name=name, **kwargs)
         self.funcs = []
 
-    def init_factory(self, factory):
-        super(FuncGroup, self).init_factory(factory)
-        for f in self.funcs:
-            f.init_factory(factory)
-
-    def del_factory(self, factory):
-        super(FuncGroup, self).del_factory(factory)
-        for f in self.funcs:
-            f.del_factory(factory)
-
-    def init_func(self, t_start, loop=False):
-        super(FuncGroup, self).init_func(t_start, loop=loop)
+    def init_func(self, t_start):
+        super(FuncGroup, self).init_func(t_start)
         self._func_idx = 0
 
         funcs = self.funcs
-        if not funcs:
-            return
+        if funcs:
+            funcs[0].init_func(t_start)
 
-        funcs[0].init_func(t_start)
+    def init_loop_iteration(self, t_start):
+        super(FuncGroup, self).init_loop_iteration(t_start)
+        self._func_idx = 0
+
+        funcs = self.funcs
+        if funcs:
+            funcs[0].init_func(t_start)
 
     def check_domain(self, t):
-        raise NotImplemented
+        raise NotImplemented  # not *yet* implemented as it's not needed
 
     def __call__(self, t):
         funcs = self.funcs
@@ -1392,8 +1199,10 @@ line 934, in __call__
 
             `func`: :class:`FuncBase`
                 The function instance to add.
-            `after`: :class:`FuncBase`
+            `after`: :class:`FuncBase`, defaults to None.
                 The function in :attr:`funcs` after which to add this function.
+            `index`: int, defaults to None.
+                The index where to insert the function.
         '''
         func.parent_func = self
 
@@ -1406,11 +1215,13 @@ line 934, in __call__
             i = self.funcs.index(after)
             index = i + 1
             self.funcs.insert(i + 1, func)
-        func.fbind('duration', self._update_duration)
+
+        if isinstance(func, CeedFuncRef):
+            func.func.fbind('duration', self._update_duration)
+        else:
+            func.fbind('duration', self._update_duration)
         self._update_duration()
         self.dispatch('on_changed', op='add', index=index)
-        if self._display:
-            func.display.show_func(index=index)
 
     def remove_func(self, func):
         '''Removes sub-function ``func`` from :attr:`funcs`. It must exist in
@@ -1423,10 +1234,11 @@ line 934, in __call__
         '''
         if func.parent_func is self:
             func.parent_func = None
-        if self._display and func._display:
-            func._display.hide_func()
 
-        func.funbind('duration', self._update_duration)
+        if isinstance(func, CeedFuncRef):
+            func.func.funbind('duration', self._update_duration)
+        else:
+            func.funbind('duration', self._update_duration)
         index = self.funcs.index(func)
         del self.funcs[index]
         self._update_duration()
@@ -1435,52 +1247,45 @@ line 934, in __call__
     def _update_duration(self, *largs):
         '''Computes duration as a function of its children.
         '''
+        funcs = (
+            f.func if isinstance(f, CeedFuncRef) else f for f in self.funcs)
         self.duration = sum(
-            (f.duration_total for f in self.funcs if f.duration != -1))
+            (f.duration_total for f in funcs if f.duration != -1))
 
-    def _update_from_source(self, *largs, **kwargs):
-        if not self.source_func or not self.track_source:
-            return
-        if largs and largs[0] is not self.source_func:
-            return
-
-        if not kwargs:
-            super(FuncGroup, self)._update_from_source(*largs, **kwargs)
-            return
-
-        if kwargs['op'] == 'add':
-            self.add_func(deepcopy(self.source_func.funcs[kwargs['index']]))
-        else:
-            self.remove_func(self.funcs[kwargs['index']])
-
-    def reload_from_source(self, *largs):
-        for func in self.funcs[:]:
-            self.remove_func(func)
-        super(FuncGroup, self).reload_from_source()
-
-    def get_state(self, state=None, recurse=True):
-        d = super(FuncGroup, self).get_state(state)
+    def get_state(self, state=None, recurse=True, expand_ref=False):
+        d = super(FuncGroup, self).get_state(state, recurse, expand_ref)
         if recurse:
-            d['funcs'] = [f.get_state() for f in self.funcs]
+            d['funcs'] = [
+                f.get_state(recurse=recurse, expand_ref=expand_ref) for
+                f in self.funcs]
         return d
 
-    def apply_state(self, state={}, clone=False, old_id_map=None):
-        for opts in state.pop('funcs', []):
-            self.add_func(
-                self.make_func(
-                    opts, self.function_factory,
-                    clone=clone, old_id_map=old_id_map))
-        super(FuncGroup, self).apply_state(
-            state, clone=clone, old_id_map=old_id_map)
+    def apply_state(self, state={}, clone=False):
+        for opts in state.get('funcs', []):
+            self.add_func(self.function_factory.make_func(opts, clone=clone))
 
-    def get_funcs(self):
+        super(FuncGroup, self).apply_state(
+            {k: v for k, v in state.items() if k != 'funcs'}, clone=clone)
+
+    def get_funcs(self, step_into_ref=True):
         yield self
         for func in self.funcs:
+            if isinstance(func, CeedFuncRef):
+                if not step_into_ref:
+                    yield func
+                    continue
+
+                func = func.func
             for f in func.get_funcs():
                 yield f
 
 
 def register_all_functions(function_factory):
+    '''Call this with a :class:`FunctionFactoryBase` instance and it will
+    register all the plugin functions with the :class:`FunctionFactoryBase`.
+
+    :param function_factory: a :class:`FunctionFactoryBase` instance.
+    '''
     function_factory.register(FuncGroup)
     function_factory.register(FuncComposit)
     from ceed.function.plugin import get_plugin_functions

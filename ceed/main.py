@@ -141,6 +141,8 @@ class CeedApp(CPLComApp):
 
         self.stage_factory.fbind('on_changed', self.changed_callback)
         self.function_factory.fbind('on_changed', self.changed_callback)
+        for func in self.function_factory.funcs_inst_default.values():
+            func.fbind('on_changed', self.changed_callback)
         knspace.painter.fbind('on_changed', self.changed_callback)
         self.view_controller.fbind('on_changed', self.changed_callback)
 
