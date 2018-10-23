@@ -19,11 +19,11 @@ from kivy.lang import Builder
 from kivy.uix.slider import Slider
 from kivy.utils import get_color_from_hex
 
-from cplcom.drag_n_drop import DragableController, DragableObjectBehavior
+from cplcom.drag_n_drop import DraggableController, DraggableObjectBehavior
 
 __all__ = ('ShowMoreSelection', 'ShowMoreBehavior',
            'TouchSelectBehavior', 'BoxSelector', 'WidgetList',
-           'CeedDragNDrop', 'CeedDragableObjectBehavior',
+           'CeedDragNDrop', 'CeedDraggableObjectBehavior',
            'FilterTouchEagerlyBehavior')
 
 
@@ -203,13 +203,13 @@ class WidgetList(KNSpaceBehavior, CompoundSelectionBehavior, FocusBehavior):
         return nodes[i], i
 
 
-class CeedDragNDrop(KNSpaceBehavior, DragableController):
+class CeedDragNDrop(KNSpaceBehavior, DraggableController):
     '''Adds ``KNSpaceBehavior`` to the drag controller.
     '''
     pass
 
 
-class CeedDragableObjectBehavior(DragableObjectBehavior):
+class CeedDraggableObjectBehavior(DraggableObjectBehavior):
     '''Adds the ``on_drag_init`` event, which is dispatched when
     ``initiate_drag`` is called.
     '''
@@ -226,7 +226,7 @@ class CeedDragableObjectBehavior(DragableObjectBehavior):
     '''
 
     def initiate_drag(self):
-        super(CeedDragableObjectBehavior, self).initiate_drag()
+        super(CeedDraggableObjectBehavior, self).initiate_drag()
         self.dispatch('on_drag_init')
 
     def on_drag_init(self, *largs):
@@ -272,7 +272,7 @@ Factory.register(classname='ShowMoreBehavior', cls=ShowMoreBehavior)
 Factory.register(classname='TouchSelectBehavior', cls=TouchSelectBehavior)
 Factory.register(classname='WidgetList', cls=WidgetList)
 Factory.register(classname='CeedDragNDrop', cls=CeedDragNDrop)
-Factory.register(classname='CeedDragableObjectBehavior',
-                 cls=CeedDragableObjectBehavior)
+Factory.register(classname='CeedDraggableObjectBehavior',
+                 cls=CeedDraggableObjectBehavior)
 Factory.register(classname='FilterTouchEagerlyBehavior',
                  cls=FilterTouchEagerlyBehavior)

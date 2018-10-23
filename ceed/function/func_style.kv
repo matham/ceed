@@ -1,7 +1,7 @@
 
 <FuncListing@FlatSplitter>:
     size_hint_x: None
-    width: '100dp'
+    width: '200dp'
     sizable_from: 'left'
     strip_size: '5dp'
     min_size: '15dp'
@@ -14,33 +14,38 @@
             bar_width: '10dp'
             scroll_type: ['bars']
             size_hint_y: None
-            height: '34'
+            height: '68'
             BoxLayout:
-                id: control_box
-                orientation: 'horizontal'
-                size_hint_min_x: self.minimum_width
-                padding: '5dp'
-                spacing: '5dp'
-                FlatSpinner:
-                    id: func_spin
-                    values: sorted(app.function_factory.funcs_inst.keys()) if app.function_factory.funcs_inst else []
-                    text_autoupdate: True
-                    size_hint_min_x: self.minimum_width
+                size_hint_min_x: control_box.minimum_width
+                orientation: 'vertical'
+                FlatLabel:
+                    text: 'Functions'
                     flat_color: app.theme.text_primary
-                    flat_menu_color: app.theme.accent
-                    flat_drop_background_color: app.theme.primary_text
-                    flat_drop_text_color: app.theme.text_primary
-                    flat_border_color: app.theme.divider
-                DraggingWidget:
-                    drag_controller: knspace.dragger
-                    drag_widget: func_spin.__self__
-                    obj_dragged: func_spin.__self__
-                    drag_cls: 'func_spinner'
-                FlatImageButton:
-                    scale_down_color: True
-                    source: 'flat_plus.png'
-                    flat_color: app.theme.accent
-                    on_release: funcs.add_func(func_spin.text)
+                BoxLayout:
+                    id: control_box
+                    orientation: 'horizontal'
+                    padding: '5dp'
+                    spacing: '5dp'
+                    FlatSpinner:
+                        id: func_spin
+                        values: sorted(app.function_factory.funcs_inst.keys()) if app.function_factory.funcs_inst else []
+                        text_autoupdate: True
+                        size_hint_min_x: self.minimum_width
+                        flat_color: app.theme.text_primary
+                        flat_menu_color: app.theme.accent
+                        flat_drop_background_color: app.theme.primary_text
+                        flat_drop_text_color: app.theme.text_primary
+                        flat_border_color: app.theme.divider
+                    DraggingWidget:
+                        drag_controller: knspace.dragger
+                        drag_widget: func_spin.__self__
+                        obj_dragged: func_spin.__self__
+                        drag_cls: 'func_spinner'
+                    FlatImageButton:
+                        scale_down_color: True
+                        source: 'flat_plus.png'
+                        flat_color: app.theme.accent
+                        on_release: funcs.add_func(func_spin.text)
         ScrollView:
             bar_width: '10dp'
             scroll_type: ['bars']

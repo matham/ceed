@@ -44,7 +44,7 @@ from kivy.properties import StringProperty, NumericProperty, BooleanProperty, \
 from kivy.logger import Logger
 from kivy.factory import Factory
 
-from ceed.utils import fix_name
+from ceed.utils import fix_name, update_key_if_other_key
 
 __all__ = ('FuncDoneException', 'FunctionFactoryBase',
            'FuncBase', 'CeedFunc', 'FuncGroup', 'register_all_functions')
@@ -196,12 +196,18 @@ class FunctionFactoryBase(EventDispatcher):
         """If used, release must be called, even when restored automatically.
         """
         func = func or self.funcs_inst[name]
+        if isinstance(func, CeedFuncRef):
+            func = func.func
+
         ref = CeedFuncRef(function_factory=self, func=func)
         self._ref_funcs[func] += 1
+        func.has_ref = True
         return ref
 
     def return_func_ref(self, func_ref):
         self._ref_funcs[func_ref.func] -= 1
+        if not self._ref_funcs[func_ref.func]:
+            func_ref.func.has_ref = False
 
     def register(self, cls, instance=None):
         '''Registers the class and adds it to :attr:`funcs_cls`. It also
@@ -282,7 +288,6 @@ class FunctionFactoryBase(EventDispatcher):
             `func`: a :class:`FuncBase` derived instance.
                 The function to add.
         '''
-        func.source_func = None
         func.name = fix_name(func.name, self.funcs_inst)
 
         func.fbind('name', self._track_func_name, func)
@@ -304,10 +309,12 @@ class FunctionFactoryBase(EventDispatcher):
                 The function to remove.
         '''
         if not force and func in self._ref_funcs and self._ref_funcs[func]:
+            assert self._ref_funcs[func] > 0
             return False
 
         func.funbind('name', self._track_func_name, func)
         del self.funcs_inst[func.name]
+        # we cannot remove by equality check (maybe?)
         for i, f in enumerate(self.funcs_user):
             if f is func:
                 del self.funcs_user[i]
@@ -344,7 +351,10 @@ class FunctionFactoryBase(EventDispatcher):
         for f in self.funcs_user[:]:
             self.remove_func(f, force=force)
 
-    def make_func(self, state, clone=False):
+        if force:
+            self._ref_funcs = defaultdict(int)
+
+    def make_func(self, state, instance=None, clone=False):
         '''Instantiates the function from the state and returns it.
         '''
         state = dict(state)
@@ -353,14 +363,47 @@ class FunctionFactoryBase(EventDispatcher):
             cls = CeedFuncRef
         else:
             cls = self.get(c)
+
         if cls is None:
             raise Exception('Missing class "{}"'.format(c))
+        assert instance is None or instance.__class__ is cls
 
-        func = cls(function_factory=self)
+        func = instance or cls(function_factory=self)
         func.apply_state(state, clone=clone)
         if c == 'CeedFuncRef':
             self._ref_funcs[func.func] += 1
         return func
+
+    def save_functions(self):
+        return [f.get_state(recurse=True, expand_ref=False)
+                for f in self.funcs_user]
+
+    def recover_funcs(self, function_states):
+        name_map = {}
+        funcs = []
+        for state in function_states:
+            # cannot be a ref func here because they are global funcs
+            c = state['cls']
+            assert c != 'CeedFuncRef'
+
+            cls = self.get(c)
+            if cls is None:
+                raise Exception('Missing class "{}"'.format(c))
+
+            func = cls(function_factory=self)
+            old_name = func.name = state['name']
+
+            self.add_func(func)
+            funcs.append(func)
+            state['name'] = name_map[old_name] = func.name
+
+        update_key_if_other_key(
+            function_states, 'cls', 'CeedFuncRef', 'ref_name', name_map)
+
+        for func, state in zip(funcs, function_states):
+            self.make_func(state, instance=func)
+
+        return funcs, name_map
 
 
 class FuncBase(EventDispatcher):
@@ -441,11 +484,15 @@ class FuncBase(EventDispatcher):
     :attr:`loop_count` is incremented until done. See class for more details.
     '''
 
-    parent_func = ObjectProperty(None, rebind=True, allownone=True)
+    parent_func = None
     '''If this function is the child of another function, e.g. it's a
     sub-function of a :class:`FuncGroup` instance, then :attr:`parent_func`
     points to the parent function.
     '''
+
+    has_ref = BooleanProperty(False)
+    """Whether there's a CeedFuncRef pointing to this function.
+    """
 
     display = None
 
@@ -755,33 +802,17 @@ class FuncBase(EventDispatcher):
         '''
         yield self
 
-    def parent_in_other_children(self, other):
-        '''Checks whether any parent of this function all the way up (including
-        this function) is a child in the child tree of ``other``.
-
-        This specifically only checks using names and ignores names that are
-        the default functions (:attr:`FunctionFactoryBase.funcs_inst_default`).
-
-        :Params:
-
-            `other`: :class:`FuncBase`
-                The function to check for membership.
-
-        :returns:
-
-            True when this function or its parent is a sub-child of the
-            ``other`` function.
+    def can_other_func_be_added(self, other_func):
+        '''Checks whether the other function may be added to us.
         '''
-        other_names = {
-            o.name for o in other.get_funcs()
-            if o.name not in self.function_factory.funcs_inst_default}
+        if isinstance(other_func, CeedFuncRef):
+            other_func = other_func.func
 
-        parent = self
-        while parent is not None:
-            if parent.name in other_names:
-                return True
-            parent = parent.parent_func
-        return False
+        # check if we (or a ref to us) are a child of other_func
+        for func in other_func.get_funcs(step_into_ref=True):
+            if func is self:
+                return False
+        return True
 
     def __deepcopy__(self, memo):
         obj = self.__class__(function_factory=self.function_factory)
@@ -791,6 +822,7 @@ class FuncBase(EventDispatcher):
     def copy_expand_ref(self):
         obj = self.__class__(function_factory=self.function_factory)
         obj.apply_state(self.get_state(expand_ref=True))
+        return obj
 
     def init_func(self, t_start):
         '''Called with the current global function time in order to make the
@@ -884,9 +916,10 @@ class CeedFuncRef(object):
 
     def __deepcopy__(self, memo):
         assert self.__class__ is CeedFuncRef
-        obj = CeedFuncRef(
-            function_factory=self.function_factory, func=self.func)
-        return obj
+        return self.function_factory.get_func_ref(func=self)
+
+    def copy_expand_ref(self):
+        return self.func.copy_expand_ref()
 
 
 class CeedFunc(FuncBase):
@@ -1192,8 +1225,17 @@ line 934, in __call__
 
         raise FuncDoneException
 
+    def replace_ref_func_with_source(self, func_ref):
+        i = self.funcs.index(func_ref)
+        self.remove_func(func_ref)
+        func = func_ref.copy_expand_ref()
+        self.add_func(func, index=i)
+        return func, i
+
     def add_func(self, func, after=None, index=None):
         '''Adds a ``func`` to this function as a sub-function in :attr:`funcs`.
+        Remember to check :meth:`can_other_func_be_added` before adding
+        if there's potential for it to return False.
 
         :Params:
 
@@ -1232,8 +1274,8 @@ line 934, in __call__
             `func`: :class:`FuncBase`
                 The function instance to remove.
         '''
-        if func.parent_func is self:
-            func.parent_func = None
+        assert func.parent_func is self
+        func.parent_func = None
 
         if isinstance(func, CeedFuncRef):
             func.func.funbind('duration', self._update_duration)
@@ -1243,6 +1285,7 @@ line 934, in __call__
         del self.funcs[index]
         self._update_duration()
         self.dispatch('on_changed', op='remove', index=index)
+        return True
 
     def _update_duration(self, *largs):
         '''Computes duration as a function of its children.
@@ -1255,9 +1298,13 @@ line 934, in __call__
     def get_state(self, state=None, recurse=True, expand_ref=False):
         d = super(FuncGroup, self).get_state(state, recurse, expand_ref)
         if recurse:
-            d['funcs'] = [
-                f.get_state(recurse=recurse, expand_ref=expand_ref) for
-                f in self.funcs]
+            d['funcs'] = funcs = []
+            for f in self.funcs:
+                if isinstance(f, CeedFuncRef) and expand_ref:
+                    state = f.func.get_state(recurse=recurse, expand_ref=True)
+                else:
+                    state = f.get_state(recurse=recurse, expand_ref=expand_ref)
+                funcs.append(state)
         return d
 
     def apply_state(self, state={}, clone=False):
@@ -1276,7 +1323,7 @@ line 934, in __call__
                     continue
 
                 func = func.func
-            for f in func.get_funcs():
+            for f in func.get_funcs(step_into_ref):
                 yield f
 
 

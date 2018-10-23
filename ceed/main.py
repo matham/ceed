@@ -30,7 +30,7 @@ import ceed.shape.shape_widgets
 import ceed.view.view_widgets
 
 from ceed.function import FunctionFactoryBase, register_all_functions
-from ceed.stage import StageFactoryBase, _bind_remove
+from ceed.stage import StageFactoryBase, remove_shapes_upon_deletion
 from ceed.view.controller import ControllerSideViewControllerBase
 from ceed.storage.controller import CeedDataWriterBase, DataSerializerBase
 from ceed.graphics import CeedDragNDrop
@@ -99,7 +99,7 @@ class CeedApp(CPLComApp):
         self.function_factory = FunctionFactoryBase()
         register_all_functions(self.function_factory)
         self.stage_factory = StageFactoryBase(
-            function_factory=self.function_factory)
+            function_factory=self.function_factory, shape_factory=None)
         self.player = CeedPlayer()
         self.view_controller = ControllerSideViewControllerBase()
         self.ceed_data = CeedDataWriterBase()
@@ -129,11 +129,19 @@ class CeedApp(CPLComApp):
 
     def on_start(self):
         self.stage_factory.shape_factory = self.shape_factory = knspace.painter
-        _bind_remove(self.stage_factory, self.shape_factory)
+        remove_shapes_upon_deletion(
+            self.stage_factory, self.shape_factory,
+            knspace.stages.remove_shape_from_stage)
         knspace.painter.add_shapes_to_canvas = \
             knspace.painter.show_widgets = True
-        self.function_factory.show_widgets = True
-        self.stage_factory.show_widgets = True
+
+        def clear_all():
+            knspace.funcs.clear_all()
+            knspace.stages.clear_all()
+
+        self.ceed_data.stage_display_callback = knspace.stages.show_stage
+        self.ceed_data.func_display_callback = knspace.funcs.show_function
+        self.ceed_data.clear_all_callback = clear_all
 
         HighightButtonBehavior.init_class()
 

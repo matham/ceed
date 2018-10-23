@@ -59,37 +59,43 @@ class CeedDataWriterBase(EventDispatcher):
 
     data_lock = None
 
+    func_display_callback = None
+
+    stage_display_callback = None
+
+    shape_display_callback = None
+
+    clear_all_callback = None
+
     def __init__(self, **kwargs):
         super(CeedDataWriterBase, self).__init__(**kwargs)
         if (not os.environ.get('KIVY_DOC_INCLUDE', None) and
                 self.backup_interval):
             Clock.schedule_interval(self.write_changes, self.backup_interval)
 
-    @staticmethod
-    def gather_config_data_dict():
+    def gather_config_data_dict(self):
         app = App.get_running_app()
         data = {}
         data['shape'] = app.shape_factory.save_state()
-        func_id_map = {}
-        data['function'] = app.function_factory.save_funcs(func_id_map)[0]
-        data['stage'] = app.stage_factory.save_stages(func_id_map)[0]
-        data['func_id_map'] = func_id_map
+        data['function'] = app.function_factory.save_functions()
+        data['stage'] = app.stage_factory.save_stages()
 
         App.get_running_app().dump_app_settings_to_file()
         App.get_running_app().load_app_settings_from_file()
         data['app_settings'] = App.get_running_app().app_settings
         return data
 
-    @staticmethod
-    def clear_existing_config_data():
+    def clear_existing_config_data(self):
+        if self.clear_all_callback is not None:
+            self.clear_all_callback()
+
         app = App.get_running_app()
-        app.stage_factory.clear_stages()
+        app.stage_factory.clear_stages(force=True)
         app.shape_factory.remove_all_groups()
         app.shape_factory.delete_all_shapes(keep_locked_shapes=False)
-        app.function_factory.clear_added_funcs()
+        app.function_factory.clear_added_funcs(force=True)
 
-    @staticmethod
-    def apply_config_data_dict(data):
+    def apply_config_data_dict(self, data):
         app = App.get_running_app()
         app_settings = data['app_settings']
         # filter classes that are not of this app
@@ -98,8 +104,15 @@ class CeedDataWriterBase(EventDispatcher):
         app.apply_app_settings()
 
         from ceed.analysis import CeedDataReader
-        CeedDataReader.populate_config(
+        funcs, stages = CeedDataReader.populate_config(
             data, app.shape_factory, app.function_factory, app.stage_factory)
+
+        if self.func_display_callback:
+            for func in funcs:
+                self.func_display_callback(func)
+        if self.stage_display_callback:
+            for stage in stages:
+                self.stage_display_callback(stage)
 
     def get_filebrowser_callback(
             self, func, check_exists=False, clear_data=False):

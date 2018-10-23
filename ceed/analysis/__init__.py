@@ -502,27 +502,13 @@ class CeedDataReader(object):
         old_to_new_name_shape_map = {}
         shape_factory.set_state(settings['shape'], old_to_new_name_shape_map)
 
-        id_to_func_map = {}
-        old_id_map = {}
-        old_to_new_name = {}
+        funcs, func_name_map = function_factory.recover_funcs(
+            settings['function'])
 
-        f1 = function_factory.recover_funcs(
-            settings['function'], id_to_func_map, old_id_map, old_to_new_name)
-        f2 = stage_factory.recover_stages(
-            settings['stage'], id_to_func_map, old_id_map=old_id_map,
+        stages, stage_name_map = stage_factory.recover_stages(
+            settings['stage'], func_name_map,
             old_to_new_name_shape_map=old_to_new_name_shape_map)
-
-        old_to_new_id_map = {v: k for k, v in old_id_map.items()}
-
-        id_map = settings['func_id_map']
-        id_map_new = {old_to_new_id_map[a]: old_to_new_id_map[b]
-                      for a, b in id_map.items()
-                      if a in old_to_new_id_map and b in old_to_new_id_map}
-
-        for f in f1[0] + f2[0]:
-            for func in f.get_funcs():
-                func.finalize_func_state(
-                    id_map_new, id_to_func_map, old_to_new_name)
+        return funcs, stages
 
     @staticmethod
     def read_fluorescent_image_from_block(block):

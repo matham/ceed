@@ -43,66 +43,18 @@
         source: 'flat_vector_curve.png'
         flat_color: app.theme.accent
         on_state: knspace.painter.draw_mode = 'bezier' if self.state == 'down' else 'none'
-    FlatDivider:
-        color: app.theme.divider
-    FlatImageButton:
-        scale_down_color: True
-        source: 'flat_copy.png'
-        hover_text: 'duplicate shapes' if self.state == 'normal' else '[b]duplicate[/b] shapes'
-        flat_color: app.theme.accent
-        disabled: lock.state == 'down'
-        on_release: knspace.painter.duplicate_selected_shapes()
-    FlatImageButton:
-        scale_down_color: True
-        source: 'flat_delete.png'
-        hover_text: 'delete shapes' if self.state == 'normal' else '[b]delete[/b] shapes'
-        flat_color: app.theme.accent
-        disabled: lock.state == 'down'
-        on_release: knspace.painter.delete_shapes()
-    FlatDivider:
-        color: app.theme.divider
-    IconSwitchBehavior:
-        id: select
-        hover_text: '[b]edit[/b] / select' if self.state == 'normal' else 'edit / [b]select[/b]'
-        source_down: 'flat_select.png'
-        source_normal: 'flat_pencil.png'
-        flat_color: app.theme.accent
-        on_state:
-            knspace.painter.select = self.state == 'down'
-            if self.state == 'down': move_cam.state = 'normal'
-    IconSwitchBehavior:
-        id: lock
-        hover_text: '[b]unlock[/b] / lock' if self.state == 'normal' else 'unlock / [b]lock[/b]'
-        source_down: 'flat_lock.png'
-        source_normal: 'flat_unlock.png'
-        flat_color: app.theme.accent
-        on_state:
-            knspace.painter.locked = self.state == 'down'
-            if self.state == 'normal': move_cam.state = 'normal'
-    FlatImageToggleButton:
-        scale_down_color: True
-        hover_text: '[b]projector[/b] / camera scaling' if self.state == 'normal' else 'projector / [b]camera[/b] scaling'
-        source: 'flat_camera_switch.png'
-        flat_color: app.theme.accent
-        id: move_cam
-        on_state:
-            if self.state == 'down': lock.state = 'down'
-            if self.state == 'down': select.state = 'normal'
-            knspace.painter.move_cam = self.state == 'down'
-    FlatDivider:
-        color: app.theme.divider
-    FlatImageToggleButton:
-        scale_down_color: True
-        hover_text: 'multiselect' if self.state == 'normal' else '[b]multi[/b]select'
-        source: 'flat_add_to_selection.png'
-        flat_color: app.theme.accent
-        on_state:
-            knspace.shape_groups.touch_multiselect = knspace.shapes.touch_multiselect = knspace.painter.multiselect = self.state == 'down'
-    FlatImageToggleButton:
-        hover_text: '[b]hide[/b] / show pos' if self.state == 'normal' else 'hide / [b]show[/b] pos'
-        source: 'flat_map.png' if self.state == 'down' else 'flat_map_off.png'
-        flat_color: app.theme.accent
-        on_state: knspace.painter.show_label = self.state == 'down'
+    FlatSpinner:
+        values: ['Draw', 'Proj', 'Cam', 'MEA']
+        text: 'Draw'
+        on_text:
+            knspace.painter.locked = self.text != 'Draw'
+            knspace.painter.move_cam = self.text == 'Cam'
+        size_hint_min_x: self.minimum_width
+        flat_color: app.theme.text_primary
+        flat_menu_color: app.theme.accent
+        flat_drop_background_color: app.theme.primary_text
+        flat_drop_text_color: app.theme.text_primary
+        flat_border_color: app.theme.divider
 
 
 <ShapeListing@FlatSplitter>:
@@ -131,7 +83,7 @@
                 height: sshapes_label.texture_size[1]
                 FlatLabel:
                     id: sshapes_label
-                    text: 'Shape groups'
+                    text: 'Shapes'
                     width: max(self.texture_size[0], self.parent.width)
                     size_hint_x: None
                     padding: '5dp', '5dp'
@@ -165,6 +117,48 @@
                         spacer_props: {'size_hint_y': None, 'height': '40dp', 'size_hint_min_x': '40dp'}
                         drag_classes: ['shape', 'shape_group']
                         drag_append_end: True
+        BoxLayout:
+            size_hint_y: None
+            height: '34dp'
+            Widget
+            BoxLayout:
+                size_hint: None, None
+                size: self.minimum_width, '34dp'
+                padding: '5dp'
+                spacing: '5dp'
+                canvas:
+                    Color:
+                        rgba: app.theme.primary
+                    Rectangle:
+                        pos: self.pos
+                        size: self.size
+                FlatImageButton:
+                    scale_down_color: True
+                    source: 'flat_copy.png'
+                    hover_text: 'duplicate shapes' if self.state == 'normal' else '[b]duplicate[/b] shapes'
+                    flat_color: app.theme.accent
+                    on_release: knspace.painter.duplicate_selected_shapes()
+                FlatImageButton:
+                    scale_down_color: True
+                    source: 'flat_delete.png'
+                    hover_text: 'delete shapes' if self.state == 'normal' else '[b]delete[/b] shapes'
+                    flat_color: app.theme.accent
+                    on_release: knspace.painter.delete_shapes()
+                FlatDivider:
+                    color: app.theme.divider
+                FlatImageToggleButton:
+                    scale_down_color: True
+                    hover_text: 'multiselect' if self.state == 'normal' else '[b]multi[/b]select'
+                    source: 'flat_add_to_selection.png'
+                    flat_color: app.theme.accent
+                    on_state:
+                        knspace.shape_groups.touch_multiselect = knspace.shapes.touch_multiselect = knspace.painter.multiselect = self.state == 'down'
+                FlatImageToggleButton:
+                    hover_text: '[b]hide[/b] / show pos' if self.state == 'normal' else 'hide / [b]show[/b] pos'
+                    source: 'flat_map.png' if self.state == 'down' else 'flat_map_off.png'
+                    flat_color: app.theme.accent
+                    on_state: knspace.painter.show_label = self.state == 'down'
+            Widget
         ScrollView:
             bar_width: '10dp'
             scroll_type: ['bars']
@@ -285,7 +279,7 @@
                 if not self.text: self.text = str(float(root.area))
 
 
-<BoxShapeDragableLayoutBehavior@ShapeGroupDragableLayoutBehavior+BoxLayout>
+<BoxShapeDraggableLayoutBehavior@ShapeGroupDraggableLayoutBehavior+BoxLayout>
 
 <WidgetShapeGroup>:
     size_hint_y: None
@@ -329,7 +323,7 @@
             source: 'flat_delete.png'
             flat_color: app.theme.accent
             on_release: knspace.painter.remove_group(root.group)
-    BoxShapeDragableLayoutBehavior:
+    BoxShapeDraggableLayoutBehavior:
         id: more
         spacing: '5dp'
         padding: '5dp', 0, 0, 0

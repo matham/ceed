@@ -20,7 +20,7 @@ from kivy.graphics import Color, Rectangle
 from kivy.metrics import dp
 
 from cplcom.graphics import FlatTextInput
-from cplcom.drag_n_drop import DragableLayoutBehavior
+from cplcom.drag_n_drop import DraggableLayoutBehavior
 
 from ceed.utils import fix_name
 from ceed.graphics import WidgetList, ShowMoreSelection, ShowMoreBehavior, \
@@ -33,7 +33,7 @@ __all__ = ('FuncList', 'FuncWidget', 'FuncWidgetGroup', 'FuncPropTextWidget',
 _get_app = App.get_running_app
 
 
-class FuncList(DragableLayoutBehavior, ShowMoreSelection, WidgetList,
+class FuncList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
                BoxLayout):
     '''Widgets that shows the list of available functions and allows for the
     creation of new functions.
@@ -41,19 +41,21 @@ class FuncList(DragableLayoutBehavior, ShowMoreSelection, WidgetList,
 
     function_factory = None
 
+    is_visible = BooleanProperty(True)
+
     def handle_drag_release(self, index, drag_widget):
         if drag_widget.drag_cls == 'func_spinner':
             func = self.function_factory.funcs_inst[
                 drag_widget.obj_dragged.text]
         else:
-            func = drag_widget.obj_dragged.func
+            dragged = drag_widget.obj_dragged
+            func = dragged.ref_func or dragged.func
 
         func = deepcopy(func)
         self.function_factory.add_func(func)
 
         widget = FuncWidget.get_display_cls(func)()
-        widget.initialize_display(
-            func, self.function_factory, self, init_children=True)
+        widget.initialize_display(func, self.function_factory, self)
         self.add_widget(widget)
 
     def add_func(self, name):
@@ -73,9 +75,8 @@ class FuncList(DragableLayoutBehavior, ShowMoreSelection, WidgetList,
         src_func = self.function_factory.funcs_inst[name]
 
         if parent:
-            if not parent.parent_in_other_children(src_func):
-                func = CeedFuncRef(
-                    function_factory=self.function_factory, func=src_func)
+            if parent.can_other_func_be_added(src_func):
+                func = self.function_factory.get_func_ref(func=src_func)
                 parent.add_func(func, after=after)
 
                 widget = FuncWidget.get_display_cls(func)()
@@ -94,12 +95,24 @@ class FuncList(DragableLayoutBehavior, ShowMoreSelection, WidgetList,
         # called on it
         return list(reversed([
             f.display for func in self.function_factory.funcs_user for
-            f in func.get_funcs(step_into_ref=False)]))
+            f in func.get_funcs(step_into_ref=False) if f.display.is_visible]))
+
+    def clear_all(self):
+        for widget in self.children[:]:
+            self.remove_widget(widget)
+
+    def show_function(self, func):
+        widget = FuncWidget.get_display_cls(func)()
+        widget.initialize_display(func, self.function_factory, self)
+        self.add_widget(widget)
 
 
-class GroupFuncList(DragableLayoutBehavior, BoxLayout):
+class GroupFuncList(DraggableLayoutBehavior, BoxLayout):
+
+    is_visible = BooleanProperty(False)
 
     group_widget = None
+    """The function's widget containing this list. """
 
     def handle_drag_release(self, index, drag_widget):
         group_widget = self.group_widget
@@ -108,8 +121,8 @@ class GroupFuncList(DragableLayoutBehavior, BoxLayout):
 
         if drag_widget.drag_cls == 'func_spinner' or \
                 drag_widget.drag_cls == 'func' and \
-                group_widget.func_controller is function_factory and \
-                group_func.parent_func is None:
+                drag_widget.obj_dragged.func_controller is function_factory \
+                and drag_widget.obj_dragged.func.parent_func is None:
             if drag_widget.drag_cls == 'func_spinner':
                 func = function_factory.get_func_ref(
                     name=drag_widget.obj_dragged.text)
@@ -118,6 +131,9 @@ class GroupFuncList(DragableLayoutBehavior, BoxLayout):
                     drag_widget.obj_dragged.func, CeedFuncRef)
                 func = function_factory.get_func_ref(
                     func=drag_widget.obj_dragged.func)
+            if not group_func.can_other_func_be_added(func):
+                function_factory.return_func_ref(func)
+                return
 
             group_func.add_func(func, index=len(self.children) - index)
 
@@ -126,12 +142,16 @@ class GroupFuncList(DragableLayoutBehavior, BoxLayout):
                 func, function_factory, group_widget.selection_controller)
             self.add_widget(widget, index=index)
         else:
-            func = deepcopy(drag_widget.obj_dragged.func)
-            self.function_factory.add_func(func)
+            dragged = drag_widget.obj_dragged
+            if not group_widget.func.can_other_func_be_added(dragged.func):
+                return
+
+            func = deepcopy(dragged.func)
+            group_widget.func.add_func(func, index=len(self.children) - index)
 
             widget = FuncWidget.get_display_cls(func)()
             widget.initialize_display(
-                func, self.function_factory, self, init_children=True)
+                func, function_factory, group_widget.selection_controller)
             self.add_widget(widget, index=index)
 
 
@@ -150,7 +170,7 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
     '''
 
     ref_func = None
-    '''Whether :attr:`func` came from a :class:`CeedFuncRef`. '''
+    '''Func being referenced, if func is the ref. '''
 
     selected = BooleanProperty(False)
     '''Whether the function is selected in the GUI.
@@ -167,6 +187,8 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
     This is e.g. :attr:`ceed.function.FunctionFactoryBase` in the function list
     case or the stage to which the function is attached.
     '''
+
+    is_visible = BooleanProperty(False)
 
     _selector = None
 
@@ -257,8 +279,7 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
             add(item)
 
     def initialize_display(
-            self, func, func_controller, selection_controller,
-            init_children=True):
+            self, func, func_controller, selection_controller):
         '''Fills in the values of :attr:`selection_controller`,
         :attr:`func_controller` of all the
         functions and sub-functions of this function.
@@ -296,8 +317,24 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
     def handle_expand_widget(self, expand):
         expand.parent.remove_widget(expand)
 
-    def replace_ref_with_source(self):
-        pass
+    def replace_ref_func_with_source(self):
+        assert self.ref_func is not None
+        if self.func.parent_func is not None:
+            controller = self.func.parent_func
+        else:
+            controller = self.func_controller
+
+        parent_widget = self.parent
+        parent_widget.remove_widget(self)
+        func, i = controller.replace_ref_func_with_source(self.func)
+
+        widget = FuncWidget.get_display_cls(func)()
+        widget.initialize_display(
+            func, self.func_controller, self.selection_controller)
+        parent_widget.add_widget(
+            widget, index=len(parent_widget.children) - i)
+
+        self.func.function_factory.return_func_ref(self.func)
 
     @kv(proxy='app*')
     def apply_kv(self):
@@ -306,10 +343,12 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
         app = _get_app()
         func = self.ref_func or self.func
         func.fbind('on_changed', app.changed_callback)
+        interpolation = .25 if isinstance(self.func, FuncGroup) else 0
 
         with KvContext():
             self.height @= self.minimum_height
             self.size_hint_min_x @= self.minimum_width
+            self.is_visible @= self.parent is not None and self.parent.is_visible
 
             with BoxSelector(
                     parent=self, size_hint_y=None, height='34dp',
@@ -320,8 +359,9 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
 
                 with selector.canvas:
                     color = Color()
-                    color.rgba ^= app.theme.primary_light if not \
-                        self.selected else app.theme.primary
+                    color.rgba ^= app.theme.interpolate(
+                        app.theme.primary_light, app.theme.primary, interpolation) if \
+                        not self.selected else app.theme.primary
                     rect = Rectangle()
                     rect.size ^= selector.size
                     rect.pos ^= selector.pos
@@ -330,8 +370,6 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
                         parent=selector, drag_widget=selector,
                         obj_dragged=self, drag_cls='func') as dragger:
                     dragger.drag_copy = True  # root.func.parent_func is None
-                    # if not self.drag_copy: root.remove_func()
-                    pass
 
                 with Factory.ExpandWidget(parent=selector) as expand:
                     expand.state = 'down'
@@ -350,6 +388,7 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
                         parent=selector, scale_down_color=True,
                         source='flat_delete.png') as del_btn:
                     del_btn.flat_color @= app.theme.accent
+                    del_btn.disabled @= func.has_ref if self.ref_func is None else False
                     with KvRule(del_btn.on_release, triggered_only=True):
                         self.remove_func()
 
@@ -361,7 +400,7 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
                             split_btn.flat_color @= app.theme.accent
 
                             with KvRule(split_btn.on_release, triggered_only=True):
-                                self.replace_ref_with_source()
+                                self.replace_ref_func_with_source()
                 else:
                     with KvContext():
                         with Factory.FlatImageButton(
@@ -392,20 +431,20 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
                     splitter.height @= splitter.minimum_height
                     splitter.min_size @= splitter.minimum_width
 
-                with BoxLayout(
-                    parent=splitter, size_hint_y=None, orientation='vertical',
-                        spacing='5dp', padding='5dp') as settings:
-                    self._settings = settings
-                    settings.height @= settings.minimum_height
-                    settings.size_hint_min_x @= settings.minimum_width
+                    with BoxLayout(
+                        parent=splitter, size_hint_y=None, orientation='vertical',
+                            spacing='5dp', padding='5dp') as settings:
+                        self._settings = settings
+                        settings.height @= settings.minimum_height
+                        settings.size_hint_min_x @= settings.minimum_width
 
-                    with Factory.FlatLabel(
-                        parent=settings, padding=('5dp', '5dp'),
-                            size_hint_y=None, halign='center') as desc:
-                        desc.flat_color @= app.theme.text_primary
-                        desc.height @= desc.texture_size[1]
-                        desc.text_size @= desc.width, None
-                        desc.text @= self.func.description
+                        with Factory.FlatLabel(
+                            parent=settings, padding=('5dp', '5dp'),
+                                size_hint_y=None, halign='center') as desc:
+                            desc.flat_color @= app.theme.text_primary
+                            desc.height @= desc.texture_size[1]
+                            desc.text_size @= desc.width, None
+                            desc.text @= self.func.description
 
         return settings_root, splitter
 
@@ -423,21 +462,18 @@ class FuncWidgetGroup(FuncWidget):
 
         super(FuncWidgetGroup, self).remove_func()
 
-    def initialize_display(
-            self, func, func_controller, selection_controller,
-            init_children=True):
+    def initialize_display(self, func, func_controller, selection_controller):
         super(FuncWidgetGroup, self).initialize_display(
-            func, func_controller, selection_controller, init_children)
+            func, func_controller, selection_controller)
 
         if self.ref_func:
             return
 
-        if init_children:
-            for child in func.funcs:
-                display = self.func_controller.get_display_cls(child)()
-                self.children_container.add_widget(display)
-                display.initialize_display(
-                    child, func_controller, selection_controller, True)
+        for child in func.funcs:
+            display = FuncWidget.get_display_cls(child)()
+            self.children_container.add_widget(display)
+            display.initialize_display(
+                child, func_controller, selection_controller)
 
     @kv(proxy='app*')
     def apply_kv(self):
@@ -452,6 +488,7 @@ class FuncWidgetGroup(FuncWidget):
                     orientation='vertical') as more:
                 self.more = self.children_container = more
                 more.group_widget = self
+                more.is_visible @= self.show_more and self.is_visible
 
                 with KvRule(more.children):
                     if more.children:

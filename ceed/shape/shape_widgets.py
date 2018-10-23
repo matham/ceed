@@ -13,7 +13,8 @@ from kivy.uix.widget import Widget
 from kivy.factory import Factory
 from kivy.clock import Clock
 
-from cplcom.drag_n_drop import DragableLayoutBehavior
+from cplcom.drag_n_drop import DraggableLayoutBehavior
+from cplcom.graphics import HighightButtonBehavior
 
 from ceed.graphics import WidgetList, ShowMoreSelection, BoxSelector, \
     ShowMoreBehavior
@@ -66,7 +67,7 @@ class CeedPainter(CeedPaintCanvasBehavior, Widget):
             self.pos_label.text = ''
 
 
-class ShapeGroupDragableLayoutBehavior(DragableLayoutBehavior):
+class ShapeGroupDraggableLayoutBehavior(DraggableLayoutBehavior):
 
     group_widget = ObjectProperty(None)
 
@@ -79,7 +80,7 @@ class ShapeGroupDragableLayoutBehavior(DragableLayoutBehavior):
 
 
 class ShapeGroupList(
-        DragableLayoutBehavior, ShowMoreSelection, WidgetList, BoxLayout):
+        DraggableLayoutBehavior, ShowMoreSelection, WidgetList, BoxLayout):
     '''Widget that shows the list of all the groups.
     '''
 
@@ -240,7 +241,7 @@ class ShapeGroupItem(BoxSelector):
         return self.shape.name
 
 
-class ShapeList(DragableLayoutBehavior, ShowMoreSelection, WidgetList,
+class ShapeList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
                 BoxLayout):
     '''Widget that shows the list of all the shapes.
     '''
@@ -407,5 +408,7 @@ class WidgetShape(ShowMoreBehavior, BoxLayout):
         self.shape.set_area(area)
 
 
-Factory.register('ShapeGroupDragableLayoutBehavior',
-                 cls=ShapeGroupDragableLayoutBehavior)
+
+
+Factory.register('ShapeGroupDraggableLayoutBehavior',
+                 cls=ShapeGroupDraggableLayoutBehavior)

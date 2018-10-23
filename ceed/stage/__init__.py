@@ -9,6 +9,7 @@ intensity values for the shapes during an experimental stage.
 See :class:`StageFactoryBase` and :class:`CeedStage` for details.
 '''
 from copy import deepcopy
+from collections import defaultdict
 
 from kivy.properties import OptionProperty, ListProperty, ObjectProperty, \
     StringProperty, NumericProperty, DictProperty, BooleanProperty
@@ -16,11 +17,11 @@ from kivy.factory import Factory
 from kivy.event import EventDispatcher
 
 from ceed.function import CeedFunc, FuncDoneException
-from ceed.utils import fix_name
+from ceed.utils import fix_name, update_key_if_other_key
 from ceed.shape import CeedShapeGroup
 
 __all__ = ('StageDoneException', 'StageFactoryBase', 'CeedStage', 'StageShape',
-           '_bind_remove')
+           'remove_shapes_upon_deletion')
 
 
 class StageDoneException(Exception):
@@ -43,121 +44,77 @@ class StageFactoryBase(EventDispatcher):
     '''The list of the currently available :class:`CeedStage` instances.
     '''
 
-    show_widgets = False
-    '''Whether the class is used through the GUI, in which case the stage's
-    widget is displayed, otherwise, no widgets are displayed.
-    '''
-
     stage_names = DictProperty([])
     '''A dict of all the stages whose keys are the stage :attr:`CeedStage.name`
     and whose values are the corresponding :class:`CeedStage`.
     '''
 
-    function_factory = ObjectProperty(None)
+    function_factory = None
 
-    shape_factory = ObjectProperty(None)
+    shape_factory = None
+
+    _stage_ref = {}
 
     __events__ = ('on_changed', )
 
-    def __init__(self, function_factory=None, **kwargs):
-        super(StageFactoryBase, self).__init__(
-            function_factory=function_factory, **kwargs)
+    def __init__(self, function_factory, shape_factory, **kwargs):
+        self.shape_factory = shape_factory
+        self.function_factory = function_factory
+        super(StageFactoryBase, self).__init__(**kwargs)
         self.stages = []
+        self._stage_ref = defaultdict(int)
 
     def on_changed(self, *largs, **kwargs):
         pass
 
-    def save_stages(self, id_map=None):
-        '''Returns a list of the configuration options for all the stages,
-        allowing it to be recovered later with :meth:`recover_stages`.
+    def get_stage_ref(self, name=None, stage=None):
+        """If used, release must be called, even when restored automatically.
+        """
+        stage = stage or self.stage_names[name]
+        if isinstance(stage, CeedStageRef):
+            stage = stage.stage
 
-        :Params:
+        ref = CeedStageRef(
+            stage_factory=self, function_factory=self.function_factory,
+            shape_factory=self.shape_factory, stage=stage)
+        self._stage_ref[stage] += 1
+        stage.has_ref = True
+        return ref
 
-            `id_map`: dict
-                A dict that will be filled-in as the function state of the
-                stages is saved.
-                The keys will be the :attr:`ceed.function.FuncBase.func_id` of
-                each of the saved functions. The corresponding value will be
-                the :attr:`ceed.function.FuncBase.func_id` of the function in
-                :attr:`ceed.function.FuncBase.source_func` if not None. This
-                allows the reconstruction of the function dependencies.
+    def return_stage_ref(self, stage_ref):
+        self._stage_ref[stage_ref.stage] -= 1
+        if not self._stage_ref[stage_ref.stage]:
+            stage_ref.stage.has_ref = False
 
-                If None, the default, a dict is created. Otherwise, it's
-                updated in place.
-
-        :returns:
-
-            A two tuple ``(states, id_map)``. ``states`` is a list of all the
-            stages' states. ``id_map`` is the ``id_map`` created or passed
-            in.
+    def make_stage(self, state, instance=None, clone=False, func_name_map={},
+                   old_to_new_name_shape_map={}):
+        '''Instantiates the function from the state and returns it.
         '''
-        if id_map is None:
-            id_map = {}
-        for stage in self.stages:
-            for s in stage.get_stages():
-                for f in s.functions:
-                    CeedFunc.fill_id_map(f, id_map)
+        state = dict(state)
+        c = state.pop('cls')
+        if c == 'CeedStageRef':
+            cls = CeedStageRef
+        else:
+            assert c == 'CeedStage'
+            cls = CeedStage
+        assert instance is None or instance.__class__ is cls
 
-        states = [s.get_state() for s in self.stages]
-        return states, id_map
+        stage = instance
+        if instance is None:
+            stage = cls(
+                stage_factory=self, function_factory=self.function_factory,
+                shape_factory=self.shape_factory)
 
-    def recover_stages(self, stages, id_to_func_map=None, old_id_map=None,
-                       old_to_new_name_shape_map=None):
-        '''Restores all the stages that was saved with :meth:`save_stages`.
-
-        :Params:
-
-            `stages`: list
-                The list of stages' states as returned by :meth:`save_stages`.
-            `id_to_func_map`: dict
-                A dict that will be filled-in as the stage functions are
-                re-created. The keys will be the
-                :attr:`ceed.function.FuncBase.func_id` of the new functions
-                created from each stage state. The corresponding value
-                will be the function created.
-
-                If None, the default, a dict is created. Otherwise, it's
-                updated in place.
-            `old_id_map`: dict
-                A dict that will be filled-in as the functions are re-created.
-                The keys will be the :attr:`ceed.function.FuncBase.func_id` of
-                the new functions created from each state. The corresponding
-                value will be the :attr:`ceed.function.FuncBase.func_id` as
-                saved in the ``stages`` state passed in.
-                :attr:`ceed.function.FuncBase.func_id` is likely to change
-                as a function is re-created; this keeps track of that.
-
-                If None, the default, a dict is created. Otherwise, it's
-                updated in place.
-
-        :returns:
-
-            A two-tuple. The first element is list of all the functions created
-            while reconstructing the stages. The second is ``id_to_func_map``
-            created, or passed in.
-        '''
-        for state in stages:
-            stage = CeedStage(stage_factory=self)
-            if self.show_widgets:
-                stage.display
-            stage.apply_state(
-                state, clone=True, old_id_map=old_id_map,
-                old_to_new_name_shape_map=old_to_new_name_shape_map)
-            self.add_stage(stage)
-
-        id_to_func_map = {} if id_to_func_map is None else id_to_func_map
-        funcs = []
-
-        for stage in self.stages:
-            for s in stage.get_stages():
-                for f in s.functions:
-                    CeedFunc.fill_id_to_func_map(f, id_to_func_map)
-                    funcs.append(f)
-
-        return funcs, id_to_func_map
+        stage.apply_state(state, clone=clone, func_name_map=func_name_map,
+                          old_to_new_name_shape_map=old_to_new_name_shape_map)
+        if c == 'CeedStageRef' and not clone:
+            self._stage_ref[stage.stage] += 1
+        return stage
 
     def add_stage(self, stage):
         '''Adds the :class:`CeedStage` to the stage factory (:attr:`stages`).
+        Remember to check :meth:`can_other_stage_be_added` before adding
+        if there's potential for it to return False.
 
         :Params:
 
@@ -165,14 +122,14 @@ class StageFactoryBase(EventDispatcher):
                 The stage to add.
         '''
         stage.name = fix_name(stage.name, [s.name for s in self.stages])
+        stage.fbind('name', self._change_stage_name, stage)
+
         self.stages.append(stage)
         self.stage_names[stage.name] = stage
-        stage.init_factory(self)
-        if self.show_widgets:
-            stage.display.show_stage()
+
         self.dispatch('on_changed')
 
-    def remove_stage(self, stage):
+    def remove_stage(self, stage, force=False):
         '''Removes the :class:`CeedStage` from the stage factory
         (:attr:`stages`).
 
@@ -181,21 +138,31 @@ class StageFactoryBase(EventDispatcher):
             `stage`: :class:`CeedStage`
                 The stage to remove.
         '''
-        stage.del_factory(self)
-        self.stages.remove(stage)
+        if not force and stage in self._stage_ref and self._stage_ref[stage]:
+            assert self._stage_ref[stage] > 0
+            return False
+
+        stage.funbind('name', self._change_stage_name, stage)
+
         del self.stage_names[stage.name]
+        # we cannot remove by equality check (maybe?)
+        for i, s in enumerate(self.stages):
+            if s is stage:
+                del self.stages[i]
+                break
+        else:
+            raise ValueError('{} was not found in stages'.format(stage))
 
-        if stage._display:
-            stage._display.hide_stage()
         self.dispatch('on_changed')
+        return True
 
-    def clear_stages(self):
+    def clear_stages(self, force=False):
         '''Removes all the stages from the factory (:class:`stages`).
         '''
         for stage in self.stages[:]:
-            self.remove_stage(stage)
+            self.remove_stage(stage, force)
 
-    def remove_shape_from_all(self, _, shape):
+    def remove_shape_from_all(self, _, shape, callback):
         '''Removes the :class:`ceed.shape.CeedShape` instance from all the
         :class:`CeedStage` instances that it is a associated with.
 
@@ -210,19 +177,58 @@ class StageFactoryBase(EventDispatcher):
             for sub_stage in stage.get_stages():
                 for stage_shape in sub_stage.shapes:
                     if stage_shape.shape is shape:
-                        sub_stage.remove_shape(stage_shape)
+                        callback(sub_stage, stage_shape)
 
-    def _change_stage_name(self, stage, name):
+    def _change_stage_name(self, stage, *largs):
         '''Makes sure that a stage's name is unique.
         '''
-        if stage.name == name:
-            return name
+        # get the new name
+        for name, s in self.stage_names.items():
+            if s is stage:
+                if stage.name == name:
+                    return
 
-        del self.stage_names[stage.name]
-        name = fix_name(name, self.stage_names)
-        stage.name = name
+                del self.stage_names[name]
+                # only one change at a time happens because of binding
+                break
+        else:
+            raise ValueError(
+                '{} has not been added to the factory'.format(stage))
+
+        stage.name = fix_name(stage.name, [s.name for s in self.stages])
         self.stage_names[stage.name] = stage
-        return name
+
+    def save_stages(self):
+        return [s.get_state(expand_ref=False)for s in self.stages]
+
+    def recover_stages(
+            self, stage_states, func_name_map, old_to_new_name_shape_map):
+        name_map = {}
+        stages = []
+        for state in stage_states:
+            # cannot be a ref func here because they are global funcs
+            c = state['cls']
+            assert c != 'CeedStageRef'
+            assert c == 'CeedStage'
+
+            stage = CeedStage(
+                stage_factory=self, function_factory=self.function_factory,
+                shape_factory=self.shape_factory)
+            old_name = stage.name = state['name']
+
+            self.add_stage(stage)
+            stages.append(stage)
+            state['name'] = name_map[old_name] = stage.name
+
+        update_key_if_other_key(
+            stage_states, 'cls', 'CeedStageRef', 'ref_name', name_map)
+
+        for stage, state in zip(stages, stage_states):
+            self.make_stage(
+                state, instance=stage, clone=True, func_name_map=func_name_map,
+                old_to_new_name_shape_map=old_to_new_name_shape_map)
+
+        return stages, name_map
 
     def tick_stage(self, stage_name):
         '''An iterator which starts a :class:`CeedStage` and ticks the time for
@@ -320,8 +326,8 @@ class StageFactoryBase(EventDispatcher):
             shape_views[shape.name] = instructions[0]
         return shape_views
 
-    def fill_shape_gl_color_values(self, shape_views, shape_values,
-                                   projection=None):
+    def fill_shape_gl_color_values(
+            self, shape_views, shape_values, projection=None):
         '''Takes the dict of the Colors instance that control the color of
         each shape as well as the list of the color values for a time point
         and sets the shape colors to those values.
@@ -501,7 +507,7 @@ class CeedStage(EventDispatcher):
     See :class:`CeedStage` description for details.
     '''
 
-    stages = ListProperty([])
+    stages = []
     '''A list of :class:`CeedStage` instances that are sub-stages of this
     stage.
 
@@ -512,13 +518,17 @@ class CeedStage(EventDispatcher):
     '''The parent stage when this stage is a sub-stage of another.
     '''
 
-    functions = ListProperty([])
+    has_ref = BooleanProperty(False)
+    """Whether there's a CeedFuncRef pointing to this function.
+    """
+
+    functions = []
     '''A list of :class:`ceed.function.FuncBase` instances through which the
     stage iterates through sequentially and updates the intensity of the
     :attr:`shapes` to the function value at each time point.
     '''
 
-    shapes = ListProperty([])
+    shapes = []
     '''The list of :class:`StageShape` instances that are associated
     with this stage. All the shapes are set to the same intensity value at
     every time point according to the :attr:`functions` value at that
@@ -545,38 +555,34 @@ class CeedStage(EventDispatcher):
     this is ignored.
     '''
 
-    stage_factory = ObjectProperty(None)
+    stage_factory = None
 
-    _display = None
+    function_factory = None
+
+    shape_factory = None
+
+    display = None
 
     __events__ = ('on_changed', )
 
-    def init_factory(self, factory):
-        for name in self.get_state():
-            self.fbind(name, self.dispatch, 'on_changed')
-        self.fbind('on_changed', factory.dispatch, 'on_changed')
+    def __init__(self, stage_factory, function_factory, shape_factory, **kwargs):
+        self.stage_factory = stage_factory
+        self.function_factory = function_factory
+        self.shape_factory = shape_factory
+        super(CeedStage, self).__init__(**kwargs)
+        self.functions = []
+        self.stages = []
+        self.shapes = []
 
-        for f in self.functions:
-            f.init_factory(self)
-        for stage in self.stages:
-            stage.init_factory(self)
-        self.dispatch('on_changed')
-
-    def del_factory(self, factory):
-        for name in self.get_state():
-            self.funbind(name, self.dispatch, 'on_changed')
-        self.funbind('on_changed', factory.dispatch, 'on_changed')
-
-        for f in self.functions:
-            f.del_factory(self)
-        for stage in self.stages:
-            stage.del_factory(self)
-        self.dispatch('on_changed')
+        for prop in self.get_state():
+            if prop in ('stages', 'functions', 'shapes'):
+                continue
+            self.fbind(prop, self.dispatch, 'on_changed', prop)
 
     def on_changed(self, *largs, **kwargs):
         pass
 
-    def get_state(self, state=None):
+    def get_state(self, state=None, expand_ref=False):
         '''Returns a dict representation of the stage so that it can be
         reconstructed later with :meth:`apply_state`.
 
@@ -591,13 +597,15 @@ class CeedStage(EventDispatcher):
 
             A dict with all the configuration data.
         '''
-        d = {}
+        d = {'cls': 'CeedStage'}
         for name in ('order', 'name', 'color_r', 'color_g', 'color_b',
                      'complete_on'):
             d[name] = getattr(self, name)
 
-        d['stages'] = [s.get_state() for s in self.stages]
-        d['functions'] = [f.get_state() for f in self.functions]
+        d['stages'] = [s.get_state(expand_ref=expand_ref) for s in self.stages]
+        d['functions'] = [
+            f.get_state(recurse=True, expand_ref=expand_ref)
+            for f in self.functions]
         d['shapes'] = [s.name for s in self.shapes]
 
         if state is None:
@@ -606,8 +614,8 @@ class CeedStage(EventDispatcher):
             state.update(d)
         return state
 
-    def apply_state(self, state={}, clone=False, old_id_map=None,
-                    old_to_new_name_shape_map=None):
+    def apply_state(self, state={}, clone=False, func_name_map={},
+                    old_to_new_name_shape_map={}):
         '''Takes the state of the stage saved with :meth:`get_state` and
         applies it to this stage. it also creates any children functions and
         stages and creates the references to the :attr:`shapes`.
@@ -620,17 +628,6 @@ class CeedStage(EventDispatcher):
             `clone`: bool
                 If True will copy all the state, otherwise it doesn't
                 copy internal parameters.
-            `old_id_map`: dict
-                A dict that will be filled-in as the functions are re-created.
-                The keys will be the :attr:`ceed.function.FuncBase.func_id` of
-                the new functions created from each state. The corresponding
-                value will be the :attr:`ceed.function.FuncBase.func_id` as
-                saved in the ``stages`` state passed in.
-                :attr:`ceed.function.FuncBase.func_id` is likely to change
-                as a function is re-created; this keeps track of that.
-
-                If None, the default, a dict is created. Otherwise, it's
-                updated in place.
         '''
         stages = state.pop('stages', [])
         functions = state.pop('functions', [])
@@ -640,19 +637,16 @@ class CeedStage(EventDispatcher):
             setattr(self, k, v)
 
         for data in stages:
-            s = CeedStage(stage_factory=self.stage_factory)
-            if self._display:
-                s.display
-            s.apply_state(
-                data, clone=True, old_id_map=old_id_map,
+            s = self.stage_factory.make_stage(
+                data, clone, func_name_map=func_name_map,
                 old_to_new_name_shape_map=old_to_new_name_shape_map)
             self.add_stage(s)
 
+        update_key_if_other_key(
+            functions, 'cls', 'CeedFuncRef', 'ref_name', func_name_map)
         for data in functions:
-            self.add_func(
-                CeedFunc.make_func(
-                    data, self.stage_factory.function_factory,
-                    clone=True, old_id_map=old_id_map))
+            func = self.function_factory.make_func(data, clone=clone)
+            self.add_func(func)
 
         shapes = self.stage_factory.shape_factory.shape_names
         groups = self.stage_factory.shape_factory.shape_group_names
@@ -665,55 +659,69 @@ class CeedStage(EventDispatcher):
                 self.add_shape(shapes[name])
             elif name in groups:
                 self.add_shape(groups[name])
+            else:
+                raise ValueError('Could not find shape {}'.format(name))
 
-    def duplicate_stage(self):
-        stage = CeedStage(stage_factory=self.stage_factory)
-        if self._display:
-            stage.display
+    def __deepcopy__(self, memo):
+        obj = self.__class__(
+            stage_factory=self.stage_factory,
+            function_factory=self.function_factory,
+            shape_factory=self.shape_factory)
+        obj.apply_state(self.get_state())
+        return obj
 
-        for name in self.get_state():
-            setattr(stage, name, getattr(self, name))
+    def replace_ref_stage_with_source(self, stage_ref):
+        i = self.stages.index(stage_ref)
+        self.remove_stage(stage_ref)
+        stage = stage_ref.copy_expand_ref()
+        self.add_stage(stage, index=i)
+        return stage, i
 
-        for child_stage in self.stages:
-            stage.add_stage(child_stage.duplicate_stage())
+    def replace_ref_func_with_source(self, func_ref):
+        i = self.functions.index(func_ref)
+        self.remove_func(func_ref)
+        func = func_ref.copy_expand_ref()
+        self.add_func(func, index=i)
+        return func, i
 
-        for func in self.functions:
-            stage.add_func(deepcopy(func))
-
-        for shape in self.shapes:
-            stage.add_shape(shape.shape)
-        return stage
-
-    @property
-    def display(self):
-        '''The GUI widget associated with the stage and displayed to the
-        user.
+    def can_other_stage_be_added(self, other_stage):
+        '''Checks whether the other stagetion may be added to us.
         '''
-        if self._display:
-            return self._display
+        if isinstance(other_stage, CeedStageRef):
+            other_stage = other_stage.stage
 
-        w = self._display = Factory.StageWidget(stage=self)
-        return w
+        # check if we (or a ref to us) are a child of other_stage
+        for stage in other_stage.get_stages(step_into_ref=True):
+            if stage is self:
+                return False
+        return True
 
-    def add_stage(self, stage):
+    def add_stage(self, stage, after=None, index=None):
         '''Adds a sub-stage instance :class:`CeedStage` to :attr:`stages`.
         '''
-        self.stages.append(stage)
         stage.parent_stage = self
 
-        if self._display:
-            stage.display.show_stage()
+        if after is None and index is None:
+            self.stages.append(stage)
+        elif index is not None:
+            self.stages.insert(index, stage)
+        else:
+            i = self.stages.index(after)
+            self.stages.insert(i + 1, stage)
+
+        self.dispatch('on_changed')
 
     def remove_stage(self, stage):
         '''Removes a sub-stage instance :class:`CeedStage` from :attr:`stages`.
         '''
-        self.stages.remove(stage)
+        self.stages.remove(stage)  # use is not equal, same for funcs
+        assert stage.parent_stage is self
         stage.parent_stage = None
 
-        if self._display and stage._display:
-            stage._display.hide_stage()
+        self.dispatch('on_changed')
+        return True
 
-    def add_func(self, func, after=None):
+    def add_func(self, func, after=None, index=None):
         '''Adds the function instance :class:`ceed.function.FuncBase` to
         :attr:`functions`.
 
@@ -725,23 +733,24 @@ class CeedStage(EventDispatcher):
                 The function in :attr:`functions` after which to add this
                 function, if not None, the default.
         '''
-        i = None
-        if after is None:
+
+        if after is None and index is None:
             self.functions.append(func)
+        elif index is not None:
+            self.functions.insert(index, func)
         else:
             i = self.functions.index(after)
             self.functions.insert(i + 1, func)
-        if self._display:
-            self._display.set_func_controller(func.display)
-            func.display.show_func(i)
+
+        self.dispatch('on_changed')
 
     def remove_func(self, func):
         '''Removes the function instance :class:`ceed.function.FuncBase` from
         :attr:`functions`.
         '''
         self.functions.remove(func)
-        if func._display:
-            func._display.hide_func()
+        self.dispatch('on_changed')
+        return True
 
     def add_shape(self, shape):
         '''Adds a :class:`StageShape` instance wrapping the
@@ -760,10 +769,11 @@ class CeedStage(EventDispatcher):
         '''
         if any([s for s in self.shapes if shape.name == s.name]):
             return None
+
         stage_shape = StageShape(stage=self, shape=shape)
         self.shapes.append(stage_shape)
-        if self._display:
-            stage_shape.display.show_widget()
+
+        self.dispatch('on_changed')
         return stage_shape
 
     def remove_shape(self, stage_shape):
@@ -771,17 +781,21 @@ class CeedStage(EventDispatcher):
         :attr:`shapes`.
         '''
         self.shapes.remove(stage_shape)
+        self.dispatch('on_changed')
 
-        if self._display and stage_shape._display:
-            stage_shape.display.hide_widget()
-
-    def get_stages(self):
+    def get_stages(self, step_into_ref=True):
         '''Iterator that iterates depth-first through all the stages
         and children :attr:`stages and yields these stages.`
         '''
         yield self
         for stage in self.stages:
-            for s in stage.get_stages():
+            if isinstance(stage, CeedStageRef):
+                if not step_into_ref:
+                    yield stage
+                    continue
+
+                stage = stage.stage
+            for s in stage.get_stages(step_into_ref):
                 yield s
 
     def tick_stage(self, shapes):
@@ -895,6 +909,7 @@ class CeedStage(EventDispatcher):
         '''
         raised = False
         for func in self.functions:
+            func = func.copy_expand_ref()
             try:
                 if not raised:
                     t = yield
@@ -909,18 +924,63 @@ class CeedStage(EventDispatcher):
         raise FuncDoneException
 
 
+class CeedStageRef(object):
+    """The function it refers to must be in the factory.
+    """
+
+    stage = None
+
+    display = None
+
+    parent_stage = None
+
+    stage_factory = None
+
+    function_factory = None
+
+    shape_factory = None
+
+    def __init__(self, stage_factory, function_factory, shape_factory,
+                 stage=None):
+        super(CeedStageRef, self).__init__()
+        self.stage = stage
+        self.stage_factory = stage_factory
+        self.shape_factory = shape_factory
+        self.function_factory = function_factory
+
+    def get_state(self, state=None, expand_ref=False):
+        if expand_ref:
+            return self.stage.get_state(expand_ref=True)
+
+        if state is None:
+            state = {}
+        state['ref_name'] = self.stage.name
+        state['cls'] = 'CeedStageRef'
+        return state
+
+    def apply_state(self, state, clone=False):
+        self.stage = self.stage_factory.stage_names[state['ref_name']]
+
+    def __deepcopy__(self, memo):
+        assert self.__class__ is CeedStageRef
+        return self.stage_factory.get_stage_ref(stage=self)
+
+    def copy_expand_ref(self):
+        return deepcopy(self.stage)
+
+
 class StageShape(EventDispatcher):
     '''A wrapper for :class:`ceed.shape.CeedShape` instances used in
     :meth:`CeedStage.add_shape` to wrap a shape or shape group to be used by
     the stage.
     '''
 
-    shape = ObjectProperty(None, rebind=True)
+    shape = None
     '''The :class:`ceed.shape.CeedShape` or :class:`ceed.shape.CeedShapeGroup`
     instance being wrapped.
     '''
 
-    stage = ObjectProperty(None, rebind=True)
+    stage = None
     '''The :class:`CeedStage` this is associated with.
     '''
 
@@ -929,28 +989,23 @@ class StageShape(EventDispatcher):
     :attr:`cplcom.painter.PaintShape.name` of the instance wrapped.
     '''
 
-    _display = None
+    display = None
 
-    def __init__(self, **kwargs):
+    def __init__(self, stage=None, shape=None, **kwargs):
         super(StageShape, self).__init__(**kwargs)
+        self.stage = stage
+        self.shape = shape
         self.shape.fbind('name', self._update_name)
         self._update_name()
 
     def _update_name(self, *largs):
         self.name = self.shape.name
 
-    @property
-    def display(self):
-        '''The GUI widget associated with the shape and displayed to the
-        user in the stage.
-        '''
-        if self._display:
-            return self._display
 
-        w = self._display = Factory.StageShapeDisplay(stage_shape=self)
-        return w
-
-
-def _bind_remove(stage_factory, shape_factory):
-    shape_factory.fbind('on_remove_shape', stage_factory.remove_shape_from_all)
-    shape_factory.fbind('on_remove_group', stage_factory.remove_shape_from_all)
+def remove_shapes_upon_deletion(stage_factory, shape_factory, callback):
+    shape_factory.fbind(
+        'on_remove_shape', stage_factory.remove_shape_from_all,
+        callback=callback)
+    shape_factory.fbind(
+        'on_remove_group', stage_factory.remove_shape_from_all,
+        callback=callback)

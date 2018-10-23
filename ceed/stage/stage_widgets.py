@@ -19,14 +19,16 @@ from kivy.garden.graph import MeshLinePlot
 from kivy.metrics import dp
 from kivy.app import App
 from kivy.utils import get_color_from_hex
+from kivy.lang.compiler import kv, KvContext, KvRule
+from kivy.uix.gridlayout import GridLayout
 from kivy.graphics import Rectangle, Color, Line
 
 from ceed.graphics import WidgetList, ShowMoreSelection, BoxSelector, \
     ShowMoreBehavior
-from ceed.stage import CeedStage
-from ceed.function.func_widgets import FuncWidget, FuncWidgetGroup
+from ceed.stage import CeedStage, CeedStageRef
+from ceed.function.func_widgets import FuncWidget, FuncWidgetGroup, CeedFuncRef
 
-from cplcom.drag_n_drop import DragableLayoutBehavior
+from cplcom.drag_n_drop import DraggableLayoutBehavior
 
 __all__ = ('StageList', 'StageWidget', 'StageShapeDisplay', 'ShapePlot',
            'StageGraph')
@@ -35,188 +37,234 @@ __all__ = ('StageList', 'StageWidget', 'StageShapeDisplay', 'ShapePlot',
 _get_app = App.get_running_app
 
 
-class CeedStageDragableLayoutBehavior(DragableLayoutBehavior):
-
-    drag_target_stage = ObjectProperty(None)
-
-    def handle_drag_release(self, index, drag_widget):
-        stage = self.drag_target_stage
-        if drag_widget.drag_cls == 'stage':
-            stage_src = drag_widget.obj_dragged.stage
-            (stage or _get_app().stage_factory).add_stage(
-                stage_src.duplicate_stage())
-            return
-
-        if not stage:
-            stage = CeedStage(stage_factory=App.get_running_app().stage_factory)
-            _get_app().stage_factory.add_stage(stage)
-
-        if drag_widget.drag_cls == 'func':
-            func = drag_widget.obj_dragged.func
-            if drag_widget.drag_copy:
-                func = deepcopy(func)
-
-            stage.add_func(func)
-        elif drag_widget.drag_cls == 'func_spinner':
-            func = deepcopy(
-                App.get_running_app().function_factory.
-                funcs_inst[drag_widget.drag_widget.text])
-
-            stage.add_func(func)
-        elif drag_widget.drag_cls == 'shape':
-            stage.add_shape(drag_widget.obj_dragged.shape)
-            if drag_widget.obj_dragged.selected:
-                for shape in knspace.painter.selected_shapes:
-                    stage.add_shape(shape)
-        elif drag_widget.drag_cls == 'shape_group':
-            stage.add_shape(drag_widget.obj_dragged.group)
-            if drag_widget.obj_dragged.selected:
-                for shape in knspace.painter.selected_groups:
-                    stage.add_shape(shape)
-
-
-class StageList(CeedStageDragableLayoutBehavior, ShowMoreSelection, WidgetList,
+class StageList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
                 BoxLayout):
     '''Widget that shows the list of all the stages.
     '''
+
+    is_visible = BooleanProperty(True)
+
+    paint_controller = None
+
+    stage_factory = None
 
     def __init__(self, **kwargs):
         super(StageList, self).__init__(**kwargs)
         self.nodes_order_reversed = False
 
-    def add_func(self, name):
-        '''Adds a copy of the function to the stage at the currently selected
-        stage.
+    @staticmethod
+    def remove_shape_from_stage(stage, stage_shape):
+        stage.remove_shape(stage_shape)
+        display = stage_shape.display
+        if display is not None:
+            display.parent.remove_widget(display)
 
-        :Params:
+    def handle_drag_release(self, index, drag_widget):
+        if drag_widget.drag_cls == 'stage':
+            stage = drag_widget.obj_dragged.stage
+            if isinstance(drag_widget.obj_dragged.stage, CeedStageRef):
+                stage = stage.stage
+            stage = deepcopy(stage)
 
-            `name`: str
-                The name of the function instance from the
-                :attr:`ceed.function.FunctionFactoryBase` to use.
-        '''
-        after = None
-        if not self.selected_nodes:
+            self.stage_factory.add_stage(stage)
+
+            widget = StageWidget()
+            widget.initialize_display(stage, self)
+            self.add_widget(widget)
             return
 
-        src_func = App.get_running_app().function_factory.funcs_inst[name]
-        widget = self.selected_nodes[0]
-        if isinstance(widget, StageWidget):
-            parent = widget.stage
-        elif isinstance(widget, FuncWidgetGroup):
-            parent = widget.func
-            if parent.parent_in_other_children(src_func):
-                return
-        elif isinstance(widget, FuncWidget):
-            after = widget.func
-            if after.parent_func:
-                parent = after.parent_func
-                if parent.parent_in_other_children(src_func):
-                    return
+        stage = self.stage_factory.make_stage({'cls': 'CeedStage'})
+        self.stage_factory.add_stage(stage)
+
+        widget = StageWidget()
+        widget.initialize_display(stage, self)
+        self.add_widget(widget)
+
+        if drag_widget.drag_cls in ('func', 'func_spinner'):
+            func_widget = StageFuncChildrenList._handle_drag_release(
+                index, drag_widget, self, stage)
+            widget.func_widget.add_widget(func_widget, index=index)
+        elif drag_widget.drag_cls in ('shape', 'shape_group'):
+            shape_factory = self.stage_factory.shape_factory
+
+            if drag_widget.drag_cls == 'shape':
+                item = drag_widget.obj_dragged.shape
+                selection = shape_factory.selected_shapes
+            elif drag_widget.drag_cls == 'shape_group':
+                item = drag_widget.obj_dragged.group
+                selection = shape_factory.selected_groups
             else:
-                parent = widget.func_controller
+                assert False
 
-        parent.add_func(deepcopy(src_func), after=after)
+            shape = stage.add_shape(item)
+            if shape is not None:
+                shape_widget = StageShapeDisplay()
+                shape_widget.initialize_display(shape, self)
+                widget.shape_widget.add_widget(shape_widget)
 
-    def get_selected_shape_stage(self):
-        '''Returns the :class:`ceed.stage.CeedStage` instance a currently
-        selected in the GUI.
-        '''
-        if self.selected_nodes:
-            widget = self.selected_nodes[0]
-            if isinstance(widget, StageWidget):
-                return widget.stage
-            if isinstance(widget, StageShapeDisplay):
-                return widget.stage_shape.stage
-
-    def add_shapes(self, shapes):
-        '''Adds the shapes to the currently selected
-        :class:`ceed.stage.CeedStage`.
-
-        :Params:
-
-            `shapes`: iterable
-                A list of :class:`ceed.shape.CeedShape` or
-                :class:`ceed.shape.CeedShapeGroup` instances to add.
-        '''
-        stage = self.get_selected_shape_stage()
-        if not stage:
-            return
-        for shape in shapes:
-            stage.add_shape(shape)
-
-    def add_selected_shapes(self):
-        '''Adds the currently selected :class:`ceed.shape.CeedShape` instances
-        to the currently selected :class:`ceed.stage.CeedStage`.
-        '''
-        self.add_shapes(knspace.painter.selected_shapes)
-
-    def add_selected_shape_groups(self):
-        '''Adds the currently selected :class:`ceed.shape.CeedShapeGroup`
-        instances to the currently selected :class:`ceed.stage.CeedStage`.
-        '''
-        self.add_shapes(knspace.painter.selected_groups)
-
-    def add_shape_by_name(self, name):
-        '''Adds the :class:`ceed.shape.CeedShape` or
-        :class:`ceed.shape.CeedShapeGroup` with name ``name`` to the currently
-        selected :class:`ceed.stage.CeedStage`.
-        '''
-        if name in knspace.painter.shape_names:
-            self.add_shapes([knspace.painter.shape_names[name]])
-        elif name in knspace.painter.shape_group_names:
-            self.add_shapes([knspace.painter.shape_group_names[name]])
-
-    def add_stage(self):
-        '''Adds a new :class:`ceed.stage.CeedStage` instance to the currently
-        selected :class:`ceed.stage.CeedStage` instance or to the root list
-        (:attr:`ceed.stage.StageFactoryBase`).
-        '''
-        parent = None
-        if self.selected_nodes:
-            widget = self.selected_nodes[0]
-            if not isinstance(widget, StageWidget):
-                return
-            parent = widget.stage
+            if drag_widget.obj_dragged.selected:
+                for shape in selection:
+                    shape = stage.add_shape(shape)
+                    if shape is not None:
+                        shape_widget = StageShapeDisplay()
+                        shape_widget.initialize_display(shape, self)
+                        widget.shape_widget.add_widget(shape_widget)
         else:
-            parent = _get_app().stage_factory
-
-        parent.add_stage(
-            CeedStage(stage_factory=App.get_running_app().stage_factory))
+            assert False
 
     def get_selectable_nodes(self):
-        return [d for stage in _get_app().stage_factory.stages
+        return [d for stage in self.stage_factory.stages
                 for d in stage.display.get_visible_children()]
+
+    def clear_all(self):
+        for widget in self.children[:]:
+            self.remove_widget(widget)
+
+    def show_stage(self, stage):
+        widget = StageWidget()
+        widget.initialize_display(stage, self)
+        self.add_widget(widget)
+
+
+class StageChildrenViewList(DraggableLayoutBehavior, BoxLayout):
+
+    is_visible = BooleanProperty(False)
+
+    stage_widget = None
+
+
+class StageChildrenList(StageChildrenViewList):
+
+    def handle_drag_release(self, index, drag_widget):
+        stage_widget = self.stage_widget
+        stage = stage_widget.stage
+        stage_factory = stage.stage_factory
+        dragged_stage = drag_widget.obj_dragged.stage
+
+        assert not isinstance(stage, CeedStageRef)
+        if not stage.can_other_stage_be_added(dragged_stage):
+            return
+
+        assert drag_widget.drag_cls == 'stage'
+        if stage.parent_stage is None:
+            assert stage in stage_factory.stages
+            assert not isinstance(dragged_stage, CeedStageRef)
+
+            new_stage = stage_factory.get_stage_ref(stage=dragged_stage)
+        else:
+            if not stage.can_other_stage_be_added(dragged_stage):
+                return
+
+            new_stage = deepcopy(dragged_stage)
+
+        stage.add_stage(new_stage, index=len(self.children) - index)
+
+        widget = StageWidget()
+        widget.initialize_display(new_stage, stage_widget.selection_controller)
+        self.add_widget(widget, index=index)
+
+
+class StageFuncChildrenList(StageChildrenViewList):
+
+    @staticmethod
+    def _handle_drag_release(index, drag_widget, selection_controller, stage):
+        stage_factory = stage.stage_factory
+        function_factory = stage.function_factory
+
+        if drag_widget.drag_cls == 'func_spinner' or \
+                drag_widget.drag_cls == 'func' and \
+                drag_widget.obj_dragged.func_controller is function_factory \
+                and drag_widget.obj_dragged.func.parent_func is None:
+            if drag_widget.drag_cls == 'func_spinner':
+                func = function_factory.get_func_ref(
+                    name=drag_widget.obj_dragged.text)
+            else:
+                assert not isinstance(
+                    drag_widget.obj_dragged.func, CeedFuncRef)
+                func = function_factory.get_func_ref(
+                    func=drag_widget.obj_dragged.func)
+        else:
+            func = deepcopy(drag_widget.obj_dragged.func)
+
+        stage.add_func(func, index=len(stage.functions) - index)
+
+        widget = FuncWidget.get_display_cls(func)()
+        widget.initialize_display(func, stage, selection_controller)
+        return widget
+
+    def handle_drag_release(self, index, drag_widget):
+        stage_widget = self.stage_widget
+        stage = stage_widget.stage
+        widget = self._handle_drag_release(
+            index, drag_widget, stage_widget.selection_controller, stage)
+        self.add_widget(widget, index=index)
+
+
+class StageShapesChildrenList(StageChildrenViewList):
+
+    def handle_drag_release(self, index, drag_widget):
+        stage_widget = self.stage_widget
+        stage = stage_widget.stage
+        shape_factory = stage.stage_factory.shape_factory
+
+        if drag_widget.drag_cls == 'shape':
+            item = drag_widget.obj_dragged.shape
+            selection = shape_factory.selected_shapes
+        elif drag_widget.drag_cls == 'shape_group':
+            item = drag_widget.obj_dragged.group
+            selection = shape_factory.selected_groups
+        else:
+            assert False
+
+        shape = stage.add_shape(item)
+        if shape is not None:
+            widget = StageShapeDisplay()
+            widget.initialize_display(shape, stage_widget.selection_controller)
+            self.add_widget(widget)
+
+        if drag_widget.obj_dragged.selected:
+            for shape in selection:
+                shape = stage.add_shape(shape)
+                if shape is not None:
+                    widget = StageShapeDisplay()
+                    widget.initialize_display(
+                        shape, stage_widget.selection_controller)
+                    self.add_widget(widget)
 
 
 class StageWidget(ShowMoreBehavior, BoxLayout):
     '''The widget displayed for an :class:`ceed.stage.CeedStage` instance.
     '''
 
-    stage = ObjectProperty(None, rebind=True)
+    stage = None
     '''The :class:`ceed.stage.CeedStage` instance attached to the widget.
     '''
 
+    ref_stage = None
+
     selected = BooleanProperty(False)
 
-    stage_widget = ObjectProperty(None)
+    stage_widget = None
     '''The internal widget container to which children
     :class:`StageWidget` widget instances are added.
     '''
 
-    func_widget = ObjectProperty(None)
+    func_widget = None
     '''The internal widget container to which children
     :class:`ceed.func_widgets.FuncWidget` or
     :class:`ceed.func_widgets.FuncWidgetGroup` widget instances are added.
     '''
 
-    shape_widget = ObjectProperty(None)
+    shape_widget = None
     '''The internal widget container to which children
     :class:`StageShapeDisplay` widget instances are added.
     '''
 
-    def __init__(self, **kwargs):
-        super(StageWidget, self).__init__(**kwargs)
-        self.settings_root.parent.remove_widget(self.settings_root)
+    is_visible = BooleanProperty(False)
+
+    children_container = None
+
+    selection_controller = None
 
     @property
     def name(self):
@@ -224,74 +272,370 @@ class StageWidget(ShowMoreBehavior, BoxLayout):
         '''
         return self.stage.name
 
-    def set_func_controller(self, func_widget):
-        '''Sets the controller attributes for the
-        :class:`ceed.func_widgets.FuncWidget` and
-        :class:`ceed.func_widgets.FuncWidgetGroup` widgets for all the
-        function children of the ``func_widget`` instance (which is
-        also a :class:`ceed.func_widgets.FuncWidget` or
-        :class:`ceed.func_widgets.FuncWidgetGroup`).
-        '''
-        for func in func_widget.func.get_funcs():
-            func.display.func_controller = self.stage
-            func.display.display_parent = self.func_widget
-            func.display.selection_controller = knspace.stages
-
-    def remove_from_parent(self):
-        '''Removes the stage from the parent stage or from the global
-        :attr:`ceed.stage.StageFactoryBase` if it doesn't have a parent.
-        '''
-        if self.stage.parent_stage:
-            self.stage.parent_stage.remove_stage(self.stage)
-        else:
-            _get_app().stage_factory.remove_stage(self.stage)
-
-    def show_stage(self):
-        '''Adds the stage's widget in the GUI.
-        '''
-        parent = self.stage.parent_stage
-        if parent:
-            i = len(parent.stages) - parent.stages.index(self.stage) - 1
-            parent.display.stage_widget.add_widget(self, index=i)
-            if self.ids.name_input in self.settings.children:
-                self.settings.remove_widget(self.ids.name_input)
-        else:
-            knspace.stages.add_widget(self)
-
-    def hide_stage(self):
-        '''Removes the stage's widget in the GUI.
-        '''
-        for child in self.get_visible_children():
-            if child.selected:
-                knspace.stages.deselect_node(child)
-                break
-
-        if self.parent:
-            self.parent.remove_widget(self)
-
     def get_visible_children(self):
+        if not self.is_visible:
+            return
         yield self
+
         for stage in self.stage.stages:
             for child in stage.display.get_visible_children():
-                yield child
+                if child.is_visible:
+                    yield child
 
         for func in self.stage.functions:
-            for f in func.get_funcs():
-                yield f.display
+            if isinstance(func, CeedFuncRef):
+                if func.display.is_visible:
+                    yield func.display
+            else:
+                for f in func.get_funcs(step_into_ref=False):
+                    if f.display.is_visible:
+                        yield f.display
 
         for shape in self.stage.shapes:
-            yield shape.display
+            if shape.display.is_visible:
+                yield shape.display
+
+    def initialize_display(self, stage, selection_controller):
+        if isinstance(stage, CeedStageRef):
+            self.ref_stage = stage.stage
+        stage.display = self
+        self.stage = stage
+        self.selection_controller = selection_controller
+
+        self.apply_kv()
+        if self.ref_stage:
+            return
+
+        for child_stage in stage.stages:
+            display = StageWidget()
+            self.stage_widget.add_widget(display)
+            display.initialize_display(child_stage, selection_controller)
+
+        for func in stage.functions:
+            display = FuncWidget.get_display_cls(func)()
+            self.func_widget.add_widget(display)
+            display.initialize_display(func, stage, selection_controller)
+
+        for shape in stage.shapes:
+            shape_widget = StageShapeDisplay()
+            shape_widget.initialize_display(shape, self.selection_controller)
+            self.shape_widget.add_widget(shape_widget)
+
+    def remove_stage(self):
+        if self.stage.parent_stage:
+            self.stage.parent_stage.remove_stage(self.stage)
+            self.parent.remove_widget(self)
+        else:
+            if self.stage.stage_factory.remove_stage(self.stage):
+                self.parent.remove_widget(self)
+
+        if self.ref_stage is not None:
+            self.stage.stage_factory.return_stage_ref(self.stage)
+        else:
+            for stage in self.stage.get_stages(step_into_ref=False):
+                if isinstance(stage, CeedStageRef):
+                    stage.stage_factory.return_stage_ref(stage)
+                else:
+                    for root_func in stage.functions:
+                        if isinstance(root_func, CeedFuncRef):
+                            root_func.function_factory.return_func_ref(
+                                root_func)
+                            continue
+
+                        for func in root_func.get_funcs(step_into_ref=False):
+                            if isinstance(func, CeedFuncRef):
+                                func.function_factory.return_func_ref(func)
+
+        for item in self.get_visible_children():
+            if item.selected:
+                self.selection_controller.deselect_node(item)
+                break
+
+    def replace_ref_with_source(self):
+        assert self.ref_stage is not None
+        assert self.stage.parent_stage is not None
+
+        parent_widget = self.parent
+        parent_widget.remove_widget(self)
+        stage, i = self.stage.parent_stage.replace_ref_stage_with_source(
+            self.stage)
+
+        widget = StageWidget()
+        widget.initialize_display(stage, self.selection_controller)
+        parent_widget.add_widget(
+            widget, index=len(parent_widget.children) - i)
+
+        self.stage.stage_factory.return_stage_ref(self.stage)
+
+    @kv(proxy='app*')
+    def apply_kv(self):
+        app = _get_app()
+        stage = self.ref_stage or self.stage
+        stage.fbind('on_changed', app.changed_callback)
+
+        with KvContext():
+            self.size_hint_y = None
+            self.orientation = 'vertical'
+            self.spacing = '3dp'
+
+            self.height @= self.minimum_height
+            self.size_hint_min_x @= self.minimum_width
+            self.is_visible @= self.parent is not None and self.parent.is_visible
+
+            with BoxSelector(
+                    parent=self, size_hint_y=None, height='34dp',
+                    orientation='horizontal', spacing='5dp', padding='5dp'
+                    ) as selector:
+                selector.size_hint_min_x @= selector.minimum_width
+                selector.controller = self.selection_controller
+
+                with selector.canvas:
+                    color = Color()
+                    color.rgba ^= app.theme.interpolate(
+                        app.theme.primary_light, app.theme.primary, .4) if \
+                        not self.selected else app.theme.primary
+                    rect = Rectangle()
+                    rect.size ^= selector.size
+                    rect.pos ^= selector.pos
+
+                with Factory.DraggingWidget(
+                        parent=selector, drag_widget=selector,
+                        obj_dragged=self, drag_cls='stage') as dragger:
+                    dragger.drag_copy = True  # root.func.parent_func is None
+                    # if not self.drag_copy: root.remove_func()
+                    pass
+
+                with Factory.ExpandWidget(parent=selector) as expand:
+                    expand.state = 'down'
+                    self.show_more @= expand.is_open
+                if self.ref_stage is not None:
+                    selector.remove_widget(expand)
+
+                with Factory.FlatLabel(
+                        parent=selector, center_texture=False,
+                        padding=('5dp', '5dp')) as stage_label:
+                    stage_label.flat_color = app.theme.text_primary
+
+                    stage_label.text @= stage.name
+                    stage_label.size_hint_min_x @= stage_label.texture_size[0]
+
+                with Factory.FlatImageButton(
+                        parent=selector, scale_down_color=True,
+                        source='flat_delete.png') as del_btn:
+                    del_btn.flat_color @= app.theme.accent
+                    del_btn.disabled @= stage.has_ref if self.ref_stage is None else False
+                    with KvRule(del_btn.on_release, triggered_only=True):
+                        self.remove_stage()
+
+                if self.ref_stage:
+                    with KvContext():
+                        with Factory.FlatImageButton(
+                                parent=selector, scale_down_color=True,
+                                source='call-split.png') as split_btn:
+                            split_btn.flat_color @= app.theme.accent
+
+                            with KvRule(split_btn.on_release, triggered_only=True):
+                                self.replace_ref_with_source()
+                else:
+                    with KvContext():
+                        with Factory.FlatImageButton(
+                                parent=selector, scale_down_color=True,
+                                source='flat_dots_vertical.png') as more_btn:
+                            more_btn.flat_color @= app.theme.accent
+
+                            settings_root, splitter = self.get_settings_dropdown()
+                            with KvRule(more_btn.on_release, triggered_only=True):
+                                assert self.ref_stage is None
+                                settings_root.open(selector)
+                                splitter.width = max(selector.width, splitter.width)
+
+            with BoxLayout(
+                    parent=self, spacing='3dp', size_hint_y=None,
+                    orientation='vertical') as more:
+                self.more = more
+                if self.ref_stage is not None:
+                    self.remove_widget(more)
+
+                more.height @= more.minimum_height
+                more.size_hint_min_x @= more.minimum_width
+                self.stage_widget = self.add_children_container(
+                    more, ['stage'], StageChildrenList)
+                self.func_widget = self.add_children_container(
+                    more, ['func', 'func_spinner'], StageFuncChildrenList)
+                self.shape_widget = self.add_children_container(
+                    more, ['shape', 'shape_group'], StageShapesChildrenList,
+                    True)
+
+    @kv(proxy='app*')
+    def get_settings_dropdown(self):
+        """Creates the dropdown with the settings.
+        """
+        assert self.ref_stage is None
+        app = _get_app()
+
+        with KvContext():
+            with Factory.FlatDropDown(
+                    do_scroll=(False, False)) as settings_root:
+                settings_root.flat_color @= app.theme.primary_text
+                settings_root.flat_border_color @= app.theme.divider
+
+                with Factory.FlatSplitter(
+                    parent=settings_root, size_hint=(None, None),
+                        sizable_from='left') as splitter:
+                    splitter.flat_color @= app.theme.accent
+                    splitter.height @= splitter.minimum_height
+                    splitter.min_size @= splitter.minimum_width
+
+                with BoxLayout(
+                    parent=splitter, size_hint_y=None, orientation='vertical',
+                        spacing='5dp', padding='5dp') as settings:
+                    settings.height @= settings.minimum_height
+                    settings.size_hint_min_x @= settings.minimum_width
+
+                    with Factory.FlatSizedTextInput(parent=settings) as name_input:
+                        name_input.background_color @= app.theme.primary_text
+                        name_input.text @= self.stage.name
+                        with KvRule(name_input.on_focus):
+                            if not name_input.focus:
+                                self.stage.name = name_input.text
+                    if self.stage.parent_stage is not None:
+                        settings.remove_widget(name_input)
+
+                    with BoxLayout(
+                            parent=settings, size_hint_y=None, height='34dp',
+                            spacing='5dp') as channel_box:
+
+                        with Factory.LightThemedToggleButton(
+                                parent=channel_box, text='R') as channel_r:
+                            channel_r.state @= 'down' if self.stage.color_r else 'normal'
+                            self.stage.color_r @= channel_r.state == 'down'
+                            with KvRule(channel_r.state):
+                                print(channel_r.state, self.stage.color_r)
+                            with KvRule(self.stage.color_r):
+                                print(channel_r.state, self.stage.color_r)
+                        with Factory.LightThemedToggleButton(
+                                parent=channel_box, text='G') as channel_g:
+                            channel_g.state @= 'down' if self.stage.color_g else 'normal'
+                            self.stage.color_g @= channel_g.state == 'down'
+                        with Factory.LightThemedToggleButton(
+                                parent=channel_box, text='B') as channel_b:
+                            channel_b.state @= 'down' if self.stage.color_b else 'normal'
+                            self.stage.color_b @= channel_b.state == 'down'
+
+                    with GridLayout(
+                            parent=settings, size_hint_y=None, padding='5dp',
+                            spacing='5dp', cols=2) as grid:
+                        grid.height @= grid.minimum_height
+                        grid.size_hint_min_x @= grid.minimum_width
+                        with Factory.FlatLabel(
+                            parent=grid, size_hint=(None, None),
+                                text='Stage order') as stage_label:
+                            stage_label.size @= stage_label.texture_size
+                            stage_label.flat_color @= app.theme.text_primary
+
+                        with BoxLayout(
+                                parent=grid, spacing='5dp', size_hint_y=None
+                                    ) as order_box:
+                            order_box.height @= order_box.minimum_height
+                            order_box.size_hint_min_x @= order_box.minimum_width
+
+                            with Factory.LightThemedToggleButton(
+                                    parent=order_box, size_hint_y=None,
+                                    padding=('5dp', '5dp'), text='Serial'
+                                    ) as serial:
+                                serial.height @= serial.texture_size[1]
+                                serial.size_hint_min_x @= serial.texture_size[0]
+
+                                serial.state @= 'down' if self.stage.order == 'serial' else 'normal'
+                                with KvRule(serial.on_state):
+                                    self.stage.order = 'serial' if serial.state == 'down' else 'parallel'
+
+                            with Factory.LightThemedToggleButton(
+                                    parent=order_box, size_hint_y=None,
+                                    padding=('5dp', '5dp'), text='Parallel'
+                                    ) as parallel:
+                                parallel.height @= parallel.texture_size[1]
+                                parallel.size_hint_min_x @= parallel.texture_size[0]
+
+                                parallel.state @= 'down' if self.stage.order == 'parallel' else 'normal'
+                                with KvRule(parallel.on_state):
+                                    self.stage.order = 'parallel' if parallel.state == 'down' else 'serial'
+
+                        with Factory.FlatLabel(
+                                parent=grid, size_hint=(None, None),
+                                text='End on') as end_label:
+                            end_label.size @= end_label.texture_size
+                            end_label.flat_color @= app.theme.text_primary
+                        with BoxLayout(
+                                parent=grid, spacing='5dp', size_hint_y=None
+                                ) as end_box:
+                            end_box.height @= end_box.minimum_height
+                            end_box.size_hint_min_x @= end_box.minimum_width
+
+                            with Factory.LightThemedToggleButton(
+                                    parent=end_box, size_hint_y=None,
+                                    padding=('5dp', '5dp'), text='All') as end_all:
+                                end_all.height @= end_all.texture_size[1]
+                                end_all.size_hint_min_x @= end_all.texture_size[0]
+                                end_all.state @= 'down' if self.stage.complete_on == 'all' else 'normal'
+                                with KvRule(end_all.on_state):
+                                    self.stage.complete_on = 'all' if end_all.state == 'down' else 'any'
+
+                            with Factory.LightThemedToggleButton(
+                                    parent=end_box, size_hint_y=None,
+                                    padding=('5dp', '5dp'), text='Any') as end_any:
+                                end_any.height @= end_any.texture_size[1]
+                                end_any.size_hint_min_x @= end_any.texture_size[0]
+                                end_any.state @= 'down' if self.stage.complete_on == 'any' else 'normal'
+                                with KvRule(end_any.on_state):
+                                    self.stage.complete_on = 'any' if end_any.state == 'down' else 'all'
+
+        return settings_root, splitter
+
+    @kv(proxy='app*')
+    def add_children_container(
+            self, container, drag_classes, cls, drag_append_end=False):
+        """Gets a StageChildrenList that is added to containter.
+        """
+        app = _get_app()
+        with KvContext():
+            with cls(parent=container) as widget:
+                widget.spacing = '5dp'
+                widget.size_hint_y = None
+                widget.orientation = 'vertical'
+                widget.spacer_props = {
+                    'size_hint_y': None, 'height': '40dp',
+                    'size_hint_min_x': '40dp'}
+                widget.drag_classes = drag_classes
+                widget.drag_target_stage = self.stage
+                widget.drag_append_end = drag_append_end
+
+                widget.height @= widget.minimum_height
+                widget.size_hint_min_x @= widget.minimum_width
+                widget.padding @= '5dp', 0, 0, (0 if widget.children else '5dp')
+                widget.is_visible @= self.show_more and self.is_visible
+                widget.stage_widget = self
+
+                with widget.canvas:
+                    color = Color()
+                    color.rgba ^= app.theme.divider
+                    rect = Rectangle()
+                    rect.pos ^= widget.x + dp(1), widget.y
+                    rect.size ^= dp(2), widget.height
+        return widget
 
 
 class StageShapeDisplay(BoxSelector):
     '''The widget used for the :class:`ceed.stage.StageShape`.
     '''
 
-    stage_shape = ObjectProperty(None, rebind=True)
+    stage_shape = None
     '''The :class:`ceed.stage.StageShape` instance that this widget displays.
     '''
 
     selected = BooleanProperty(False)
+
+    selection_controller = None
 
     @property
     def name(self):
@@ -299,21 +643,47 @@ class StageShapeDisplay(BoxSelector):
         '''
         return self.stage_shape.name
 
-    def show_widget(self):
-        '''Adds the shapes's widget in the GUI.
-        '''
-        stage = self.stage_shape.stage
-        i = len(stage.shapes) - stage.shapes.index(self.stage_shape) - 1
-        stage.display.shape_widget.add_widget(self, index=i)
+    def initialize_display(self, stage_shape, selection_controller):
+        stage_shape.display = self
+        self.stage_shape = stage_shape
+        self.controller = self.selection_controller = selection_controller
 
-    def hide_widget(self):
-        '''Removes the shapes's widget from the GUI.
-        '''
+        self.apply_kv()
+
+    def remove_shape(self):
+        self.stage_shape.stage.remove_shape(self.stage_shape)
         if self.selected:
-            knspace.stages.deselect_node(self)
+            self.selection_controller.deselect_node(self)
+        self.parent.remove_widget(self)
 
-        if self.parent:
-            self.parent.remove_widget(self)
+    @kv(proxy='app*')
+    def apply_kv(self):
+        app = _get_app()
+        with KvContext():
+            self.size_hint_y = None
+            self.height = '34dp'
+            self.size_hint_min_x @= self.minimum_width
+            self.orientation = 'horizontal'
+            self.use_parent = False
+            self.spacing = '5dp'
+            with self.canvas:
+                color = Color()
+                color.rgba ^= app.theme.primary_light if not self.selected else app.theme.primary
+                rect = Rectangle()
+                rect.size ^= self.size
+                rect.pos ^= self.pos
+            with Factory.FlatLabel(parent=self) as label:
+                label.padding = '5dp', '5dp'
+                label.flat_color @= app.theme.text_primary
+                label.center_texture = False
+                label.text @= self.stage_shape.name
+                label.size_hint_min_x @= label.texture_size[0]
+            with Factory.FlatImageButton(parent=self) as btn:
+                btn.scale_down_color = True
+                btn.source = 'flat_delete.png'
+                btn.flat_color @= app.theme.accent
+                with KvRule(btn.on_release, triggered_only=True):
+                    self.remove_shape()
 
 
 class ShapePlot(object):
@@ -813,7 +1183,3 @@ class StageGraph(Factory.FlatSplitter):
         else:
             self.unpinned_parent.add_widget(self)
             self.unpinned_root.open()
-
-
-Factory.register('CeedStageDragableLayoutBehavior',
-                 cls=CeedStageDragableLayoutBehavior)
