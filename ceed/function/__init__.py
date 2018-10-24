@@ -342,8 +342,9 @@ class FunctionFactoryBase(EventDispatcher):
             raise ValueError(
                 '{} has not been added to the factory'.format(func))
 
-        func.name = fix_name(func.name, self.funcs_inst)
-        self.funcs_inst[func.name] = func
+        new_name = fix_name(func.name, self.funcs_inst)
+        self.funcs_inst[new_name] = func
+        func.name = new_name
 
     def clear_added_funcs(self, force=False):
         '''Removes all the functions registered with :meth:`add_func`.

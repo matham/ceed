@@ -95,7 +95,9 @@ class ViewControllerBase(EventDispatcher):
         'use_software_frame_rate', 'cam_rotation', 'cam_scale',
         'cam_center_x', 'cam_center_y', 'output_count', 'screen_offset_x',
         'preview', 'fullscreen', 'video_mode', 'LED_mode', 'LED_mode_idle',
-        'vpixx_remote')
+        'vpixx_remote', 'mirror_mea', 'mea_rotation', 'mea_scale',
+        'mea_center_x', 'mea_center_y', 'mea_num_rows', 'mea_num_cols',
+        'mea_pitch', 'mea_diameter')
 
     screen_width = NumericProperty(1920)
     '''The screen width on which the data is played. This is the full-screen
@@ -149,6 +151,32 @@ class ViewControllerBase(EventDispatcher):
     cam_rotation = NumericProperty(0)
     '''The rotation angle of the background image.
     '''
+
+    mea_scale = NumericProperty(1.)
+    '''The scaling factor of the MEA.
+    '''
+
+    mea_center_x = NumericProperty(0)
+    '''The x center of the MEA.
+    '''
+
+    mea_center_y = NumericProperty(0)
+    '''The y center of the MEA.
+    '''
+
+    mea_rotation = NumericProperty(0)
+    '''The rotation angle of the MEA.
+    '''
+
+    mirror_mea = BooleanProperty(True)
+
+    mea_num_rows = NumericProperty(12)
+
+    mea_num_cols = NumericProperty(12)
+
+    mea_pitch = NumericProperty(20)
+
+    mea_diameter = NumericProperty(3)
 
     output_count = BooleanProperty(True)
     '''Whether the corner pixel is used to output frame information on the

@@ -44,7 +44,7 @@ class StageFactoryBase(EventDispatcher):
     '''The list of the currently available :class:`CeedStage` instances.
     '''
 
-    stage_names = DictProperty([])
+    stage_names = DictProperty({})
     '''A dict of all the stages whose keys are the stage :attr:`CeedStage.name`
     and whose values are the corresponding :class:`CeedStage`.
     '''
@@ -193,10 +193,11 @@ class StageFactoryBase(EventDispatcher):
                 break
         else:
             raise ValueError(
-                '{} has not been added to the factory'.format(stage))
+                '{} has not been added to the stage'.format(stage))
 
-        stage.name = fix_name(stage.name, [s.name for s in self.stages])
-        self.stage_names[stage.name] = stage
+        new_name = fix_name(stage.name, list(self.stage_names.keys()))
+        self.stage_names[new_name] = stage
+        stage.name = new_name
 
     def save_stages(self):
         return [s.get_state(expand_ref=False)for s in self.stages]
@@ -638,7 +639,7 @@ class CeedStage(EventDispatcher):
 
         for data in stages:
             s = self.stage_factory.make_stage(
-                data, clone, func_name_map=func_name_map,
+                data, clone=clone, func_name_map=func_name_map,
                 old_to_new_name_shape_map=old_to_new_name_shape_map)
             self.add_stage(s)
 
@@ -853,7 +854,8 @@ class CeedStage(EventDispatcher):
                 names.add(shape.name)
         names = list(names)
 
-        stages = [s.tick_stage(shapes) for s in self.stages]
+        stages = [s.stage.tick_stage(shapes) if isinstance(s, CeedStageRef)
+                  else s.tick_stage(shapes) for s in self.stages]
         funcs = self.tick_funcs()
         serial = self.order == 'serial'
         end_on_first = self.complete_on == 'any' and not serial
@@ -958,7 +960,9 @@ class CeedStageRef(object):
         state['cls'] = 'CeedStageRef'
         return state
 
-    def apply_state(self, state, clone=False):
+    def apply_state(
+            self, state={}, clone=False, func_name_map={},
+            old_to_new_name_shape_map={}):
         self.stage = self.stage_factory.stage_names[state['ref_name']]
 
     def __deepcopy__(self, memo):

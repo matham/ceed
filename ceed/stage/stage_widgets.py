@@ -148,7 +148,6 @@ class StageChildrenList(StageChildrenViewList):
         assert drag_widget.drag_cls == 'stage'
         if stage.parent_stage is None:
             assert stage in stage_factory.stages
-            assert not isinstance(dragged_stage, CeedStageRef)
 
             new_stage = stage_factory.get_stage_ref(stage=dragged_stage)
         else:
@@ -291,8 +290,8 @@ class StageWidget(ShowMoreBehavior, BoxLayout):
                     if f.display.is_visible:
                         yield f.display
 
-        for shape in self.stage.shapes:
-            if shape.display.is_visible:
+        if self.show_more:
+            for shape in self.stage.shapes:
                 yield shape.display
 
     def initialize_display(self, stage, selection_controller):
@@ -495,7 +494,7 @@ class StageWidget(ShowMoreBehavior, BoxLayout):
                     with Factory.FlatSizedTextInput(parent=settings) as name_input:
                         name_input.background_color @= app.theme.primary_text
                         name_input.text @= self.stage.name
-                        with KvRule(name_input.on_focus):
+                        with KvRule(name_input.focus):
                             if not name_input.focus:
                                 self.stage.name = name_input.text
                     if self.stage.parent_stage is not None:
@@ -509,10 +508,6 @@ class StageWidget(ShowMoreBehavior, BoxLayout):
                                 parent=channel_box, text='R') as channel_r:
                             channel_r.state @= 'down' if self.stage.color_r else 'normal'
                             self.stage.color_r @= channel_r.state == 'down'
-                            with KvRule(channel_r.state):
-                                print(channel_r.state, self.stage.color_r)
-                            with KvRule(self.stage.color_r):
-                                print(channel_r.state, self.stage.color_r)
                         with Factory.LightThemedToggleButton(
                                 parent=channel_box, text='G') as channel_g:
                             channel_g.state @= 'down' if self.stage.color_g else 'normal'
@@ -547,7 +542,7 @@ class StageWidget(ShowMoreBehavior, BoxLayout):
                                 serial.size_hint_min_x @= serial.texture_size[0]
 
                                 serial.state @= 'down' if self.stage.order == 'serial' else 'normal'
-                                with KvRule(serial.on_state):
+                                with KvRule(serial.state):
                                     self.stage.order = 'serial' if serial.state == 'down' else 'parallel'
 
                             with Factory.LightThemedToggleButton(
@@ -558,7 +553,7 @@ class StageWidget(ShowMoreBehavior, BoxLayout):
                                 parallel.size_hint_min_x @= parallel.texture_size[0]
 
                                 parallel.state @= 'down' if self.stage.order == 'parallel' else 'normal'
-                                with KvRule(parallel.on_state):
+                                with KvRule(parallel.state):
                                     self.stage.order = 'parallel' if parallel.state == 'down' else 'serial'
 
                         with Factory.FlatLabel(
@@ -578,7 +573,7 @@ class StageWidget(ShowMoreBehavior, BoxLayout):
                                 end_all.height @= end_all.texture_size[1]
                                 end_all.size_hint_min_x @= end_all.texture_size[0]
                                 end_all.state @= 'down' if self.stage.complete_on == 'all' else 'normal'
-                                with KvRule(end_all.on_state):
+                                with KvRule(end_all.state):
                                     self.stage.complete_on = 'all' if end_all.state == 'down' else 'any'
 
                             with Factory.LightThemedToggleButton(
@@ -587,7 +582,7 @@ class StageWidget(ShowMoreBehavior, BoxLayout):
                                 end_any.height @= end_any.texture_size[1]
                                 end_any.size_hint_min_x @= end_any.texture_size[0]
                                 end_any.state @= 'down' if self.stage.complete_on == 'any' else 'normal'
-                                with KvRule(end_any.on_state):
+                                with KvRule(end_any.state):
                                     self.stage.complete_on = 'any' if end_any.state == 'down' else 'all'
 
         return settings_root, splitter

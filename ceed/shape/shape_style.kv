@@ -49,6 +49,7 @@
         on_text:
             knspace.painter.locked = self.text != 'Draw'
             knspace.painter.move_cam = self.text == 'Cam'
+            knspace.painter.move_array = self.text == 'MEA'
         size_hint_min_x: self.minimum_width
         flat_color: app.theme.text_primary
         flat_menu_color: app.theme.accent

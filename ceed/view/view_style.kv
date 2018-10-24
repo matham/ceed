@@ -9,8 +9,8 @@
         id: scatter
         size_hint: None, None
         size: app.view_controller.screen_width, app.view_controller.screen_height
-        do_translation: painter.locked and not painter.select and not painter.move_cam, painter.locked and not painter.select and not painter.move_cam
-        do_scale: painter.locked and not painter.select and not painter.move_cam
+        do_translation: self.do_scale, self.do_scale
+        do_scale: painter.locked and not painter.select and not painter.move_cam and not painter.move_array
         do_rotation: False
         do_collide_after_children: True
         auto_bring_to_front: False  # required for ctrl click to work in painter
@@ -54,6 +54,29 @@
                 size_hint: None, None
                 size: app.view_controller.screen_width, app.view_controller.screen_height
                 move_cam: False
+                move_array: False
+            MEAArrayAlign:
+                do_scale: painter.locked and not painter.select and painter.move_array
+                do_translation: self.do_scale, self.do_scale
+                do_rotation: self.do_scale
+                show: self.do_scale
+                size_hint: None, None
+                auto_bring_to_front: False
+                on_show: self.color.a = 1 if self.show else 0
+
+                scale: app.view_controller.mea_scale
+                center: app.view_controller.mea_center_x, app.view_controller.mea_center_y
+                rotation: app.view_controller.mea_rotation
+
+                on_center: app.view_controller.mea_center_x, app.view_controller.mea_center_y = self.center
+                on_scale: app.view_controller.mea_scale = self.scale
+                on_rotation: app.view_controller.mea_rotation = self.rotation
+
+                num_rows: app.view_controller.mea_num_rows
+                num_cols: app.view_controller.mea_num_cols
+                pitch: app.view_controller.mea_pitch
+                diameter: app.view_controller.mea_diameter
+                mirror_mea: app.view_controller.mirror_mea
 
 <ControlBar@BoxLayout>:
     size_hint: None, None

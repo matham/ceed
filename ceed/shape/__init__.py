@@ -358,8 +358,8 @@ class CeedPaintCanvasBehavior(KNSpaceBehavior, PaintCanvasBehavior):
 
         del cont[shape.name]
         name = fix_name(name, self.shape_names, self.shape_group_names)
-        shape.name = name
         cont[name] = shape
+        shape.name = name
         return name
 
 

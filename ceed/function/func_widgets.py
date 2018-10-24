@@ -438,6 +438,13 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
                         settings.height @= settings.minimum_height
                         settings.size_hint_min_x @= settings.minimum_width
 
+                        with FuncNamePropTextWidget(
+                            parent=settings, func=self.ref_func or self.func,
+                                prop_name='name') as name:
+                            pass
+                        if self.func.parent_func is not None:
+                            name.disabled = True
+
                         with Factory.FlatLabel(
                             parent=settings, padding=('5dp', '5dp'),
                                 size_hint_y=None, halign='center') as desc:

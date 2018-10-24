@@ -9,7 +9,11 @@ from kivy.uix.behaviors.focus import FocusBehavior
 from kivy.uix.stencilview import StencilView
 from kivy.uix.scatter import Scatter
 from kivy.clock import Clock
+from kivy.properties import NumericProperty, BooleanProperty
 from kivy.app import App
+from kivy.graphics.vertex_instructions import Point
+from kivy.graphics.context_instructions import Color
+from kivy.factory import Factory
 __all__ = ('ViewRootFocusBehavior', )
 
 _get_app = App.get_running_app
@@ -103,3 +107,62 @@ class PainterScatter(Scatter):
         x = min(max(self.x, parent.right - self.bbox[1][0]), parent.x)
         y = min(max(self.y, parent.top - self.bbox[1][1]), parent.y)
         self.pos = x, y
+
+
+class MEAArrayAlign(Scatter):
+
+    num_rows = NumericProperty(12)
+
+    num_cols = NumericProperty(12)
+
+    pitch = NumericProperty(20)
+
+    diameter = NumericProperty(3)
+
+    mirror_mea = BooleanProperty(True)
+
+    show = BooleanProperty(False)
+
+    color = None
+
+    label = None
+
+    def __init__(self, **kwargs):
+        super(MEAArrayAlign, self).__init__(**kwargs)
+        label = self.label = Factory.XYSizedLabel(text='11')
+        self.add_widget(label)
+        self.fbind('num_rows', self.update_graphics)
+        self.fbind('num_cols', self.update_graphics)
+        self.fbind('mirror_mea', self.update_graphics)
+        self.fbind('pitch', self.update_graphics)
+        self.fbind('diameter', self.update_graphics)
+        self.update_graphics()
+
+        def track_show(*largs):
+            label.color = 1, 1, 1, (1 if self.show else 0)
+        self.fbind('show', track_show)
+        track_show()
+
+    def update_graphics(self, *largs):
+        self.canvas.remove_group('MEAArrayAlign')
+        pitch = self.pitch
+        radius = self.diameter / 2.0
+
+        with self.canvas:
+            self.color = Color(
+                1, 1, 1, 1 if self.show else 0, group='MEAArrayAlign')
+            for row in range(self.num_rows):
+                for col in range(self.num_cols):
+                    Point(
+                        points=[col * pitch, row * pitch], pointsize=radius,
+                        group='MEAArrayAlign')
+
+        h = max((self.num_rows - 1) * pitch, 0)
+        w = max((self.num_cols - 1) * pitch, 0)
+        if self.mirror_mea:
+            self.label.y = h
+            self.label.right = w
+        else:
+            self.label.pos = 0, h
+        self.size = w, h + 35
+
