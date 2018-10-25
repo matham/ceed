@@ -1,4 +1,5 @@
 #:import Clock kivy.clock.Clock
+#:import Matrix kivy.graphics.transformation.Matrix
 
 <ControlDisplay>:
     on_size:
@@ -41,13 +42,8 @@
                 do_translation: self.do_scale, self.do_scale
                 do_rotation: self.do_scale
 
-                scale: app.view_controller.cam_scale
-                center: app.view_controller.cam_center_x, app.view_controller.cam_center_y
-                rotation: app.view_controller.cam_rotation
-
-                on_center: app.view_controller.cam_center_x, app.view_controller.cam_center_y = self.center
-                on_scale: app.view_controller.cam_scale = self.scale
-                on_rotation: app.view_controller.cam_rotation = self.rotation
+                transform: mea_align.make_matrix(app.view_controller.cam_transform)
+                on_transform: if not mea_align.compare_mat(self.transform, app.view_controller.cam_transform): app.view_controller.cam_transform = self.transform.tolist()
             CeedPainter:
                 knsname: 'painter'
                 id: painter
@@ -56,21 +52,17 @@
                 move_cam: False
                 move_array: False
             MEAArrayAlign:
+                knsname: 'mea_align'
+                id: mea_align
                 do_scale: painter.locked and not painter.select and painter.move_array
                 do_translation: self.do_scale, self.do_scale
                 do_rotation: self.do_scale
-                show: self.do_scale
                 size_hint: None, None
                 auto_bring_to_front: False
                 on_show: self.color.a = 1 if self.show else 0
 
-                scale: app.view_controller.mea_scale
-                center: app.view_controller.mea_center_x, app.view_controller.mea_center_y
-                rotation: app.view_controller.mea_rotation
-
-                on_center: app.view_controller.mea_center_x, app.view_controller.mea_center_y = self.center
-                on_scale: app.view_controller.mea_scale = self.scale
-                on_rotation: app.view_controller.mea_rotation = self.rotation
+                transform: self.make_matrix(app.view_controller.mea_transform)
+                on_transform: if not self.compare_mat(self.transform, app.view_controller.mea_transform): app.view_controller.mea_transform = self.transform.tolist()
 
                 num_rows: app.view_controller.mea_num_rows
                 num_cols: app.view_controller.mea_num_cols
@@ -96,18 +88,6 @@
         on_release: app.view_controller.request_stage_start(stage_spinner.text) if self.state == 'down' else app.view_controller.request_stage_end()
         state: 'down' if app.view_controller.stage_active else 'normal'
         hover_text: '[b]start[/b] stage' if self.state == 'normal' else '[b]stop[/b] stage'
-    FlatImageToggleButton:
-        knsname: 'gui_save_cam_stage'
-        source: 'flat_not_live.png' if self.state == 'normal' else 'flat_live.png'
-        hover_text: 'auto screenshot' if self.state == 'normal' else '[b]auto screenshot[/b]'
-        flat_color: app.theme.accent
-        state: 'normal'
-    FlatImageButton:
-        on_release: app.view_controller.do_cam_registration()
-        source: 'flat_align.png'
-        scale_down_color: True
-        flat_color: app.theme.accent
-        hover_text: 'align cam'
     FlatImageToggleButton:
         on_release: app.view_controller.start_process() if self.state == 'down' else app.view_controller.stop_process()
         state: 'down' if app.view_controller.view_process else 'normal'

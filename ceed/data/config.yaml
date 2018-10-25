@@ -63,7 +63,31 @@ video_file_playback:
   record_directory: ''
   record_fname: video{}.avi
   record_fname_count: '32'
-view: {LED_mode: RGB, LED_mode_idle: none, cam_center_x: 946.2206040536023, cam_center_y: 131.93107831078748,
-  cam_rotation: 90.03436444463864, cam_scale: 1.0952277895189546, frame_rate: 120.0,
-  fullscreen: true, output_count: true, preview: false, screen_height: 1080, screen_offset_x: 0,
-  screen_width: 1920, use_software_frame_rate: false, video_mode: RGB, vpixx_remote: true}
+view:
+  LED_mode: RGB
+  LED_mode_idle: none
+  cam_transform:
+  - [0.5617473958974615, 0.005910019946316945, 0.0, 0.0]
+  - [-0.005910019946316945, 0.5617473958974615, 0.0, 0.0]
+  - [0.0, 0.0, 0.5617784840427272, 0.0]
+  - [305.4165729610285, 75.36801019641916, 0.0, 1.0]
+  frame_rate: 120.0
+  fullscreen: false
+  mea_diameter: 3
+  mea_num_cols: 12
+  mea_num_rows: 12
+  mea_pitch: 20
+  mea_transform:
+  - [3.658582492418856, 0.02587770320289443, 0.0, 0.0]
+  - [-0.02587770320289443, 3.658582492418856, 0.0, 0.0]
+  - [0.0, 0.0, 3.658674009714011, 0.0]
+  - [523.1790692579134, 148.92823483776525, 0.0, 1.0]
+  mirror_mea: true
+  output_count: true
+  preview: false
+  screen_height: 1080
+  screen_offset_x: 0
+  screen_width: 1920
+  use_software_frame_rate: false
+  video_mode: RGB
+  vpixx_remote: true

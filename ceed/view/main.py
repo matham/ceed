@@ -46,28 +46,6 @@ kv = '''
         Widget:
             size: root.size
             id: display_canvas
-        BufferImage:
-            id: background_widget
-            auto_bring_to_front: False
-            size_hint: None, None
-            on_image_size:
-                app.view_controller._restore_cam_pos()
-                self.size = self.image_size
-            scale_to_image: False
-            color: [1, 1, 1, app.view_controller.alpha_color]
-    
-            do_scale: True
-            do_translation: True, True
-            do_rotation: True
-    
-            scale: app.view_controller.cam_scale
-            center: app.view_controller.cam_center_x, app.view_controller.cam_center_y
-            rotation: app.view_controller.cam_rotation
-
-            on_center: app.view_controller.cam_center_x, app.view_controller.cam_center_y = self.center
-            on_scale: app.view_controller.cam_scale = self.scale
-            on_rotation: app.view_controller.cam_rotation = self.rotation
-        
 '''
 
 
@@ -125,9 +103,6 @@ class CeedViewApp(CPLComApp):
 
     def get_display_canvas(self):
         return self.root.ids.display_canvas.canvas
-
-    def get_background_widget(self):
-        return self.root.ids.background_widget
 
     def build(self):
         Builder.load_string(kv)

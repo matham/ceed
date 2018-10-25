@@ -56,6 +56,12 @@
         flat_drop_background_color: app.theme.primary_text
         flat_drop_text_color: app.theme.text_primary
         flat_border_color: app.theme.divider
+    IconSwitchBehavior:
+        hover_text: 'Array grid' if self.state == 'normal' else 'Array [b]grid[/b]'
+        source_down: 'grid.png'
+        source_normal: 'grid-off.png'
+        flat_color: app.theme.accent
+        on_state: knspace.mea_align.show = self.state == 'down'
 
 
 <ShapeListing@FlatSplitter>:

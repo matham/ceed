@@ -5,6 +5,7 @@ Widgets used on the viewer side of the controller/viewer interface.
 These are displayed when the second process of the viewer is running.
 '''
 
+from kivy.uix.behaviors.knspace import KNSpaceBehavior
 from kivy.uix.behaviors.focus import FocusBehavior
 from kivy.uix.stencilview import StencilView
 from kivy.uix.scatter import Scatter
@@ -12,6 +13,7 @@ from kivy.clock import Clock
 from kivy.properties import NumericProperty, BooleanProperty
 from kivy.app import App
 from kivy.graphics.vertex_instructions import Point
+from kivy.graphics.transformation import Matrix
 from kivy.graphics.context_instructions import Color
 from kivy.factory import Factory
 __all__ = ('ViewRootFocusBehavior', )
@@ -109,7 +111,7 @@ class PainterScatter(Scatter):
         self.pos = x, y
 
 
-class MEAArrayAlign(Scatter):
+class MEAArrayAlign(KNSpaceBehavior, Scatter):
 
     num_rows = NumericProperty(12)
 
@@ -166,3 +168,13 @@ class MEAArrayAlign(Scatter):
             self.label.pos = 0, h
         self.size = w, h + 35
 
+
+    @staticmethod
+    def make_matrix(elems):
+        mat = Matrix()
+        mat.set(array=elems)
+        return mat
+
+    @staticmethod
+    def compare_mat(mat, mat_list):
+        return mat.tolist() == tuple(tuple(item) for item in mat_list)
