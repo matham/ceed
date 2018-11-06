@@ -31,7 +31,7 @@
             flat_color: app.theme.primary_text
             flat_border_color: app.theme.divider
             FlatButton:
-                text: 'Save as'
+                text: 'Save as h5'
                 size_hint: None, None
                 size: self.texture_size
                 scale_down_color: True
@@ -42,7 +42,7 @@
                     app.filebrowser.callback = app.ceed_data.get_filebrowser_callback(app.ceed_data.save_as, True)
                     app.filebrowser.open()
             FlatButton:
-                text: 'Create'
+                text: 'Create empty h5'
                 size_hint: None, None
                 size: self.texture_size
                 scale_down_color: True
@@ -53,7 +53,7 @@
                     app.filebrowser.callback = app.ceed_data.get_filebrowser_callback(app.ceed_data.create_file, True, True)
                     app.filebrowser.open()
             FlatButton:
-                text: 'Open'
+                text: 'Open existing h5'
                 size_hint: None, None
                 size: self.texture_size
                 scale_down_color: True
@@ -64,7 +64,7 @@
                     app.filebrowser.callback = app.ceed_data.get_filebrowser_callback(app.ceed_data.open_file, clear_data=True)
                     app.filebrowser.open()
             FlatButton:
-                text: 'Import'
+                text: 'Import h5'
                 size_hint: None, None
                 size: self.texture_size
                 scale_down_color: True
@@ -75,14 +75,14 @@
                     app.filebrowser.callback = app.ceed_data.get_filebrowser_callback(app.ceed_data.import_file)
                     app.filebrowser.open()
             FlatButton:
-                text: 'Close'
+                text: 'Close current h5'
                 size_hint: None, None
                 size: self.texture_size
                 scale_down_color: True
                 flat_color: app.theme.text_primary
                 on_release: app.ceed_data.ui_close()
             FlatButton:
-                text: 'Discard'
+                text: 'Discard unsaved h5'
                 size_hint: None, None
                 size: self.texture_size
                 scale_down_color: True

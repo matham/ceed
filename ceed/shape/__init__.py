@@ -306,9 +306,10 @@ class CeedPaintCanvasBehavior(KNSpaceBehavior, PaintCanvasBehavior):
         the key is the old name (if present in ``state``) and the associated
         value is the actual final shape name.
         '''
+        old_name = state['name']
         shape = super(CeedPaintCanvasBehavior, self).restore_shape(state)
         if 'name' in state:
-            old_name_map[state['name']] = shape.name
+            old_name_map[old_name] = shape.name
         return shape
 
     def set_state(self, state, old_to_new_name_map):
@@ -326,13 +327,13 @@ class CeedPaintCanvasBehavior(KNSpaceBehavior, PaintCanvasBehavior):
 
         for group_state in state['groups']:
             group = CeedShapeGroup(paint_widget=self, name=group_state['name'])
-            if 'name' in group_state:
-                old_to_new_name_map[group_state['name']] = group.name
+            old_to_new_name_map[group_state['name']] = group.name
             self.add_group(group)
+
             for name in group_state['shapes']:
-                if (name in old_to_new_name_map and
-                        old_to_new_name_map[name] in shape_names):
-                    group.add_shape(shape_names[old_to_new_name_map[name]])
+                new_name = old_to_new_name_map.get(name, name)
+                if new_name in shape_names:
+                    group.add_shape(shape_names[new_name])
 
         self.dispatch('on_changed')
 

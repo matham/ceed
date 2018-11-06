@@ -66,6 +66,15 @@ class CeedPainter(CeedPaintCanvasBehavior, Widget):
         else:
             self.pos_label.text = ''
 
+    def add_enclosing_polygon(self):
+        w, h = self.size
+        shape = self.create_add_shape('polygon')
+        shape.add_point(pos=(0, 0))
+        shape.add_point(pos=(w, 0))
+        shape.add_point(pos=(w, h))
+        shape.add_point(pos=(0, h))
+        shape.finish()
+
 
 class ShapeGroupDraggableLayoutBehavior(DraggableLayoutBehavior):
 

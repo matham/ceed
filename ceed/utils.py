@@ -58,7 +58,7 @@ def update_key_if_other_key(items, key, value, other_key, key_map):
     for item in items:
         if isinstance(item, dict):
             if key in item and item[key] == value and other_key in item:
-                item[other_key] = key_map[item[other_key]]
+                item[other_key] = key_map.get(item[other_key], item[other_key])
             update_key_if_other_key(
                 item.values(), key, value, other_key, key_map)
         elif isinstance(item, (list, tuple)):

@@ -31,6 +31,7 @@ _MAP_NET_NP = {
     'Boolean': np.dtype('bool'),
 }
 
+
 def asNumpyArray(netArray):
     '''
     Given a CLR `System.Array` returns a `numpy.ndarray`.  See _MAP_NET_NP for

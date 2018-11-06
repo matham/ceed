@@ -168,6 +168,33 @@ class MEAArrayAlign(KNSpaceBehavior, Scatter):
             self.label.pos = 0, h
         self.size = w, h + 35
 
+    def on_touch_down(self, touch):
+        if not self.do_translation_x and \
+                not self.do_translation_y and \
+                not self.do_rotation and \
+                not self.do_scale:
+            return False
+
+        return super(MEAArrayAlign, self).on_touch_down(touch)
+
+    def on_touch_move(self, touch):
+        if not self.do_translation_x and \
+                not self.do_translation_y and \
+                not self.do_rotation and \
+                not self.do_scale:
+            return False
+
+        return super(MEAArrayAlign, self).on_touch_move(touch)
+
+    def on_touch_up(self, touch):
+        if not self.do_translation_x and \
+                not self.do_translation_y and \
+                not self.do_rotation and \
+                not self.do_scale:
+            return False
+
+        return super(MEAArrayAlign, self).on_touch_up(touch)
+
 
     @staticmethod
     def make_matrix(elems):

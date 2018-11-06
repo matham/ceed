@@ -652,10 +652,7 @@ class CeedStage(EventDispatcher):
         shapes = self.stage_factory.shape_factory.shape_names
         groups = self.stage_factory.shape_factory.shape_group_names
         for name in shapes_state:
-            if name not in old_to_new_name_shape_map:
-                continue
-
-            name = old_to_new_name_shape_map[name]
+            name = old_to_new_name_shape_map.get(name, name)
             if name in shapes:
                 self.add_shape(shapes[name])
             elif name in groups:
