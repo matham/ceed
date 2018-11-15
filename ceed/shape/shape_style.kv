@@ -45,13 +45,13 @@
         on_state: knspace.painter.draw_mode = 'bezier' if self.state == 'down' else 'none'
     FlatSpinner:
         id: touch_mode
-        values: ['Draw', 'Proj', 'Cam', 'MEA']
+        values: ['Draw', 'Pan/Zoom', 'Align_cam', 'Align_MEA']
         text: 'Draw'
         on_text:
             knspace.painter.locked = self.text != 'Draw'
-            knspace.painter.move_cam = self.text == 'Cam'
-            knspace.painter.move_array = self.text == 'MEA'
-            if self.text == 'MEA': mea_grid.state = 'down'
+            knspace.painter.move_cam = self.text == 'Align_cam'
+            knspace.painter.move_array = self.text == 'Align_MEA'
+            if self.text == 'Align_MEA': mea_grid.state = 'down'
         size_hint_min_x: self.minimum_width
         flat_color: app.theme.text_primary
         flat_menu_color: app.theme.accent
@@ -60,7 +60,7 @@
         flat_border_color: app.theme.divider
     IconSwitchBehavior:
         id: mea_grid
-        disabled: touch_mode.text == 'MEA'
+        disabled: touch_mode.text == 'Align_MEA'
         hover_text: 'Array grid' if self.state == 'normal' else 'Array [b]grid[/b]'
         source_down: 'grid.png'
         source_normal: 'grid-off.png'

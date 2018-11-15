@@ -71,6 +71,7 @@ view:
   - [-0.005910019946316945, 0.5617473958974615, 0.0, 0.0]
   - [0.0, 0.0, 0.5617784840427272, 0.0]
   - [305.4165729610285, 75.36801019641916, 0.0, 1.0]
+  flip_projector: true
   frame_rate: 120.0
   fullscreen: false
   mea_diameter: 3
@@ -84,7 +85,6 @@ view:
   - [523.1790692579134, 148.92823483776525, 0.0, 1.0]
   mirror_mea: true
   output_count: true
-  preview: false
   screen_height: 1080
   screen_offset_x: 0
   screen_width: 1920

@@ -230,7 +230,7 @@
     FlatImageButton:
         scale_down_color: True
         source: 'flat_screenshot_save.png'
-        hover_text: 'save screenshot'
+        hover_text: 'save cam image'
         flat_color: app.theme.accent
         last_image: None
         on_press: self.last_image = knspace.player.last_image
@@ -243,7 +243,7 @@
     FlatImageButton:
         scale_down_color: True
         source: 'flat_screenshot_load.png'
-        hover_text: 'load screenshot'
+        hover_text: 'load cam image'
         flat_color: app.theme.accent
         on_release:
             app.filebrowser.target = knspace.player.browse_path
@@ -251,6 +251,13 @@
             app.filebrowser.multiselect = False
             app.filebrowser.callback = knspace.player.load_screenshot
             app.filebrowser.open()
+    FlatImageButton:
+        scale_down_color: True
+        source: 'flat_refresh.png'
+        hover_text: 'reload stage final cam image'
+        flat_color: app.theme.accent
+        disabled: app.view_controller.last_cam_image is None
+        on_release: knspace.player.set_screenshot(app.view_controller.last_cam_image)
     FlatDivider:
         color: app.theme.divider
     FlatImageToggleButton:

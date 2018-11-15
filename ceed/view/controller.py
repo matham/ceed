@@ -93,14 +93,17 @@ class ViewControllerBase(EventDispatcher):
     __settings_attrs__ = (
         'screen_width', 'screen_height', 'frame_rate',
         'use_software_frame_rate', 'output_count', 'screen_offset_x',
-        'preview', 'fullscreen', 'video_mode', 'LED_mode', 'LED_mode_idle',
+        'fullscreen', 'video_mode', 'LED_mode', 'LED_mode_idle',
         'vpixx_remote', 'mirror_mea', 'mea_num_rows', 'mea_num_cols',
-        'mea_pitch', 'mea_diameter', 'mea_transform', 'cam_transform')
+        'mea_pitch', 'mea_diameter', 'mea_transform', 'cam_transform',
+        'flip_projector')
 
     screen_width = NumericProperty(1920)
     '''The screen width on which the data is played. This is the full-screen
     size.
     '''
+
+    flip_projector = BooleanProperty(True)
 
     screen_height = NumericProperty(1080)
     '''The screen height on which the data is played. This is the full-screen
@@ -153,11 +156,6 @@ class ViewControllerBase(EventDispatcher):
     PROPixx controller IO pot. If True,
     :class:`ceed.storage.controller.DataSerializerBase` is used to set the 24 
     bits of the corner pixel.
-    '''
-
-    preview = BooleanProperty(True)
-    '''When run, if True, the data is played in the main GUI. When False,
-    the data id played on the second window.
     '''
 
     fullscreen = BooleanProperty(False)
@@ -339,6 +337,13 @@ class ViewControllerBase(EventDispatcher):
         self.shape_views = []
         w, h = self.screen_width, self.screen_height
 
+        with canvas:
+            PushMatrix()
+            s = Scale()
+            if self.flip_projector:
+                s.x = -1
+            s.origin = w / 2., h / 2.
+
         if black_back:
             with canvas:
                 Color(0, 0, 0, 1, group=self.canvas_name)
@@ -365,6 +370,9 @@ class ViewControllerBase(EventDispatcher):
             self.shape_views = [
                 _get_app().stage_factory.get_shapes_gl_color_instructions(
                     canvas, self.canvas_name)]
+
+        with canvas:
+            PopMatrix()
 
         if self.output_count and not self.serializer_tex:
             with canvas:
@@ -675,7 +683,7 @@ class ControllerSideViewControllerBase(ViewControllerBase):
 
     initial_cam_image = None
 
-    last_cam_image = None
+    last_cam_image = ObjectProperty(None, allownone=True)
 
     proj_size = None
 
@@ -700,9 +708,6 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         if not stage_name:
             self.stage_active = False
             raise ValueError('No stage specified')
-        if not self.preview and not self.view_process:
-            self.stage_active = False
-            raise Exception("No window to run experiment")
 
         App.get_running_app().dump_app_settings_to_file()
         App.get_running_app().load_app_settings_from_file()
@@ -717,23 +722,26 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         else:
             App.get_running_app().ceed_data.add_led_state(0, 1, 1, 1)
 
-        if self.preview:
+        if self.view_process is None:
             self.start_stage(stage_name, knspace.painter.canvas)
-        elif self.view_process and self.queue_view_read:
+        elif self.queue_view_read is not None:
             self.initial_cam_image = knspace.player.last_image
             app = App.get_running_app()
             self.queue_view_read.put_nowait(
                 ('config', yaml_dumps(app.ceed_data.gather_config_data_dict())))
             self.queue_view_read.put_nowait(('start_stage', stage_name))
+        else:
+            self.stage_active = False
+            raise ValueError('Already running stage')
 
     @app_error
     def request_stage_end(self):
         '''Ends the stage either in the GUI when previewing or in the
         viewer.
         '''
-        if self.preview:
+        if self.view_process is None:
             self.end_stage()
-        elif self.view_process and self.queue_view_read:
+        elif self.queue_view_read is not None:
             self.last_cam_image = knspace.player.last_image
             if self.last_cam_image is self.initial_cam_image:
                 self.last_cam_image = None

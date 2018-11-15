@@ -97,15 +97,10 @@
         flat_color: app.theme.accent
         hover_text: '[b]hide[/b] / show window' if self.state == 'normal' else 'hide / [b]show[/b] window'
     FlatImageToggleButton:
-        on_release: app.view_controller.preview = self.state == 'down'
-        state: 'down' if app.view_controller.preview else 'normal'
-        source: 'flat_snowflake.png'
-        scale_down_color: True
-        flat_color: app.theme.accent
-        hover_text: 'preview' if self.state == 'normal' else '[b]preview[/b]'
-    FlatImageToggleButton:
         knsname: 'gui_remote_view'
-        on_release: app.remote_viewer.start_listener() if self.state == 'down' else app.remote_viewer.stop_listener()
+        on_release:
+            app.remote_viewer.start_listener() if self.state == 'down' else app.remote_viewer.stop_listener()
+            if app.view_controller.propixx_lib and self.state == 'down': app.view_controller.set_led_mode(app.view_controller.LED_mode_idle)
         state: 'down' if app.remote_viewer.running else 'normal'
         source: 'ic_cast_white_24dp_1x.png' if self.state == 'normal' else 'ic_cast_connected_white_24dp_1x.png'
         scale_down_color: True

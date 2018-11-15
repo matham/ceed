@@ -416,6 +416,10 @@ class CeedPlayer(KNSpaceBehavior, EventDispatcher):
         knspace.central_display.update_img(img)
         self.last_image = img
 
+    def set_screenshot(self, image):
+        knspace.central_display.update_img(image)
+        self.last_image = image
+
     def save_screenshot(self, img, path, selection, filename):
         '''Saves the image acquired to a file.
         '''
