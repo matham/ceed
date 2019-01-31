@@ -7,6 +7,8 @@ import sys
 import logging
 import nixio as nix
 import re
+from numpy.lib.format import open_memmap
+
 from cplcom.utils import yaml_dumps, yaml_loads
 from cplcom.config import apply_config
 from cplcom.player import Player
@@ -135,7 +137,7 @@ class CeedDataReader(object):
                 experiments.append(m.group(1))
         return list(sorted(experiments, key=int))
 
-    def read_experiment(self, experiment):
+    def load_experiment(self, experiment):
         self._block = block = self._nix_file.blocks[
             'experiment{}'.format(experiment)]
         section = self._nix_file.sections[
@@ -179,6 +181,10 @@ class CeedDataReader(object):
             self.electrode_intensity_alignment = None
             logging.warning(
                 'Could not find alignment for experiment {}'.format(experiment))
+
+    def load_mcs_data(self):
+        if self.electrodes_data:  # already loaded
+            return
 
         mcs_block = self._nix_file.blocks['mcs_data']
         mcs_metadata = mcs_block.metadata
@@ -499,15 +505,15 @@ class CeedDataReader(object):
     @staticmethod
     def populate_config(
             settings, shape_factory, function_factory, stage_factory):
-        old_to_new_name_shape_map = {}
-        shape_factory.set_state(settings['shape'], old_to_new_name_shape_map)
+        old_name_to_shape_map = {}
+        shape_factory.set_state(settings['shape'], old_name_to_shape_map)
 
         funcs, func_name_map = function_factory.recover_funcs(
             settings['function'])
 
         stages, stage_name_map = stage_factory.recover_stages(
             settings['stage'], func_name_map,
-            old_to_new_name_shape_map=old_to_new_name_shape_map)
+            old_name_to_shape_map=old_name_to_shape_map)
         return funcs, stages
 
     @staticmethod
@@ -522,44 +528,87 @@ class CeedDataReader(object):
                     size=yaml_loads(group.metadata['size']))
         return img
 
-    def dump_electrode_data_matlab(self, filename, chunks=1e9):
+    def dump_electrode_data_matlab(self, prefix, chunks=1e9):
         itemsize = np.array([0.0]).nbytes
         data = self.electrodes_data
-        n_items = int(chunks // (itemsize * len(data)))
+        n_items = None  # num time samples per chunk
+        if chunks is not None:
+            # number of bytes per sample with all channels
+            n_items = int(chunks // (itemsize * len(data)))
+
         total_n = sum(len(value) for value in data.values())
         pbar = tqdm(
             total=total_n, file=sys.stdout, unit_scale=1, unit='bytes')
 
-        with open(filename, 'wb') as fh:
-            for name, value in data.items():
-                pbar.desc = 'Electrode {:6}'.format(name)
+        for name, value in data.items():
+            pbar.desc = 'Electrode {:6}'.format(name)
+            filename = prefix + '_' + name + '.mat'
+            with open(filename, 'wb') as fh:
                 offset, scale = self.get_electrode_offset_scale(name)
-                i = 0
-                n = len(value)
 
-                while i * n_items < n:
-                    items = np.array(
-                        value[i * n_items:min((i + 1) * n_items, n)])
-                    scipy.io.savemat(fh, {
-                        '{}_{}'.format(name, i): (items - offset) * scale})
+                if chunks is None:
+                    items = np.array(value)
+                    scipy.io.savemat(fh, {'data': (items - offset) * scale,
+                                          'sr': self.electrodes_metadata[name]['sampling_frequency']})
                     pbar.update(len(items))
-                    i += 1
+                else:
+                    n = len(value)
+                    i = 0
+                    while i * n_items < n:
+                        items = np.array(
+                            value[i * n_items:min((i + 1) * n_items, n)])
+                        scipy.io.savemat(fh, {
+                            '{}_{}'.format(name, i): (items - offset) * scale})
+                        pbar.update(len(items))
+                        i += 1
         pbar.close()
+
+    def dump_electrode_data_circus(self, filename, chunks=1e9):
+        self.load_mcs_data()
+        itemsize = np.array([0.0], dtype=np.float32).nbytes
+        data = self.electrodes_data
+        n = len(next(iter(data.values())))  # num samples per channel
+        n_items = int(chunks // itemsize)  # num chunked samples per chan
+        total_n = sum(len(value) for value in data.values())  # num bytes total
+        pbar = tqdm(
+            total=total_n * itemsize, file=sys.stdout, unit_scale=1,
+            unit='bytes')
+
+        mmap_array = open_memmap(
+            filename, mode='w+', dtype=np.float32, shape=(n, len(data)))
+
+        names = sorted(data.keys(), key=lambda x: (x[0], int(x[1:])))
+        for k, name in enumerate(names):
+            value = data[name]
+            offset, scale = self.get_electrode_offset_scale(name)
+            i = 0
+            n = len(value)
+
+            while i * n_items < n:
+                items = np.array(
+                    value[i * n_items:min((i + 1) * n_items, n)])
+                mmap_array[i * n_items:i * n_items + len(items), k] = \
+                    (items - offset) * scale
+                pbar.update(len(items) * itemsize)
+                i += 1
+        pbar.close()
+        print('Channel order is: {}'.format(names))
 
 
 if __name__ == '__main__':
     from functools import partial
     f = CeedDataReader(r'E:\slice_1_merged.h5')
     f.open_h5()
-    f.read_experiment(0)
+    f.load_mcs_data()
+    f.load_experiment(0)
     f.dump_electrode_data_matlab('E:\\out.mat')
     exit()
     f.open_h5()
     # for exp in f.get_experiments():
-    #     f.read_experiment(exp)
+    #     f.load_experiment(exp)
     #     f.generate_movie(
     #         r'E:\experiment{}.mp4'.format(exp), lum=3, speed=.25)
-    f.read_experiment(4)
+    f.load_experiment(4)
     img = f.get_fluorescent_image()
     background = partial(
         f._show_image, img=img, scale=f.view_controller.cam_scale,
@@ -583,5 +632,5 @@ if __name__ == '__main__':
 
     f = CeedDataReader(r'/home/cpl/Desktop/test_out.h5')
     f.open_h5()
-    f.read_experiment(0)
+    f.load_experiment(0)
     f.save_flourescent_image(r'/home/cpl/Desktop/test_out.bmp')

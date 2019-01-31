@@ -132,8 +132,8 @@ class CeedApp(CPLComApp):
         remove_shapes_upon_deletion(
             self.stage_factory, self.shape_factory,
             knspace.stages.remove_shape_from_stage)
-        knspace.painter.add_shapes_to_canvas = \
-            knspace.painter.show_widgets = True
+        knspace.painter.shapes_canvas = knspace.painter.canvas
+        knspace.painter.shape_widgets_list = knspace.shapes
 
         def clear_all():
             knspace.funcs.clear_all()

@@ -31,7 +31,19 @@
             flat_color: app.theme.primary_text
             flat_border_color: app.theme.divider
             FlatButton:
-                text: 'Save as h5'
+                text: 'Save current file'
+                size_hint: None, None
+                size: self.texture_size
+                scale_down_color: True
+                flat_color: app.theme.text_primary
+                on_release:
+                    if app.ceed_data.filename: app.ceed_data.save()
+                    if not app.ceed_data.filename: app.filebrowser.target = app.ceed_data.root_path
+                    if not app.ceed_data.filename: app.filebrowser.dirselect =  app.filebrowser.multiselect = False
+                    if not app.ceed_data.filename: app.filebrowser.callback = app.ceed_data.get_filebrowser_callback(app.ceed_data.save_as, True)
+                    if not app.ceed_data.filename: app.filebrowser.open()
+            FlatButton:
+                text: 'Save current as file'
                 size_hint: None, None
                 size: self.texture_size
                 scale_down_color: True
@@ -42,7 +54,7 @@
                     app.filebrowser.callback = app.ceed_data.get_filebrowser_callback(app.ceed_data.save_as, True)
                     app.filebrowser.open()
             FlatButton:
-                text: 'Create empty h5'
+                text: 'Clear & create empty file'
                 size_hint: None, None
                 size: self.texture_size
                 scale_down_color: True
@@ -53,7 +65,7 @@
                     app.filebrowser.callback = app.ceed_data.get_filebrowser_callback(app.ceed_data.create_file, True, True)
                     app.filebrowser.open()
             FlatButton:
-                text: 'Open existing h5'
+                text: 'Clear & open existing file'
                 size_hint: None, None
                 size: self.texture_size
                 scale_down_color: True
@@ -64,7 +76,7 @@
                     app.filebrowser.callback = app.ceed_data.get_filebrowser_callback(app.ceed_data.open_file, clear_data=True)
                     app.filebrowser.open()
             FlatButton:
-                text: 'Import h5'
+                text: 'Import metadata from file'
                 size_hint: None, None
                 size: self.texture_size
                 scale_down_color: True
@@ -75,21 +87,21 @@
                     app.filebrowser.callback = app.ceed_data.get_filebrowser_callback(app.ceed_data.import_file)
                     app.filebrowser.open()
             FlatButton:
-                text: 'Close current h5'
+                text: 'Close current file & clear'
                 size_hint: None, None
                 size: self.texture_size
                 scale_down_color: True
                 flat_color: app.theme.text_primary
                 on_release: app.ceed_data.ui_close()
             FlatButton:
-                text: 'Discard unsaved h5'
+                text: 'Discard unsaved changes'
                 size_hint: None, None
                 size: self.texture_size
                 scale_down_color: True
                 flat_color: app.theme.text_primary
                 on_release: app.ceed_data.discard_file()
             FlatButton:
-                text: 'Load YAML'
+                text: 'Load metadata from YAML'
                 size_hint: None, None
                 size: self.texture_size
                 scale_down_color: True
@@ -100,7 +112,7 @@
                     app.filebrowser.callback = app.ceed_data.get_filebrowser_callback(app.ceed_data.read_yaml_config)
                     app.filebrowser.open()
             FlatButton:
-                text: 'Save YAML'
+                text: 'Export metadata to YAML'
                 size_hint: None, None
                 size: self.texture_size
                 scale_down_color: True

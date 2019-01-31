@@ -15,6 +15,7 @@ from kivy.properties import OptionProperty, ListProperty, ObjectProperty, \
     StringProperty, NumericProperty, DictProperty, BooleanProperty
 from kivy.factory import Factory
 from kivy.event import EventDispatcher
+from kivy.graphics import Color
 
 from ceed.function import CeedFunc, FuncDoneException
 from ceed.utils import fix_name, update_key_if_other_key
@@ -87,7 +88,7 @@ class StageFactoryBase(EventDispatcher):
             stage_ref.stage.has_ref = False
 
     def make_stage(self, state, instance=None, clone=False, func_name_map={},
-                   old_to_new_name_shape_map={}):
+                   old_name_to_shape_map=None):
         '''Instantiates the function from the state and returns it.
         '''
         state = dict(state)
@@ -106,7 +107,7 @@ class StageFactoryBase(EventDispatcher):
                 shape_factory=self.shape_factory)
 
         stage.apply_state(state, clone=clone, func_name_map=func_name_map,
-                          old_to_new_name_shape_map=old_to_new_name_shape_map)
+                          old_name_to_shape_map=old_name_to_shape_map)
         if c == 'CeedStageRef' and not clone:
             self._stage_ref[stage.stage] += 1
         return stage
@@ -203,7 +204,7 @@ class StageFactoryBase(EventDispatcher):
         return [s.get_state(expand_ref=False)for s in self.stages]
 
     def recover_stages(
-            self, stage_states, func_name_map, old_to_new_name_shape_map):
+            self, stage_states, func_name_map, old_name_to_shape_map):
         name_map = {}
         stages = []
         for state in stage_states:
@@ -227,7 +228,7 @@ class StageFactoryBase(EventDispatcher):
         for stage, state in zip(stages, stage_states):
             self.make_stage(
                 state, instance=stage, clone=True, func_name_map=func_name_map,
-                old_to_new_name_shape_map=old_to_new_name_shape_map)
+                old_name_to_shape_map=old_name_to_shape_map)
 
         return stages, name_map
 
@@ -319,12 +320,10 @@ class StageFactoryBase(EventDispatcher):
         '''
         shape_views = {}
         for shape in self.shape_factory.shapes:
-            instructions = shape.add_shape_instructions(
-                (0, 0, 0, 1), name, canvas)
-            if not instructions:
-                raise ValueError('Malformed shape {}'.format(shape.name))
+            color = shape_views[shape.name] = Color(0, 0, 0, 1, group=name)
+            canvas.add(color)
+            shape.add_area_graphics_to_canvas(name, canvas)
 
-            shape_views[shape.name] = instructions[0]
         return shape_views
 
     def fill_shape_gl_color_values(
@@ -616,7 +615,7 @@ class CeedStage(EventDispatcher):
         return state
 
     def apply_state(self, state={}, clone=False, func_name_map={},
-                    old_to_new_name_shape_map={}):
+                    old_name_to_shape_map=None):
         '''Takes the state of the stage saved with :meth:`get_state` and
         applies it to this stage. it also creates any children functions and
         stages and creates the references to the :attr:`shapes`.
@@ -640,7 +639,7 @@ class CeedStage(EventDispatcher):
         for data in stages:
             s = self.stage_factory.make_stage(
                 data, clone=clone, func_name_map=func_name_map,
-                old_to_new_name_shape_map=old_to_new_name_shape_map)
+                old_name_to_shape_map=old_name_to_shape_map)
             self.add_stage(s)
 
         update_key_if_other_key(
@@ -652,13 +651,19 @@ class CeedStage(EventDispatcher):
         shapes = self.stage_factory.shape_factory.shape_names
         groups = self.stage_factory.shape_factory.shape_group_names
         for name in shapes_state:
-            name = old_to_new_name_shape_map.get(name, name)
-            if name in shapes:
-                self.add_shape(shapes[name])
-            elif name in groups:
-                self.add_shape(groups[name])
+            if old_name_to_shape_map is None:
+                if name in shapes:
+                    self.add_shape(shapes[name])
+                elif name in groups:
+                    self.add_shape(groups[name])
+                else:
+                    raise ValueError('Could not find shape {}'.format(name))
             else:
-                raise ValueError('Could not find shape {}'.format(name))
+                shape = old_name_to_shape_map.get(name, None)
+                if shape is not None:
+                    self.add_shape(shape)
+                else:
+                    raise ValueError('Could not find shape {}'.format(name))
 
     def __deepcopy__(self, memo):
         obj = self.__class__(
@@ -959,7 +964,7 @@ class CeedStageRef(object):
 
     def apply_state(
             self, state={}, clone=False, func_name_map={},
-            old_to_new_name_shape_map={}):
+            old_name_to_shape_map=None):
         self.stage = self.stage_factory.stage_names[state['ref_name']]
 
     def __deepcopy__(self, memo):

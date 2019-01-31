@@ -18,15 +18,21 @@
             scroll_type: ['bars']
             do_scroll_y: False
             size_hint_y: None
-            height: stages_label.texture_size[1]
-            FlatLabel:
-                id: stages_label
-                text: 'Stages'
-                width: max(self.texture_size[0], self.parent.width)
-                size_hint_x: None
-                padding: '5dp', '5dp'
-                flat_color: app.theme.text_primary
-                center_texture: True
+            height: '38dp'
+            BoxLayout:
+                size_hint_min_x: self.minimum_width
+                orientation: 'horizontal'
+                FlatLabel:
+                    text: 'Stages'
+                    width: self.texture_size[0]
+                    size_hint_x: None
+                    flat_color: app.theme.text_primary
+                Widget
+                FlatImageButton:
+                    scale_down_color: True
+                    source: 'flat_plus.png'
+                    flat_color: app.theme.accent
+                    on_release: stages.add_empty_stage()
         ScrollView:
             bar_width: '10dp'
             scroll_type: ['bars']

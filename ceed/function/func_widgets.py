@@ -370,6 +370,7 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
                         parent=selector, drag_widget=selector,
                         obj_dragged=self, drag_cls='func') as dragger:
                     dragger.drag_copy = True  # root.func.parent_func is None
+                    dragger.flat_color = .196, .122, .063, 1
 
                 with Factory.ExpandWidget(parent=selector) as expand:
                     expand.state = 'down'

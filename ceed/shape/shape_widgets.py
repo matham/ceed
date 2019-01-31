@@ -3,6 +3,8 @@
 
 Defines the GUI components used with :mod:`ceed.shape`.
 '''
+import math
+
 from kivy.uix.behaviors.knspace import KNSpaceBehavior, knspace
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
@@ -12,6 +14,7 @@ from kivy.core.window import Window
 from kivy.uix.widget import Widget
 from kivy.factory import Factory
 from kivy.clock import Clock
+from kivy.app import App
 
 from cplcom.drag_n_drop import DraggableLayoutBehavior
 from cplcom.graphics import HighightButtonBehavior
@@ -38,16 +41,102 @@ class CeedPainter(CeedPaintCanvasBehavior, Widget):
     '''The label instance that shows the mouse position.
     '''
 
+    shape_widgets_list = None
+
     def __init__(self, **kwargs):
         super(CeedPainter, self).__init__(**kwargs)
         self.pos_label = Factory.XYSizedLabel()
+
+    @property
+    def selected_groups(self):
+        return [widget.group for widget in knspace.shape_groups.selected_nodes]
+
+    def create_shape_with_touch(self, touch):
+        shape = super(CeedPainter, self).create_shape_with_touch(touch)
+        if shape is not None:
+            shape.add_shape_to_canvas(self)
+        return shape
+
+    def reorder_shape(self, shape, before_shape=None):
+        super(CeedPainter, self).reorder_shape(shape, before_shape=before_shape)
+
+        self.shape_widgets_list.remove_widget(shape.widget)
+        if before_shape is None:
+            self.shape_widgets_list.add_widget(shape.widget)
+        else:
+            i = self.shape_widgets_list.index(before_shape.widget)
+            self.shape_widgets_list.add_widget(shape.widget, index=i)
+
+    def add_shape(self, shape):
+        if super(CeedPainter, self).add_shape(shape):
+            shape.add_shape_to_canvas(self)
+            widget = shape.widget = WidgetShape(painter=self, shape=shape)
+            widget.show_widget()
+            shape.fbind('on_update', App.get_running_app().changed_callback)
+            return True
+        return False
+
+    def remove_shape(self, shape):
+        if super(CeedPainter, self).remove_shape(shape):
+            shape.remove_shape_from_canvas()
+            shape.widget.hide_widget()
+            shape.widget = None
+            shape.funbind('on_update', App.get_running_app().changed_callback)
+            return True
+        return False
+
+    def add_group(self, group=None):
+        '''Similar to :meth:`add_shape` but for a :class:`CeedShapeGroup`.
+
+        :Params:
+
+            `group`: :class:`CeedShapeGroup`
+                The group to add. If None, the default, a new
+                :class:`CeedShapeGroup` is created.
+
+        :returns:
+
+            The :class:`CeedShapeGroup` added.
+        '''
+        group = super(CeedPainter, self).add_group(group)
+        widget = group.widget = WidgetShapeGroup(group=group)
+        widget.show_widget()
+        group.fbind('on_changed', App.get_running_app().changed_callback)
+        return group
+
+    def remove_group(self, group):
+        '''Similar to :meth:`remove_shape` but for a :class:`CeedShapeGroup`.
+
+        :Params:
+
+            `group`: :class:`CeedShapeGroup`
+                The group to remove.
+
+        :returns:
+
+            True if the group was removed, False otherwise.
+        '''
+        if super(CeedPainter, self).remove_group(group):
+            group.widget.hide_widget()
+            group.widget = None
+            group.funbind('on_changed', App.get_running_app().changed_callback)
+            return True
+        return False
+
+    def add_shape_to_group(self, group, shape):
+        super(CeedPainter, self).add_shape_to_group(group, shape)
+        group.widget.add_shape(shape)
+
+    def remove_shape_from_group(self, group, shape):
+        super(CeedPainter, self).remove_shape_from_group(group, shape)
+        group.widget.remove_shape(shape)
 
     def on_show_label(self, *largs):
         '''Shows/hides the :attr:`pos_label` label.
         '''
         state = self.show_label
         for shape in self.shapes:
-            shape.display.show_label = state
+            shape.widget.show_label = state
 
         label = self.pos_label
         if state:
@@ -68,12 +157,22 @@ class CeedPainter(CeedPaintCanvasBehavior, Widget):
 
     def add_enclosing_polygon(self):
         w, h = self.size
-        shape = self.create_add_shape('polygon')
-        shape.add_point(pos=(0, 0))
-        shape.add_point(pos=(w, 0))
-        shape.add_point(pos=(w, h))
-        shape.add_point(pos=(0, h))
-        shape.finish()
+        self.create_add_shape(
+            'polygon', points=[0, 0, w, 0, w, h, 0, h])
+
+    def select_shape(self, shape):
+        if super(CeedPainter, self).select_shape(shape):
+            if shape.widget is not None:
+                knspace.shapes.select_node(shape.widget)
+            return True
+        return False
+
+    def deselect_shape(self, shape):
+        if super(CeedPainter, self).deselect_shape(shape):
+            if shape.widget is not None:
+                knspace.shapes.deselect_node(shape.widget)
+            return True
+        return False
 
 
 class ShapeGroupDraggableLayoutBehavior(DraggableLayoutBehavior):
@@ -82,10 +181,11 @@ class ShapeGroupDraggableLayoutBehavior(DraggableLayoutBehavior):
 
     def handle_drag_release(self, index, drag_widget):
         group = self.group_widget.group
-        group.add_shape(drag_widget.obj_dragged.shape)
+
+        knspace.painter.add_shape_to_group(
+            group, drag_widget.obj_dragged.shape)
         if drag_widget.obj_dragged.selected:
-            for shape in knspace.painter.selected_shapes:
-                group.add_shape(shape)
+            knspace.painter.add_selected_shapes_to_group(group)
 
 
 class ShapeGroupList(
@@ -99,54 +199,21 @@ class ShapeGroupList(
         '''
         group = None
         if self.selected_nodes:
-            node = self.selected_nodes[-1]
-            if isinstance(node, ShapeGroupItem):
-                node = node.group
-            group = node.group
+            group = self.selected_nodes[-1].group
 
-        self.knspace.painter.add_selected_shapes(group)
-
-    def select_node(self, shape_widget):
-        if not super(ShapeGroupList, self).select_node(shape_widget):
-            return False
-
-        if isinstance(shape_widget, WidgetShapeGroup):
-            shape_widget.group.select()
-            self._anchor = self
-            self._last_selected_node = self
-        else:
-            shape_widget.group.group.select_shape(shape_widget.shape)
-        return True
-
-    def deselect_node(self, shape_widget):
-        if not super(ShapeGroupList, self).deselect_node(shape_widget):
-            return False
-
-        if isinstance(shape_widget, WidgetShapeGroup):
-            shape_widget.group.deselect()
-        else:
-            shape_widget.group.group.deselect_shape(shape_widget.shape)
-        return True
-
-    def get_selectable_nodes(self):
-        nodes = []
-        for child in reversed(self.children):
-            nodes.append(child)
-            if child.show_more:
-                for c in reversed(child.shape_widgets):
-                    nodes.append(c)
-        return nodes
+        self.knspace.painter.add_selected_shapes_to_group(group)
 
     def handle_drag_release(self, index, drag_widget):
         if drag_widget.drag_cls == 'shape':
             group = self.knspace.painter.add_group()
-            group.add_shape(drag_widget.obj_dragged.shape)
+            self.knspace.painter.add_shape_to_group(
+                group, drag_widget.obj_dragged.shape)
             if drag_widget.obj_dragged.selected:
-                self.knspace.painter.add_selected_shapes(group)
+                self.knspace.painter.add_selected_shapes_to_group(group)
         else:
             group = self.knspace.painter.add_group()
             for shape in drag_widget.obj_dragged.group.shapes:
-                group.add_shape(shape)
+                self.knspace.painter.add_shape_to_group(group, shape)
 
 
 class WidgetShapeGroup(ShowMoreBehavior, BoxLayout):
@@ -175,17 +242,8 @@ class WidgetShapeGroup(ShowMoreBehavior, BoxLayout):
     def hide_widget(self):
         '''Hides this widget group.
         '''
-        knspace.shape_groups.remove_widget(self)
-
-    def select_widget(self):
-        '''Selects the group.
-        '''
-        knspace.shape_groups.select_node(self)
-
-    def deselect_widget(self):
-        '''Deselects the group.
-        '''
         knspace.shape_groups.deselect_node(self)
+        knspace.shape_groups.remove_widget(self)
 
     @property
     def shape_widgets(self):
@@ -209,30 +267,10 @@ class WidgetShapeGroup(ShowMoreBehavior, BoxLayout):
                 self.more.remove_widget(widget)
                 return
 
-    def select_shape_widget(self, shape):
-        '''Selects the :class:`ceed.shape.CeedShape` from within this group.
-        '''
-        for widget in self.shape_widgets:
-            if widget.shape is shape:
-                knspace.shape_groups.select_node(widget)
-                return
 
-    def deselect_shape_widget(self, shape):
-        '''Deselects the :class:`ceed.shape.CeedShape` from within this group.
-        '''
-        for widget in self.shape_widgets:
-            if widget.shape is shape:
-                knspace.shape_groups.deselect_node(widget)
-                return
-
-
-class ShapeGroupItem(BoxSelector):
+class ShapeGroupItem(BoxLayout):
     '''The shape's widget displayed in the :class:`WidgetShapeGroup` widget
     tree for a shape in that group.
-    '''
-
-    selected = BooleanProperty(False)
-    '''Whether this shape is selected in the group.
     '''
 
     shape = ObjectProperty(None, rebind=True)
@@ -317,19 +355,10 @@ class WidgetShape(ShowMoreBehavior, BoxLayout):
     def __init__(self, **kwargs):
         super(WidgetShape, self).__init__(**kwargs)
         self.show_label = self.painter.show_label
-        self.fbind('show_label', self._show_label)
-        self.shape.fbind('name', self._label_text)
 
-        label = self.label = Label()
+        self.label = Label()
         trigger = Clock.create_trigger(self._shape_update, 0)
-        f = self._shape_update_trigger = lambda *largs: trigger() and False
-        self.shape.fbind('on_update', f)
-        label.fbind('size', f)
-        f()
-
-        self._label_text()
-        if self.show_label:
-            self._show_label()
+        self._shape_update_trigger = lambda *largs: trigger() and False
 
     @property
     def name(self):
@@ -346,6 +375,17 @@ class WidgetShape(ShowMoreBehavior, BoxLayout):
             knspace.shapes.add_widget(
                 self, index=len(knspace.shapes.children) - index)
 
+        self.fbind('show_label', self._show_label)
+        self.shape.fbind('name', self._label_text)
+
+        f = self._shape_update_trigger
+        self.shape.fbind('on_update', f)
+        self.label.fbind('size', f)
+        f()
+
+        self._label_text()
+        self._show_label()
+
     def hide_widget(self):
         '''Hides this widget from the list of shape widgets.
         '''
@@ -354,28 +394,23 @@ class WidgetShape(ShowMoreBehavior, BoxLayout):
 
         label = self.label
         label.funbind('size', self._shape_update_trigger)
-        if self.show_label:
-            self.painter.remove_widget(label)
 
-    def select_widget(self):
-        '''Selects the shape of this widget.
-        '''
-        knspace.shapes.select_node(self)
+        self.funbind('show_label', self._show_label)
+        self.shape.funbind('name', self._label_text)
+        self._show_label(force_hide=True)
 
-    def deselect_widget(self):
-        '''Deselects the shape of this widget.
-        '''
-        knspace.shapes.deselect_node(self)
-
-    def _show_label(self, *largs):
+    def _show_label(self, *largs, force_hide=False):
         '''Displays/hides the label in the shapes center containing the name of
         shape.
         '''
-        if self.show_label:
+        if self.show_label and not force_hide:
+            if self.label.parent is not None:  # already showing
+                return
+
             self.painter.add_widget(self.label)
             self._shape_update_trigger()
             self._label_text()
-        else:
+        elif self.label.parent is not None:
             self.painter.remove_widget(self.label)
 
     def _label_text(self, *largs):
@@ -414,9 +449,8 @@ class WidgetShape(ShowMoreBehavior, BoxLayout):
     def _update_area(self, area):
         '''Sets the area from the GUI.
         '''
-        self.shape.set_area(area)
-
-
+        if not math.isclose(area, self.area):
+            self.shape.set_area(area)
 
 
 Factory.register('ShapeGroupDraggableLayoutBehavior',

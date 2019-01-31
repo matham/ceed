@@ -76,7 +76,7 @@ class CeedDataWriterBase(EventDispatcher):
     def gather_config_data_dict(self):
         app = App.get_running_app()
         data = {}
-        data['shape'] = app.shape_factory.save_state()
+        data['shape'] = app.shape_factory.get_state()
         data['function'] = app.function_factory.save_functions()
         data['stage'] = app.stage_factory.save_stages()
 

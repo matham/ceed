@@ -73,7 +73,7 @@ view:
   - [305.4165729610285, 75.36801019641916, 0.0, 1.0]
   flip_projector: true
   frame_rate: 120.0
-  fullscreen: false
+  fullscreen: true
   mea_diameter: 3
   mea_num_cols: 12
   mea_num_rows: 12

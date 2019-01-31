@@ -61,7 +61,9 @@ class ViewRootFocusBehavior(FocusBehavior):
         return True
 
 
-class ControlDisplay(StencilView):
+class ControlDisplay(FocusBehavior, StencilView):
+
+    painter = None
 
     def on_touch_down(self, touch):
         if not self.collide_point(*touch.pos):
@@ -77,6 +79,18 @@ class ControlDisplay(StencilView):
         if not self.collide_point(*touch.pos):
             return False
         return super(ControlDisplay, self).on_touch_up(touch)
+
+    def keyboard_on_key_down(self, window, keycode, text, modifiers):
+        if self.painter.keyboard_on_key_down(
+                window, keycode, text, modifiers):
+            return True
+        return super(ControlDisplay, self).keyboard_on_key_down(
+            window, keycode, text, modifiers)
+
+    def keyboard_on_key_up(self, window, keycode):
+        if self.painter.keyboard_on_key_up(window, keycode):
+            return True
+        return super(ControlDisplay, self).keyboard_on_key_up(window, keycode)
 
 
 class PainterScatter(Scatter):

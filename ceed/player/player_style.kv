@@ -254,7 +254,7 @@
     FlatImageButton:
         scale_down_color: True
         source: 'flat_refresh.png'
-        hover_text: 'reload stage final cam image'
+        hover_text: "reset to stage's final cam image"
         flat_color: app.theme.accent
         disabled: app.view_controller.last_cam_image is None
         on_release: knspace.player.set_screenshot(app.view_controller.last_cam_image)

@@ -52,12 +52,28 @@ class StageList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
         super(StageList, self).__init__(**kwargs)
         self.nodes_order_reversed = False
 
-    @staticmethod
-    def remove_shape_from_stage(stage, stage_shape):
+    def remove_shape_from_stage(self, stage, stage_shape):
+        self.clear_selection()
         stage.remove_shape(stage_shape)
         display = stage_shape.display
         if display is not None:
             display.parent.remove_widget(display)
+
+    def add_empty_stage(self):
+        stage = self.stage_factory.make_stage({'cls': 'CeedStage'})
+        widget = StageWidget()
+
+        if self.selected_nodes:
+            stage_widget = self.selected_nodes[-1]
+            stage_widget.stage.add_stage(stage)
+
+            widget.initialize_display(stage, stage_widget.selection_controller)
+            stage_widget.stage_widget.add_widget(widget)
+        else:
+            self.stage_factory.add_stage(stage)
+            widget.initialize_display(stage, self)
+            self.add_widget(widget)
+        return stage
 
     def handle_drag_release(self, index, drag_widget):
         if drag_widget.drag_cls == 'stage':
@@ -321,6 +337,7 @@ class StageWidget(ShowMoreBehavior, BoxLayout):
             self.shape_widget.add_widget(shape_widget)
 
     def remove_stage(self):
+        self.selection_controller.clear_selection()
         if self.stage.parent_stage:
             self.stage.parent_stage.remove_stage(self.stage)
             self.parent.remove_widget(self)
@@ -351,6 +368,7 @@ class StageWidget(ShowMoreBehavior, BoxLayout):
                 break
 
     def replace_ref_with_source(self):
+        self.selection_controller.clear_selection()
         assert self.ref_stage is not None
         assert self.stage.parent_stage is not None
 
@@ -401,6 +419,7 @@ class StageWidget(ShowMoreBehavior, BoxLayout):
                         parent=selector, drag_widget=selector,
                         obj_dragged=self, drag_cls='stage') as dragger:
                     dragger.drag_copy = True  # root.func.parent_func is None
+                    dragger.flat_color = .482, .114, 0, 1
                     # if not self.drag_copy: root.remove_func()
                     pass
 
@@ -458,12 +477,14 @@ class StageWidget(ShowMoreBehavior, BoxLayout):
                 more.height @= more.minimum_height
                 more.size_hint_min_x @= more.minimum_width
                 self.stage_widget = self.add_children_container(
-                    more, ['stage'], StageChildrenList)
+                    more, ['stage'], StageChildrenList,
+                    (.482, .114, 0, 1))
                 self.func_widget = self.add_children_container(
-                    more, ['func', 'func_spinner'], StageFuncChildrenList)
+                    more, ['func', 'func_spinner'], StageFuncChildrenList,
+                    (.196, .122, .063, 1))
                 self.shape_widget = self.add_children_container(
                     more, ['shape', 'shape_group'], StageShapesChildrenList,
-                    True)
+                    (.835, .278, 0, 1), True)
 
     @kv(proxy='app*')
     def get_settings_dropdown(self):
@@ -589,7 +610,7 @@ class StageWidget(ShowMoreBehavior, BoxLayout):
 
     @kv(proxy='app*')
     def add_children_container(
-            self, container, drag_classes, cls, drag_append_end=False):
+            self, container, drag_classes, cls, color, drag_append_end=False):
         """Gets a StageChildrenList that is added to containter.
         """
         app = _get_app()
@@ -612,8 +633,8 @@ class StageWidget(ShowMoreBehavior, BoxLayout):
                 widget.stage_widget = self
 
                 with widget.canvas:
-                    color = Color()
-                    color.rgba ^= app.theme.divider
+                    color_inst = Color()
+                    color_inst.rgba = color
                     rect = Rectangle()
                     rect.pos ^= widget.x + dp(1), widget.y
                     rect.size ^= dp(2), widget.height

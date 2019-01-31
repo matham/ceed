@@ -23,7 +23,7 @@
         on_state: knspace.painter.draw_mode = 'ellipse' if self.state == 'down' else 'none'
     FlatImageToggleButton:
         group: 'paint'
-        hover_text: 'free' if self.state == 'normal' else '[b]free[/b]'
+        hover_text: 'freeform' if self.state == 'normal' else '[b]freeform[/b]'
         scale_down_color: True
         source: 'flat_polyline.png'
         flat_color: app.theme.accent
@@ -36,13 +36,6 @@
         source: 'flat_polygon.png'
         flat_color: app.theme.accent
         on_state: knspace.painter.draw_mode = 'polygon' if self.state == 'down' else 'none'
-    FlatImageToggleButton:
-        group: 'paint'
-        hover_text: 'bezier' if self.state == 'normal' else '[b]bezier[/b]'
-        scale_down_color: True
-        source: 'flat_vector_curve.png'
-        flat_color: app.theme.accent
-        on_state: knspace.painter.draw_mode = 'bezier' if self.state == 'down' else 'none'
     FlatSpinner:
         id: touch_mode
         values: ['Draw', 'Pan/Zoom', 'Align_cam', 'Align_MEA']
@@ -61,7 +54,7 @@
     IconSwitchBehavior:
         id: mea_grid
         disabled: touch_mode.text == 'Align_MEA'
-        hover_text: 'Array grid' if self.state == 'normal' else 'Array [b]grid[/b]'
+        hover_text: 'Show array grid' if self.state == 'normal' else 'Show array [b]grid[/b]'
         source_down: 'grid.png'
         source_normal: 'grid-off.png'
         flat_color: app.theme.accent
@@ -162,7 +155,7 @@
                     source: 'flat_delete.png'
                     hover_text: 'delete shapes' if self.state == 'normal' else '[b]delete[/b] shapes'
                     flat_color: app.theme.accent
-                    on_release: knspace.painter.delete_shapes()
+                    on_release: knspace.painter.delete_selected_shapes()
                 FlatDivider:
                     color: app.theme.divider
                 FlatImageToggleButton:
@@ -227,6 +220,7 @@
             drag_widget: selector.__self__
             obj_dragged: root
             drag_cls: 'shape'
+            flat_color: .835, .278, 0, 1
         ExpandWidget:
             id: expand
         FlatLabel:
@@ -329,6 +323,7 @@
             drag_widget: selector.__self__
             obj_dragged: root
             drag_cls: 'shape_group'
+            flat_color: .835, .278, 0, 1
         ExpandWidget:
             id: expand
         FlatLabel:
@@ -371,12 +366,10 @@
     height: '34dp'
     size_hint_min_x: self.minimum_width
     orientation: 'horizontal'
-    controller: knspace.shape_groups
-    use_parent: False
     spacing: '5dp'
     canvas:
         Color:
-            rgba: app.theme.primary_light if not root.selected else app.theme.primary
+            rgba: app.theme.primary_light
         Rectangle:
             size: self.size
             pos: self.pos
@@ -390,4 +383,4 @@
         scale_down_color: True
         source: 'flat_delete.png'
         flat_color: app.theme.accent
-        on_release: root.group.group.remove_shape(root.shape)
+        on_release: knsname.painter.remove_shape_from_group(root.group.group, root.shape)

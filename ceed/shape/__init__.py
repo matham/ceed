@@ -8,21 +8,23 @@ Shapes are created automatically when the user draws regions in the GUI. The
 controller keeping track of these shapes is a :class:`CeedPaintCanvasBehavior`
 instance.
 '''
+import math
+
 from kivy.uix.behaviors.knspace import KNSpaceBehavior, knspace
 from kivy.properties import BooleanProperty, NumericProperty, StringProperty, \
     ObjectProperty, DictProperty, ListProperty
 from kivy.event import EventDispatcher
 from kivy.factory import Factory
+from kivy.garden.collider import Collide2DPoly, CollideEllipse
 
 from cplcom.painter import PaintCanvasBehavior, PaintCircle, PaintEllipse, \
-    PaintPolygon, PaintBezier, PaintShape
+    PaintPolygon, PaintFreeformPolygon
 
 from ceed.utils import fix_name
 
 __all__ = (
     'CeedPaintCanvasBehavior', 'CeedShape', 'CeedShapeGroup',
-    'CeedPaintCircle', 'CeedPaintEllipse', 'CeedPaintPolygon',
-    'CeedPaintBezier')
+    'CeedPaintCircle', 'CeedPaintEllipse', 'CeedPaintPolygon')
 
 
 class CeedPaintCanvasBehavior(KNSpaceBehavior, PaintCanvasBehavior):
@@ -57,19 +59,8 @@ class CeedPaintCanvasBehavior(KNSpaceBehavior, PaintCanvasBehavior):
             is changed.
     '''
 
-    show_widgets = False
-    '''Whether the class is used through the GUI, in which case the shape's
-    widget are displayed, otherwise, no widgets are displayed.
-    '''
-
     groups = ListProperty([])
     '''List of :class:`CeedShapeGroup` instances.
-    '''
-
-    selected_groups = ListProperty([])
-    '''Similar to :attr:`cplcom.painter.PaintCanvasBehavior.selected_shapes`,
-    but for the groups. It's the list of :class:`CeedShapeGroup` currently
-    selected in the GUI.
     '''
 
     shape_names = DictProperty([])
@@ -84,7 +75,7 @@ class CeedPaintCanvasBehavior(KNSpaceBehavior, PaintCanvasBehavior):
 
     __events__ = ('on_remove_shape', 'on_remove_group', 'on_changed')
 
-    def add_shape(self, shape, **kwargs):
+    def add_shape(self, shape):
         '''Overrides :meth:`cplcom.painter.PaintCanvasBehavior.add_shape`.
 
         It ensures the the name of the :class:`CeedShape` added is unique and
@@ -100,14 +91,13 @@ class CeedPaintCanvasBehavior(KNSpaceBehavior, PaintCanvasBehavior):
 
             True if the shape was added, False otherwise.
         '''
-        if not super(CeedPaintCanvasBehavior, self).add_shape(shape, **kwargs):
+        if not super(CeedPaintCanvasBehavior, self).add_shape(shape):
             return False
 
-        shape.name = fix_name(
+        name = fix_name(
             shape.name, self.shape_names, self.shape_group_names)
-        self.shape_names[shape.name] = shape
-        if self.show_widgets:
-            shape.display.show_widget()
+        self.shape_names[name] = shape
+        shape.name = name
         self.dispatch('on_changed')
         return True
 
@@ -126,22 +116,16 @@ class CeedPaintCanvasBehavior(KNSpaceBehavior, PaintCanvasBehavior):
         if not super(CeedPaintCanvasBehavior, self).remove_shape(shape):
             return False
 
-        if shape._display:
-            shape.display.hide_widget()
         self.remove_shape_from_groups(shape)
-        self.dispatch('on_remove_shape', shape)
         del self.shape_names[shape.name]
+        self.dispatch('on_remove_shape', shape)
         self.dispatch('on_changed')
         return True
 
     def reorder_shape(self, shape, before_shape=None):
-        if shape._display:
-            shape.display.hide_widget()
-        super(CeedPaintCanvasBehavior, self).reorder_shape(
-            shape, before_shape=before_shape)
-        if self.show_widgets:
-            shape.display.show_widget(self.shapes.index(shape))
         self.dispatch('on_changed')
+        return super(CeedPaintCanvasBehavior, self).reorder_shape(
+            shape, before_shape=before_shape)
 
     def move_shape_lower(self, shape):
         '''Moves it below the shape below it
@@ -181,9 +165,10 @@ class CeedPaintCanvasBehavior(KNSpaceBehavior, PaintCanvasBehavior):
             group = CeedShapeGroup(paint_widget=self)
         self.groups.append(group)
 
-        if self.show_widgets:
-            group.display.show_widget()
-        self.shape_group_names[group.name] = group
+        name = fix_name(
+            group.name, self.shape_names, self.shape_group_names)
+        self.shape_group_names[name] = group
+        group.name = name
         self.dispatch('on_changed')
         return group
 
@@ -199,14 +184,9 @@ class CeedPaintCanvasBehavior(KNSpaceBehavior, PaintCanvasBehavior):
 
             True if the group was removed, False otherwise.
         '''
-        group.remove_all()
-        group.deselect(keep_shapes=True)
-        if group._display:
-            group.display.hide_widget()
-
-        self.dispatch('on_remove_group', group)
         del self.shape_group_names[group.name]
         self.groups.remove(group)
+        self.dispatch('on_remove_group', group)
         self.dispatch('on_changed')
         return True
 
@@ -216,7 +196,15 @@ class CeedPaintCanvasBehavior(KNSpaceBehavior, PaintCanvasBehavior):
         for group in self.groups[:]:
             self.remove_group(group)
 
-    def add_selected_shapes(self, group=None):
+    def add_shape_to_group(self, group, shape):
+        group.add_shape(shape)
+        self.dispatch('on_changed')
+
+    def remove_shape_from_group(self, group, shape):
+        group.remove_shape(shape)
+        self.dispatch('on_changed')
+
+    def add_selected_shapes_to_group(self, group=None):
         '''Adds all the
         :attr:`cplcom.painter.PaintCanvasBehavior.selected_shapes` to the
         ``group``.
@@ -235,7 +223,7 @@ class CeedPaintCanvasBehavior(KNSpaceBehavior, PaintCanvasBehavior):
             group = self.add_group()
 
         for shape in self.selected_shapes:
-            group.add_shape(shape)
+            self.add_shape_to_group(group, shape)
         return group
 
     def remove_shape_from_groups(self, shape):
@@ -248,57 +236,22 @@ class CeedPaintCanvasBehavior(KNSpaceBehavior, PaintCanvasBehavior):
         '''
         for group in self.groups:
             if shape in group.shapes:
-                group.remove_shape(shape)
+                self.remove_shape_from_group(group, shape)
 
-    def deselect_shape_everywhere(self, shape):
-        '''Deselects the :class:`CeedShape` from all the groups. If the
-        shape was selected, it is selected in all the groups. This clears that.
-
-        :Params:
-
-            `shape`: :class:`CeedShape`
-                The shape to deselect.
-        '''
-        for group in self.groups:
-            if shape in group.shapes:
-                group.deselect_shape(shape)
-
-    def count_shape_selection(self, shape):
-        '''The number of :class:`CeedShapeGroup` that the :class:`CeedShape`
-        is selected in. If the shape was selected, it is selected in all the
-        groups that contains it. This counts the number of groups that
-        contain it and in which it's selected.
-
-        :Params:
-
-            `shape`: :class:`CeedShape`
-                The shape to deselects.
-
-        :returns:
-
-            The number of groups in which it's selected.
-        '''
-        count = 0
-        for group in self.groups:
-            if shape in group.selected_shapes:
-                count += 1
-        return count
-
-    def save_state(self):
+    def get_state(self):
         '''Returns a dictionary containing all the configuration data for all
         the shapes and groups. It is used with :meth:`set_state` to later
         restore the state.
         '''
-        d = {}
-        d['shapes__name_count'] = PaintShape._name_count
-        d['groups__name_count'] = CeedShapeGroup._name_count
-        d['shapes'] = self.save_shapes()
-        d['groups'] = [{'name': g.name, 'shapes': [s.name for s in g.shapes]}
-                       for g in self.groups]
+        d = {
+            'shapes': [s.get_state() for s in self.shapes],
+            'groups': [{'name': g.name, 'shapes': [s.name for s in g.shapes]}
+                       for g in self.groups],
+        }
         return d
 
-    def restore_shape(self, state, old_name_map):
-        '''Overrides :meth:`cplcom.painter.PaintCanvasBehavior.restore_shape`.
+    def create_shape_from_state(self, state, old_name_map):
+        '''Overrides :meth:`cplcom.painter.PaintCanvasBehavior.create_shape_from_state`.
 
         It takes an additional parameter, ``old_name_map``. When a shape is
         created from the ``state``, the shape's new name could be changed so
@@ -306,34 +259,31 @@ class CeedPaintCanvasBehavior(KNSpaceBehavior, PaintCanvasBehavior):
         the key is the old name (if present in ``state``) and the associated
         value is the actual final shape name.
         '''
-        old_name = state['name']
-        shape = super(CeedPaintCanvasBehavior, self).restore_shape(state)
-        if 'name' in state:
-            old_name_map[old_name] = shape.name
+        old_name = state.get('name', '')
+        shape = super(CeedPaintCanvasBehavior, self).create_shape_from_state(
+            state)
+        if old_name:
+            old_name_map[old_name] = shape
         return shape
 
-    def set_state(self, state, old_to_new_name_map):
+    def set_state(self, state, old_name_map):
         '''Takes the dict returned by :meth:`save_state` and adds the shapes
         and groups to the controller.
         '''
-        PaintShape._name_count = max(
-            PaintShape._name_count, state['shapes__name_count'])
-        CeedShapeGroup._name_count = max(
-            CeedShapeGroup._name_count, state['groups__name_count'])
-
         for s in state['shapes']:
-            self.restore_shape(s, old_to_new_name_map)
-        shape_names = self.shape_names
+            self.create_shape_from_state(s, old_name_map)
 
         for group_state in state['groups']:
             group = CeedShapeGroup(paint_widget=self, name=group_state['name'])
-            old_to_new_name_map[group_state['name']] = group.name
+            if group_state['name']:
+                old_name_map[group_state['name']] = group
             self.add_group(group)
 
             for name in group_state['shapes']:
-                new_name = old_to_new_name_map.get(name, name)
-                if new_name in shape_names:
-                    group.add_shape(shape_names[new_name])
+                shape = old_name_map.get(name, None)
+                if shape is None:
+                    raise Exception('Cannot find shape {}'.format(name))
+                self.add_shape_to_group(group, shape)
 
         self.dispatch('on_changed')
 
@@ -353,13 +303,13 @@ class CeedPaintCanvasBehavior(KNSpaceBehavior, PaintCanvasBehavior):
             return name
 
         if isinstance(shape, CeedShape):
-            cont = self.shape_names
+            container = self.shape_names
         else:
-            cont = self.shape_group_names
+            container = self.shape_group_names
 
-        del cont[shape.name]
+        del container[shape.name]
         name = fix_name(name, self.shape_names, self.shape_group_names)
-        cont[name] = shape
+        container[name] = shape
         shape.name = name
         return name
 
@@ -370,44 +320,99 @@ class CeedShape(object):
     :class:`cplcom.painter.PaintShape` classes.
     '''
 
-    _display = None
+    name = StringProperty('Shape')
 
-    def __init__(self, **kwargs):
+    _collider = None
+
+    _area = None
+
+    _bounding_box = None
+
+    _centroid = None
+
+    paint_widget_size = 0, 0
+
+    widget = None
+
+    def __init__(self, paint_widget_size=(0, 0), **kwargs):
         super(CeedShape, self).__init__(**kwargs)
-        self.fbind('on_update', self.paint_widget.dispatch, 'on_changed')
-        self.fbind('name', self.paint_widget.dispatch, 'on_changed')
+        self.paint_widget_size = paint_widget_size
+        self.fbind('name', self.dispatch, 'on_update')
 
-    @property
-    def display(self):
-        '''The GUI widget associated with the shape and displayed to the
-        user.
-        '''
-        if self._display:
-            return self._display
-
-        w = self._display = Factory.WidgetShape(
-            shape=self, painter=self.paint_widget)
-        return w
-
-    def select(self):
-        if super(CeedShape, self).select():
-            if self._display:
-                self.display.select_widget()
-            return True
-        return False
-
-    def deselect(self):
-        if super(CeedShape, self).deselect():
-            self.paint_widget.deselect_shape_everywhere(self)
-            if self._display:
-                self.display.deselect_widget()
-            return True
-        return False
+        def on_update(*largs):
+            self._bounding_box = None
+            self._centroid = None
+            self._area = None
+            self._collider = None
+        self.fbind('on_update', on_update)
 
     def get_state(self, state=None):
         d = super(CeedShape, self).get_state(state)
-        d['cls'] = self.__class__.__name__[9:].lower()
+        d['name'] = self.name
         return d
+
+    def set_state(self, state):
+        state = dict(state)
+        state.pop('cls', None)
+        self.name = state.pop('name')
+        return super(CeedShape, self).set_state(state)
+
+    def _get_collider(self, size):
+        pass
+
+    @property
+    def bounding_box(self):
+        if self._bounding_box is not None:
+            return self._bounding_box
+
+        collider = self.collider
+        if collider is None:
+            return 0, 0, 0, 0
+
+        x1, y1, x2, y2 = collider.bounding_box()
+        box = self._bounding_box = x1, y1, x2 + 1, y2 + 1
+        return box
+
+    @property
+    def centroid(self):
+        if self._centroid is not None:
+            return self._centroid
+
+        collider = self.collider
+        if collider is None:
+            return 0, 0
+
+        self._centroid = xc, yc = self.collider.get_centroid()
+        return xc, yc
+
+    @property
+    def area(self):
+        if self._area is not None:
+            return self._area
+
+        collider = self.collider
+        if collider is None:
+            return 0
+
+        self._area = area = float(self.collider.get_area())
+        return area
+
+    def set_area(self, area):
+        if not area:
+            return
+
+        scale = 1 / math.sqrt(self.area / float(area))
+        self.rescale(scale)
+
+    @property
+    def collider(self):
+        if not self.is_valid or not self.finished:
+            return None
+        if self._collider is not None:
+            return self._collider
+
+        self._collider = collider = self._get_collider(self.paint_widget_size)
+        return collider
 
 
 class CeedShapeGroup(EventDispatcher):
@@ -428,18 +433,9 @@ class CeedShapeGroup(EventDispatcher):
     '''See :attr:`cplcom.painter.PaintShape.paint_widget`.
     '''
 
-    _name_count = 0
-    '''A counter to ensure name uniqueness.
-    '''
-
-    name = StringProperty('')
+    name = StringProperty('Group')
     '''The name of the group. Similar to
     See :attr:`cplcom.painter.PaintShape.name`.
-    '''
-
-    selected = BooleanProperty(False)
-    '''Whether the group is selected. Similar to
-    See :attr:`cplcom.painter.PaintShape.selected`.
     '''
 
     shapes = []
@@ -447,41 +443,17 @@ class CeedShapeGroup(EventDispatcher):
     this group.
     '''
 
-    selected_shapes = []
-    '''A list that contains the :class:`CeedShape` instances that is part of
-    this group and are also selected.
-    '''
-
-    _display = None
+    widget = None
 
     __events__ = ('on_changed', )
 
     def __init__(self, **kwargs):
-        if 'name' not in kwargs:
-            kwargs['name'] = 'G{}'.format(CeedShapeGroup._name_count)
-            CeedShapeGroup._name_count += 1
         super(CeedShapeGroup, self).__init__(**kwargs)
         self.shapes = []
-        self.selected_shapes = []
-        self.name = fix_name(
-            self.name, self.paint_widget.shape_names,
-            self.paint_widget.shape_group_names)
         self.fbind('name', self.dispatch, 'on_changed')
-        self.fbind('on_changed', self.paint_widget.dispatch, 'on_changed')
 
     def on_changed(self, *largs):
         pass
-
-    @property
-    def display(self):
-        '''The GUI widget associated with the group and displayed to the
-        user.
-        '''
-        if self._display:
-            return self._display
-
-        w = self._display = Factory.WidgetShapeGroup(group=self)
-        return w
 
     def add_shape(self, shape):
         '''Adds the shape to the group if it is not already in the group.
@@ -494,8 +466,6 @@ class CeedShapeGroup(EventDispatcher):
         if shape in self.shapes:
             return
 
-        if self._display:
-            self.display.add_shape(shape)
         self.shapes.append(shape)
         self.dispatch('on_changed')
 
@@ -508,12 +478,9 @@ class CeedShapeGroup(EventDispatcher):
             `shape`: :class:`CeedShape`
                 The shape to remove from :attr:`shapes`.
         '''
-        self.deselect_shape(shape)
         if shape not in self.shapes:
             return
 
-        if self._display:
-            self.display.remove_shape(shape)
         self.shapes.remove(shape)
         self.dispatch('on_changed')
 
@@ -523,114 +490,46 @@ class CeedShapeGroup(EventDispatcher):
         for shape in self.shapes:
             self.remove_shape(shape)
 
-    def select_shape(self, shape):
-        '''Selects the shape within the group. Selected shapes are added to
-        :attr:`selected_shapes`.
-
-        :Params:
-
-            `shape`: :class:`CeedShape`
-                The shape to select.
-
-        :returns:
-
-            True if the shape was selected, False otherwise.
-        '''
-        if shape not in self.selected_shapes:
-            self.selected_shapes.append(shape)
-            if self._display:
-                self.display.select_shape_widget(shape)
-            self.paint_widget.select_shape(shape)
-            return True
-        return False
-
-    def deselect_shape(self, shape):
-        '''deselects the shape if it's selected within the group.
-
-        :Params:
-
-            `shape`: :class:`CeedShape`
-                The shape to deselect.
-
-        :returns:
-
-            True if the shape was deselected, False otherwise.
-        '''
-        if shape in self.selected_shapes:
-            self.deselect(keep_shapes=True)
-            self.selected_shapes.remove(shape)
-            if self._display:
-                self.display.deselect_shape_widget(shape)
-
-            if not self.paint_widget.count_shape_selection(shape):
-                self.paint_widget.deselect_shape(shape)
-            return True
-        return False
-
-    def select(self):
-        '''Selects the group and all its children shapes.
-
-        :returns:
-
-            True if the group was selected, False otherwise.
-        '''
-        if self.selected:
-            return False
-        self.selected = True
-
-        if self._display:
-            self.display.select_widget()
-        for shape in self.shapes:
-            self.select_shape(shape)
-        return True
-
-    def deselect(self, keep_shapes=False):
-        '''Deselects the group and all its shapes if ``keep_shapes`` is True,
-        otherwise, only the group is deselected.
-
-        :returns:
-
-            True if the group was deselected, False otherwise.
-        '''
-        if not self.selected:
-            return False
-        self.selected = False
-
-        if self._display:
-            self.display.deselect_widget()
-        if not keep_shapes:
-            for shape in self.shapes:
-                self.deselect_shape(shape)
-        return True
-
 
 class CeedPaintCircle(CeedShape, PaintCircle):
     '''A circle shape.
     '''
-    pass
+
+    def _get_collider(self, size):
+        x, y = self.center
+        r = self.radius
+        return CollideEllipse(x=x, y=y, rx=r, ry=r)
 
 
 class CeedPaintEllipse(CeedShape, PaintEllipse):
     '''An ellipse shape.
     '''
-    pass
+
+    def _get_collider(self, size):
+        x, y = self.center
+        rx, ry = self.radius_x, self.radius_y
+        return CollideEllipse(x=x, y=y, rx=rx, ry=ry, angle=self.angle)
 
 
 class CeedPaintPolygon(CeedShape, PaintPolygon):
     '''A polygonal shape.
     '''
-    pass
+
+    def _get_collider(self, size):
+        return Collide2DPoly(points=self.points, cache=False)
 
 
-class CeedPaintBezier(CeedShape, PaintBezier):
-    '''A bezier shape.
+class CeedPaintFreeformPolygon(CeedShape, PaintFreeformPolygon):
+    '''A polygonal shape.
     '''
-    pass
+
+    def _get_collider(self, size):
+        return Collide2DPoly(points=self.points, cache=False)
 
 
 # make sure the classes above is used rather than the defaults.
 CeedPaintCanvasBehavior.shape_cls_map = {
     'circle': CeedPaintCircle, 'ellipse': CeedPaintEllipse,
-    'polygon': CeedPaintPolygon, 'freeform': CeedPaintPolygon,
-    'bezier': CeedPaintBezier
+    'polygon': CeedPaintPolygon, 'freeform': CeedPaintFreeformPolygon,
+    'none': None
 }
