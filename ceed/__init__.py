@@ -9,7 +9,7 @@ import os
 
 __all__ = ('__version__', 'has_gui_control', 'is_view_inst')
 
-__version__ = '0.1-dev'
+__version__ = '1.0.0-dev'
 
 has_gui_control = False
 '''whether ceed is running from a GUI or if it has been imported as a library.
