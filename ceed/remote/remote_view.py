@@ -220,7 +220,7 @@ class RemoteViewerListenerBase(EventDispatcher):
                     img = Image(
                         plane_buffers=plane_buffers, pix_fmt=pix_fmt,
                         size=size, linesize=linesize)
-                    remote_player.last_image = sws.scale(img, _flip=True)
+                    remote_player.last_image = sws.scale(img)
                     remote_player.display_trigger()
                 else:
                     print('got', msg, value)

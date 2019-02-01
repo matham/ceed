@@ -459,9 +459,9 @@ class CeedMCSDataMerger(object):
 
 
 if __name__ == '__main__':
-    ceed_file = r'/home/cpl/Desktop/data/temp.h5'
-    mcs_file = r'/home/cpl/Desktop/data/tempc.h5'
-    output_file = r'/home/cpl/Desktop/data/temp_merged.h5'
+    ceed_file = r'/home/cpl/Desktop/data/test.h5'
+    mcs_file = r'/home/cpl/Desktop/data/mcs.h5'
+    output_file = r'/home/cpl/Desktop/data/test_merged.h5'
     align_by = None
     merger = CeedMCSDataMerger()
 

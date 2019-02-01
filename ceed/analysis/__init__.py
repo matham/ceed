@@ -489,7 +489,7 @@ class CeedDataReader(object):
             fbo, 'stage_replay')
         fbo.add(Translate(-x, -y))
 
-        for i in range(start, end):
+        for i in tqdm(range(start, end)):
             for name, intensity in intensities.items():
                 r, g, b, a = intensity[i]
                 if not r and not g and not b:
@@ -597,32 +597,32 @@ class CeedDataReader(object):
 
 if __name__ == '__main__':
     from functools import partial
-    f = CeedDataReader(r'E:\slice_1_merged.h5')
+    f = CeedDataReader(r'/home/cpl/Desktop/data/test_merged.h5')
     f.open_h5()
     f.load_mcs_data()
-    f.load_experiment(0)
-    f.dump_electrode_data_matlab('E:\\out.mat')
-    exit()
-    f.open_h5()
+
     # for exp in f.get_experiments():
     #     f.load_experiment(exp)
     #     f.generate_movie(
-    #         r'E:\experiment{}.mp4'.format(exp), lum=3, speed=.25)
-    f.load_experiment(4)
-    img = f.get_fluorescent_image()
-    background = partial(
-        f._show_image, img=img, scale=f.view_controller.cam_scale,
-        translation=(
-            f.view_controller.cam_center_x - img.get_size()[0] / 2,
-            f.view_controller.cam_center_y - img.get_size()[1] / 2
-        ),
-        rotation=f.view_controller.cam_rotation)
+    #         r'/home/cpl/Desktop/data/test_merged{}.mp4'.format(exp), lum=3, speed=.25)
+    # exit()
+
+    f.load_experiment(0)
+    background = None
+    # img = f.get_fluorescent_image()
+    # background = partial(
+    #     f._show_image, img=img, scale=f.view_controller.cam_scale,
+    #     translation=(
+    #         f.view_controller.cam_center_x - img.get_size()[0] / 2,
+    #         f.view_controller.cam_center_y - img.get_size()[1] / 2
+    #     ),
+    #     rotation=f.view_controller.cam_rotation)
 
     # f.generate_movie(
     #     r'E:\test.mp4', lum=3, speed=.1, background=background)
 
     f.generate_movie(
-        r'E:\test.mp4', lum=3, canvas_size_hint=(2, 1), speed=.2,
+        r'/home/cpl/Desktop/data/test_merged_electrodes.mp4', lum=3, canvas_size_hint=(2, 1), speed=.2,
         metadata_funcs=[f.paint_electrodes_data(
             electrodes=CeedDataReader.get_128_electrode_names(),
             draw_pos_hint=(1, 0), volt_axis=50, cols=12)],
@@ -630,7 +630,7 @@ if __name__ == '__main__':
     )
     f.close_h5()
 
-    f = CeedDataReader(r'/home/cpl/Desktop/test_out.h5')
-    f.open_h5()
-    f.load_experiment(0)
-    f.save_flourescent_image(r'/home/cpl/Desktop/test_out.bmp')
+    # f = CeedDataReader(r'/home/cpl/Desktop/test_out.h5')
+    # f.open_h5()
+    # f.load_experiment(0)
+    # f.save_flourescent_image(r'/home/cpl/Desktop/test_out.bmp')
