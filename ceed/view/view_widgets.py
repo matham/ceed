@@ -4,6 +4,7 @@
 Widgets used on the viewer side of the controller/viewer interface.
 These are displayed when the second process of the viewer is running.
 '''
+from math import isclose
 
 from kivy.uix.behaviors.knspace import KNSpaceBehavior
 from kivy.uix.behaviors.focus import FocusBehavior
@@ -112,11 +113,13 @@ class PainterScatter(Scatter):
 
     def _recalculate_size(self, *largs):
         parent = self.parent
-        self.scale = max(
+        scale = max(
             self.scale, min(
                 1,
                 min(parent.height / _get_app().view_controller.screen_height,
                     parent.width / _get_app().view_controller.screen_width)))
+        if not isclose(self.scale, scale):
+            self.scale = scale
 
     def _recalculate_pos(self, *largs):
         parent = self.parent
