@@ -1,15 +1,14 @@
 #:import Clock kivy.clock.Clock
 #:import Matrix kivy.graphics.transformation.Matrix
 
-<ControlDisplay@ScrollView>:
-    scroll_type: ['bars']
-    bar_width: '15dp'
-    FloatLayout:
-        id: layout
-        size_hint: None, None
-        size: app.view_controller.screen_width * scatter.scale + dp(50), app.view_controller.screen_height * scatter.scale + dp(50)
+<ControlDisplay@FloatLayout>:
+    ScrollView:
+        scroll_type: ['bars']
+        bar_width: '15dp'
         BoxLayout:
-            padding: '25dp'
+            size_hint: None, None
+            size: app.view_controller.screen_width * scatter.scale + dp(65), app.view_controller.screen_height * scatter.scale + dp(50)
+            padding: '40dp', '25dp', '25dp', '25dp'
             pos_hint: {'pos': [0, 0]}
             Scatter:
                 id: scatter
@@ -18,7 +17,8 @@
                 do_rotation: False
                 auto_bring_to_front: False
                 do_collide_after_children: True
-                scale: 1
+                size_hint: None, None
+                size: app.view_controller.screen_width, app.view_controller.screen_height
                 RelativeLayout:
                     size: app.view_controller.screen_width, app.view_controller.screen_height
                     canvas.before:
@@ -73,6 +73,44 @@
                         pitch: app.view_controller.mea_pitch
                         diameter: app.view_controller.mea_diameter
                         mirror_mea: app.view_controller.mirror_mea
+    BoxLayout:
+        orientation: 'vertical'
+        pos: self.parent.x + dp(2), self.parent.top - self.height - dp(5)
+        spacing: '5dp'
+        size_hint: None, None
+        size: self.minimum_size
+        canvas:
+            Color:
+                rgba: app.theme.primary
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        FlatImageButton:
+            size_hint_y: None
+            height: '34dp'
+            on_release: slider.value = max(slider.min, slider.value - 0.25)
+            source: 'magnify-minus-outline.png'
+            scale_down_color: True
+            flat_color: app.theme.accent
+            hover_text: ''
+        FlatImageButton:
+            size_hint_y: None
+            height: '34dp'
+            on_release: slider.value = min(slider.max, slider.value + 0.25)
+            source: 'magnify-plus-outline.png'
+            scale_down_color: True
+            flat_color: app.theme.accent
+            hover_text: ''
+        Slider:
+            id: slider
+            orientation: 'vertical'
+            size_hint_y: None
+            height: '200dp'
+            max: 4
+            min: min((root.width - dp(65)) / app.view_controller.screen_width, (root.height - dp(50)) / app.view_controller.screen_height)
+            value: 1.
+            on_value: scatter.scale = self.value
+
 
 <ControlBar@BoxLayout>:
     size_hint: None, None
