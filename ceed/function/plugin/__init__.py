@@ -157,8 +157,8 @@ class ExponentialFunc(CeedFunc):
 class CosFunc(CeedFunc):
     '''Defines a cosine function.
 
-    The function is defined as ``y(t_in) = Acos(2pi*f*t + th0*pi/180)``, where
-    ``t = (t_in - t_start + t_offset)``.
+    The function is defined as ``y(t_in) = Acos(2pi*f*t + th0*pi/180) + b``,
+    where ``t = (t_in - t_start + t_offset)``.
     '''
 
     f = NumericProperty(1.)
@@ -167,20 +167,25 @@ class CosFunc(CeedFunc):
 
     th0 = NumericProperty(0.)
 
+    b = NumericProperty(0.)
+
     def __init__(self, **kwargs):
         kwargs.setdefault('name', 'Cos')
-        kwargs.setdefault('description', 'y(t) = Acos(2pi*f*t + th0*pi/180)')
+        kwargs.setdefault(
+            'description', 'y(t) = Acos(2pi*f*t + th0*pi/180) + b')
         super(CosFunc, self).__init__(**kwargs)
 
     def __call__(self, t):
         if not self.check_domain(t) and self.tick_loop(t):
             raise FuncDoneException
         t = t - self.t_start + self.t_offset
-        return self.A * cos(2 * pi * self.f * t + self.th0 * pi / 180.)
+        return self.A * cos(
+            2 * pi * self.f * t + self.th0 * pi / 180.) + self.b
 
     def get_gui_props(self, properties=None):
         d = super(CosFunc, self).get_gui_props(properties)
         d['f'] = None
+        d['b'] = None
         d['A'] = None
         d['th0'] = None
         return d
@@ -188,6 +193,7 @@ class CosFunc(CeedFunc):
     def get_state(self, *largs, **kwargs):
         d = super(CosFunc, self).get_state(*largs, **kwargs)
         d['f'] = self.f
+        d['b'] = self.b
         d['A'] = self.A
         d['th0'] = self.th0
         return d
