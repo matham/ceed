@@ -17,6 +17,7 @@ from kivy.graphics.vertex_instructions import Point
 from kivy.graphics.transformation import Matrix
 from kivy.graphics.context_instructions import Color
 from kivy.factory import Factory
+
 __all__ = ('ViewRootFocusBehavior', )
 
 _get_app = App.get_running_app
@@ -60,72 +61,6 @@ class ViewRootFocusBehavior(FocusBehavior):
             _get_app().view_controller.alpha_color = max(
                 0., _get_app().view_controller.alpha_color - .01)
         return True
-
-
-class ControlDisplay(FocusBehavior, StencilView):
-
-    painter = None
-
-    def on_touch_down(self, touch):
-        if not self.collide_point(*touch.pos):
-            return False
-        return super(ControlDisplay, self).on_touch_down(touch)
-
-    def on_touch_move(self, touch):
-        if not self.collide_point(*touch.pos):
-            return False
-        return super(ControlDisplay, self).on_touch_move(touch)
-
-    def on_touch_up(self, touch):
-        if not self.collide_point(*touch.pos):
-            return False
-        return super(ControlDisplay, self).on_touch_up(touch)
-
-    def keyboard_on_key_down(self, window, keycode, text, modifiers):
-        if self.painter.keyboard_on_key_down(
-                window, keycode, text, modifiers):
-            return True
-        return super(ControlDisplay, self).keyboard_on_key_down(
-            window, keycode, text, modifiers)
-
-    def keyboard_on_key_up(self, window, keycode):
-        if self.painter.keyboard_on_key_up(window, keycode):
-            return True
-        return super(ControlDisplay, self).keyboard_on_key_up(window, keycode)
-
-
-class PainterScatter(Scatter):
-
-    _sizing_trigger = None
-
-    _pos_trigger = None
-
-    def __init__(self, **kwargs):
-        super(PainterScatter, self).__init__(**kwargs)
-        self._sizing_trigger = Clock.create_trigger(self._recalculate_size, -1)
-        self.fbind('scale', self._sizing_trigger)
-        _get_app().view_controller.fbind('screen_height', self._sizing_trigger)
-        _get_app().view_controller.fbind('screen_width', self._sizing_trigger)
-
-        self._pos_trigger = Clock.create_trigger(self._recalculate_pos, -1)
-        self.fbind('pos', self._pos_trigger)
-        self.fbind('bbox', self._pos_trigger)
-
-    def _recalculate_size(self, *largs):
-        parent = self.parent
-        scale = max(
-            self.scale, min(
-                1,
-                min(parent.height / _get_app().view_controller.screen_height,
-                    parent.width / _get_app().view_controller.screen_width)))
-        if not isclose(self.scale, scale):
-            self.scale = scale
-
-    def _recalculate_pos(self, *largs):
-        parent = self.parent
-        x = min(max(self.x, parent.right - self.bbox[1][0]), parent.x)
-        y = min(max(self.y, parent.top - self.bbox[1][1]), parent.y)
-        self.pos = x, y
 
 
 class MEAArrayAlign(KNSpaceBehavior, Scatter):
@@ -211,7 +146,6 @@ class MEAArrayAlign(KNSpaceBehavior, Scatter):
             return False
 
         return super(MEAArrayAlign, self).on_touch_up(touch)
-
 
     @staticmethod
     def make_matrix(elems):

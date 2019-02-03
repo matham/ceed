@@ -1,76 +1,78 @@
 #:import Clock kivy.clock.Clock
 #:import Matrix kivy.graphics.transformation.Matrix
 
-<ControlDisplay>:
-    painter: painter
-    on_size:
-        scatter._sizing_trigger()
-        scatter._pos_trigger()
-    on_pos: scatter._pos_trigger()
-    PainterScatter:
-        id: scatter
+<ControlDisplay@ScrollView>:
+    scroll_type: ['bars']
+    bar_width: '15dp'
+    FloatLayout:
+        id: layout
         size_hint: None, None
-        size: app.view_controller.screen_width, app.view_controller.screen_height
-        do_translation: self.do_scale, self.do_scale
-        do_scale: painter.locked and not painter.move_cam and not painter.move_array
-        do_rotation: False
-        do_collide_after_children: True
-        auto_bring_to_front: False  # required for ctrl click to work in painter
-        Widget:
-            size: scatter.width, scatter.height
-            canvas.before:
-                Color:
-                    rgba: [0, 0, 0, 1]
-                Rectangle:
-                    pos: self.pos
-                    size: self.size
-            canvas.after:
-                Color:
-                    rgba: [1, 1, 1, .2]
-                Rectangle:
-                    pos: self.x, self.top
-                    size: self.width, max(0, root.height - self.height)
-            BufferImage:
-                knsname: 'central_display'
+        size: app.view_controller.screen_width * scatter.scale + dp(50), app.view_controller.screen_height * scatter.scale + dp(50)
+        BoxLayout:
+            padding: '25dp'
+            pos_hint: {'pos': [0, 0]}
+            Scatter:
+                id: scatter
+                do_scale: False
+                do_translation: False, False
+                do_rotation: False
                 auto_bring_to_front: False
-                size_hint: None, None
-                on_image_size:
-                    app.view_controller._restore_cam_pos()
-                    self.size = self.image_size
-                scale_to_image: False
+                do_collide_after_children: True
+                scale: 1
+                RelativeLayout:
+                    size: app.view_controller.screen_width, app.view_controller.screen_height
+                    canvas.before:
+                        Color:
+                            rgba: [0, 0, 0, 1]
+                        Rectangle:
+                            size: self.size
+                    # canvas.after:
+                    #     Color:
+                    #         rgba: [1, 1, 1, .2]
+                    #     Rectangle:
+                    #         pos: 0, self.height
+                    #         size: self.width, max(0, layout.height - self.height)
+                    BufferImage:
+                        knsname: 'central_display'
+                        auto_bring_to_front: False
+                        size_hint: None, None
+                        on_image_size:
+                            app.view_controller._restore_cam_pos()
+                            self.size = self.image_size
+                        scale_to_image: False
 
-                do_scale: painter.locked and painter.move_cam
-                do_translation: self.do_scale, self.do_scale
-                do_rotation: self.do_scale
+                        do_scale: painter.locked and painter.move_cam
+                        do_translation: self.do_scale, self.do_scale
+                        do_rotation: self.do_scale
 
-                transform: mea_align.make_matrix(app.view_controller.cam_transform)
-                on_transform: if not mea_align.compare_mat(self.transform, app.view_controller.cam_transform): app.view_controller.cam_transform = self.transform.tolist()
-            CeedPainter:
-                knsname: 'painter'
-                id: painter
-                size_hint: None, None
-                size: app.view_controller.screen_width, app.view_controller.screen_height
-                move_cam: False
-                move_array: False
-            MEAArrayAlign:
-                knsname: 'mea_align'
-                id: mea_align
-                do_scale: painter.locked and painter.move_array
-                do_translation: self.do_scale, self.do_scale
-                do_rotation: self.do_scale
-                size_hint: None, None
-                auto_bring_to_front: False
-                do_collide_after_children: False
-                on_show: self.color.a = 1 if self.show else 0
+                        transform: mea_align.make_matrix(app.view_controller.cam_transform)
+                        on_transform: if not mea_align.compare_mat(self.transform, app.view_controller.cam_transform): app.view_controller.cam_transform = self.transform.tolist()
+                    CeedPainter:
+                        knsname: 'painter'
+                        id: painter
+                        size_hint: None, None
+                        size: app.view_controller.screen_width, app.view_controller.screen_height
+                        move_cam: False
+                        move_array: False
+                    MEAArrayAlign:
+                        knsname: 'mea_align'
+                        id: mea_align
+                        do_scale: painter.locked and painter.move_array
+                        do_translation: self.do_scale, self.do_scale
+                        do_rotation: self.do_scale
+                        size_hint: None, None
+                        auto_bring_to_front: False
+                        do_collide_after_children: False
+                        on_show: self.color.a = 1 if self.show else 0
 
-                transform: self.make_matrix(app.view_controller.mea_transform)
-                on_transform: if not self.compare_mat(self.transform, app.view_controller.mea_transform): app.view_controller.mea_transform = self.transform.tolist()
+                        transform: self.make_matrix(app.view_controller.mea_transform)
+                        on_transform: if not self.compare_mat(self.transform, app.view_controller.mea_transform): app.view_controller.mea_transform = self.transform.tolist()
 
-                num_rows: app.view_controller.mea_num_rows
-                num_cols: app.view_controller.mea_num_cols
-                pitch: app.view_controller.mea_pitch
-                diameter: app.view_controller.mea_diameter
-                mirror_mea: app.view_controller.mirror_mea
+                        num_rows: app.view_controller.mea_num_rows
+                        num_cols: app.view_controller.mea_num_cols
+                        pitch: app.view_controller.mea_pitch
+                        diameter: app.view_controller.mea_diameter
+                        mirror_mea: app.view_controller.mirror_mea
 
 <ControlBar@BoxLayout>:
     size_hint: None, None
