@@ -469,7 +469,7 @@ class StageWidget(ShowMoreBehavior, BoxLayout):
 
             with BoxLayout(
                     parent=self, spacing='3dp', size_hint_y=None,
-                    orientation='vertical') as more:
+                    orientation='vertical', padding=('15dp', 0, 0, 0)) as more:
                 self.more = more
                 if self.ref_stage is not None:
                     self.remove_widget(more)
@@ -628,11 +628,28 @@ class StageWidget(ShowMoreBehavior, BoxLayout):
 
                 widget.height @= widget.minimum_height
                 widget.size_hint_min_x @= widget.minimum_width
-                widget.padding @= '5dp', 0, 0, (0 if widget.children else '5dp')
+                widget.padding @= '5dp', 0, 0, (
+                    0 if widget.children and not (
+                        app.drag_controller.dragging and
+                        app.drag_controller.widget_dragged and
+                        app.drag_controller.widget_dragged.drag_cls in
+                        drag_classes)
+                    else '12dp')
                 widget.is_visible @= self.show_more and self.is_visible
                 widget.stage_widget = self
 
                 with widget.canvas:
+                    color_back = Color()
+                    color_back.rgba = 152 / 255., 153 / 255., 155 / 255., 1.
+
+                    rect_back = Rectangle()
+                    rect_back.pos ^= widget.x + dp(5), widget.y
+                    rect_back.size ^= widget.width - dp(5), dp(10) if (
+                        app.drag_controller.dragging and
+                        app.drag_controller.widget_dragged and
+                        app.drag_controller.widget_dragged.drag_cls in
+                        drag_classes) else 0
+
                     color_inst = Color()
                     color_inst.rgba = color
                     rect = Rectangle()

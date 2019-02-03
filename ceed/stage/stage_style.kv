@@ -41,7 +41,7 @@
                 knsname: 'stages'
                 orientation: 'vertical'
                 spacing: '3dp'
-                padding: '0dp', (0 if self.children else '10dp')
+                padding: '0dp', 0, 0, '12dp'
                 stage_factory: app.stage_factory
                 size_hint_y: None
                 height: self.minimum_height
@@ -50,6 +50,12 @@
                 spacer_props: {'size_hint_y': None, 'height': '40dp', 'size_hint_min_x': '40dp'}
                 drag_classes: ['shape', 'shape_group', 'func', 'func_spinner', 'stage']
                 drag_append_end: True
+                canvas:
+                    Color:
+                        rgba: (152 / 255., 153 / 255., 155 / 255., 1.) if app.drag_controller.dragging and app.drag_controller.widget_dragged and app.drag_controller.widget_dragged.drag_cls in ('shape', 'shape_group', 'func', 'func_spinner', 'stage') else (0, 0, 0, 0)
+                    Rectangle:
+                        pos: self.pos
+                        size: self.width, dp(10)
 
 
 <ShapeGraphSelector@FlatToggleButton>:

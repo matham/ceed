@@ -1,7 +1,7 @@
 app: {inspect: true}
-data: {backup_interval: 5.0, root_path: /home/cpl/Desktop/data}
+data: {backup_interval: 5.0, root_path: 'C:\Users\Matthew Einhorn\Desktop'}
 function: {timebase_denominator: 1, timebase_numerator: 1}
-player: {browse_path: /home/cpl/Desktop/data/7-16-2018}
+player: {browse_path: 'C:\Users\Matthew Einhorn\Desktop'}
 point_gray_cam:
   brightness: {abs: true, auto: false, controllable: true, max: 12.4755859375, min: 0.0,
     one_push: false, present: true, relative_value: 880, value: 5.76171875}
@@ -79,10 +79,10 @@ view:
   mea_num_rows: 12
   mea_pitch: 20
   mea_transform:
-  - [4.506329489371896, -0.0811247717853738, 0.0, 0.0]
-  - [0.0811247717853738, 4.506329489371896, 0.0, 0.0]
-  - [0.0, 0.0, 4.5070596507457, 0.0]
-  - [399.97586157319813, 241.84782498573935, 0.0, 1.0]
+  - [5.114540312818914, -0.22483156581131516, 0.0, 0.0]
+  - [0.22483156581131516, 5.114540312818914, 0.0, 0.0]
+  - [0.0, 0.0, 5.119479645865868, 0.0]
+  - [317.55575317862827, 100.14426626080038, 0.0, 1.0]
   mirror_mea: true
   output_count: true
   screen_height: 1080

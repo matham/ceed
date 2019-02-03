@@ -498,11 +498,16 @@ class FuncWidgetGroup(FuncWidget):
                 more.group_widget = self
                 more.is_visible @= self.show_more and self.is_visible
 
-                with KvRule(more.children):
-                    if more.children:
-                        more.padding = '5dp', '5dp', 0, 0
+                with KvRule(more.children, app.drag_controller.widget_dragged,
+                            app.drag_controller.dragging):
+                    if more.children and not (
+                            app.drag_controller.dragging and
+                            app.drag_controller.widget_dragged and
+                            app.drag_controller.widget_dragged.drag_cls in
+                            ('func', 'func_spinner')):
+                        more.padding = '15dp', '5dp', 0, 0
                     else:
-                        more.padding = '5dp', '5dp', 0, '5dp'
+                        more.padding = '15dp', '5dp', 0, '12dp'
 
                 more.height @= more.minimum_height
                 more.size_hint_min_x @= more.minimum_width
@@ -513,12 +518,23 @@ class FuncWidgetGroup(FuncWidget):
                 more.drag_classes = ['func', 'func_spinner']
                 more.controller @= self.func
                 with more.canvas:
+                    color_back = Color()
+                    color_back.rgba = 152 / 255., 153 / 255., 155 / 255., 1.
+
+                    more_rect_back = Rectangle()
+                    more_rect_back.pos ^= more.x + dp(15), more.y
+                    more_rect_back.size ^= more.width - dp(15), dp(10) if (
+                        app.drag_controller.dragging and
+                        app.drag_controller.widget_dragged and
+                        app.drag_controller.widget_dragged.drag_cls in
+                        ('func', 'func_spinner')) else 0
+
                     color = Color()
                     color.rgba ^= app.theme.divider
 
                     more_rect = Rectangle()
-                    more_rect.pos ^= more.x + dp(1), more.y
-                    more_rect.size ^= dp(2), more.height - dp(5)
+                    more_rect.pos ^= more.x + dp(11), more.y
+                    more_rect.size ^= dp(2), more.height - dp(2)
 
     def _show_more(self, *largs):
         '''Displays the additional configuration options in the GUI.

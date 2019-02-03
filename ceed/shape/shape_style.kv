@@ -111,7 +111,7 @@
                         knsname: 'shape_groups'
                         orientation: 'vertical'
                         spacing: '3dp'
-                        padding: '0dp', ('10dp' if not self.children else '3dp')
+                        padding: '0dp', '0dp', '0dp', '12dp'
                         size_hint_y: None
                         height: self.minimum_height
                         size_hint_min_x: self.minimum_width
@@ -121,6 +121,12 @@
                         spacer_props: {'size_hint_y': None, 'height': '40dp', 'size_hint_min_x': '40dp'}
                         drag_classes: ['shape', 'shape_group']
                         drag_append_end: True
+                        canvas:
+                            Color:
+                                rgba: (152 / 255., 153 / 255., 155 / 255., 1.) if app.drag_controller.dragging and app.drag_controller.widget_dragged and app.drag_controller.widget_dragged.drag_cls in ('shape', 'shape_group') else (0, 0, 0, 0)
+                            Rectangle:
+                                pos: self.pos
+                                size: self.width, dp(10)
         BoxLayout:
             size_hint_y: None
             height: '34dp'
@@ -179,7 +185,7 @@
                 knsname: 'shapes'
                 orientation: 'vertical'
                 spacing: '3dp'
-                padding: 0, (0 if self.children else '10dp')
+                padding: 0, 0, 0, '12dp'
                 size_hint_y: None
                 height: self.minimum_height
                 size_hint_min_x: self.minimum_width
@@ -188,6 +194,12 @@
                 spacer_props: {'size_hint_y': None, 'height': '50dp', 'size_hint_min_x': '40dp'}
                 drag_classes: ['shape']
                 drag_append_end: True
+                canvas:
+                    Color:
+                        rgba: (152 / 255., 153 / 255., 155 / 255., 1.) if app.drag_controller.dragging and app.drag_controller.widget_dragged and app.drag_controller.widget_dragged.drag_cls == 'shape' else (0, 0, 0, 0)
+                    Rectangle:
+                        pos: self.pos
+                        size: self.width, dp(10)
 
 
 <WidgetShape>:
@@ -340,7 +352,8 @@
     BoxShapeDraggableLayoutBehavior:
         id: more
         spacing: '5dp'
-        padding: '5dp', 0, 0, 0
+        matched_drag: bool(app.drag_controller.dragging and app.drag_controller.widget_dragged and app.drag_controller.widget_dragged.drag_cls in ('shape', 'shape_group') and expand.is_open)
+        padding: '15dp', 0, 0, ('12dp' if self.matched_drag or len(self.children) == 1 else 0)
         size_hint_y: None
         height: self.minimum_height
         size_hint_min_x: self.minimum_width
@@ -351,10 +364,15 @@
         group_widget: root
         canvas:
             Color:
+                rgba: (152 / 255., 153 / 255., 155 / 255., 1.) if self.matched_drag else (0, 0, 0, 0)
+            Rectangle:
+                pos: self.x + dp(15), self.y
+                size: self.width - dp(15), dp(10)
+            Color:
                 rgba: app.theme.divider
             Rectangle:
-                pos: self.x + dp(1), self.y
-                size: dp(2), self.height - dp(5)
+                pos: self.x + dp(11), self.y
+                size: dp(2), self.height - dp(2)
         FlatSizedTextInput:
             background_color: root.flat_color
             text: root.group.name if root.group else ''

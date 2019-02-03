@@ -59,11 +59,17 @@
                 knsname: 'funcs'
                 orientation: 'vertical'
                 spacing: '3dp'
-                padding: '0dp', '10dp'
+                padding: '0dp', '0dp', '0dp', '12dp'
                 size_hint_y: None
                 height: self.minimum_height
                 size_hint_min_x: self.minimum_width
                 touch_deselect_last: True
+                canvas:
+                    Color:
+                        rgba: (152 / 255., 153 / 255., 155 / 255., 1.) if app.drag_controller.dragging and app.drag_controller.widget_dragged and app.drag_controller.widget_dragged.drag_cls in ('func', 'func_spinner') else (0, 0, 0, 0)
+                    Rectangle:
+                        pos: self.pos
+                        size: self.width, dp(10)
 
 
 <FuncPropTextWidget>:

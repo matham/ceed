@@ -96,6 +96,8 @@ class CeedApp(CPLComApp):
         return d
 
     def __init__(self, **kwargs):
+        drag = self.drag_controller = CeedDragNDrop()
+        drag.knsname = 'dragger'
         self.function_factory = FunctionFactoryBase()
         register_all_functions(self.function_factory)
         self.stage_factory = StageFactoryBase(
@@ -121,8 +123,6 @@ class CeedApp(CPLComApp):
         Builder.load_file(join(base, 'view', 'view_style.kv'))
         Builder.load_file(join(base, 'storage', 'storage_style.kv'))
         self.yesno_prompt = Factory.CeedYesNoPrompt()
-        drag = self.drag_controller = CeedDragNDrop()
-        drag.knsname = 'dragger'
 
         root = Factory.get('MainView')()
         return super(CeedApp, self).build(root)
