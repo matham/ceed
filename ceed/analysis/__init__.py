@@ -42,6 +42,18 @@ def callable_gen(gen):
     return outer_func
 
 
+def partial_func(func):
+    def outer_func(*l, **kw):
+        def inner_func(*largs, **kwargs):
+            return func(*l, *largs, **kwargs, **kw)
+        return inner_func
+    return outer_func
+
+
+class EndOfDataException(Exception):
+    pass
+
+
 class CeedDataReader(object):
 
     filename = ''
@@ -197,7 +209,7 @@ class CeedDataReader(object):
         for item in mcs_block.data_arrays:
             if not item.name.startswith('electrode_'):
                 continue
-            electrode_data[item.name[10:]] = item
+            electrode_data[item.name[10:]] = np.array(item)
 
             electrodes_metadata[item.name[10:]] = electrode_metadata = {}
             for prop in mcs_metadata.sections[item.name].props:
@@ -220,7 +232,9 @@ class CeedDataReader(object):
             10. ** float(metadata['Exponent']))
 
     @staticmethod
-    def _show_image(canvas, pos, size, img, scale, translation, rotation):
+    def _show_image(
+            config, img, scale=None, translation=None,
+            rotation=None, transform_matrix=None):
         from kivy.graphics.texture import Texture
         from kivy.graphics.fbo import Fbo
         from kivy.graphics import (
@@ -232,6 +246,9 @@ class CeedDataReader(object):
         from kivy.graphics.transformation import Matrix
         img_fmt = img.get_pixel_format()
         img_w, img_h = img.get_size()
+        size = config['orig_size']
+        pos = config['pos']
+        canvas = config['canvas']
 
         if img_fmt not in ('yuv420p', 'rgba', 'rgb24', 'gray', 'bgr24', 'bgra'):
             ofmt = get_best_pix_fmt(
@@ -280,9 +297,17 @@ class CeedDataReader(object):
 
             PushMatrix()
             center = pos[0] + size[0] / 2, pos[1] + size[1] / 2
-            Rotate(angle=rotation, axis=(0, 0, 1), origin=center)
-            Scale(scale, scale, 1, origin=center)
-            Translate(*translation)
+            if rotation:
+                Rotate(angle=rotation, axis=(0, 0, 1), origin=center)
+            if scale:
+                Scale(scale, scale, 1, origin=center)
+            if translation:
+                Translate(*translation)
+            if transform_matrix is not None:
+                mat = Matrix()
+                mat.set(array=transform_matrix)
+                m = MatrixInstruction()
+                m.matrix = mat
             Rectangle(size=(img_w, img_h), texture=tex, pos=pos)
             PopMatrix()
 
@@ -290,15 +315,25 @@ class CeedDataReader(object):
             Rectangle(pos=pos, size=size)
             StencilPop()
 
-    @callable_gen
-    def paint_electrodes_data(
-            self, pos, size, orig_size, fbo, rate, electrodes, cols=1, rows=None,
-            spacing=2, draw_size=(0, 0), draw_size_hint=(1, 1),
+    def paint_background_image(
+            self, img, scale=None, translation=None,
+            rotation=None, transform_matrix=None):
+        return partial_func(self._show_image)(
+            img=img, scale=scale, translation=translation, rotation=rotation,
+            transform_matrix=transform_matrix)
+
+    @partial_func
+    def _paint_electrodes_data_setup(
+            self, config, electrodes, cols=1,
+            rows=None, spacing=2, draw_size=(0, 0), draw_size_hint=(1, 1),
             draw_pos=(0, 0), draw_pos_hint=(None, None), volt_scale=1e-6,
-            time_axis_s=1, volt_axis=100):
+            time_axis_s=1, volt_axis=100, transform_matrix=None):
         from kivy.graphics import (
             Mesh, StencilPush, StencilUse, StencilUnUse, StencilPop, Rectangle,
             Color)
+        from kivy.graphics.context_instructions import (
+            PushMatrix, PopMatrix, Scale, MatrixInstruction)
+        from kivy.graphics.transformation import Matrix
         if not cols and not rows:
             raise ValueError("Either rows or cols must be specified")
         if rows and cols:
@@ -309,7 +344,9 @@ class CeedDataReader(object):
         if not cols:
             cols = int(math.ceil(len(electrodes) / rows))
 
-        orig_w, orig_h = orig_size
+        orig_w, orig_h = config['orig_size']
+        fbo = config['canvas']
+
         draw_w, draw_h = draw_size
         draw_hint_w, draw_hint_h = draw_size_hint
         w = int(draw_w if draw_hint_w is None else orig_w * draw_hint_w)
@@ -322,6 +359,17 @@ class CeedDataReader(object):
 
         ew = int((w - max(0, cols - 1) * spacing) / cols)
         eh = int((h - max(0, rows - 1) * spacing) / rows)
+
+        with fbo:
+            PushMatrix()
+            center = x + w / 2., y + h / 2.
+            # if scale:
+            #     Scale(scale, scale, 1, origin=center)
+            if transform_matrix is not None:
+                mat = Matrix()
+                mat.set(array=transform_matrix)
+                m = MatrixInstruction()
+                m.matrix = mat
 
         positions = [(0, 0), ] * len(electrodes)
         graphics = [None, ] * len(electrodes)
@@ -356,7 +404,10 @@ class CeedDataReader(object):
                 fbo.add(StencilPop())
 
                 i += 1
-        fbo.add(Color(1, 1, 1, 1))
+
+        with fbo:
+            Color(1, 1, 1, 1)
+            PopMatrix()
 
         electrodes_data = [None, ] * len(electrodes)
         # y_min, y_max = float('inf'), float('-inf')
@@ -366,7 +417,7 @@ class CeedDataReader(object):
                 break
         freq = self.electrodes_metadata[name]['sampling_frequency']
 
-        frame_n = int(1 / rate * freq)
+        frame_n = int(1 / config['rate'] * freq)
         n_t = int(time_axis_s * freq)
         t_vals = np.arange(n_t) / (n_t - 1) * ew
         y_scale = (eh / 2) / volt_axis
@@ -375,16 +426,35 @@ class CeedDataReader(object):
             if name is None:
                 continue
             offset, scale = self.get_electrode_offset_scale(name)
-            electrodes_data[i] = data = \
+            electrodes_data[i] = \
                 self.electrodes_data[name], offset, scale / volt_scale
             # y_min = min(np.min(data), y_min)
             # y_max = max(np.max(data), y_max)
 
+        new_config = {
+            'alignment': alignment, 'frame_n': frame_n, 't_vals': t_vals,
+            'y_scale': y_scale, 'electrodes_data': electrodes_data, 'n_t': n_t,
+            'positions': positions, 'graphics': graphics, 'eh': eh}
+        return CallableGen(self._paint_electrodes_data(new_config))
+
+    def _paint_electrodes_data(self, config):
+        alignment = config['alignment']
+        frame_n = config['frame_n']
+        t_vals = config['t_vals']
+        y_scale = config['y_scale']
+        electrodes_data = config['electrodes_data']
+        n_t = config['n_t']
+        positions = config['positions']
+        graphics = config['graphics']
+        eh = config['eh']
+
+        indices = list(range(len(t_vals)))
+        verts = np.zeros(len(t_vals) * 4)
         k_start = None
         while True:
             i = yield
             if i >= len(alignment):
-                raise ValueError('Count value is too large')
+                raise EndOfDataException('Count value is too large')
             k = alignment[i]
 
             if k_start is None:
@@ -392,30 +462,42 @@ class CeedDataReader(object):
 
             k = k + frame_n if i == len(alignment) - 1 else alignment[i + 1]
             n = (k - k_start) % n_t
-            t = t_vals[:n]
 
             for data, (ex, ey), mesh in zip(
                     electrodes_data, positions, graphics):
                 if data is None:
                     continue
+
+                x_vals = t_vals[:n] + ex
+
                 data, offset, scale = data
-
                 data = (np.array(data[k - n:k]) - offset) * (y_scale * scale)
-                assert len(data) == len(t)
+                y_vals = data + ey + eh / 2
 
-                verts = [0, ] * (4 * len(data))
-                for j, (x, y) in enumerate(zip(t, data)):
-                    verts[j * 4] = x + ex
-                    verts[j * 4 + 1] = y + ey + eh / 2
-                mesh.vertices = verts
-                mesh.indices = range(len(data))
+                assert len(y_vals) == len(x_vals)
+
+                verts[:4 * n:4] = x_vals
+                verts[1:4 * n:4] = y_vals
+                mesh.vertices = memoryview(np.asarray(verts, dtype=np.float32))
+                mesh.indices = indices[:n]
+
+    def paint_electrodes_data_callbacks(self, electrodes, cols=1,
+            rows=None, spacing=2, draw_size=(0, 0), draw_size_hint=(1, 1),
+            draw_pos=(0, 0), draw_pos_hint=(None, None), volt_scale=1e-6,
+            time_axis_s=1, volt_axis=100):
+        return self._paint_electrodes_data_setup(
+            electrodes=electrodes, cols=cols, rows=rows, spacing=spacing,
+            draw_size=draw_size, draw_size_hint=draw_size_hint,
+            draw_pos=draw_pos, draw_pos_hint=draw_pos_hint,
+            volt_scale=volt_scale, time_axis_s=time_axis_s, volt_axis=volt_axis)
 
     def generate_movie(
             self, filename, out_fmt='yuv420p', codec='libx264',
-            lib_opts={'crf': '0'}, start=None, end=None, canvas_size=(0, 0),
-            canvas_size_hint=(1, 1), shape_pos=(0, 0),
-            shape_pos_hint=(None, None), metadata_funcs=[], alpha=1, lum=1,
-            speed=1, background=None):
+            lib_opts={'crf': '0'}, video_fmt='mp4', start=None, end=None,
+            canvas_size=(0, 0),
+            canvas_size_hint=(1, 1), projector_pos=(0, 0),
+            projector_pos_hint=(None, None), paint_funcs=(), alpha=1., lum=1.,
+            speed=1.):
         from kivy.graphics import (
             Canvas, Translate, Fbo, ClearColor, ClearBuffers, Scale)
         from kivy.core.window import Window
@@ -433,10 +515,10 @@ class CeedDataReader(object):
         w = int(canvas_w if cv_hint_w is None else orig_w * cv_hint_w)
         h = int(canvas_h if cv_hint_h is None else orig_h * cv_hint_h)
 
-        shape_x, shape_y = shape_pos
-        shape_hint_x, shape_hint_y = shape_pos_hint
-        x = int(shape_x if shape_hint_x is None else orig_w * shape_hint_x)
-        y = int(shape_y if shape_hint_y is None else orig_h * shape_hint_y)
+        projector_x, projector_y = projector_pos
+        projector_hint_x, projector_hint_y = projector_pos_hint
+        x = int(projector_x if projector_hint_x is None else orig_w * projector_hint_x)
+        y = int(projector_y if projector_hint_y is None else orig_h * projector_hint_y)
 
         Window.size = w, h
         intensities = self.shapes_intensity
@@ -461,7 +543,8 @@ class CeedDataReader(object):
             'width_in': w, 'height_in': h, 'width_out': w,
             'height_out': h, 'codec': codec,
             'frame_rate': (int(speed * rate_int), 1)}
-        writer = MediaWriter(filename, [stream], fmt='mp4', lib_opts=lib_opts)
+        writer = MediaWriter(
+            filename, [stream], fmt=video_fmt, lib_opts=lib_opts)
 
         fbo = Fbo(size=(w, h), with_stencilbuffer=True)
         with fbo:
@@ -470,15 +553,10 @@ class CeedDataReader(object):
             Scale(1, -1, 1)
             Translate(0, -h, 0)
 
-        metadata_funcs = [
-            f((x, y), (w, h), (orig_w, orig_h), fbo, rate)
-            for f in metadata_funcs]
-
-        if background is not None:
-            background(
-                fbo, (x, y),
-                (self.view_controller.screen_width,
-                 self.view_controller.screen_height))
+        config = {'canvas': fbo, 'pos': (x, y), 'size': (w, h),
+                  'orig_size': (orig_w, orig_h), 'rate': rate}
+        paint_funcs = [func(config) for func in paint_funcs]
+        paint_funcs = [func for func in paint_funcs if func is not None]
 
         fbo.draw()
         img = Image(plane_buffers=[fbo.pixels], pix_fmt='rgba', size=(w, h))
@@ -489,18 +567,27 @@ class CeedDataReader(object):
             fbo, 'stage_replay')
         fbo.add(Translate(-x, -y))
 
-        for i in tqdm(range(start, end)):
+        pbar = tqdm(
+            total=(end - 1 - start) / rate, file=sys.stdout, unit='second',
+            unit_scale=1)
+        for i in range(start, end):
+            pbar.update(1 / rate)
             for name, intensity in intensities.items():
                 r, g, b, a = intensity[i]
                 if not r and not g and not b:
                     a = 0
                 shape_views[name].rgba = r * lum, g * lum, b * lum, a * alpha
-            for f in metadata_funcs:
-                f(i)
+
+            try:
+                for func in paint_funcs:
+                    func(i)
+            except EndOfDataException:
+                break
 
             fbo.draw()
             img = Image(plane_buffers=[fbo.pixels], pix_fmt='rgba', size=(w, h))
             writer.write_frame(img, (i - start + 1) / (rate * speed))
+        print('done')
 
     @staticmethod
     def populate_config(
@@ -596,41 +683,22 @@ class CeedDataReader(object):
 
 
 if __name__ == '__main__':
-    from functools import partial
-    f = CeedDataReader(r'/home/cpl/Desktop/data/test_merged.h5')
+    f = CeedDataReader(r'F:\test_merged.h5')
     f.open_h5()
     f.load_mcs_data()
 
-    # for exp in f.get_experiments():
-    #     f.load_experiment(exp)
-    #     f.generate_movie(
-    #         r'/home/cpl/Desktop/data/test_merged{}.mp4'.format(exp), lum=3, speed=.25)
-    # exit()
-
     f.load_experiment(0)
-    background = None
-    # img = f.get_fluorescent_image()
-    # background = partial(
-    #     f._show_image, img=img, scale=f.view_controller.cam_scale,
-    #     translation=(
-    #         f.view_controller.cam_center_x - img.get_size()[0] / 2,
-    #         f.view_controller.cam_center_y - img.get_size()[1] / 2
-    #     ),
-    #     rotation=f.view_controller.cam_rotation)
-
-    # f.generate_movie(
-    #     r'E:\test.mp4', lum=3, speed=.1, background=background)
+    # f.save_flourescent_image(r'/home/cpl/Desktop/test_out.bmp')
 
     f.generate_movie(
-        r'/home/cpl/Desktop/data/test_merged_electrodes.mp4', lum=3, canvas_size_hint=(2, 1), speed=.2,
-        metadata_funcs=[f.paint_electrodes_data(
-            electrodes=CeedDataReader.get_128_electrode_names(),
-            draw_pos_hint=(1, 0), volt_axis=50, cols=12)],
-        background=background
+        r'E:\est_merged_electrodes.mp4', lum=3, canvas_size_hint=(2, 1),
+        speed=.2,
+        paint_funcs=[
+            f.paint_background_image(
+                f.get_fluorescent_image(),
+                transform_matrix=f.view_controller.cam_transform),
+            f.paint_electrodes_data_callbacks(
+                CeedDataReader.get_128_electrode_names(),
+                draw_pos_hint=(1, 0), volt_axis=50, cols=12)]
     )
     f.close_h5()
-
-    # f = CeedDataReader(r'/home/cpl/Desktop/test_out.h5')
-    # f.open_h5()
-    # f.load_experiment(0)
-    # f.save_flourescent_image(r'/home/cpl/Desktop/test_out.bmp')
