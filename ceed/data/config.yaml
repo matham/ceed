@@ -41,7 +41,7 @@ point_gray_cam:
     one_push: false, present: true, relative_value: 2177, value: 0.12402534484863281}
   tilt: {abs: false, auto: false, controllable: false, max: 0.0, min: 0.0, one_push: false,
     present: false, relative_value: 0, value: 0.0}
-remote_viewer: {port: 10000, server: 192.168.114.10, timeout: 0.1}
+remote_viewer: {port: 10000, server: 128.253.57.120, timeout: 0.1}
 serializer:
   clock_idx: 2
   count_indices: [19, 20]

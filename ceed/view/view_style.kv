@@ -3,9 +3,11 @@
 
 <ControlDisplay@FloatLayout>:
     ScrollView:
+        id: scroll
         scroll_type: ['bars']
         bar_width: '15dp'
         BoxLayout:
+            id: box
             size_hint: None, None
             size: app.view_controller.screen_width * scatter.scale + dp(65), app.view_controller.screen_height * scatter.scale + dp(50)
             padding: '40dp', '25dp', '25dp', '25dp'
@@ -73,6 +75,24 @@
                         pitch: app.view_controller.mea_pitch
                         diameter: app.view_controller.mea_diameter
                         mirror_mea: app.view_controller.mirror_mea
+            Widget:
+                size_hint: None, None
+                size: 0, 0
+                canvas:
+                    Color:
+                        rgba: 1, 1, 1, .5
+                    Rectangle:
+                        pos: scatter.x - dp(2), scatter.y - dp(2)
+                        size: dp(2), box.height - dp(46)
+                    Rectangle:
+                        pos: scatter.right, scatter.y - dp(2)
+                        size: dp(2), box.height - dp(46)
+                    Rectangle:
+                        pos: scatter.x, scatter.top
+                        size: box.width - dp(65), dp(2)
+                    Rectangle:
+                        pos: scatter.x, scatter.y - dp(2)
+                        size: box.width - dp(65), dp(2)
     BoxLayout:
         orientation: 'vertical'
         pos: self.parent.x + dp(2), self.parent.top - self.height - dp(5)
