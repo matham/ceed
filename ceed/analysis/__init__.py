@@ -3,8 +3,10 @@ import sys
 import scipy.io
 import numpy as np
 from fractions import Fraction
+import string
 import sys
 import logging
+import itertools
 import nixio as nix
 import re
 from numpy.lib.format import open_memmap
@@ -125,20 +127,23 @@ class CeedDataReader(object):
         self._nix_file = nix.File.open(
             self.filename, nix.FileMode.ReadOnly)
 
-    @staticmethod
-    def get_128_electrode_names(movie_padding=True):
+    def get_electrode_names(self):
         names = []
-        disabled = set([
+        disabled = {
             'A1', 'A2', 'A3', 'A10', 'A11', 'A12',
             'B1', 'B2', 'B11', 'B12',
             'C1', 'C12',
             'K1', 'K12',
             'L1', 'L2', 'L11', 'L12',
-            'M1', 'M2', 'M3', 'M10', 'M11', 'M12'])
-        for row in range(12, 0, -1):
-            for col in 'ABCDEFGHJKLM':
+            'M1', 'M2', 'M3', 'M10', 'M11', 'M12'}
+
+        for row in range(1, self.view_controller.mea_num_rows + 1):
+            row_names = []
+            names.append(row_names)
+            for col in "ABCDEFGHJKLMNOPQRSTUVWXYZ"[
+                       :self.view_controller.mea_num_cols]:
                 name = '{}{}'.format(col, row)
-                names.append(None if name in disabled else name)
+                row_names.append(None if name in disabled else name)
         return names
 
     def get_experiments(self):
@@ -324,29 +329,37 @@ class CeedDataReader(object):
 
     @partial_func
     def _paint_electrodes_data_setup(
-            self, config, electrodes, cols=1,
-            rows=None, spacing=2, draw_size=(0, 0), draw_size_hint=(1, 1),
+            self, config, electrode_names,
+            spacing=2, draw_size=(0, 0), draw_size_hint=(1, 1),
             draw_pos=(0, 0), draw_pos_hint=(None, None), volt_scale=1e-6,
-            time_axis_s=1, volt_axis=100, transform_matrix=None):
+            time_axis_s=1, volt_axis=100, transform_matrix=None,
+            label_width=70):
         from kivy.graphics import (
             Mesh, StencilPush, StencilUse, StencilUnUse, StencilPop, Rectangle,
             Color)
         from kivy.graphics.context_instructions import (
             PushMatrix, PopMatrix, Scale, MatrixInstruction)
         from kivy.graphics.transformation import Matrix
-        if not cols and not rows:
-            raise ValueError("Either rows or cols must be specified")
-        if rows and cols:
-            raise ValueError('Only one of cols and rows can be specified')
+        from kivy.base import EventLoop
+        EventLoop.ensure_window()
+        from kivy.core.text import Label
+        from kivy.metrics import dp, sp
 
-        if not rows:
-            rows = int(math.ceil(len(electrodes) / cols))
-        if not cols:
-            cols = int(math.ceil(len(electrodes) / rows))
+        n_rows = len(electrode_names)
+        if not n_rows:
+            raise ValueError("There must be at least one electrode specified")
+        n_cols = len(electrode_names[0])
+        if not n_cols:
+            raise ValueError("There must be at least one electrode specified")
+        if not all((len(row) == n_cols for row in electrode_names)):
+            raise ValueError(
+                "The number of electrodes in all rows must be the same")
+        n_electrodes = sum(map(len, electrode_names))
 
         orig_w, orig_h = config['orig_size']
         fbo = config['canvas']
 
+        label_height = 45 if label_width else 0
         draw_w, draw_h = draw_size
         draw_hint_w, draw_hint_h = draw_size_hint
         w = int(draw_w if draw_hint_w is None else orig_w * draw_hint_w)
@@ -357,12 +370,12 @@ class CeedDataReader(object):
         x = int(draw_x if draw_hint_x is None else orig_w * draw_hint_x)
         y = int(draw_y if draw_hint_y is None else orig_h * draw_hint_y)
 
-        ew = int((w - max(0, cols - 1) * spacing) / cols)
-        eh = int((h - max(0, rows - 1) * spacing) / rows)
+        ew = int((w - label_width - max(0, n_cols - 1) * spacing) / n_cols)
+        eh = int((h - label_height - max(0, n_rows - 1) * spacing) / n_rows)
 
         with fbo:
             PushMatrix()
-            center = x + w / 2., y + h / 2.
+            # center = x + w / 2., y + h / 2.
             # if scale:
             #     Scale(scale, scale, 1, origin=center)
             if transform_matrix is not None:
@@ -371,29 +384,27 @@ class CeedDataReader(object):
                 m = MatrixInstruction()
                 m.matrix = mat
 
-        positions = [(0, 0), ] * len(electrodes)
-        graphics = [None, ] * len(electrodes)
+        positions = [(0, 0), ] * n_electrodes
+        graphics = [None, ] * n_electrodes
         i = 0
-        fbo.add(Color(1, 215 / 255, 0, 1))
-        for row in range(rows):
-            if i >= len(electrodes):
-                break
-            ey = y
+
+        electrode_color = 1, 215 / 255, 0, 1
+        for row, row_names in enumerate(reversed(electrode_names)):
+            ey = y + label_height
             if row:
                 ey += (eh + spacing) * row
 
-            for col in range(cols):
-                if i >= len(electrodes):
-                    break
-                if electrodes[i] is None:
+            for col, name in enumerate(row_names):
+                if name is None:
                     i += 1
                     continue
 
-                ex = x
+                ex = x + label_width
                 if col:
                     ex += (ew + spacing) * col
 
                 positions[i] = ex, ey
+                fbo.add(Color(*electrode_color))
                 fbo.add(StencilPush())
                 fbo.add(Rectangle(pos=(ex, ey), size=(ew, eh)))
                 fbo.add(StencilUse())
@@ -405,14 +416,43 @@ class CeedDataReader(object):
 
                 i += 1
 
+                if label_width:
+                    if not col:
+                        fbo.add(Color(1, 1, 1, 1))
+                        label = Label(text=name, font_size=sp(40))
+                        label.refresh()
+                        _w, _h = label.texture.size
+                        rect = Rectangle(
+                            pos=(x, ey + (eh - _h) / 2.),
+                            size=label.texture.size)
+                        rect.texture = label.texture
+                        fbo.add(rect)
+
+                    if not row:
+                        fbo.add(Color(1, 1, 1, 1))
+                        label = Label(text=name, font_size=sp(40))
+                        label.refresh()
+                        _w, _h = label.texture.size
+                        rect = Rectangle(
+                            pos=(ex + (ew - _w) / 2., y),
+                            size=label.texture.size)
+                        rect.texture = label.texture
+                        fbo.add(rect)
+
         with fbo:
             Color(1, 1, 1, 1)
             PopMatrix()
 
-        electrodes_data = [None, ] * len(electrodes)
+        electrodes_data = [None, ] * n_electrodes
         # y_min, y_max = float('inf'), float('-inf')
         alignment = np.array(self.electrode_intensity_alignment)
-        for name in electrodes:
+
+        # get the frequency from any channel
+        name = None
+        for row_names in electrode_names:
+            for name in row_names:
+                if name is not None:
+                    break
             if name is not None:
                 break
         freq = self.electrodes_metadata[name]['sampling_frequency']
@@ -422,7 +462,7 @@ class CeedDataReader(object):
         t_vals = np.arange(n_t) / (n_t - 1) * ew
         y_scale = (eh / 2) / volt_axis
 
-        for i, name in enumerate(electrodes):
+        for i, name in enumerate(itertools.chain(*electrode_names)):
             if name is None:
                 continue
             offset, scale = self.get_electrode_offset_scale(name)
@@ -481,23 +521,99 @@ class CeedDataReader(object):
                 mesh.vertices = memoryview(np.asarray(verts, dtype=np.float32))
                 mesh.indices = indices[:n]
 
-    def paint_electrodes_data_callbacks(self, electrodes, cols=1,
-            rows=None, spacing=2, draw_size=(0, 0), draw_size_hint=(1, 1),
-            draw_pos=(0, 0), draw_pos_hint=(None, None), volt_scale=1e-6,
-            time_axis_s=1, volt_axis=100):
+    def paint_electrodes_data_callbacks(
+            self, electrode_names, spacing=2, draw_size=(0, 0),
+            draw_size_hint=(1, 1), draw_pos=(0, 0), draw_pos_hint=(None, None),
+            volt_scale=1e-6, time_axis_s=1, volt_axis=100):
         return self._paint_electrodes_data_setup(
-            electrodes=electrodes, cols=cols, rows=rows, spacing=spacing,
+            electrode_names=electrode_names, spacing=spacing,
             draw_size=draw_size, draw_size_hint=draw_size_hint,
             draw_pos=draw_pos, draw_pos_hint=draw_pos_hint,
             volt_scale=volt_scale, time_axis_s=time_axis_s, volt_axis=volt_axis)
+
+    def _show_mea_outline(self, config, transform_matrix=None):
+        from kivy.graphics import (
+            Line, StencilPush, StencilUse, StencilUnUse, StencilPop, Rectangle,
+            Color)
+        from kivy.graphics.context_instructions import (
+            PushMatrix, PopMatrix, Rotate, Translate, Scale, MatrixInstruction,
+            BindTexture)
+        from kivy.graphics.transformation import Matrix
+        from kivy.base import EventLoop
+        EventLoop.ensure_window()
+        from kivy.core.text import Label
+        from kivy.metrics import dp, sp
+
+        size = config['orig_size']
+        pos = config['pos']
+        canvas = config['canvas']
+        mea_w = max(self.view_controller.mea_num_cols - 1, 0) * \
+            self.view_controller.mea_pitch
+        mea_h = max(self.view_controller.mea_num_rows - 1, 0) * \
+            self.view_controller.mea_pitch
+        last_col = "ABCDEFGHJKLMNOPQRSTUVWXYZ"[
+            self.view_controller.mea_num_cols - 1]
+
+        with canvas:
+            StencilPush()
+            Rectangle(pos=pos, size=size)
+            StencilUse()
+
+            PushMatrix()
+            if transform_matrix is not None:
+                mat = Matrix()
+                mat.set(array=transform_matrix)
+                m = MatrixInstruction()
+                m.matrix = mat
+            Color(1, 215 / 255, 0, .2)
+            Line(points=[0, 0, mea_w, 0, mea_w, mea_h, 0, mea_h], close=True)
+
+            label = Label(text='A1', font_size=sp(12))
+            label.refresh()
+            _w, _h = label.texture.size
+            rect = Rectangle(
+                pos=(mea_w, mea_h - _h / 2.), size=label.texture.size)
+            rect.texture = label.texture
+
+            label = Label(
+                text='A{}'.format(self.view_controller.mea_num_rows),
+                font_size=sp(12))
+            label.refresh()
+            _w, _h = label.texture.size
+            rect = Rectangle(
+                pos=(-_w, mea_h - _h / 2.), size=label.texture.size)
+            rect.texture = label.texture
+
+            label = Label(text='{}1'.format(last_col), font_size=sp(12))
+            label.refresh()
+            _w, _h = label.texture.size
+            rect = Rectangle(pos=(mea_w, -_h / 2.), size=label.texture.size)
+            rect.texture = label.texture
+
+            label = Label(
+                text='{}{}'.format(last_col, self.view_controller.mea_num_rows),
+                font_size=sp(12))
+            label.refresh()
+            _w, _h = label.texture.size
+            rect = Rectangle(pos=(-_w, -_h / 2.), size=label.texture.size)
+            rect.texture = label.texture
+            PopMatrix()
+
+            StencilUnUse()
+            Rectangle(pos=pos, size=size)
+            StencilPop()
+
+    def show_mea_outline(self, transform_matrix=None):
+        return partial_func(self._show_mea_outline)(
+            transform_matrix=transform_matrix)
 
     def generate_movie(
             self, filename, out_fmt='yuv420p', codec='libx264',
             lib_opts={'crf': '0'}, video_fmt='mp4', start=None, end=None,
             canvas_size=(0, 0),
             canvas_size_hint=(1, 1), projector_pos=(0, 0),
-            projector_pos_hint=(None, None), paint_funcs=(), alpha=1., lum=1.,
-            speed=1.):
+            projector_pos_hint=(None, None), paint_funcs=(),
+            stimulation_transparency=1., lum=1., speed=1.):
         from kivy.graphics import (
             Canvas, Translate, Fbo, ClearColor, ClearBuffers, Scale)
         from kivy.core.window import Window
@@ -517,8 +633,10 @@ class CeedDataReader(object):
 
         projector_x, projector_y = projector_pos
         projector_hint_x, projector_hint_y = projector_pos_hint
-        x = int(projector_x if projector_hint_x is None else orig_w * projector_hint_x)
-        y = int(projector_y if projector_hint_y is None else orig_h * projector_hint_y)
+        x = int(projector_x if projector_hint_x is None else
+                orig_w * projector_hint_x)
+        y = int(projector_y if projector_hint_y is None else
+                orig_h * projector_hint_y)
 
         Window.size = w, h
         intensities = self.shapes_intensity
@@ -576,7 +694,8 @@ class CeedDataReader(object):
                 r, g, b, a = intensity[i]
                 if not r and not g and not b:
                     a = 0
-                shape_views[name].rgba = r * lum, g * lum, b * lum, a * alpha
+                shape_views[name].rgba = \
+                    r * lum, g * lum, b * lum, a * stimulation_transparency
 
             try:
                 for func in paint_funcs:
@@ -697,8 +816,8 @@ if __name__ == '__main__':
             f.paint_background_image(
                 f.get_fluorescent_image(),
                 transform_matrix=f.view_controller.cam_transform),
+            f.show_mea_outline(f.view_controller.mea_transform),
             f.paint_electrodes_data_callbacks(
-                CeedDataReader.get_128_electrode_names(),
-                draw_pos_hint=(1, 0), volt_axis=50, cols=12)]
+                f.get_electrode_names(), draw_pos_hint=(1, 0), volt_axis=50)]
     )
     f.close_h5()

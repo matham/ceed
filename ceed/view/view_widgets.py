@@ -73,8 +73,6 @@ class MEAArrayAlign(KNSpaceBehavior, Scatter):
 
     diameter = NumericProperty(3)
 
-    mirror_mea = BooleanProperty(True)
-
     show = BooleanProperty(False)
 
     color = None
@@ -83,11 +81,10 @@ class MEAArrayAlign(KNSpaceBehavior, Scatter):
 
     def __init__(self, **kwargs):
         super(MEAArrayAlign, self).__init__(**kwargs)
-        label = self.label = Factory.XYSizedLabel(text='11')
+        label = self.label = Factory.XYSizedLabel(text='A1')
         self.add_widget(label)
         self.fbind('num_rows', self.update_graphics)
         self.fbind('num_cols', self.update_graphics)
-        self.fbind('mirror_mea', self.update_graphics)
         self.fbind('pitch', self.update_graphics)
         self.fbind('diameter', self.update_graphics)
         self.update_graphics()
@@ -113,11 +110,8 @@ class MEAArrayAlign(KNSpaceBehavior, Scatter):
 
         h = max((self.num_rows - 1) * pitch, 0)
         w = max((self.num_cols - 1) * pitch, 0)
-        if self.mirror_mea:
-            self.label.y = h
-            self.label.right = w
-        else:
-            self.label.pos = 0, h
+        self.label.y = h
+        self.label.right = w
         self.size = w, h + 35
 
     def on_touch_down(self, touch):
