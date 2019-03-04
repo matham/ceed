@@ -156,16 +156,6 @@
         scale_down_color: True
         flat_color: app.theme.accent
         hover_text: '[b]hide[/b] / show projector window' if self.state == 'normal' else 'hide / [b]show[/b] projector window'
-    FlatImageToggleButton:
-        knsname: 'gui_remote_view'
-        on_release:
-            app.remote_viewer.start_listener() if self.state == 'down' else app.remote_viewer.stop_listener()
-            if app.view_controller.propixx_lib and self.state == 'down': app.view_controller.set_led_mode(app.view_controller.LED_mode_idle)
-        state: 'down' if app.remote_viewer.running else 'normal'
-        source: 'ic_cast_white_24dp_1x.png' if self.state == 'normal' else 'ic_cast_connected_white_24dp_1x.png'
-        scale_down_color: True
-        flat_color: app.theme.accent
-        hover_text: 'Remote viewer ' + ('[b]disconnected[/b]' if self.state == 'normal' else '[b]connected[/b]')
     FlatImageButton:
         on_parent: self.stage_graph = Factory.StageGraphPopup()
         on_release: self.stage_graph.open()
