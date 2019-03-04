@@ -73,12 +73,14 @@ class CeedDataWriterBase(EventDispatcher):
                 self.backup_interval):
             Clock.schedule_interval(self.write_changes, self.backup_interval)
 
-    def gather_config_data_dict(self):
+    def gather_config_data_dict(self, stages_only=False):
         app = App.get_running_app()
         data = {}
         data['shape'] = app.shape_factory.get_state()
         data['function'] = app.function_factory.save_functions()
         data['stage'] = app.stage_factory.save_stages()
+        if stages_only:
+            return data
 
         App.get_running_app().dump_app_settings_to_file()
         App.get_running_app().load_app_settings_from_file()
@@ -95,13 +97,17 @@ class CeedDataWriterBase(EventDispatcher):
         app.shape_factory.delete_all_shapes(keep_locked_shapes=False)
         app.function_factory.clear_added_funcs(force=True)
 
-    def apply_config_data_dict(self, data):
+    def apply_config_data_dict(
+            self, data, stages_only=False, requires_app_settings=True):
         app = App.get_running_app()
-        app_settings = data['app_settings']
-        # filter classes that are not of this app
-        classes = app.get_config_classes()
-        app.app_settings = {cls: app_settings[cls] for cls in classes}
-        app.apply_app_settings()
+
+        if not stages_only and (
+                requires_app_settings or 'app_settings' in data):
+            app_settings = data['app_settings']
+            # filter classes that are not of this app
+            classes = app.get_config_classes()
+            app.app_settings = {cls: app_settings[cls] for cls in classes}
+            app.apply_app_settings()
 
         from ceed.analysis import CeedDataReader
         funcs, stages = CeedDataReader.populate_config(
@@ -115,7 +121,7 @@ class CeedDataWriterBase(EventDispatcher):
                 self.stage_display_callback(stage)
 
     def get_filebrowser_callback(
-            self, func, check_exists=False, clear_data=False):
+            self, func, check_exists=False, clear_data=False, **kwargs):
 
         def callback(path, selection, filename):
             if not isdir(path) or not filename:
@@ -134,7 +140,7 @@ class CeedDataWriterBase(EventDispatcher):
                         if clear_data:
                             self.close_file(force_remove_autosave=True)
                             self.clear_existing_config_data()
-                        func(fname, overwrite)
+                        func(fname, overwrite, **kwargs)
 
                     yesno = App.get_running_app().yesno_prompt
                     yesno.msg = ('"{}" already exists, would you like to '
@@ -145,7 +151,7 @@ class CeedDataWriterBase(EventDispatcher):
                     if clear_data:
                         self.close_file(force_remove_autosave=True)
                         self.clear_existing_config_data()
-                    func(fname)
+                    func(fname, **kwargs)
 
             if clear_data and (self.has_unsaved or self.config_changed):
                 yesno = App.get_running_app().yesno_prompt
@@ -267,7 +273,7 @@ class CeedDataWriterBase(EventDispatcher):
         self.filename = self.backup_filename = ''
         self.config_changed = self.has_unsaved = False
 
-    def import_file(self, filename):
+    def import_file(self, filename, stages_only=False):
         '''Loads the file's config data. '''
         f = nix.File.open(filename, nix.FileMode.ReadOnly)
         Logger.debug(
@@ -283,7 +289,7 @@ class CeedDataWriterBase(EventDispatcher):
         else:
             f.close()
 
-        self.apply_config_data_dict(data)
+        self.apply_config_data_dict(data, stages_only=stages_only)
         self.config_changed = True
 
     def discard_file(self,):
@@ -342,19 +348,22 @@ class CeedDataWriterBase(EventDispatcher):
             if self.data_lock:
                 self.data_lock.release()
 
-    def write_yaml_config(self, filename, overwrite=False):
+    def write_yaml_config(self, filename, overwrite=False, stages_only=False):
         if exists(filename) and not overwrite:
             raise ValueError('{} already exists'.format(filename))
 
-        data = yaml_dumps(self.gather_config_data_dict())
+        data = yaml_dumps(self.gather_config_data_dict(stages_only=stages_only))
         with open(filename, 'w') as fh:
             fh.write(data)
 
-    def read_yaml_config(self, filename):
+    def read_yaml_config(
+            self, filename, stages_only=False, requires_app_settings=True):
         with open(filename, 'r') as fh:
             data = fh.read()
         data = yaml_loads(data)
-        self.apply_config_data_dict(data)
+        self.apply_config_data_dict(
+            data, stages_only=stages_only,
+            requires_app_settings=requires_app_settings)
         self.config_changed = True
 
     def write_config(self, config_section=None):

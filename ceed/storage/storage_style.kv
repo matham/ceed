@@ -76,7 +76,7 @@
                     app.filebrowser.callback = app.ceed_data.get_filebrowser_callback(app.ceed_data.open_file, clear_data=True)
                     app.filebrowser.open()
             FlatButton:
-                text: 'Import metadata from file'
+                text: 'Import all settings from file'
                 size_hint: None, None
                 size: self.texture_size
                 scale_down_color: True
@@ -85,6 +85,17 @@
                     app.filebrowser.target = app.ceed_data.root_path
                     app.filebrowser.dirselect =  app.filebrowser.multiselect = False
                     app.filebrowser.callback = app.ceed_data.get_filebrowser_callback(app.ceed_data.import_file)
+                    app.filebrowser.open()
+            FlatButton:
+                text: 'Import stages from file'
+                size_hint: None, None
+                size: self.texture_size
+                scale_down_color: True
+                flat_color: app.theme.text_primary
+                on_release:
+                    app.filebrowser.target = app.ceed_data.root_path
+                    app.filebrowser.dirselect =  app.filebrowser.multiselect = False
+                    app.filebrowser.callback = app.ceed_data.get_filebrowser_callback(app.ceed_data.import_file, stages_only=True)
                     app.filebrowser.open()
             FlatButton:
                 text: 'Close current file & clear'
@@ -101,7 +112,7 @@
                 flat_color: app.theme.text_primary
                 on_release: app.ceed_data.discard_file()
             FlatButton:
-                text: 'Load metadata from YAML'
+                text: 'Import & append all settings from YAML'
                 size_hint: None, None
                 size: self.texture_size
                 scale_down_color: True
@@ -109,10 +120,10 @@
                 on_release:
                     app.filebrowser.target = app.ceed_data.root_path
                     app.filebrowser.dirselect =  app.filebrowser.multiselect = False
-                    app.filebrowser.callback = app.ceed_data.get_filebrowser_callback(app.ceed_data.read_yaml_config)
+                    app.filebrowser.callback = app.ceed_data.get_filebrowser_callback(app.ceed_data.read_yaml_config, requires_app_settings=False)
                     app.filebrowser.open()
             FlatButton:
-                text: 'Export metadata to YAML'
+                text: 'Export all settings to YAML'
                 size_hint: None, None
                 size: self.texture_size
                 scale_down_color: True
@@ -121,4 +132,26 @@
                     app.filebrowser.target = app.ceed_data.root_path
                     app.filebrowser.dirselect =  app.filebrowser.multiselect = False
                     app.filebrowser.callback = app.ceed_data.get_filebrowser_callback(app.ceed_data.write_yaml_config, True)
+                    app.filebrowser.open()
+            FlatButton:
+                text: 'Import & append stages from YAML'
+                size_hint: None, None
+                size: self.texture_size
+                scale_down_color: True
+                flat_color: app.theme.text_primary
+                on_release:
+                    app.filebrowser.target = app.ceed_data.root_path
+                    app.filebrowser.dirselect =  app.filebrowser.multiselect = False
+                    app.filebrowser.callback = app.ceed_data.get_filebrowser_callback(app.ceed_data.read_yaml_config, stages_only=True)
+                    app.filebrowser.open()
+            FlatButton:
+                text: 'Export stages to YAML'
+                size_hint: None, None
+                size: self.texture_size
+                scale_down_color: True
+                flat_color: app.theme.text_primary
+                on_release:
+                    app.filebrowser.target = app.ceed_data.root_path
+                    app.filebrowser.dirselect =  app.filebrowser.multiselect = False
+                    app.filebrowser.callback = app.ceed_data.get_filebrowser_callback(app.ceed_data.write_yaml_config, True, stages_only=True)
                     app.filebrowser.open()
