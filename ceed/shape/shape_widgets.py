@@ -158,7 +158,7 @@ class CeedPainter(CeedPaintCanvasBehavior, Widget):
     def add_enclosing_polygon(self):
         w, h = self.size
         self.create_add_shape(
-            'polygon', points=[0, 0, w, 0, w, h, 0, h])
+            'polygon', points=[0, 0, w, 0, w, h, 0, h], name='enclosed')
 
     def select_shape(self, shape):
         if super(CeedPainter, self).select_shape(shape):
