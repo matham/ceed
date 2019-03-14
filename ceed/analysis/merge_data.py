@@ -1,4 +1,6 @@
+import sys
 import datetime
+from tqdm import tqdm
 import numbers
 import os.path
 from math import ceil
@@ -415,25 +417,36 @@ class CeedMCSDataMerger(object):
                 'experiment_{}'.format(exp), 'experiment_{}'.format(exp),
                 data=indices)
 
+        streams = mcs_f.recordings[0].analog_streams
+        num_channels = 0
+        for stream in streams.values():
+            if 128 in stream.channel_infos:
+                num_channels += 1
+            elif 0 in stream.channel_infos:
+                num_channels += len(stream.channel_infos)
+
+        pbar = tqdm(
+            total=num_channels, file=sys.stdout, unit_scale=1,
+            unit='data channels')
+
         block = f.create_block('mcs_data', 'mcs_raw_experiment_data')
         block.metadata = section = f.create_section(
             'mcs_metadata', 'Associated metadata for the mcs data')
-        for stream_id in mcs_f.recordings[0].analog_streams:
-            stream = mcs_f.recordings[0].analog_streams[stream_id]
+        for stream_id, stream in streams.items():
             if 128 in stream.channel_infos:
+                pbar.update()
                 block.create_data_array(
                     'digital_io', 'digital_io',
                     data=np.array(stream.channel_data).squeeze())
             elif 0 in stream.channel_infos:
                 for i in stream.channel_infos:
-                    print('writing channel {}'.format(i))
                     info = stream.channel_infos[i].info
+                    pbar.update()
 
                     elec_sec = section.create_section(
                         'electrode_{}'.format(info['Label']),
                         'metadata for this electrode')
                     for key, val in info.items():
-                        #print(key, val, type(key), type(val))
                         if isinstance(val, np.generic):
                             val = val.item()
                         elec_sec[key] = yaml_dumps(val)
