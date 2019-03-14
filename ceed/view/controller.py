@@ -96,7 +96,7 @@ class ViewControllerBase(EventDispatcher):
         'fullscreen', 'video_mode', 'LED_mode', 'LED_mode_idle',
         'vpixx_remote', 'mirror_mea', 'mea_num_rows', 'mea_num_cols',
         'mea_pitch', 'mea_diameter', 'mea_transform', 'cam_transform',
-        'flip_projector')
+        'flip_projector', 'flip_camera')
 
     screen_width = NumericProperty(1920)
     '''The screen width on which the data is played. This is the full-screen
@@ -104,6 +104,8 @@ class ViewControllerBase(EventDispatcher):
     '''
 
     flip_projector = BooleanProperty(True)
+
+    flip_camera = BooleanProperty(False)
 
     screen_height = NumericProperty(1080)
     '''The screen height on which the data is played. This is the full-screen

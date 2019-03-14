@@ -36,6 +36,7 @@
                     #         size: self.width, max(0, layout.height - self.height)
                     BufferImage:
                         knsname: 'central_display'
+                        flip: app.view_controller.flip_camera
                         auto_bring_to_front: False
                         size_hint: None, None
                         on_image_size:
@@ -202,6 +203,14 @@
                 text: 'true' if app.view_controller.flip_projector else 'false'
                 state: 'down' if app.view_controller.flip_projector else 'normal'
                 on_state: app.view_controller.flip_projector = self.state == 'down'
+            ThemedLabel:
+                size_hint: None, None
+                size: self.texture_size
+                text: 'Reflect camera horizontally'
+            LightThemedToggleButton:
+                text: 'true' if app.view_controller.flip_camera else 'false'
+                state: 'down' if app.view_controller.flip_camera else 'normal'
+                on_state: app.view_controller.flip_camera = self.state == 'down'
             ThemedLabel:
                 size_hint: None, None
                 size: self.texture_size
