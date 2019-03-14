@@ -10,6 +10,7 @@ if __name__ == '__main__':
 
 from functools import partial
 from os.path import join, dirname
+import time
 
 from cplcom.app import CPLComApp, run_app as run_cpl_app
 from cplcom.graphics import HighightButtonBehavior
@@ -28,6 +29,7 @@ import ceed.function.func_widgets
 import ceed.stage.stage_widgets
 import ceed.shape.shape_widgets
 import ceed.view.view_widgets
+import ceed.storage.storage_widgets
 
 from ceed.function import FunctionFactoryBase, register_all_functions
 from ceed.stage import StageFactoryBase, remove_shapes_upon_deletion
@@ -205,6 +207,7 @@ def _cleanup(app, *largs):
     if app.ceed_data is not None:
         app.ceed_data.stop_experiment()
     app.dump_app_settings_to_file()
+
 
 run_app = partial(run_cpl_app, CeedApp, _cleanup)
 '''The function that starts the GUI and the entry point for

@@ -92,8 +92,6 @@ class CeedDataReader(object):
 
     _block = None
 
-    _experiment_pat = re.compile('^experiment([0-9]+)$')
-
     _YUV_RGB_FS = '''
     $HEADER$
     uniform sampler2D tex_y;
@@ -146,13 +144,10 @@ class CeedDataReader(object):
                 row_names.append(None if name in disabled else name)
         return names
 
-    def get_experiments(self):
-        experiments = []
-        for block in self._nix_file.blocks:
-            m = re.match(self._experiment_pat, block.name)
-            if m is not None:
-                experiments.append(m.group(1))
-        return list(sorted(experiments, key=int))
+    def get_experiment_numbers(self):
+        from ceed.storage.controller import CeedDataWriterBase
+        return CeedDataWriterBase.get_blocks_experiment_numbers(
+            self._nix_file.blocks)
 
     def load_experiment(self, experiment):
         self._block = block = self._nix_file.blocks[
@@ -723,9 +718,9 @@ class CeedDataReader(object):
         return funcs, stages
 
     @staticmethod
-    def read_fluorescent_image_from_block(block):
+    def read_fluorescent_image_from_block(block, postfix=''):
         try:
-            group = block.groups['fluorescent_image']
+            group = block.groups['fluorescent_image{}'.format(postfix)]
         except KeyError:
             return None
 

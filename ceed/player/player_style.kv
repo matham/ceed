@@ -1,4 +1,5 @@
 #:import Factory kivy.factory.Factory
+#:import Clock kivy.clock.Clock
 #:import dp kivy.metrics.dp
 #:import partial functools.partial
 #:import knspace kivy.uix.behaviors.knspace.knspace
@@ -227,6 +228,41 @@
         on_state: knspace.player.record() if self.state == 'down' else knspace.player.stop_recording()
     FlatDivider:
         color: app.theme.divider
+    FlatImageButton:
+        id: h5_save_image_btn
+        scale_down_color: True
+        source: 'content-save-move.png'
+        hover_text: 'save cam image to current h5 file'
+        flat_color: app.theme.accent
+        last_image: None
+        on_press: self.last_image = knspace.player.last_image
+        on_release: self.h5_save.open(self)
+        h5_save: h5_save.__self__
+        on_parent: Clock.schedule_once(lambda *x: self.parent.remove_widget(self.h5_save))
+    FlatDropDown:
+        id: h5_save
+        flat_color: app.theme.primary_text
+        flat_border_color: app.theme.divider
+        BoxLayout:
+            spacing: '10dp'
+            size_hint: None, None
+            height: 3 * image_notes.line_height
+            width: '400dp'
+            FlatTextInput:
+                id: image_notes
+                hint_text: "Image notes"
+            FlatButton:
+                size_hint_x: None
+                width: self.texture_size[0]
+                padding: '5dp', '5dp'
+                scale_down_color: True
+                flat_background_color: app.theme.accent
+                disabled: h5_save_image_btn.last_image is None
+                on_release:
+                    app.ceed_data.add_image_to_file(h5_save_image_btn.last_image, image_notes.text)
+                    image_notes.text = ''
+                    h5_save.dismiss()
+                text: 'Add to file'
     FlatImageButton:
         scale_down_color: True
         source: 'flat_screenshot_save.png'

@@ -217,21 +217,16 @@ class CeedMCSDataMerger(object):
 
     mcs_data_container = None
 
-    _experiment_pat = re.compile('^experiment([0-9]+)$')
-
     @staticmethod
-    def get_experiment_names(filename, ignore_list=[]):
+    def get_experiment_numbers(filename, ignore_list=None):
+        from ceed.storage.controller import CeedDataWriterBase
         nix_file = nix.File.open(filename, nix.FileMode.ReadOnly)
-        experiments = []
-        ignore_list = set(map(str, ignore_list))
-
-        for block in nix_file.blocks:
-            m = re.match(CeedMCSDataMerger._experiment_pat, block.name)
-            if m is not None and m.group(1) not in ignore_list:
-                experiments.append(m.group(1))
-
-        nix_file.close()
-        return list(sorted(experiments, key=int))
+        try:
+            names = CeedDataWriterBase.get_blocks_experiment_numbers(
+                nix_file.blocks, ignore_list)
+        finally:
+            nix_file.close()
+        return names
 
     def read_mcs_digital_data(self, filename):
         data = McsPy.McsData.RawData(filename)
@@ -469,7 +464,7 @@ if __name__ == '__main__':
     init = False
 
     alignment = {}
-    for experiment in merger.get_experiment_names(ceed_file, ignore_list=[]):
+    for experiment in merger.get_experiment_numbers(ceed_file, ignore_list=[]):
         merger.read_ceed_digital_data(ceed_file, experiment)
         merger.parse_ceed_digital_data()
 

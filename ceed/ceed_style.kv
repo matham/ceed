@@ -1,3 +1,4 @@
+#:import Factory kivy.factory.Factory
 
 <PinnedGraph@KNSpaceBehavior+BoxLayout>
 
@@ -50,13 +51,29 @@
             size_hint_y: None
             height: video.height
             color: app.theme.divider
+        FlatLabel:
+            text: str(error_indicator.count)
+            size_hint: None, None
+            size: self.texture_size[0], video.height
+            padding: '1dp', '5dp'
+            flat_color: app.theme.text_primary
         FlatErrorIndicatorPopup:
+            id: error_indicator
             scale_down_color: True
             source: 'flat_alert.png'
             flat_color: app.theme.accent
             size_hint_y: None
             height: video.height
-            on_parent: app.error_indicator = self
+            on_parent:
+                app.error_indicator = self
+                w = Factory.UserLogText()
+                w.logger = self
+                self._display.user_container.add_widget(w)
+                self.levels = dict(self.levels)
+                self.levels['user'] = self.levels['info']
+                self.icon_names = {'user': 'info'}
+            on_log_event: if args[3] != 'error': app.ceed_data.add_log_item('{}: {}'.format(args[3], args[2]))
+            on_release: self.count = 0
     PinnedGraph:
         knsname: 'pinned_graph'
         size_hint_y: None
@@ -84,3 +101,22 @@
             ShapeListing
             StageListing
             FuncListing
+
+
+<UserLogText@BoxLayout>:
+    user_callback: None
+    spacing: '10dp'
+    size_hint_y: None
+    logger: None
+    height: 2 * text.line_height
+    TextInput:
+        id: text
+        hint_text: "Notes"
+    Button:
+        size_hint_x: None
+        width: self.texture_size[0]
+        padding: '5dp', '5dp'
+        on_release:
+            if text.text: root.logger.add_item(text.text, 'user')
+            text.text = ''
+        text: 'Write to log'

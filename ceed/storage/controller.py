@@ -18,8 +18,11 @@ try:
 except ImportError:
     from queue import Queue, Empty
 import numpy as np
+from functools import partial
 import struct
+import re
 from ffpyplayer.pic import Image
+import time
 
 from kivy.event import EventDispatcher
 from kivy.properties import StringProperty, NumericProperty, ListProperty, \
@@ -66,6 +69,10 @@ class CeedDataWriterBase(EventDispatcher):
     shape_display_callback = None
 
     clear_all_callback = None
+
+    _experiment_pat = re.compile('^experiment([0-9]+)$')
+
+    __events__ = ('on_experiment_change', )
 
     def __init__(self, **kwargs):
         super(CeedDataWriterBase, self).__init__(**kwargs)
@@ -119,6 +126,9 @@ class CeedDataWriterBase(EventDispatcher):
         if self.stage_display_callback:
             for stage in stages:
                 self.stage_display_callback(stage)
+
+    def on_experiment_change(self, name, value):
+        pass
 
     def get_filebrowser_callback(
             self, func, check_exists=False, clear_data=False, **kwargs):
@@ -226,7 +236,16 @@ class CeedDataWriterBase(EventDispatcher):
             format(self.backup_filename, self.filename))
 
         f.create_section('app_config', 'configuration')
+        f.create_section('app_logs', 'log')
+        self.nix_file.sections['app_logs']['log_data'] = ''
+
+        block = self.nix_file.create_block('fluorescent_images', 'image')
+        sec = self.nix_file.create_section(
+            'fluorescent_images_metadata', 'metadata')
+        block.metadata = sec
         self.save()
+
+        self.dispatch('on_experiment_change', 'open', None)
 
     def open_file(self, filename):
         '''Loads the file's config and opens the file for usage. '''
@@ -253,6 +272,8 @@ class CeedDataWriterBase(EventDispatcher):
             'file "{}"'.format(self.backup_filename, self.filename))
         self.save()
 
+        self.dispatch('on_experiment_change', 'open', None)
+
     def close_file(self, force_remove_autosave=False):
         '''Closes without saving the data. But if data was unsaved, it leaves
         the backup file unchanged.
@@ -273,20 +294,19 @@ class CeedDataWriterBase(EventDispatcher):
         self.filename = self.backup_filename = ''
         self.config_changed = self.has_unsaved = False
 
+        self.dispatch('on_experiment_change', 'close', None)
+
     def import_file(self, filename, stages_only=False):
         '''Loads the file's config data. '''
-        f = nix.File.open(filename, nix.FileMode.ReadOnly)
         Logger.debug(
-            'Ceed Controller (storage): Imported "{}"'.format(self.filename))
+            'Ceed Controller (storage): Importing "{}"'.format(self.filename))
         data = {}
+        f = nix.File.open(filename, nix.FileMode.ReadOnly)
 
         try:
             for prop in f.sections['app_config']:
                 data[prop.name] = yaml_loads(prop.values[0].value)
-        except:
-            f.close()
-            raise
-        else:
+        finally:
             f.close()
 
         self.apply_config_data_dict(data, stages_only=stages_only)
@@ -343,6 +363,7 @@ class CeedDataWriterBase(EventDispatcher):
 
             if self.config_changed:
                 self.write_config()
+                self.dispatch('on_experiment_change', 'app_config', None)
             self.nix_file._h5file.flush()
         finally:
             if self.data_lock:
@@ -381,6 +402,23 @@ class CeedDataWriterBase(EventDispatcher):
             data[prop.name] = yaml_loads(prop.values[0].value)
         return data
 
+    def add_log_item(self, text):
+        section = self.nix_file.sections['app_logs']
+        t = time.time()
+        section['log_data'] += '\n{}: {}'.format(t, text)
+        self.config_changed = True
+        self.dispatch('on_experiment_change', 'app_log', None)
+
+    def add_app_log(self, text):
+        app = App.get_running_app()
+        if app is None:
+            return
+
+        app.error_indicator.add_item(text, 'user')
+
+    def get_log_data(self):
+        return self.nix_file.sections['app_logs']['log_data']
+
     def load_last_fluorescent_image(self, filename):
         from ceed.analysis import CeedDataReader
         f = nix.File.open(filename, nix.FileMode.ReadOnly)
@@ -392,7 +430,12 @@ class CeedDataWriterBase(EventDispatcher):
             if not f.blocks:
                 raise ValueError('Image not found in {}'.format(filename))
 
+            names = set(CeedDataWriterBase.get_blocks_experiment_numbers(
+                f.blocks))
             for block in reversed(f.blocks):
+                if block.name not in names:
+                    continue
+
                 img = CeedDataReader.read_fluorescent_image_from_block(block)
                 if img is not None:
                     return img
@@ -401,11 +444,24 @@ class CeedDataWriterBase(EventDispatcher):
         finally:
             f.close()
 
-    def write_fluorescent_image(self, block, img):
-        group = block.create_group('fluorescent_image', 'image')
+    def add_image_to_file(self, img, notes=''):
+        block = self.nix_file.blocks['fluorescent_images']
+        n = len(block.groups)
+        group = self.write_fluorescent_image(block, img, '_{}'.format(n))
+
+        group.metadata['notes'] = notes
+        group.metadata['save_time'] = '{}'.format(time.time())
+        self.add_app_log('Saved current image to h5 file')
+
+        self.config_changed = True
+        self.dispatch('on_experiment_change', 'image_add', n)
+
+    def write_fluorescent_image(self, block, img, postfix=''):
+        group = block.create_group(
+            'fluorescent_image{}'.format(postfix), 'image')
 
         config = block.metadata.create_section(
-            'fluorescent_image_config', 'image')
+            'fluorescent_image_config{}'.format(postfix), 'image')
         config['size'] = yaml_dumps(img.get_size())
         config['pix_fmt'] = img.get_pixel_format()
         config['linesizes'] = yaml_dumps(img.get_linesizes())
@@ -414,9 +470,86 @@ class CeedDataWriterBase(EventDispatcher):
 
         for i, plane in enumerate(img.to_bytearray()):
             image_data = block.create_data_array(
-                    'fluorescent_image_plane_{}'.format(i), 'image',
-                    dtype=np.uint8, data=plane)
+                'fluorescent_image_plane{}_{}'.format(postfix, i), 'image',
+                dtype=np.uint8, data=plane)
             group.data_arrays.append(image_data)
+        return group
+
+    def get_num_fluorescent_images(self):
+        try:
+            return len(self.nix_file.blocks['fluorescent_images'].groups)
+        except KeyError:
+            return 0
+
+    def get_experiment_numbers(self):
+        return self.get_blocks_experiment_numbers(self.nix_file.blocks)
+
+    def get_experiment_notes(self, experiment_block_number):
+        name = 'experiment{}'.format(experiment_block_number)
+        if 'notes' in self.nix_file.blocks[name].metadata:
+            return self.nix_file.blocks[name].metadata['notes']
+        return ''
+
+    def set_experiment_notes(self, experiment_block_number, text):
+        name = 'experiment{}'.format(experiment_block_number)
+        block = self.nix_file.blocks[name]
+        block.metadata['notes'] = text
+        self.config_changed = True
+
+        self.dispatch(
+            'on_experiment_change', 'experiment_notes', experiment_block_number)
+
+    def get_experiment_config(self, experiment_block_number):
+        name = 'experiment{}'.format(experiment_block_number)
+        config = self.nix_file.blocks[name].metadata.sections['app_config']
+        return self.read_config(config)
+
+    def get_experiment_metadata(self, experiment_block_number):
+        from ceed.analysis import CeedDataReader
+        name = 'experiment{}'.format(experiment_block_number)
+        block = self.nix_file.blocks[name]
+
+        t = block.metadata['save_time'] if 'save_time' in block.metadata else 0
+        notes = block.metadata['notes'] if 'notes' in block.metadata else ''
+        duration_sec = (block.data_arrays['frame_time'][-1] -
+                        block.data_arrays['frame_time'][0])
+
+        metadata = {
+            'stage': block.metadata['stage'],
+            'save_time': t,
+            'image': CeedDataReader.read_fluorescent_image_from_block(block),
+            'notes': notes,
+            'duration_frames': len(block.data_arrays['frame_time']),
+            'duration_sec': float(duration_sec),
+            'experiment_number': experiment_block_number,
+            'config': self.get_experiment_config(experiment_block_number),
+        }
+        return metadata
+
+    def get_saved_image(self, image_num):
+        from ceed.analysis import CeedDataReader
+        block = self.nix_file.blocks['fluorescent_images']
+        group = block.groups['fluorescent_image_{}'.format(image_num)]
+        data = {
+            'save_time': group.metadata['save_time'],
+            'notes': group.metadata['notes'],
+            'image': CeedDataReader.read_fluorescent_image_from_block(
+                block, postfix='_{}'.format(image_num)),
+            'image_num': image_num,
+        }
+        return data
+
+    @staticmethod
+    def get_blocks_experiment_numbers(blocks, ignore_list=None):
+        experiments = []
+        ignore_list = set(map(str, ignore_list or []))
+
+        for block in blocks:
+            m = re.match(CeedDataWriterBase._experiment_pat, block.name)
+            if m is not None and m.group(1) not in ignore_list:
+                experiments.append(m.group(1))
+
+        return list(sorted(experiments, key=int))
 
     def ensure_array_size(self, used, allocated, added=1):
         required = used + added
@@ -477,7 +610,7 @@ class CeedDataWriterBase(EventDispatcher):
                 flip_i = 0
 
             if eof:
-                break
+                value()
             elif msg == 'frame':
                 count, bits, values = value
                 frame_count_buf[frame_i] = count
@@ -504,8 +637,10 @@ class CeedDataWriterBase(EventDispatcher):
 
     def prepare_experiment(self, stage_name):
         self.stop_experiment()
+        self.add_app_log('Saved current image to h5 file')
 
-        i = len(self.nix_file.blocks)
+        i = len(self.get_experiment_numbers())
+        self.add_app_log('Starting experiment {}'.format(i))
         block = self.nix_file.create_block(
             'experiment{}'.format(i), 'experiment_data')
 
@@ -515,6 +650,8 @@ class CeedDataWriterBase(EventDispatcher):
 
         import ceed
         sec['ceed_version'] = ceed.__version__
+        sec['save_time'] = '{}'.format(time.time())
+        sec['notes'] = ''
 
         config = sec.create_section('app_config', 'configuration')
         self.write_config(config)
@@ -561,8 +698,22 @@ class CeedDataWriterBase(EventDispatcher):
         if not self.data_thread:
             return
 
-        self.data_queue.put_nowait(('eof', None))
+        block = self.nix_file.blocks[-1]
+        name = block.name
+
+        def wait_for_stop():
+            def notify(*largs):
+                self.dispatch(
+                    'on_experiment_change', 'experiment_ended',
+                    name[len('experiment'):])
+            Clock.schedule_once(notify)
+
+        self.data_queue.put_nowait(('eof', wait_for_stop))
         self.data_queue = self.data_thread = self.data_lock = None
+        self.add_app_log('Ending experiment')
+        self.dispatch(
+            'on_experiment_change', 'experiment_stop',
+            block.name[len('experiment'):])
 
     def add_frame(self, count, bits, values):
         if not count:

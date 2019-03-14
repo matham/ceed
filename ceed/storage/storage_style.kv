@@ -3,18 +3,22 @@
 <DataBar@BoxLayout>:
     size_hint: None, None
     size: self.minimum_width, '34dp'
-    more: more.__self__
+    more: more.__self__  # need to keep a ref to it after it's removed
+    data_view: data_view.__self__
     BoxLayout:
         padding: '5dp'
         spacing: '5dp'
         size_hint_x: None
         width: self.minimum_width
         id: box
-        on_parent: Clock.schedule_once(lambda *x: self.remove_widget(more.__self__))
+        on_parent:
+            Clock.schedule_once(lambda *x: self.remove_widget(data_view.__self__))
+            Clock.schedule_once(lambda *x: self.remove_widget(more.__self__))
         FlatImageButton:
             scale_down_color: True
             source: 'flat_save.png'
             flat_color: app.theme.accent
+            hover_text: "Save current file"
             on_release:
                 if app.ceed_data.filename: app.ceed_data.save()
                 if not app.ceed_data.filename: app.filebrowser.target = app.ceed_data.root_path
@@ -155,3 +159,236 @@
                     app.filebrowser.dirselect =  app.filebrowser.multiselect = False
                     app.filebrowser.callback = app.ceed_data.get_filebrowser_callback(app.ceed_data.write_yaml_config, True, stages_only=True)
                     app.filebrowser.open()
+        FlatImageButton:
+            scale_down_color: True
+            source: 'calendar-text-outline.png'
+            flat_color: app.theme.accent
+            on_release: root.data_view.open(self.parent)
+            hover_text: "Show logged data"
+        FlatDropDown:
+            id: data_view
+            flat_color: app.theme.primary_text
+            flat_border_color: app.theme.divider
+            do_scroll_x: False
+            do_scroll_y: False
+            ExperimentLogWidget:
+                id: experiment_log
+                spacing: '10dp'
+                size_hint: None, None
+                width: '600dp'
+                height: self.minimum_height
+                log_container: log_container
+                orientation: 'vertical'
+                ScrollView:
+                    size_hint_y: None
+                    height: min(dp(150), log_label.height)
+                    scroll_type: ['bars', ]
+                    bar_width: '15dp'
+                    FlatLabel:
+                        id: log_label
+                        markup: True
+                        text: '[b]Experiment log[/b]\n----------------------\n{}'.format(experiment_log.log_text)
+                        size_hint_y: None
+                        height: self.texture_size[1]
+                        text_size: self.width, None
+                        padding: '5dp', '5dp'
+                        flat_color: app.theme.text_primary
+                ScrollView:
+                    scroll_type: ['bars', ]
+                    bar_width: '15dp'
+                    size_hint_y: None
+                    height: '100dp'
+                    FlatLabel:
+                        text: '[b]Configuration[/b]\n-----------------\n{}'.format(experiment_log.config_str)
+                        markup: True
+                        size_hint_y: None
+                        height: self.texture_size[1]
+                        text_size: self.width, None
+                        padding: '5dp', '5dp'
+                        flat_color: app.theme.text_primary
+                ScrollView:
+                    size_hint_y: None
+                    height: min(dp(450), log_container.height)
+                    scroll_type: ['bars', ]
+                    bar_width: '10dp'
+                    BoxLayout:
+                        id: log_container
+                        orientation: 'vertical'
+                        size_hint_y: None
+                        height: self.minimum_height
+                        padding: '5dp'
+                        spacing: '5dp'
+
+
+<ImageLogWidget>:
+    more: more.__self__
+    show_more: expand.is_open
+    orientation: 'vertical'
+    size_hint_y: None
+    height: self.minimum_height
+    image_widget: image_widget
+    canvas:
+        Color:
+            rgba: app.theme.primary_light
+        Rectangle:
+            size: self.size
+            pos: self.pos
+    BoxLayout:
+        size_hint_y: None
+        height: '34dp'
+        spacing: '5dp'
+        padding: '5dp'
+        ExpandWidget:
+            id: expand
+        FlatLabel:
+            markup: True
+            size_hint_x: None
+            width: self.texture_size[0]
+            padding: '5dp', '5dp'
+            flat_color: app.theme.text_primary
+            text: '[b]Image[/b] {} - [b]Time[/b]: {:0.1f}'.format(root.image_num, root.save_time)
+        FlatDivider:
+            color: app.theme.divider
+        FlatLabel:
+            markup: True
+            padding: '5dp', '5dp'
+            flat_color: app.theme.text_primary
+            shorten: True
+            text_size: self.size
+            text: '[b]Notes[/b]: {}'.format(root.notes)
+    BoxLayout:
+        id: more
+        size_hint_y: None
+        height: '200dp'
+        spacing: '5dp'
+        padding: '5dp'
+        BoxLayout:
+            orientation: 'vertical'
+            FlatLabel:
+                markup: True
+                text: '[b]Notes[/b]\n---------'
+                halign: 'center'
+                size_hint_y: None
+                height: self.texture_size[1]
+                padding: '5dp', '5dp'
+                flat_color: app.theme.text_primary
+            ScrollView:
+                scroll_type: ['bars', ]
+                bar_width: '15dp'
+                FlatLabel:
+                    text: root.notes
+                    size_hint_y: None
+                    height: self.texture_size[1]
+                    text_size: self.width, None
+                    padding: '5dp', '5dp'
+                    flat_color: app.theme.text_primary
+        RelativeLayout:
+            on_size: image_widget.update_img(image_widget.img)
+            canvas:
+                Color:
+                    rgba: 1, 1, 1, 1
+            BufferImage:
+                id: image_widget
+                available_size: self.parent.size
+                size_hint: None, None
+                size: self.image_size
+                auto_bring_to_front: False
+                do_collide_after_children: True
+                do_rotation: False
+                do_scale: False
+                do_translation: False, False
+
+
+<StageLogWidget>:
+    more: more.__self__
+    show_more: expand.is_open
+    orientation: 'vertical'
+    size_hint_y: None
+    height: self.minimum_height
+    image_widget: image_widget
+    canvas:
+        Color:
+            rgba: app.theme.primary_light
+        Rectangle:
+            size: self.size
+            pos: self.pos
+    BoxLayout:
+        size_hint_y: None
+        height: '34dp'
+        spacing: '5dp'
+        padding: '5dp'
+        ExpandWidget:
+            id: expand
+        FlatLabel:
+            markup: True
+            size_hint_x: None
+            width: self.texture_size[0]
+            padding: '5dp', '5dp'
+            flat_color: app.theme.text_primary
+            text: '[b]Exp[/b] {}, [b]{}[/b] ({:0.1f}s / {}) - [b]Time[/b]: {:0.1f}'.format(root.experiment_number, root.stage, root.duration_sec, root.duration_frames, root.save_time)
+        FlatDivider:
+            color: app.theme.divider
+        FlatLabel:
+            markup: True
+            padding: '5dp', '5dp'
+            flat_color: app.theme.text_primary
+            shorten: True
+            text_size: self.size
+            text: '[b]Notes[/b]: {}'.format(root.notes)
+    BoxLayout:
+        id: more
+        size_hint_y: None
+        height: '300dp'
+        spacing: '5dp'
+        padding: '5dp'
+        orientation: 'vertical'
+        BoxLayout:
+            BoxLayout:
+                orientation: 'vertical'
+                FlatLabel:
+                    markup: True
+                    text: '[b]Notes[/b]\n---------'
+                    halign: 'center'
+                    size_hint_y: None
+                    height: self.texture_size[1]
+                    padding: '5dp', '5dp'
+                    flat_color: app.theme.text_primary
+                ScrollView:
+                    scroll_type: ['bars', ]
+                    bar_width: '15dp'
+                    FlatTextInput:
+                        text: root.notes
+                        size_hint_y: None
+                        height: self.minimum_height
+                        padding: '5dp'
+                        flat_color: app.theme.text_primary
+                        hint_text: 'Notes'
+                        on_focus: if not self.focus: root.update_text(self.text)
+            RelativeLayout:
+                on_size: image_widget.update_img(image_widget.img)
+                canvas:
+                    Color:
+                        rgba: 1, 1, 1, 1
+                BufferImage:
+                    id: image_widget
+                    available_size: self.parent.size
+                    size_hint: None, None
+                    size: self.image_size
+                    auto_bring_to_front: False
+                    do_collide_after_children: True
+                    do_rotation: False
+                    do_scale: False
+                    do_translation: False, False
+        ScrollView:
+            scroll_type: ['bars', ]
+            bar_width: '15dp'
+            size_hint_y: None
+            height: '100dp'
+            FlatLabel:
+                text: '[b]Configuration[/b]\n-----------------\n{}'.format(root.config_str)
+                markup: True
+                size_hint_y: None
+                height: self.texture_size[1]
+                text_size: self.width, None
+                padding: '5dp', '5dp'
+                flat_color: app.theme.text_primary
