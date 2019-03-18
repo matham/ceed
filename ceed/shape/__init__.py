@@ -223,7 +223,8 @@ class CeedPaintCanvasBehavior(KNSpaceBehavior, PaintCanvasBehavior):
             group = self.add_group()
 
         for shape in self.selected_shapes:
-            self.add_shape_to_group(group, shape)
+            if shape not in group.shapes:
+                self.add_shape_to_group(group, shape)
         return group
 
     def remove_shape_from_groups(self, shape):
