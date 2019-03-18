@@ -74,6 +74,9 @@ class CeedDataWriterBase(EventDispatcher):
 
     _experiment_pat = re.compile('^experiment([0-9]+)$')
 
+    _mea_trans_pat = re.compile(
+        '.+(mea_transform:[ \n\\-\\[\\],0-9.]+\\]).+', flags=re.DOTALL)
+
     __events__ = ('on_experiment_change', )
 
     def __init__(self, **kwargs):
@@ -512,6 +515,38 @@ class CeedDataWriterBase(EventDispatcher):
         config = self.nix_file.blocks[name].metadata.sections['app_config']
         return self.read_config(config)
 
+    def get_config_mea_matrix_string(self, experiment_block_number=None):
+        if experiment_block_number is not None:
+            name = 'experiment{}'.format(experiment_block_number)
+            config = self.nix_file.blocks[name].metadata.sections['app_config']
+        else:
+            config = self.nix_file.sections['app_config']
+        settings = config.props['app_settings'].values[0].value
+
+        m = re.match(self._mea_trans_pat, settings)
+        if m is None:
+            raise ValueError('Cannot find mea transform in the settings')
+
+        return m.group(1)
+
+    def set_config_mea_matrix_string(
+            self, experiment_block_number, config_string, new_config_string):
+        if config_string == new_config_string:
+            raise ValueError('New and old MEA transform are identical')
+
+        name = 'experiment{}'.format(experiment_block_number)
+        config = self.nix_file.blocks[name].metadata.sections['app_config']
+        settings = config.props['app_settings'].values[0].value
+        settings_new = settings.replace(config_string, new_config_string)
+        if settings == settings_new:
+            raise ValueError('Could not find the MEA matrix in the config')
+
+        config['app_settings'] = settings_new
+        self.config_changed = True
+        self.dispatch(
+            'on_experiment_change', 'experiment_mea_settings',
+            experiment_block_number)
+
     def get_experiment_metadata(self, experiment_block_number):
         from ceed.analysis import CeedDataReader
         name = 'experiment{}'.format(experiment_block_number)
@@ -531,6 +566,8 @@ class CeedDataWriterBase(EventDispatcher):
             'duration_sec': float(duration_sec),
             'experiment_number': experiment_block_number,
             'config': self.get_experiment_config(experiment_block_number),
+            'mea_config': self.get_config_mea_matrix_string(
+                experiment_block_number),
         }
         return metadata
 

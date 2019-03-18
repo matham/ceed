@@ -23,6 +23,8 @@ class ExperimentLogWidget(BoxLayout):
 
     config_str = StringProperty('')
 
+    mea_config = StringProperty('')
+
     def __init__(self, **kwargs):
         super(ExperimentLogWidget, self).__init__(**kwargs)
         data_storage = self.data_storage = App.get_running_app().ceed_data
@@ -45,7 +47,6 @@ class ExperimentLogWidget(BoxLayout):
         elif name == 'experiment_ended':
             for widget in self.log_container.children:
                 if isinstance(widget, StageLogWidget):
-                    print('widget', widget.experiment_number, value)
                     if widget.experiment_number == value:
                         widget.refresh_metadata()
                         break
@@ -66,6 +67,18 @@ class ExperimentLogWidget(BoxLayout):
                 assert False
         elif name == 'app_config':
             self.format_config(self.data_storage.read_config())
+        elif name == 'experiment_mea_settings':
+            for widget in self.log_container.children:
+                if isinstance(widget, StageLogWidget):
+                    if widget.experiment_number == value:
+                        widget.config = self.data_storage.get_experiment_config(
+                            value)
+                        widget.mea_config = \
+                            self.data_storage.get_config_mea_matrix_string(
+                                value)
+                        break
+            else:
+                assert False
         else:
             assert False
 
@@ -96,6 +109,8 @@ class ExperimentLogWidget(BoxLayout):
             s += '-' * len(key) + '\n'
             s += yaml_dumps(value) + '\n\n'
         self.config_str = s
+
+        self.mea_config = self.data_storage.get_config_mea_matrix_string()
 
 
 class LogWidgetBase(object):
@@ -134,9 +149,10 @@ class StageLogWidget(LogWidgetBase, ShowMoreBehavior, BoxLayout):
 
     config_str = StringProperty('')
 
+    mea_config = StringProperty('')
+
     def refresh_metadata(self):
         data = self.data_storage.get_experiment_metadata(self.experiment_number)
-        print('refresh', data)
         for key, value in data.items():
             setattr(self, key, value)
 

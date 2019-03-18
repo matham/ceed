@@ -195,6 +195,12 @@
                     height: min(dp(150), log_label.height)
                     scroll_type: ['bars', ]
                     bar_width: '15dp'
+                    canvas.before:
+                        Color:
+                            rgba: app.theme.interpolate(app.theme.primary_light, app.theme.primary, .2)
+                        Rectangle:
+                            size: self.size
+                            pos: self.pos
                     FlatLabel:
                         id: log_label
                         markup: True
@@ -209,8 +215,14 @@
                     bar_width: '15dp'
                     size_hint_y: None
                     height: '100dp'
+                    canvas.before:
+                        Color:
+                            rgba: app.theme.interpolate(app.theme.primary_light, app.theme.primary, .2)
+                        Rectangle:
+                            size: self.size
+                            pos: self.pos
                     FlatLabel:
-                        text: '[b]Configuration[/b]\n-----------------\n{}'.format(experiment_log.config_str)
+                        text: '[b]Configuration[/b]\n-----------------\n{}\n-----------------\n{}'.format(experiment_log.mea_config, experiment_log.config_str)
                         markup: True
                         size_hint_y: None
                         height: self.texture_size[1]
@@ -396,7 +408,7 @@
             size_hint_y: None
             height: '100dp'
             FlatLabel:
-                text: '[b]Configuration[/b]\n-----------------\n{}'.format(root.config_str)
+                text: '[b]Configuration[/b]\n-----------------\n{}\n-----------------\n{}'.format(root.mea_config, root.config_str)
                 markup: True
                 size_hint_y: None
                 height: self.texture_size[1]
