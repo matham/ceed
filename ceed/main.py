@@ -160,6 +160,7 @@ class CeedApp(CPLComApp):
         self.ceed_data.fbind('filename', self.set_tittle)
         self.ceed_data.fbind('config_changed', self.set_tittle)
         self.ceed_data.fbind('has_unsaved', self.set_tittle)
+        self.ceed_data.fbind('read_only_file', self.set_tittle)
 
         try:
             self.view_controller.set_led_mode(self.view_controller.LED_mode_idle)
@@ -172,12 +173,18 @@ class CeedApp(CPLComApp):
         star = ''
         if self.ceed_data.has_unsaved or self.ceed_data.config_changed:
             star = '*'
+
+        read_only = ''
+        if self.ceed_data.read_only_file:
+            read_only = ' - Read Only'
+
         if self.ceed_data.filename:
             filename = ' - {}'.format(self.ceed_data.filename)
         else:
             filename = ' - Unnamed File'
-        Window.set_title('Ceed v{}, CPL lab{}{}'.format(
-            ceed.__version__, star, filename))
+
+        Window.set_title('Ceed v{}, CPL lab{}{}{}'.format(
+            ceed.__version__, star, filename, read_only))
 
     def changed_callback(self, *largs, **kwargs):
         self.ceed_data.config_changed = True
@@ -195,6 +202,11 @@ class CeedApp(CPLComApp):
             self._close_message = ''
             return False
         return True
+
+    def handle_exception(self, *largs, **kwargs):
+        val = super(CeedApp, self).handle_exception(*largs, **kwargs)
+        self.view_controller.request_stage_end()
+        return val
 
 
 def _cleanup(app, *largs):

@@ -48,6 +48,8 @@ class CeedDataWriterBase(EventDispatcher):
 
     filename = StringProperty('')
 
+    read_only_file = BooleanProperty(False)
+
     backup_filename = ''
 
     nix_file = None
@@ -78,7 +80,9 @@ class CeedDataWriterBase(EventDispatcher):
         super(CeedDataWriterBase, self).__init__(**kwargs)
         if (not os.environ.get('KIVY_DOC_INCLUDE', None) and
                 self.backup_interval):
-            Clock.schedule_interval(self.write_changes, self.backup_interval)
+            Clock.schedule_interval(
+                partial(self.write_changes, scheduled=True),
+                self.backup_interval)
 
     def gather_config_data_dict(self, stages_only=False):
         app = App.get_running_app()
@@ -247,11 +251,12 @@ class CeedDataWriterBase(EventDispatcher):
 
         self.dispatch('on_experiment_change', 'open', None)
 
-    def open_file(self, filename):
+    def open_file(self, filename, read_only=False):
         '''Loads the file's config and opens the file for usage. '''
         self.close_file()
 
         self.filename = filename
+        self.read_only_file = read_only
 
         head, tail = split(filename)
         name, ext = splitext(tail)
@@ -265,12 +270,14 @@ class CeedDataWriterBase(EventDispatcher):
         self.import_file(self.backup_filename)
 
         self.nix_file = nix.File.open(
-            self.backup_filename, nix.FileMode.ReadWrite)
+            self.backup_filename,
+            nix.FileMode.ReadOnly if read_only else nix.FileMode.ReadWrite)
         self.config_changed = self.has_unsaved = True
         Logger.debug(
             'Ceed Controller (storage): Created tempfile {}, from existing '
             'file "{}"'.format(self.backup_filename, self.filename))
-        self.save()
+        if not read_only:
+            self.save()
 
         self.dispatch('on_experiment_change', 'open', None)
 
@@ -293,6 +300,7 @@ class CeedDataWriterBase(EventDispatcher):
             '"{}"'.format(self.backup_filename, self.filename))
         self.filename = self.backup_filename = ''
         self.config_changed = self.has_unsaved = False
+        self.read_only_file = False
 
         self.dispatch('on_experiment_change', 'close', None)
 
@@ -352,9 +360,9 @@ class CeedDataWriterBase(EventDispatcher):
         if filename:
             self.config_changed = self.has_unsaved = False
 
-    def write_changes(self, *largs):
+    def write_changes(self, *largs, scheduled=False):
         '''Writes unsaved changes to the current (autosave) file. '''
-        if not self.nix_file:
+        if not self.nix_file or scheduled and self.read_only_file:
             return
 
         try:

@@ -69,6 +69,17 @@
                     app.filebrowser.callback = app.ceed_data.get_filebrowser_callback(app.ceed_data.create_file, True, True)
                     app.filebrowser.open()
             FlatButton:
+                text: 'Clear & open existing file RO'
+                size_hint: None, None
+                size: self.texture_size
+                scale_down_color: True
+                flat_color: app.theme.text_primary
+                on_release:
+                    app.filebrowser.target = app.ceed_data.root_path
+                    app.filebrowser.dirselect =  app.filebrowser.multiselect = False
+                    app.filebrowser.callback = app.ceed_data.get_filebrowser_callback(app.ceed_data.open_file, clear_data=True, read_only=True)
+                    app.filebrowser.open()
+            FlatButton:
                 text: 'Clear & open existing file'
                 size_hint: None, None
                 size: self.texture_size
