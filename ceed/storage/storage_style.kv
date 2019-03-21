@@ -210,6 +210,47 @@
                         text_size: self.width, None
                         padding: '5dp', '5dp'
                         flat_color: app.theme.text_primary
+                BoxLayout:
+                    size_hint_y: None
+                    height: self.minimum_height
+                    padding: '5dp'
+                    FlatLabel:
+                        text: '[b]Configuration[/b]:'
+                        size_hint: None, None
+                        size: self.texture_size
+                        flat_color: app.theme.text_primary
+                        markup: True
+                        padding: '5dp', '2dp'
+                    ThemedSpinner:
+                        id: source_exp_name
+                        values: ['app'] + experiment_log.experiment_names
+                        text_autoupdate: True
+                        on_text: experiment_log.bind_to_current_config_selection(self.text)
+                        size_hint_x: None
+                        width: self.minimum_width
+                        padding: '5dp', '2dp'
+                    FlatLabel:
+                        text: '[b]Copy MEA config to[/b]:'
+                        size_hint: None, None
+                        size: self.texture_size
+                        padding: '10dp', '2dp'
+                        flat_color: app.theme.text_primary
+                        markup: True
+                    ThemedSpinner:
+                        id: target_exp_name
+                        values: experiment_log.experiment_names
+                        text_autoupdate: True
+                        size_hint_x: None
+                        padding: '5dp', '2dp'
+                        width: self.minimum_width
+                    FlatButton:
+                        text: 'Apply'
+                        size_hint: None, None
+                        size: self.texture_size
+                        scale_down_color: True
+                        flat_background_color: app.theme.accent
+                        padding: '5dp', '2dp'
+                        on_release: if target_exp_name.text: experiment_log.copy_mea_config_to_exp(source_exp_name.text, target_exp_name.text)
                 ScrollView:
                     scroll_type: ['bars', ]
                     bar_width: '15dp'
@@ -222,7 +263,7 @@
                             size: self.size
                             pos: self.pos
                     FlatLabel:
-                        text: '[b]Configuration[/b]\n-----------------\n{}\n-----------------\n{}'.format(experiment_log.mea_config, experiment_log.config_str)
+                        text: '[b]Configuration[/b]\n-----------------\n{}\n-----------------\n{}'.format(experiment_log.selected_mea_config_str, experiment_log.selected_config_str)
                         markup: True
                         size_hint_y: None
                         height: self.texture_size[1]
@@ -340,6 +381,12 @@
         height: '34dp'
         spacing: '5dp'
         padding: '5dp'
+        canvas:
+            Color:
+                rgba: (1, 0, 0, 1) if root.mea_config_different else (1, 0, 0, 0)
+            Rectangle:
+                pos: self.pos
+                size: dp(4), self.height
         ExpandWidget:
             id: expand
         FlatLabel:
@@ -402,16 +449,3 @@
                     do_rotation: False
                     do_scale: False
                     do_translation: False, False
-        ScrollView:
-            scroll_type: ['bars', ]
-            bar_width: '15dp'
-            size_hint_y: None
-            height: '100dp'
-            FlatLabel:
-                text: '[b]Configuration[/b]\n-----------------\n{}\n-----------------\n{}'.format(root.mea_config, root.config_str)
-                markup: True
-                size_hint_y: None
-                height: self.texture_size[1]
-                text_size: self.width, None
-                padding: '5dp', '5dp'
-                flat_color: app.theme.text_primary
