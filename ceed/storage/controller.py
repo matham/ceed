@@ -244,15 +244,48 @@ class CeedDataWriterBase(EventDispatcher):
 
         f.create_section('app_config', 'configuration')
         f.create_section('app_logs', 'log')
-        self.nix_file.sections['app_logs']['log_data'] = ''
+        f.sections['app_logs']['log_data'] = ''
+        f.sections['app_logs']['notes'] = ''
 
-        block = self.nix_file.create_block('fluorescent_images', 'image')
-        sec = self.nix_file.create_section(
-            'fluorescent_images_metadata', 'metadata')
+        block = f.create_block('fluorescent_images', 'image')
+        sec = f.create_section('fluorescent_images_metadata', 'metadata')
         block.metadata = sec
         self.save()
 
         self.dispatch('on_experiment_change', 'open', None)
+
+    @staticmethod
+    def upgrade_file(nix_file):
+        import ceed
+        version = yaml_dumps(ceed.__version__)
+
+        if 'app_logs' not in nix_file.sections:
+            nix_file.create_section('app_logs', 'log')
+            nix_file.sections['app_logs']['log_data'] = ''
+            nix_file.sections['app_logs']['notes'] = ''
+
+        if 'fluorescent_images' not in nix_file.blocks:
+            block = nix_file.create_block('fluorescent_images', 'image')
+            sec = nix_file.create_section(
+                'fluorescent_images_metadata', 'metadata')
+            block.metadata = sec
+
+        for num in CeedDataWriterBase.get_blocks_experiment_numbers(
+                nix_file.blocks):
+            name = CeedDataWriterBase.get_experiment_block_name(num)
+            metadata = nix_file.blocks[name].metadata
+
+            if 'notes' not in metadata:
+                metadata['notes'] = ''
+            if 'save_time' not in metadata:
+                metadata['save_time'] = '0'
+
+            if 'ceed_version' not in metadata.sections['app_config']:
+                metadata.sections['app_config']['ceed_version'] = version
+
+        if 'ceed_version' not in nix_file.sections['app_config']:
+            import ceed
+            nix_file.sections['app_config']['ceed_version'] = version
 
     def open_file(self, filename, read_only=False):
         '''Loads the file's config and opens the file for usage. '''
@@ -279,6 +312,8 @@ class CeedDataWriterBase(EventDispatcher):
         Logger.debug(
             'Ceed Controller (storage): Created tempfile {}, from existing '
             'file "{}"'.format(self.backup_filename, self.filename))
+
+        self.upgrade_file(self.nix_file)
         if not read_only:
             self.save()
 
@@ -399,11 +434,14 @@ class CeedDataWriterBase(EventDispatcher):
         self.config_changed = True
 
     def write_config(self, config_section=None):
+        import ceed
         config = config_section if config_section is not None else \
             self.nix_file.sections['app_config']
         data = self.gather_config_data_dict()
         for k, v in data.items():
             config[k] = yaml_dumps(v)
+
+        config['ceed_version'] = yaml_dumps(ceed.__version__)
 
     def read_config(self, config_section=None):
         config = config_section if config_section is not None else \
@@ -411,6 +449,7 @@ class CeedDataWriterBase(EventDispatcher):
         data = {}
         for prop in config.props:
             data[prop.name] = yaml_loads(prop.values[0].value)
+
         return data
 
     def add_log_item(self, text):
@@ -496,13 +535,13 @@ class CeedDataWriterBase(EventDispatcher):
         return self.get_blocks_experiment_numbers(self.nix_file.blocks)
 
     def get_experiment_notes(self, experiment_block_number):
-        name = 'experiment{}'.format(experiment_block_number)
+        name = self.get_experiment_block_name(experiment_block_number)
         if 'notes' in self.nix_file.blocks[name].metadata:
             return self.nix_file.blocks[name].metadata['notes']
         return ''
 
     def set_experiment_notes(self, experiment_block_number, text):
-        name = 'experiment{}'.format(experiment_block_number)
+        name = self.get_experiment_block_name(experiment_block_number)
         block = self.nix_file.blocks[name]
         block.metadata['notes'] = text
         self.config_changed = True
@@ -511,13 +550,13 @@ class CeedDataWriterBase(EventDispatcher):
             'on_experiment_change', 'experiment_notes', experiment_block_number)
 
     def get_experiment_config(self, experiment_block_number):
-        name = 'experiment{}'.format(experiment_block_number)
+        name = self.get_experiment_block_name(experiment_block_number)
         config = self.nix_file.blocks[name].metadata.sections['app_config']
         return self.read_config(config)
 
     def get_config_mea_matrix_string(self, experiment_block_number=None):
         if experiment_block_number is not None:
-            name = 'experiment{}'.format(experiment_block_number)
+            name = self.get_experiment_block_name(experiment_block_number)
             config = self.nix_file.blocks[name].metadata.sections['app_config']
         else:
             config = self.nix_file.sections['app_config']
@@ -534,7 +573,7 @@ class CeedDataWriterBase(EventDispatcher):
         if config_string == new_config_string:
             raise ValueError('New and old MEA transform are identical')
 
-        name = 'experiment{}'.format(experiment_block_number)
+        name = self.get_experiment_block_name(experiment_block_number)
         config = self.nix_file.blocks[name].metadata.sections['app_config']
         settings = config.props['app_settings'].values[0].value
         settings_new = settings.replace(config_string, new_config_string)
@@ -549,7 +588,7 @@ class CeedDataWriterBase(EventDispatcher):
 
     def get_experiment_metadata(self, experiment_block_number):
         from ceed.analysis import CeedDataReader
-        name = 'experiment{}'.format(experiment_block_number)
+        name = self.get_experiment_block_name(experiment_block_number)
         block = self.nix_file.blocks[name]
 
         t = block.metadata['save_time'] if 'save_time' in block.metadata else 0
@@ -559,7 +598,7 @@ class CeedDataWriterBase(EventDispatcher):
 
         metadata = {
             'stage': block.metadata['stage'],
-            'save_time': t,
+            'save_time': float(t),
             'image': CeedDataReader.read_fluorescent_image_from_block(block),
             'notes': notes,
             'duration_frames': len(block.data_arrays['frame_time']),
@@ -576,7 +615,7 @@ class CeedDataWriterBase(EventDispatcher):
         block = self.nix_file.blocks['fluorescent_images']
         group = block.groups['fluorescent_image_{}'.format(image_num)]
         data = {
-            'save_time': group.metadata['save_time'],
+            'save_time': float(group.metadata['save_time']),
             'notes': group.metadata['notes'],
             'image': CeedDataReader.read_fluorescent_image_from_block(
                 block, postfix='_{}'.format(image_num)),
@@ -595,6 +634,10 @@ class CeedDataWriterBase(EventDispatcher):
                 experiments.append(m.group(1))
 
         return list(sorted(experiments, key=int))
+
+    @staticmethod
+    def get_experiment_block_name(experiment_num):
+        return 'experiment{}'.format(experiment_num)
 
     def ensure_array_size(self, used, allocated, added=1):
         required = used + added
@@ -687,7 +730,7 @@ class CeedDataWriterBase(EventDispatcher):
         i = len(self.get_experiment_numbers())
         self.add_app_log('Starting experiment {}'.format(i))
         block = self.nix_file.create_block(
-            'experiment{}'.format(i), 'experiment_data')
+            self.get_experiment_block_name(i), 'experiment_data')
 
         sec = self.nix_file.create_section(
             'experiment{}_metadata'.format(i), 'metadata')

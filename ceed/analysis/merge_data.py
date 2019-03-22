@@ -255,9 +255,10 @@ class CeedMCSDataMerger(object):
         self.mcs_dig_config = {'t_start': t_start, 'f': f}
 
     def read_ceed_digital_data(self, filename, experiment):
+        from ceed.storage.controller import CeedDataWriterBase
         f = nix.File.open(filename, nix.FileMode.ReadOnly)
 
-        block = f.blocks['experiment{}'.format(experiment)]
+        block = f.blocks[CeedDataWriterBase.get_experiment_block_name(experiment)]
         section = block.metadata
         start_t = datetime.datetime(1970, 1, 1) + \
             datetime.timedelta(seconds=block.created_at)
@@ -395,9 +396,19 @@ class CeedMCSDataMerger(object):
         raise AlignmentException('Could not align the data')
 
     @staticmethod
-    def merge_data(filename, ceed_filename, mcs_filename, alignment_indices):
+    def merge_data(
+            filename, ceed_filename, mcs_filename, alignment_indices,
+            notes='', notes_filename=None):
         if os.path.exists(filename):
             raise Exception('{} already exists'.format(filename))
+
+        if notes_filename and os.path.exists(notes_filename):
+            with open(notes_filename, 'r') as fh:
+                lines = fh.read()
+
+            if notes and lines:
+                notes += '\n'
+            notes += lines
 
         mcs_f = McsPy.McsData.RawData(mcs_filename)
         if not len(mcs_f.recordings):
@@ -408,6 +419,14 @@ class CeedMCSDataMerger(object):
 
         copy2(ceed_filename, filename)
         f = nix.File.open(filename, nix.FileMode.ReadWrite)
+
+        if 'app_logs' not in f.sections:
+            f.create_section('app_logs', 'log')
+            f.sections['app_logs']['notes'] = ''
+
+        if f.sections['app_logs']['notes'] and notes:
+            f.sections['app_logs']['notes'] += '\n'
+        f.sections['app_logs']['notes'] += notes
 
         block = f.create_block(
             'ceed_mcs_alignment', 'each row, r, contains the sample number '
@@ -463,13 +482,18 @@ class CeedMCSDataMerger(object):
                     block.create_data_array(
                         'electrode_{}'.format(info['Label']), 'electrode_data',
                         data=data)
+
+        pbar.close()
         f.close()
 
 
 if __name__ == '__main__':
-    ceed_file = r'/home/cpl/Desktop/data/test.h5'
-    mcs_file = r'/home/cpl/Desktop/data/mcs.h5'
-    output_file = r'/home/cpl/Desktop/data/test_merged.h5'
+    ceed_file = r'F:\ceed.h5'
+    mcs_file = r'F:\mcs.h5'
+    output_file = r'F:\ceed_merged.h5'
+    notes = ''
+    notes_filename = None
+
     align_by = None
     merger = CeedMCSDataMerger()
 
@@ -496,4 +520,7 @@ if __name__ == '__main__':
             print(
                 "Couldn't align MCS and ceed data for experiment "
                 "{} ({})".format(experiment, e))
-    merger.merge_data(output_file, ceed_file, mcs_file, alignment)
+
+    merger.merge_data(
+        output_file, ceed_file, mcs_file, alignment, notes=notes,
+        notes_filename=notes_filename)

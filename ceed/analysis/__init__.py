@@ -22,7 +22,7 @@ from ffpyplayer.writer import MediaWriter
 from ceed.function import FunctionFactoryBase, register_all_functions
 from ceed.stage import StageFactoryBase, StageDoneException
 from ceed.shape import CeedPaintCanvasBehavior
-from ceed.storage.controller import DataSerializerBase
+from ceed.storage.controller import DataSerializerBase, CeedDataWriterBase
 from ceed.view.controller import ViewControllerBase
 
 
@@ -151,13 +151,16 @@ class CeedDataReader(object):
 
     def load_experiment(self, experiment):
         self._block = block = self._nix_file.blocks[
-            'experiment{}'.format(experiment)]
+            CeedDataWriterBase.get_experiment_block_name(experiment)]
         section = self._nix_file.sections[
             'experiment{}_metadata'.format(experiment)]
         self.experiment = experiment
 
         self.experiment_stage_name = section['stage']
         self.ceed_version = section['ceed_version']
+        self.experiment_notes = section['notes'] if 'notes' in section else ''
+        self.experiment_start_time = float(
+            section['save_time']) if 'save_time' in section else 0
         config = section.sections['app_config']
 
         config_data = {}
