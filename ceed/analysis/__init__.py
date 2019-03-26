@@ -60,6 +60,10 @@ class CeedDataReader(object):
 
     filename = ''
 
+    experiments_in_file = []
+
+    num_images_in_file = 0
+
     shapes_intensity = {}
 
     electrodes_data = {}
@@ -84,9 +88,21 @@ class CeedDataReader(object):
 
     experiment_stage_name = ''
 
+    experiment_notes = ''
+
+    experiment_start_time = 0
+
+    experiment_cam_image = None
+
+    loaded_experiment = None
+
     ceed_version = ''
 
-    experiment = 0
+    app_logs = ''
+
+    app_notes = ''
+
+    app_config = {}
 
     _nix_file = None
 
@@ -119,11 +135,18 @@ class CeedDataReader(object):
             self._nix_file = None
 
     def open_h5(self):
+        from ceed.storage.controller import CeedDataWriterBase
         if self._nix_file is not None:
             raise Exception('File already open')
 
         self._nix_file = nix.File.open(
             self.filename, nix.FileMode.ReadOnly)
+        self.experiments_in_file = \
+            CeedDataWriterBase.get_blocks_experiment_numbers(
+                self._nix_file.blocks)
+        self.num_images_in_file = \
+            CeedDataWriterBase.get_file_num_fluorescent_images(self._nix_file)
+        self.load_application_data()
 
     def get_electrode_names(self):
         names = []
@@ -144,20 +167,48 @@ class CeedDataReader(object):
                 row_names.append(None if name in disabled else name)
         return names
 
-    def get_experiment_numbers(self):
-        from ceed.storage.controller import CeedDataWriterBase
-        return CeedDataWriterBase.get_blocks_experiment_numbers(
-            self._nix_file.blocks)
+    def load_application_data(self):
+        self.app_logs = self.app_notes = ''
+        if 'app_logs' in self._nix_file.sections:
+            self.app_logs = self._nix_file.sections['app_logs']['log_data']
+            self.app_notes = self._nix_file.sections['app_logs']['notes']
+
+        config = self._nix_file.sections['app_config']
+
+        config_data = {}
+        for prop in config.props:
+            config_data[prop.name] = yaml_loads(prop.values[0].value)
+
+        self.ceed_version = config_data.get('ceed_version', '')
+
+        view = ViewControllerBase()
+        ser = DataSerializerBase()
+        func = FunctionFactoryBase()
+        register_all_functions(func)
+        shape = CeedPaintCanvasBehavior()
+        stage = StageFactoryBase(
+            function_factory=func, shape_factory=shape)
+
+        apply_config(config_data['app_settings'], {
+            'view': view, 'serializer': ser, 'function': func})
+        self.populate_config(config_data, shape, func, stage)
+
+        self.app_config = {
+            'view_controller': view,
+            'data_serializer': ser,
+            'function_factory': func,
+            'shape_factory': shape,
+            'stage_factory': stage,
+        }
 
     def load_experiment(self, experiment):
         self._block = block = self._nix_file.blocks[
             CeedDataWriterBase.get_experiment_block_name(experiment)]
         section = self._nix_file.sections[
             'experiment{}_metadata'.format(experiment)]
-        self.experiment = experiment
+        self.loaded_experiment = experiment
 
         self.experiment_stage_name = section['stage']
-        self.ceed_version = section['ceed_version']
         self.experiment_notes = section['notes'] if 'notes' in section else ''
         self.experiment_start_time = float(
             section['save_time']) if 'save_time' in section else 0
@@ -171,13 +222,16 @@ class CeedDataReader(object):
         ser = self.data_serializer = DataSerializerBase()
         func = self.function_factory = FunctionFactoryBase()
         register_all_functions(func)
-        shape = self.shape_factory = CeedPaintCanvasBehavior(knsname='painter')
+        shape = self.shape_factory = CeedPaintCanvasBehavior()
         stage = self.stage_factory = StageFactoryBase(
             function_factory=func, shape_factory=shape)
 
         apply_config(config_data['app_settings'], {
             'view': view, 'serializer': ser, 'function': func})
         self.populate_config(config_data, shape, func, stage)
+
+        self.experiment_cam_image = self.read_image_from_block(
+            self._block)
 
         data = self.shapes_intensity = {}
         for item in block.data_arrays:
@@ -218,12 +272,19 @@ class CeedDataReader(object):
             for prop in mcs_metadata.sections[item.name].props:
                 electrode_metadata[prop.name] = yaml_loads(prop.values[0].value)
 
-    def get_fluorescent_image(self):
-        return self.read_fluorescent_image_from_block(self._block)
+    def get_image_from_file(self, image_num):
+        block = self._nix_file.blocks['fluorescent_images']
+        postfix = '_{}'.format(image_num)
 
-    def save_flourescent_image(self, filename, img=None, codec='bmp'):
-        if img is None:
-            img = self.get_fluorescent_image()
+        group = block.groups['fluorescent_image{}'.format(postfix)]
+        img = self.read_image_from_block(block, postfix)
+
+        notes = group.metadata['notes']
+        save_time = float(group.metadata['save_time'])
+
+        return img, notes, save_time
+
+    def save_image(self, filename, img, codec='bmp'):
         Player.save_image(
             filename, img, codec=codec, pix_fmt=img.get_pixel_format())
 
@@ -704,7 +765,7 @@ class CeedDataReader(object):
             fbo.draw()
             img = Image(plane_buffers=[fbo.pixels], pix_fmt='rgba', size=(w, h))
             writer.write_frame(img, (i - start + 1) / (rate * speed))
-        print('done')
+        pbar.close()
 
     @staticmethod
     def populate_config(
@@ -721,7 +782,7 @@ class CeedDataReader(object):
         return funcs, stages
 
     @staticmethod
-    def read_fluorescent_image_from_block(block, postfix=''):
+    def read_image_from_block(block, postfix=''):
         try:
             group = block.groups['fluorescent_image{}'.format(postfix)]
         except KeyError:
@@ -752,8 +813,11 @@ class CeedDataReader(object):
 
                 if chunks is None:
                     items = np.array(value)
-                    scipy.io.savemat(fh, {'data': (items - offset) * scale,
-                                          'sr': self.electrodes_metadata[name]['sampling_frequency']})
+                    scipy.io.savemat(
+                        fh, {'data': (items - offset) * scale,
+                             'sr': self.electrodes_metadata[name][
+                                 'sampling_frequency']}
+                    )
                     pbar.update(len(items))
                 else:
                     n = len(value)
@@ -796,23 +860,27 @@ class CeedDataReader(object):
                 pbar.update(len(items) * itemsize)
                 i += 1
         pbar.close()
-        print('Channel order is: {}'.format(names))
+        print('Channel order in "{}" is: {}'.format(filename, names))
 
 
 if __name__ == '__main__':
-    f = CeedDataReader(r'F:\test_merged.h5')
+    f = CeedDataReader(r'e:\ceed_merged.h5')
     f.open_h5()
     f.load_mcs_data()
 
-    f.load_experiment(0)
-    # f.save_flourescent_image(r'/home/cpl/Desktop/test_out.bmp')
+    print('Found experiments: {}. Number of saved images are: {}'.format(
+        f.experiments_in_file, f.num_images_in_file))
+
+    f.load_experiment(2)
+    # f.save_image(
+    #     r'/home/cpl/Desktop/test_out.bmp', f.experiment_cam_image)
 
     f.generate_movie(
-        r'E:\est_merged_electrodes.mp4', lum=3, canvas_size_hint=(2, 1),
-        speed=.2,
+        r'E:\est_merged_electrodes2.mp4', lum=3, canvas_size_hint=(2, 1),
+        speed=1., end=1,
         paint_funcs=[
             f.paint_background_image(
-                f.get_fluorescent_image(),
+                f.experiment_cam_image,
                 transform_matrix=f.view_controller.cam_transform),
             f.show_mea_outline(f.view_controller.mea_transform),
             f.paint_electrodes_data_callbacks(

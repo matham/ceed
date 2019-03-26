@@ -314,6 +314,7 @@ class CeedDataWriterBase(EventDispatcher):
             'file "{}"'.format(self.backup_filename, self.filename))
 
         self.upgrade_file(self.nix_file)
+        self.write_config()
         if not read_only:
             self.save()
 
@@ -526,8 +527,12 @@ class CeedDataWriterBase(EventDispatcher):
         return group
 
     def get_num_fluorescent_images(self):
+        return self.get_file_num_fluorescent_images(self.nix_file)
+
+    @staticmethod
+    def get_file_num_fluorescent_images(nix_file):
         try:
-            return len(self.nix_file.blocks['fluorescent_images'].groups)
+            return len(nix_file.blocks['fluorescent_images'].groups)
         except KeyError:
             return 0
 
