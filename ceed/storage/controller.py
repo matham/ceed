@@ -487,7 +487,7 @@ class CeedDataWriterBase(EventDispatcher):
                 if block.name not in names:
                     continue
 
-                img = CeedDataReader.read_fluorescent_image_from_block(block)
+                img = CeedDataReader.read_image_from_block(block)
                 if img is not None:
                     return img
 
@@ -604,7 +604,7 @@ class CeedDataWriterBase(EventDispatcher):
         metadata = {
             'stage': block.metadata['stage'],
             'save_time': float(t),
-            'image': CeedDataReader.read_fluorescent_image_from_block(block),
+            'image': CeedDataReader.read_image_from_block(block),
             'notes': notes,
             'duration_frames': len(block.data_arrays['frame_time']),
             'duration_sec': float(duration_sec),
@@ -622,7 +622,7 @@ class CeedDataWriterBase(EventDispatcher):
         data = {
             'save_time': float(group.metadata['save_time']),
             'notes': group.metadata['notes'],
-            'image': CeedDataReader.read_fluorescent_image_from_block(
+            'image': CeedDataReader.read_image_from_block(
                 block, postfix='_{}'.format(image_num)),
             'image_num': image_num,
         }
