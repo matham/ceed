@@ -77,3 +77,39 @@
     height: self.minimum_height
     multiline: False
     on_focus: if not self.focus: self._update_attr(self.text)
+
+
+<FuncSettingsDropDown>:
+    do_scroll: False, False
+    flat_color: app.theme.primary_text
+    flat_border_color: app.theme.divider
+    splitter: splitter
+    settings: settings
+    FlatSplitter:
+        id: splitter
+        size_hint: None, None
+        sizable_from: 'left'
+        flat_color: app.theme.accent
+        height: self.minimum_height
+        min_size: self.minimum_width
+        BoxLayout:
+            id: settings
+            size_hint_y: None
+            orientation: 'vertical'
+            spacing: '5dp'
+            padding: '5dp'
+            height: self.minimum_height
+            size_hint_min_x: self.minimum_width
+            FuncNamePropTextWidget:
+                func: root.func_widget.ref_func or root.func_widget.func
+                prop_name: 'name'
+                on_parent: self.apply_binding()
+                disabled: root.func_widget.func.parent_func is not None
+            FlatLabel:
+                padding: '5dp', '5dp'
+                size_hint_y: None
+                halign: 'center'
+                flat_color: app.theme.text_primary
+                height: self.texture_size[1]
+                text_size: self.width, None
+                text: root.func_widget.func.description

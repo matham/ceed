@@ -256,9 +256,11 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
                     grid.add_widget(
                         label(text=pretty_names.get(key, key),
                               padding_x='10dp', flat_color=color))
-                    grid.add_widget(FuncPropTextWidget(
-                        func=func, prop_name=key,
-                        input_filter=input_filter[fmt]))
+                    widget = FuncPropTextWidget(input_filter=input_filter[fmt])
+                    widget.func = func
+                    widget.prop_name = key
+                    widget.apply_binding()
+                    grid.add_widget(widget)
 
             for key, cls in sorted(cls_widgets, key=lambda x: x[0]):
                 cls, kw = cls
@@ -409,52 +411,15 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
                                 source='flat_dots_vertical.png') as more_btn:
                             more_btn.flat_color @= app.theme.accent
 
-                            settings_root, splitter = self.get_settings_dropdown()
+                            assert self.ref_func is None
+                            settings_root = Factory.FuncSettingsDropDown(func_widget=self)
+                            splitter = settings_root.splitter
+                            self._settings = settings_root.settings
+
                             with KvRule(more_btn.on_release, triggered_only=True):
                                 assert self.ref_func is None
                                 settings_root.open(selector)
                                 splitter.width = max(selector.width, splitter.width)
-
-    @kv(proxy='app*')
-    def get_settings_dropdown(self):
-        assert self.ref_func is None
-        app = _get_app()
-        with KvContext():
-            with Factory.FlatDropDown(
-                    do_scroll=(False, False)) as settings_root:
-                settings_root.flat_color @= app.theme.primary_text
-                settings_root.flat_border_color @= app.theme.divider
-
-                with Factory.FlatSplitter(
-                    parent=settings_root, size_hint=(None, None),
-                        sizable_from='left') as splitter:
-                    splitter.flat_color @= app.theme.accent
-                    splitter.height @= splitter.minimum_height
-                    splitter.min_size @= splitter.minimum_width
-
-                    with BoxLayout(
-                        parent=splitter, size_hint_y=None, orientation='vertical',
-                            spacing='5dp', padding='5dp') as settings:
-                        self._settings = settings
-                        settings.height @= settings.minimum_height
-                        settings.size_hint_min_x @= settings.minimum_width
-
-                        with FuncNamePropTextWidget(
-                            parent=settings, func=self.ref_func or self.func,
-                                prop_name='name') as name:
-                            pass
-                        if self.func.parent_func is not None:
-                            name.disabled = True
-
-                        with Factory.FlatLabel(
-                            parent=settings, padding=('5dp', '5dp'),
-                                size_hint_y=None, halign='center') as desc:
-                            desc.flat_color @= app.theme.text_primary
-                            desc.height @= desc.texture_size[1]
-                            desc.text_size @= desc.width, None
-                            desc.text @= self.func.description
-
-        return settings_root, splitter
 
 
 class FuncWidgetGroup(FuncWidget):
@@ -575,13 +540,10 @@ class FuncPropTextWidget(FlatTextInput):
     '''The name of the property of :attr:`func` that this widget edits.
     '''
 
-    def __init__(self, func=None, prop_name=None, **kwargs):
-        super(FuncPropTextWidget, self).__init__(**kwargs)
-        self.func = func
-        self.prop_name = prop_name
+    def apply_binding(self):
         if not self.hint_text:
-            self.hint_text = prop_name
-        func.fbind(prop_name, self._update_text)
+            self.hint_text = self.prop_name
+        self.func.fbind(self.prop_name, self._update_text)
         self._update_text()
 
     def _update_text(self, *largs):
@@ -681,3 +643,12 @@ class TrackOptionsSpinner(Factory.SizedCeedFlatSpinner):
 
         if self.text not in vals:
             self.text = vals[0] if vals else ''
+
+
+class FuncSettingsDropDown(Factory.FlatDropDown):
+
+    func_widget = ObjectProperty(None)
+
+    def __init__(self, func_widget, **kwargs):
+        self.func_widget = func_widget
+        super(FuncSettingsDropDown, self).__init__(**kwargs)
