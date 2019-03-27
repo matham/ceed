@@ -315,8 +315,6 @@ class CeedDataWriterBase(EventDispatcher):
 
         self.upgrade_file(self.nix_file)
         self.write_config()
-        if not read_only:
-            self.save()
 
         self.dispatch('on_experiment_change', 'open', None)
 
@@ -376,6 +374,8 @@ class CeedDataWriterBase(EventDispatcher):
             raise ValueError('{} already exists'.format(filename))
         self.save(filename, True)
         self.open_file(filename)
+        if not self.read_only_file:
+            self.save()
 
     def save(self, filename=None, force=False):
         '''Saves the changes to the autosave and also saves the changes to
@@ -443,6 +443,7 @@ class CeedDataWriterBase(EventDispatcher):
             config[k] = yaml_dumps(v)
 
         config['ceed_version'] = yaml_dumps(ceed.__version__)
+        self.has_unsaved = True
 
     def read_config(self, config_section=None):
         config = config_section if config_section is not None else \
@@ -457,7 +458,7 @@ class CeedDataWriterBase(EventDispatcher):
         section = self.nix_file.sections['app_logs']
         t = time.time()
         section['log_data'] += '\n{}: {}'.format(t, text)
-        self.config_changed = True
+        self.has_unsaved = True
         self.dispatch('on_experiment_change', 'app_log', None)
 
     def add_app_log(self, text):
@@ -504,7 +505,7 @@ class CeedDataWriterBase(EventDispatcher):
         group.metadata['save_time'] = '{}'.format(time.time())
         self.add_app_log('Saved current image to h5 file')
 
-        self.config_changed = True
+        self.has_unsaved = True
         self.dispatch('on_experiment_change', 'image_add', n)
 
     def write_fluorescent_image(self, block, img, postfix=''):
@@ -549,7 +550,7 @@ class CeedDataWriterBase(EventDispatcher):
         name = self.get_experiment_block_name(experiment_block_number)
         block = self.nix_file.blocks[name]
         block.metadata['notes'] = text
-        self.config_changed = True
+        self.has_unsaved = True
 
         self.dispatch(
             'on_experiment_change', 'experiment_notes', experiment_block_number)
@@ -586,7 +587,7 @@ class CeedDataWriterBase(EventDispatcher):
             raise ValueError('Could not find the MEA matrix in the config')
 
         config['app_settings'] = settings_new
-        self.config_changed = True
+        self.has_unsaved = True
         self.dispatch(
             'on_experiment_change', 'experiment_mea_settings',
             experiment_block_number)
