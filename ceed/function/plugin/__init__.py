@@ -73,6 +73,11 @@ class ConstFunc(CeedFunc):
         d['a'] = self.a
         return d
 
+    def get_noise_supported_parameters(self):
+        val = super(ConstFunc, self).get_noise_supported_parameters()
+        val.add('a')
+        return val
+
 
 class LinearFunc(CeedFunc):
     '''Defines a linearly increasing function.
@@ -107,6 +112,12 @@ class LinearFunc(CeedFunc):
         d['m'] = self.m
         d['b'] = self.b
         return d
+
+    def get_noise_supported_parameters(self):
+        val = super(LinearFunc, self).get_noise_supported_parameters()
+        val.add('m')
+        val.add('b')
+        return val
 
 
 class ExponentialFunc(CeedFunc):
@@ -153,6 +164,14 @@ class ExponentialFunc(CeedFunc):
         d['tau2'] = self.tau2
         return d
 
+    def get_noise_supported_parameters(self):
+        val = super(ExponentialFunc, self).get_noise_supported_parameters()
+        val.add('A')
+        val.add('B')
+        val.add('tau1')
+        val.add('tau2')
+        return val
+
 
 class CosFunc(CeedFunc):
     '''Defines a cosine function.
@@ -197,6 +216,14 @@ class CosFunc(CeedFunc):
         d['A'] = self.A
         d['th0'] = self.th0
         return d
+
+    def get_noise_supported_parameters(self):
+        val = super(CosFunc, self).get_noise_supported_parameters()
+        val.add('f')
+        val.add('A')
+        val.add('th0')
+        val.add('b')
+        return val
 
 
 def get_ceed_functions():

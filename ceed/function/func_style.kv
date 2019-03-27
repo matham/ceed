@@ -1,3 +1,4 @@
+#:import Factory kivy.factory.Factory
 
 <FuncListing@FlatSplitter>:
     size_hint_x: None
@@ -113,3 +114,32 @@
                 height: self.texture_size[1]
                 text_size: self.width, None
                 text: root.func_widget.func.description
+
+
+<FuncNoiseDropDown@FlatDropDown>:
+    do_scroll: False, False
+    flat_color: app.theme.primary_text
+    flat_border_color: app.theme.divider
+    container: container
+    FlatSplitter:
+        size_hint: None, None
+        sizable_from: 'left'
+        flat_color: app.theme.accent
+        height: self.minimum_height
+        min_size: self.minimum_width
+        BoxLayout:
+            id: container
+            size_hint_y: None
+            orientation: 'vertical'
+            spacing: '5dp'
+            padding: '5dp'
+            height: self.minimum_height
+            size_hint_min_x: self.minimum_width
+
+
+<NoiseSelection@FlatImageButton>:
+    more_widget: None
+    scale_down_color: True
+    source: 'flat_dots_vertical.png'
+    flat_color: app.theme.accent
+    on_release: self.more_widget.open(root)

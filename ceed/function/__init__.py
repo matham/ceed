@@ -45,6 +45,8 @@ from kivy.logger import Logger
 from kivy.factory import Factory
 
 from ceed.utils import fix_name, update_key_if_other_key
+from ceed.function.param_noise import ParameterNoiseFactory, \
+    register_noise_classes
 
 __all__ = ('FuncDoneException', 'FunctionFactoryBase',
            'FuncBase', 'CeedFunc', 'FuncGroup', 'register_all_functions')
@@ -174,6 +176,8 @@ class FunctionFactoryBase(EventDispatcher):
     :attr:`FuncBase.timebase`.
     '''
 
+    param_noise_factory = None
+
     _cls_inst_funcs = {}
     '''Mapping from a :class:`FuncBase` derived class to a default instance of
     that class.
@@ -188,6 +192,8 @@ class FunctionFactoryBase(EventDispatcher):
         self.funcs_inst_default = {}
         self._cls_inst_funcs = {}
         self._ref_funcs = defaultdict(int)
+        self.param_noise_factory = ParameterNoiseFactory()
+        register_noise_classes(self.param_noise_factory)
 
     def on_changed(self, *largs, **kwargs):
         pass
@@ -563,6 +569,8 @@ class FuncBase(EventDispatcher):
     '''The current loop count. See :attr:`loop` and the class description.
     '''
 
+    noisy_parameters = DictProperty({})
+
     __events__ = ('on_changed', )
 
     def __init__(self, function_factory, **kwargs):
@@ -574,6 +582,9 @@ class FuncBase(EventDispatcher):
         self.fbind('duration', self._update_total_duration)
         self.fbind('loop', self._update_total_duration)
         self._update_total_duration()
+
+    def get_noise_supported_parameters(self):
+        return set()
 
     def __call__(self, t):
         raise NotImplementedError
@@ -753,7 +764,10 @@ class FuncBase(EventDispatcher):
             'name': self.name, 'cls': self.__class__.__name__,
             'loop': self.loop,
             'timebase_numerator': self.timebase_numerator,
-            'timebase_denominator': self.timebase_denominator}
+            'timebase_denominator': self.timebase_denominator,
+            'noisy_parameters':
+                {k: v.get_config() for k, v in self.noisy_parameters.items()},
+        }
         if state is None:
             state = d
         else:
@@ -781,7 +795,16 @@ class FuncBase(EventDispatcher):
         '''
         p = self._clone_props
         for k, v in state.items():
-            if clone or k not in p:
+            if k == 'noisy_parameters':
+                noisy_parameters = {}
+                noise_factory = self.function_factory.param_noise_factory
+
+                for param, config in v.items():
+                    noisy_parameters[param] = noise_factory.make_instance(
+                        config)
+
+                self.noisy_parameters = noisy_parameters
+            elif clone or k not in p:
                 setattr(self, k, v)
 
     def get_funcs(self, step_into_ref=True):

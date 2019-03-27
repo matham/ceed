@@ -18,6 +18,7 @@ from kivy.app import App
 from kivy.lang.compiler import kv, KvContext, KvRule
 from kivy.graphics import Color, Rectangle
 from kivy.metrics import dp
+from kivy.uix.widget import Widget
 
 from cplcom.graphics import FlatTextInput
 from cplcom.drag_n_drop import DraggableLayoutBehavior
@@ -214,6 +215,7 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
         func = self.func
         items = func.get_gui_elements()
         kwargs = func.get_gui_props()
+        noise_supported_parameters = func.get_noise_supported_parameters()
         pretty_names = func.get_prop_pretty_name()
         add = self._settings.add_widget
 
@@ -248,7 +250,7 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
                                     format(value))
 
         if props or cls_widgets:
-            grid = Factory.XYSizedGridLayout(cols=2)
+            grid = Factory.XYSizedGridLayout(cols=3)
             label = Factory.FlatXSizedLabel
             color = App.get_running_app().theme.text_primary
             for fmt, keys in sorted(props.items(), key=lambda x: x[0]):
@@ -256,11 +258,20 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
                     grid.add_widget(
                         label(text=pretty_names.get(key, key),
                               padding_x='10dp', flat_color=color))
+
                     widget = FuncPropTextWidget(input_filter=input_filter[fmt])
                     widget.func = func
                     widget.prop_name = key
                     widget.apply_binding()
                     grid.add_widget(widget)
+
+                    if key in noise_supported_parameters:
+                        noise = Factory.NoiseSelection()
+                        noise.more_widget = FuncNoiseDropDown()
+                        grid.add_widget(noise)
+                    else:
+                        grid.add_widget(
+                            Widget(size_hint=(None, None), size=(0, 0)))
 
             for key, cls in sorted(cls_widgets, key=lambda x: x[0]):
                 cls, kw = cls
@@ -272,6 +283,14 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
                           padding_x='10dp', flat_color=color))
                 grid.add_widget(cls(
                     func=func, prop_name=key, **kw))
+
+                if key in noise_supported_parameters:
+                    noise = Factory.NoiseSelection()
+                    noise.more_widget = FuncNoiseDropDown()
+                    grid.add_widget(noise)
+                else:
+                    grid.add_widget(
+                        Widget(size_hint=(None, None), size=(0, 0)))
 
             add(grid)
 
@@ -652,3 +671,9 @@ class FuncSettingsDropDown(Factory.FlatDropDown):
     def __init__(self, func_widget, **kwargs):
         self.func_widget = func_widget
         super(FuncSettingsDropDown, self).__init__(**kwargs)
+
+
+class FuncNoiseDropDown(Factory.FlatDropDown):
+
+    def __init__(self, **kwargs):
+        super(FuncNoiseDropDown, self).__init__(**kwargs)
