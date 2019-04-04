@@ -488,9 +488,9 @@ class CeedMCSDataMerger(object):
 
 
 if __name__ == '__main__':
-    ceed_file = r'F:\ceed.h5'
-    mcs_file = r'F:\mcs.h5'
-    output_file = r'F:\ceed_merged.h5'
+    ceed_file = r'/home/cpl/Desktop/data/3-11-19/slice2.h5'
+    mcs_file = r'/home/cpl/Desktop/data/3-11-19/2019-03-11T17-13-30McsRecording.h5'
+    output_file = r'/home/cpl/Desktop/data/3-11-19/slice2_merged.h5'
     notes = ''
     notes_filename = None
 
