@@ -183,7 +183,7 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
     case.
     '''
 
-    func_controller = None
+    func_controller = ObjectProperty(None)
     '''The controller to which the function is added or removed from.
     This is e.g. :attr:`ceed.function.FunctionFactoryBase` in the function list
     case or the stage to which the function is attached.

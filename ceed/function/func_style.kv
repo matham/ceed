@@ -1,4 +1,5 @@
 #:import Factory kivy.factory.Factory
+#:import FunctionFactoryBase ceed.function.FunctionFactoryBase
 
 <FuncListing@FlatSplitter>:
     size_hint_x: None
@@ -104,8 +105,8 @@
             FuncNamePropTextWidget:
                 func: root.func_widget.ref_func or root.func_widget.func
                 prop_name: 'name'
-                on_parent: self.apply_binding()
-                disabled: root.func_widget.func.parent_func is not None
+                on_parent: if self.parent is not None: self.apply_binding()
+                disabled: root.func_widget.func.parent_func is not None or not isinstance(root.func_widget.func_controller, FunctionFactoryBase)
             FlatLabel:
                 padding: '5dp', '5dp'
                 size_hint_y: None
