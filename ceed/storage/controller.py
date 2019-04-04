@@ -707,6 +707,7 @@ class CeedDataWriterBase(EventDispatcher):
 
             if eof:
                 value()
+                break
             elif msg == 'frame':
                 count, bits, values = value
                 frame_count_buf[frame_i] = count
