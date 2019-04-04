@@ -749,14 +749,16 @@ class ControllerSideViewControllerBase(ViewControllerBase):
                 self.last_cam_image = None
             self.queue_view_read.put_nowait(('end_stage', None))
 
-    def stage_end_cleanup(self, state={}):
+    def stage_end_cleanup(self, state=None):
         App.get_running_app().ceed_data.stop_experiment()
         self.stage_active = False
-        if state and self.last_cam_image is not None:
-            self.proj_size = state['proj_size']
-            self.proj_pixels = state['pixels']
-        else:
-            self.last_cam_image = None
+        if state:
+            if self.last_cam_image is None:
+                self.last_cam_image = knspace.player.last_image
+
+            if self.last_cam_image is not None:
+                self.proj_size = state['proj_size']
+                self.proj_pixels = state['pixels']
 
         if self.propixx_lib:
             self.set_pixel_mode(False)
