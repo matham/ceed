@@ -19,8 +19,8 @@ from kivy.garden.graph import MeshLinePlot
 from kivy.metrics import dp
 from kivy.app import App
 from kivy.utils import get_color_from_hex
-from kivy.lang.compiler import kv, KvContext, KvRule
 from kivy.uix.gridlayout import GridLayout
+from kivy.lang import Builder
 from kivy.graphics import Rectangle, Color, Line
 
 from ceed.graphics import WidgetList, ShowMoreSelection, BoxSelector, \
@@ -281,6 +281,8 @@ class StageWidget(ShowMoreBehavior, BoxLayout):
 
     selection_controller = None
 
+    settings_root = None
+
     @property
     def name(self):
         '''The :attr:`ceed.stage.CeedStage.name` of the stage.
@@ -384,278 +386,52 @@ class StageWidget(ShowMoreBehavior, BoxLayout):
 
         self.stage.stage_factory.return_stage_ref(self.stage)
 
-    @kv(proxy='app*')
     def apply_kv(self):
         app = _get_app()
         stage = self.ref_stage or self.stage
         stage.fbind('on_changed', app.changed_callback)
 
-        with KvContext():
-            self.size_hint_y = None
-            self.orientation = 'vertical'
-            self.spacing = '3dp'
+        Builder.apply_rules(self, 'StageWidgetStyle', dispatch_kv_post=True)
 
-            self.height @= self.minimum_height
-            self.size_hint_min_x @= self.minimum_width
-            self.is_visible @= self.parent is not None and self.parent.is_visible
+        more = self.more
+        if self.ref_stage is not None:
+            self.remove_widget(more)
+        else:
+            self.settings_root = Factory.FlatDropDown()
+            self.settings_root.stage_widget = self
+            Builder.apply_rules(
+                self.settings_root, 'StageSettingsDropdownStyle',
+                dispatch_kv_post=True)
 
-            with BoxSelector(
-                    parent=self, size_hint_y=None, height='34dp',
-                    orientation='horizontal', spacing='5dp', padding='5dp'
-                    ) as selector:
-                selector.size_hint_min_x @= selector.minimum_width
-                selector.controller = self.selection_controller
+            self.add_stage_containers(more)
 
-                with selector.canvas:
-                    color = Color()
-                    color.rgba ^= app.theme.interpolate(
-                        app.theme.primary_light, app.theme.primary, .4) if \
-                        not self.selected else app.theme.primary
-                    rect = Rectangle()
-                    rect.size ^= selector.size
-                    rect.pos ^= selector.pos
+    def add_stage_containers(self, more_widget):
+        stage_widget = self.stage_widget = StageChildrenList()
+        stage_widget.stage_widget = self
+        stage_widget.drag_classes = ['stage']
+        stage_widget.drag_append_end = False
+        stage_widget.back_color = (.482, .114, 0, 1)
+        more_widget.add_widget(stage_widget)
+        Builder.apply_rules(
+            stage_widget, 'StageContainerListStyle', dispatch_kv_post=True)
 
-                with Factory.DraggingWidget(
-                        parent=selector, drag_widget=selector,
-                        obj_dragged=self, drag_cls='stage') as dragger:
-                    dragger.drag_copy = True  # root.func.parent_func is None
-                    dragger.flat_color = .482, .114, 0, 1
-                    # if not self.drag_copy: root.remove_func()
-                    pass
+        func_widget = self.func_widget = StageFuncChildrenList()
+        func_widget.stage_widget = self
+        func_widget.drag_classes = ['func', 'func_spinner']
+        func_widget.drag_append_end = False
+        func_widget.back_color = (.196, .122, .063, 1)
+        more_widget.add_widget(func_widget)
+        Builder.apply_rules(
+            func_widget, 'StageContainerListStyle', dispatch_kv_post=True)
 
-                with Factory.ExpandWidget(parent=selector) as expand:
-                    expand.state = 'down'
-                    self.show_more @= expand.is_open
-                if self.ref_stage is not None:
-                    selector.remove_widget(expand)
-
-                with Factory.FlatLabel(
-                        parent=selector, center_texture=False,
-                        padding=('5dp', '5dp')) as stage_label:
-                    stage_label.flat_color = app.theme.text_primary
-
-                    stage_label.text @= stage.name
-                    stage_label.size_hint_min_x @= stage_label.texture_size[0]
-
-                with Factory.FlatImageButton(
-                        parent=selector, scale_down_color=True,
-                        source='flat_delete.png') as del_btn:
-                    del_btn.flat_color @= app.theme.accent
-                    del_btn.disabled @= stage.has_ref if self.ref_stage is None else False
-                    with KvRule(del_btn.on_release, triggered_only=True):
-                        self.remove_stage()
-
-                if self.ref_stage:
-                    with KvContext():
-                        with Factory.FlatImageButton(
-                                parent=selector, scale_down_color=True,
-                                source='call-split.png') as split_btn:
-                            split_btn.flat_color @= app.theme.accent
-
-                            with KvRule(split_btn.on_release, triggered_only=True):
-                                self.replace_ref_with_source()
-                else:
-                    with KvContext():
-                        with Factory.FlatImageButton(
-                                parent=selector, scale_down_color=True,
-                                source='flat_dots_vertical.png') as more_btn:
-                            more_btn.flat_color @= app.theme.accent
-
-                            settings_root, splitter = self.get_settings_dropdown()
-                            with KvRule(more_btn.on_release, triggered_only=True):
-                                assert self.ref_stage is None
-                                settings_root.open(selector)
-                                splitter.width = max(selector.width, splitter.width)
-
-            with BoxLayout(
-                    parent=self, spacing='3dp', size_hint_y=None,
-                    orientation='vertical', padding=('15dp', 0, 0, 0)) as more:
-                self.more = more
-                if self.ref_stage is not None:
-                    self.remove_widget(more)
-
-                more.height @= more.minimum_height
-                more.size_hint_min_x @= more.minimum_width
-                self.stage_widget = self.add_children_container(
-                    more, ['stage'], StageChildrenList,
-                    (.482, .114, 0, 1))
-                self.func_widget = self.add_children_container(
-                    more, ['func', 'func_spinner'], StageFuncChildrenList,
-                    (.196, .122, .063, 1))
-                self.shape_widget = self.add_children_container(
-                    more, ['shape', 'shape_group'], StageShapesChildrenList,
-                    (.835, .278, 0, 1), True)
-
-    @kv(proxy='app*')
-    def get_settings_dropdown(self):
-        """Creates the dropdown with the settings.
-        """
-        assert self.ref_stage is None
-        app = _get_app()
-
-        with KvContext():
-            with Factory.FlatDropDown(
-                    do_scroll=(False, False)) as settings_root:
-                settings_root.flat_color @= app.theme.primary_text
-                settings_root.flat_border_color @= app.theme.divider
-
-                with Factory.FlatSplitter(
-                    parent=settings_root, size_hint=(None, None),
-                        sizable_from='left') as splitter:
-                    splitter.flat_color @= app.theme.accent
-                    splitter.height @= splitter.minimum_height
-                    splitter.min_size @= splitter.minimum_width
-
-                with BoxLayout(
-                    parent=splitter, size_hint_y=None, orientation='vertical',
-                        spacing='5dp', padding='5dp') as settings:
-                    settings.height @= settings.minimum_height
-                    settings.size_hint_min_x @= settings.minimum_width
-
-                    with Factory.FlatSizedTextInput(parent=settings) as name_input:
-                        name_input.background_color @= app.theme.primary_text
-                        name_input.text @= self.stage.name
-                        with KvRule(name_input.focus):
-                            if not name_input.focus:
-                                self.stage.name = name_input.text
-                    if self.stage.parent_stage is not None:
-                        settings.remove_widget(name_input)
-
-                    with BoxLayout(
-                            parent=settings, size_hint_y=None, height='34dp',
-                            spacing='5dp') as channel_box:
-
-                        with Factory.LightThemedToggleButton(
-                                parent=channel_box, text='R') as channel_r:
-                            channel_r.state @= 'down' if self.stage.color_r else 'normal'
-                            self.stage.color_r @= channel_r.state == 'down'
-                        with Factory.LightThemedToggleButton(
-                                parent=channel_box, text='G') as channel_g:
-                            channel_g.state @= 'down' if self.stage.color_g else 'normal'
-                            self.stage.color_g @= channel_g.state == 'down'
-                        with Factory.LightThemedToggleButton(
-                                parent=channel_box, text='B') as channel_b:
-                            channel_b.state @= 'down' if self.stage.color_b else 'normal'
-                            self.stage.color_b @= channel_b.state == 'down'
-
-                    with GridLayout(
-                            parent=settings, size_hint_y=None, padding='5dp',
-                            spacing='5dp', cols=2) as grid:
-                        grid.height @= grid.minimum_height
-                        grid.size_hint_min_x @= grid.minimum_width
-                        with Factory.FlatLabel(
-                            parent=grid, size_hint=(None, None),
-                                text='Stage order') as stage_label:
-                            stage_label.size @= stage_label.texture_size
-                            stage_label.flat_color @= app.theme.text_primary
-
-                        with BoxLayout(
-                                parent=grid, spacing='5dp', size_hint_y=None
-                                    ) as order_box:
-                            order_box.height @= order_box.minimum_height
-                            order_box.size_hint_min_x @= order_box.minimum_width
-
-                            with Factory.LightThemedToggleButton(
-                                    parent=order_box, size_hint_y=None,
-                                    padding=('5dp', '5dp'), text='Serial'
-                                    ) as serial:
-                                serial.height @= serial.texture_size[1]
-                                serial.size_hint_min_x @= serial.texture_size[0]
-
-                                serial.state @= 'down' if self.stage.order == 'serial' else 'normal'
-                                with KvRule(serial.state):
-                                    self.stage.order = 'serial' if serial.state == 'down' else 'parallel'
-
-                            with Factory.LightThemedToggleButton(
-                                    parent=order_box, size_hint_y=None,
-                                    padding=('5dp', '5dp'), text='Parallel'
-                                    ) as parallel:
-                                parallel.height @= parallel.texture_size[1]
-                                parallel.size_hint_min_x @= parallel.texture_size[0]
-
-                                parallel.state @= 'down' if self.stage.order == 'parallel' else 'normal'
-                                with KvRule(parallel.state):
-                                    self.stage.order = 'parallel' if parallel.state == 'down' else 'serial'
-
-                        with Factory.FlatLabel(
-                                parent=grid, size_hint=(None, None),
-                                text='End on') as end_label:
-                            end_label.size @= end_label.texture_size
-                            end_label.flat_color @= app.theme.text_primary
-                        with BoxLayout(
-                                parent=grid, spacing='5dp', size_hint_y=None
-                                ) as end_box:
-                            end_box.height @= end_box.minimum_height
-                            end_box.size_hint_min_x @= end_box.minimum_width
-
-                            with Factory.LightThemedToggleButton(
-                                    parent=end_box, size_hint_y=None,
-                                    padding=('5dp', '5dp'), text='All') as end_all:
-                                end_all.height @= end_all.texture_size[1]
-                                end_all.size_hint_min_x @= end_all.texture_size[0]
-                                end_all.state @= 'down' if self.stage.complete_on == 'all' else 'normal'
-                                with KvRule(end_all.state):
-                                    self.stage.complete_on = 'all' if end_all.state == 'down' else 'any'
-
-                            with Factory.LightThemedToggleButton(
-                                    parent=end_box, size_hint_y=None,
-                                    padding=('5dp', '5dp'), text='Any') as end_any:
-                                end_any.height @= end_any.texture_size[1]
-                                end_any.size_hint_min_x @= end_any.texture_size[0]
-                                end_any.state @= 'down' if self.stage.complete_on == 'any' else 'normal'
-                                with KvRule(end_any.state):
-                                    self.stage.complete_on = 'any' if end_any.state == 'down' else 'all'
-
-        return settings_root, splitter
-
-    @kv(proxy='app*')
-    def add_children_container(
-            self, container, drag_classes, cls, color, drag_append_end=False):
-        """Gets a StageChildrenList that is added to containter.
-        """
-        app = _get_app()
-        with KvContext():
-            with cls(parent=container) as widget:
-                widget.spacing = '5dp'
-                widget.size_hint_y = None
-                widget.orientation = 'vertical'
-                widget.spacer_props = {
-                    'size_hint_y': None, 'height': '40dp',
-                    'size_hint_min_x': '40dp'}
-                widget.drag_classes = drag_classes
-                widget.drag_target_stage = self.stage
-                widget.drag_append_end = drag_append_end
-
-                widget.height @= widget.minimum_height
-                widget.size_hint_min_x @= widget.minimum_width
-                widget.padding @= '5dp', 0, 0, (
-                    0 if widget.children and not (
-                        app.drag_controller.dragging and
-                        app.drag_controller.widget_dragged and
-                        app.drag_controller.widget_dragged.drag_cls in
-                        drag_classes)
-                    else '12dp')
-                widget.is_visible @= self.show_more and self.is_visible
-                widget.stage_widget = self
-
-                with widget.canvas:
-                    color_back = Color()
-                    color_back.rgba = 152 / 255., 153 / 255., 155 / 255., 1.
-
-                    rect_back = Rectangle()
-                    rect_back.pos ^= widget.x + dp(5), widget.y
-                    rect_back.size ^= widget.width - dp(5), dp(10) if (
-                        app.drag_controller.dragging and
-                        app.drag_controller.widget_dragged and
-                        app.drag_controller.widget_dragged.drag_cls in
-                        drag_classes) else 0
-
-                    color_inst = Color()
-                    color_inst.rgba = color
-                    rect = Rectangle()
-                    rect.pos ^= widget.x + dp(1), widget.y
-                    rect.size ^= dp(2), widget.height
-        return widget
+        shape_widget = self.shape_widget = StageShapesChildrenList()
+        shape_widget.stage_widget = self
+        shape_widget.drag_classes = ['shape', 'shape_group']
+        shape_widget.drag_append_end = True
+        shape_widget.back_color = (.835, .278, 0, 1)
+        more_widget.add_widget(shape_widget)
+        Builder.apply_rules(
+            shape_widget, 'StageContainerListStyle', dispatch_kv_post=True)
 
 
 class StageShapeDisplay(BoxSelector):
@@ -681,42 +457,14 @@ class StageShapeDisplay(BoxSelector):
         self.stage_shape = stage_shape
         self.controller = self.selection_controller = selection_controller
 
-        self.apply_kv()
+        Builder.apply_rules(
+            self, 'StageShapeDisplayStyle', dispatch_kv_post=True)
 
     def remove_shape(self):
         self.stage_shape.stage.remove_shape(self.stage_shape)
         if self.selected:
             self.selection_controller.deselect_node(self)
         self.parent.remove_widget(self)
-
-    @kv(proxy='app*')
-    def apply_kv(self):
-        app = _get_app()
-        with KvContext():
-            self.size_hint_y = None
-            self.height = '34dp'
-            self.size_hint_min_x @= self.minimum_width
-            self.orientation = 'horizontal'
-            self.use_parent = False
-            self.spacing = '5dp'
-            with self.canvas:
-                color = Color()
-                color.rgba ^= app.theme.primary_light if not self.selected else app.theme.primary
-                rect = Rectangle()
-                rect.size ^= self.size
-                rect.pos ^= self.pos
-            with Factory.FlatLabel(parent=self) as label:
-                label.padding = '5dp', '5dp'
-                label.flat_color @= app.theme.text_primary
-                label.center_texture = False
-                label.text @= self.stage_shape.name
-                label.size_hint_min_x @= label.texture_size[0]
-            with Factory.FlatImageButton(parent=self) as btn:
-                btn.scale_down_color = True
-                btn.source = 'flat_delete.png'
-                btn.flat_color @= app.theme.accent
-                with KvRule(btn.on_release, triggered_only=True):
-                    self.remove_shape()
 
 
 class ShapePlot(object):

@@ -17,7 +17,7 @@ from kivy.factory import Factory
 from kivy.event import EventDispatcher
 from kivy.graphics import Color
 
-from ceed.function import CeedFunc, FuncDoneException
+from ceed.function import CeedFunc, FuncDoneException, CeedFuncRef
 from ceed.utils import fix_name, update_key_if_other_key
 from ceed.shape import CeedShapeGroup
 

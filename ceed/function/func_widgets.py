@@ -15,10 +15,10 @@ from kivy.clock import Clock
 from kivy.factory import Factory
 from kivy.compat import string_types
 from kivy.app import App
-from kivy.lang.compiler import kv, KvContext, KvRule
 from kivy.graphics import Color, Rectangle
 from kivy.metrics import dp
 from kivy.uix.widget import Widget
+from kivy.lang import Builder
 
 from cplcom.graphics import FlatTextInput
 from cplcom.drag_n_drop import DraggableLayoutBehavior
@@ -195,6 +195,10 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
 
     _settings = None
 
+    theme_interpolation = 0
+
+    settings_root = None
+
     @property
     def name(self):
         if self.ref_func:
@@ -267,7 +271,8 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
 
                     if key in noise_supported_parameters:
                         noise = Factory.NoiseSelection()
-                        noise.more_widget = FuncNoiseDropDown()
+                        noise.func = func
+                        noise.prop_name = key
                         grid.add_widget(noise)
                     else:
                         grid.add_widget(
@@ -357,88 +362,17 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
 
         self.func.function_factory.return_func_ref(self.func)
 
-    @kv(proxy='app*')
     def apply_kv(self):
-        self.size_hint_y = None
-        self.orientation = 'vertical'
-        app = _get_app()
         func = self.ref_func or self.func
+        app = _get_app()
         func.fbind('on_changed', app.changed_callback)
-        interpolation = .25 if isinstance(self.func, FuncGroup) else 0
 
-        with KvContext():
-            self.height @= self.minimum_height
-            self.size_hint_min_x @= self.minimum_width
-            self.is_visible @= self.parent is not None and self.parent.is_visible
+        if self.ref_func is None:
+            self.settings_root = settings_root = FuncSettingsDropDown(
+                func_widget=self)
+            self._settings = settings_root.settings
 
-            with BoxSelector(
-                    parent=self, size_hint_y=None, height='34dp',
-                    orientation='horizontal', spacing='5dp', padding='5dp'
-                    ) as selector:
-                selector.size_hint_min_x @= selector.minimum_width
-                selector.controller @= self.selection_controller
-
-                with selector.canvas:
-                    color = Color()
-                    color.rgba ^= app.theme.interpolate(
-                        app.theme.primary_light, app.theme.primary, interpolation) if \
-                        not self.selected else app.theme.primary
-                    rect = Rectangle()
-                    rect.size ^= selector.size
-                    rect.pos ^= selector.pos
-
-                with Factory.DraggingWidget(
-                        parent=selector, drag_widget=selector,
-                        obj_dragged=self, drag_cls='func') as dragger:
-                    dragger.drag_copy = True  # root.func.parent_func is None
-                    dragger.flat_color = .196, .122, .063, 1
-
-                with Factory.ExpandWidget(parent=selector) as expand:
-                    expand.state = 'down'
-                    self.show_more @= expand.is_open
-                self.handle_expand_widget(expand)
-
-                with Factory.FlatLabel(
-                        parent=selector, center_texture=False,
-                        padding=('5dp', '5dp')) as func_label:
-                    func_label.flat_color = app.theme.text_primary
-
-                    func_label.text @= func.name
-                    func_label.size_hint_min_x @= func_label.texture_size[0]
-
-                with Factory.FlatImageButton(
-                        parent=selector, scale_down_color=True,
-                        source='flat_delete.png') as del_btn:
-                    del_btn.flat_color @= app.theme.accent
-                    del_btn.disabled @= func.has_ref if self.ref_func is None else False
-                    with KvRule(del_btn.on_release, triggered_only=True):
-                        self.remove_func()
-
-                if self.ref_func:
-                    with KvContext():
-                        with Factory.FlatImageButton(
-                                parent=selector, scale_down_color=True,
-                                source='call-split.png') as split_btn:
-                            split_btn.flat_color @= app.theme.accent
-
-                            with KvRule(split_btn.on_release, triggered_only=True):
-                                self.replace_ref_func_with_source()
-                else:
-                    with KvContext():
-                        with Factory.FlatImageButton(
-                                parent=selector, scale_down_color=True,
-                                source='flat_dots_vertical.png') as more_btn:
-                            more_btn.flat_color @= app.theme.accent
-
-                            assert self.ref_func is None
-                            settings_root = Factory.FuncSettingsDropDown(func_widget=self)
-                            splitter = settings_root.splitter
-                            self._settings = settings_root.settings
-
-                            with KvRule(more_btn.on_release, triggered_only=True):
-                                assert self.ref_func is None
-                                settings_root.open(selector)
-                                splitter.width = max(selector.width, splitter.width)
+        Builder.apply_rules(self, 'FuncWidgetStyle', dispatch_kv_post=True)
 
 
 class FuncWidgetGroup(FuncWidget):
@@ -446,6 +380,8 @@ class FuncWidgetGroup(FuncWidget):
     '''
 
     children_container = None
+
+    theme_interpolation = 0.25
 
     def remove_func(self):
         c = self.selected_child()
@@ -467,58 +403,17 @@ class FuncWidgetGroup(FuncWidget):
             display.initialize_display(
                 child, func_controller, selection_controller)
 
-    @kv(proxy='app*')
     def apply_kv(self):
-        FuncWidget.apply_kv(self)
-        if self.ref_func:
+        super(FuncWidgetGroup, self).apply_kv()
+        if self.ref_func is not None:
             return
 
-        app = _get_app()
-        with KvContext():
-            with GroupFuncList(
-                    parent=self, spacing='5dp', size_hint_y=None,
-                    orientation='vertical') as more:
-                self.more = self.children_container = more
-                more.group_widget = self
-                more.is_visible @= self.show_more and self.is_visible
+        self.more = self.children_container = func_list = GroupFuncList()
+        self.add_widget(func_list)
+        func_list.group_widget = self
 
-                with KvRule(more.children, app.drag_controller.widget_dragged,
-                            app.drag_controller.dragging):
-                    if more.children and not (
-                            app.drag_controller.dragging and
-                            app.drag_controller.widget_dragged and
-                            app.drag_controller.widget_dragged.drag_cls in
-                            ('func', 'func_spinner')):
-                        more.padding = '15dp', '5dp', 0, 0
-                    else:
-                        more.padding = '15dp', '5dp', 0, '12dp'
-
-                more.height @= more.minimum_height
-                more.size_hint_min_x @= more.minimum_width
-
-                more.spacer_props = {
-                    'size_hint_y': None, 'height': '50dp',
-                    'size_hint_min_x': '40dp'}
-                more.drag_classes = ['func', 'func_spinner']
-                more.controller @= self.func
-                with more.canvas:
-                    color_back = Color()
-                    color_back.rgba = 152 / 255., 153 / 255., 155 / 255., 1.
-
-                    more_rect_back = Rectangle()
-                    more_rect_back.pos ^= more.x + dp(15), more.y
-                    more_rect_back.size ^= more.width - dp(15), dp(10) if (
-                        app.drag_controller.dragging and
-                        app.drag_controller.widget_dragged and
-                        app.drag_controller.widget_dragged.drag_cls in
-                        ('func', 'func_spinner')) else 0
-
-                    color = Color()
-                    color.rgba ^= app.theme.divider
-
-                    more_rect = Rectangle()
-                    more_rect.pos ^= more.x + dp(11), more.y
-                    more_rect.size ^= dp(2), more.height - dp(2)
+        Builder.apply_rules(
+            func_list, 'GroupFuncListStyle', dispatch_kv_post=True)
 
     def _show_more(self, *largs):
         '''Displays the additional configuration options in the GUI.
@@ -577,7 +472,6 @@ class FuncPropTextWidget(FlatTextInput):
             self._update_text()
             return
 
-        self.func.track_source = False
         if self.input_filter:
             text = {'int': int, 'float': float}[self.input_filter](text)
         setattr(self.func, self.prop_name, text)
@@ -650,7 +544,6 @@ class TrackOptionsSpinner(Factory.SizedCeedFlatSpinner):
         '''Updates the function property from the GUI.
         '''
         if getattr(self.func, self.prop_name) != self.text:
-            self.func.track_source = False
             setattr(self.func, self.prop_name, self.text)
 
     def _update_values(self, *largs):

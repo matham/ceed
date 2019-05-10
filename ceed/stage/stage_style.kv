@@ -58,6 +58,226 @@
                         size: self.width, dp(10)
 
 
+<StageWidgetStyle@object>:
+    size_hint_y: None
+    orientation: 'vertical'
+    spacing: '3dp'
+    height: self.minimum_height
+    size_hint_min_x: self.minimum_width
+    is_visible: self.parent is not None and self.parent.is_visible
+    more: more
+    show_more: expand.is_open
+    BoxSelector:
+        id: selector
+        size_hint_y: None
+        height: '34dp'
+        orientation: 'horizontal'
+        spacing: '5dp'
+        padding: '5dp'
+        size_hint_min_x: self.minimum_width
+        controller: root.selection_controller
+        canvas:
+            Color:
+                rgba: app.theme.interpolate(app.theme.primary_light, app.theme.primary, .4) if not root.selected else app.theme.primary
+            Rectangle:
+                size: self.size
+                pos: self.pos
+        DraggingWidget:
+            id: dragger
+            drag_widget: selector
+            obj_dragged: root.__self__
+            drag_cls: 'stage'
+            drag_copy: True
+            flat_color: .482, .114, 0, 1
+        ExpandWidget:
+            id: expand
+            state: 'down'
+            on_kv_post: if root.ref_stage is not None: selector.remove_widget(self)
+        FlatLabel:
+            id: stage_label
+            center_texture: False
+            padding: ('5dp', '5dp')
+            flat_color: app.theme.text_primary
+            text: root.ref_stage.name if root.ref_stage is not None else root.stage.name
+            size_hint_min_x: self.texture_size[0]
+        FlatImageButton:
+            id: del_btn
+            scale_down_color: True
+            source: 'flat_delete.png'
+            flat_color: app.theme.accent
+            disabled: root.stage.has_ref if root.ref_stage is None else False
+            on_release: root.remove_stage()
+        FlatImageButton:
+            scale_down_color: True
+            source: 'flat_dots_vertical.png' if root.ref_stage is None else 'call-split.png'
+            flat_color: app.theme.accent
+            on_release:
+                if root.ref_stage is not None: root.replace_ref_with_source()
+                if root.ref_stage is None: root.settings_root.open(selector)
+                if root.ref_stage is None: root.settings_root.splitter.width = max(selector.width, root.settings_root.splitter.width)
+    BoxLayout:
+        id: more
+        spacing: '3dp'
+        size_hint_y: None
+        orientation: 'vertical'
+        padding: ('15dp', 0, 0, 0)
+        height: self.minimum_height
+        size_hint_min_x: self.minimum_width
+
+
+<StageContainerListStyle@object>:
+    spacing: '5dp'
+    size_hint_y: None
+    orientation: 'vertical'
+    spacer_props: {'size_hint_y': None, 'height': '40dp', 'size_hint_min_x': '40dp'}
+    back_color: 1, 1, 1, 1
+    height: self.minimum_height
+    size_hint_min_x: self.minimum_width
+    padding: '5dp', 0, 0, (0 if self.children and not (app.drag_controller.dragging and app.drag_controller.widget_dragged and app.drag_controller.widget_dragged.drag_cls in self.drag_classes) else '12dp')
+    is_visible: self.stage_widget.show_more and self.stage_widget.is_visible
+    drag_target_stage: self.stage_widget.stage
+    canvas:
+        Color:
+            rgba: 152 / 255., 153 / 255., 155 / 255., 1.
+        Rectangle:
+            pos: self.x + dp(5), self.y
+            size: self.width - dp(5), dp(10) if (app.drag_controller.dragging and app.drag_controller.widget_dragged and app.drag_controller.widget_dragged.drag_cls in self.drag_classes) else 0
+        Color:
+            rgba: self.back_color
+        Rectangle:
+            pos: self.x + dp(1), self.y
+            size: dp(2), self.height
+
+
+<StageSettingsDropdownStyle@object>:
+    do_scroll: (False, False)
+    flat_color: app.theme.primary_text
+    flat_border_color: app.theme.divider
+    splitter: splitter
+    settings: settings
+    FlatSplitter:
+        id: splitter
+        size_hint: (None, None)
+        sizable_from: 'left'
+        flat_color: app.theme.accent
+        height: self.minimum_height
+        min_size: self.minimum_width
+    BoxLayout:
+        id: settings
+        size_hint_y: None
+        orientation: 'vertical'
+        spacing: '5dp'
+        padding: '5dp'
+        height: self.minimum_height
+        size_hint_min_x: self.minimum_width
+        FlatSizedTextInput:
+            background_color: app.theme.primary_text
+            text: root.stage_widget.stage.name
+            on_focus: if not self.focus: root.stage_widget.stage.name = self.text
+            on_kv_post: if root.stage_widget.stage.parent_stage is not None: settings.remove_widget(self)
+        BoxLayout:
+            size_hint_y: None
+            height: '34dp'
+            spacing: '5dp'
+            LightThemedToggleButton:
+                text: 'R'
+                state: 'down' if root.stage_widget.stage.color_r else 'normal'
+                on_state: root.stage_widget.stage.color_r = self.state == 'down'
+            LightThemedToggleButton:
+                text: 'G'
+                state: 'down' if root.stage_widget.stage.color_g else 'normal'
+                on_state: root.stage_widget.stage.color_g = self.state == 'down'
+            LightThemedToggleButton:
+                text: 'B'
+                state: 'down' if root.stage_widget.stage.color_b else 'normal'
+                on_state: root.stage_widget.stage.color_b = self.state == 'down'
+        GridLayout:
+            size_hint_y: None
+            padding: '5dp'
+            spacing: '5dp'
+            cols: 2
+            height: self.minimum_height
+            size_hint_min_x: self.minimum_width
+            FlatLabel:
+                size_hint: (None, None)
+                text: 'Stage order'
+                size: self.texture_size
+                flat_color: app.theme.text_primary
+            BoxLayout:
+                spacing: '5dp'
+                size_hint_y: None
+                height: self.minimum_height
+                size_hint_min_x: self.minimum_width
+                LightThemedToggleButton:
+                    size_hint_y: None
+                    padding: ('5dp', '5dp')
+                    text: 'Serial'
+                    height: self.texture_size[1]
+                    size_hint_min_x: self.texture_size[0]
+                    state: 'down' if root.stage_widget.stage.order == 'serial' else 'normal'
+                    on_state: root.stage_widget.stage.order = 'serial' if self.state == 'down' else 'parallel'
+                LightThemedToggleButton:
+                    size_hint_y: None
+                    padding: ('5dp', '5dp')
+                    text: 'Parallel'
+                    height: self.texture_size[1]
+                    size_hint_min_x: self.texture_size[0]
+                    state: 'down' if root.stage_widget.stage.order == 'parallel' else 'normal'
+                    on_state: root.stage_widget.stage.order = 'parallel' if self.state == 'down' else 'serial'
+            FlatLabel:
+                size_hint: (None, None)
+                text: 'End on'
+                size: self.texture_size
+                flat_color: app.theme.text_primary
+            BoxLayout:
+                spacing: '5dp'
+                size_hint_y: None
+                height: self.minimum_height
+                size_hint_min_x: self.minimum_width
+                LightThemedToggleButton:
+                    size_hint_y: None
+                    padding: ('5dp', '5dp')
+                    text: 'All'
+                    height: self.texture_size[1]
+                    size_hint_min_x: self.texture_size[0]
+                    state: 'down' if root.stage_widget.stage.complete_on == 'all' else 'normal'
+                    on_state: root.stage_widget.stage.complete_on = 'all' if self.state == 'down' else 'any'
+                LightThemedToggleButton:
+                    size_hint_y: None
+                    padding: ('5dp', '5dp')
+                    text: 'Any'
+                    height: self.texture_size[1]
+                    size_hint_min_x: self.texture_size[0]
+                    state: 'down' if root.stage_widget.stage.complete_on == 'any' else 'normal'
+                    on_state: root.stage_widget.stage.complete_on = 'any' if self.state == 'down' else 'all'
+
+
+<StageShapeDisplayStyle@object>:
+    size_hint_y: None
+    height: '34dp'
+    size_hint_min_x: self.minimum_width
+    orientation: 'horizontal'
+    use_parent: False
+    spacing: '5dp'
+    canvas:
+        Color:
+            rgba: app.theme.primary_light if not self.selected else app.theme.primary
+        Rectangle:
+            size: self.size
+            pos: self.pos
+    FlatLabel:
+        padding: '5dp', '5dp'
+        flat_color: app.theme.text_primary
+        center_texture: False
+        text: root.stage_shape.name
+        size_hint_min_x: self.texture_size[0]
+    FlatImageButton:
+        scale_down_color: True
+        source: 'flat_delete.png'
+        flat_color: app.theme.accent
+        on_release: root.remove_shape()
+
+
 <ShapeGraphSelector@FlatToggleButton>:
     controller: None
     size_hint: None, None
