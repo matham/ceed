@@ -907,6 +907,10 @@ class FuncBase(EventDispatcher):
         else:
             self.duration_total = self.loop * self.duration
 
+    def resample_parameters(self):
+        for key, value in self.noisy_parameters.items():
+            setattr(self, key, value.sample())
+
 
 class CeedFuncRef(object):
     """The function it refers to must be in the factory.

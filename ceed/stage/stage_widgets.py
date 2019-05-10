@@ -25,7 +25,7 @@ from kivy.graphics import Rectangle, Color, Line
 
 from ceed.graphics import WidgetList, ShowMoreSelection, BoxSelector, \
     ShowMoreBehavior
-from ceed.stage import CeedStage, CeedStageRef
+from ceed.stage import CeedStage, CeedStageRef, last_experiment_stage_name
 from ceed.function.func_widgets import FuncWidget, FuncWidgetGroup, CeedFuncRef
 
 from cplcom.drag_n_drop import DraggableLayoutBehavior
@@ -137,6 +137,26 @@ class StageList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
             self.remove_widget(widget)
 
     def show_stage(self, stage):
+        widget = StageWidget()
+        widget.initialize_display(stage, self)
+        self.add_widget(widget)
+
+    def copy_and_resample_experiment_stage(self, stage_name):
+        stage = self.stage_factory.stage_names[stage_name]
+        stage = stage.copy_expand_ref()
+        stage.resample_func_parameters()
+        stage.name = last_experiment_stage_name
+
+        if last_experiment_stage_name in self.stage_factory.stage_names:
+            for widget in self.children:
+                if widget.stage.name == last_experiment_stage_name:
+                    widget.remove_stage_from_factory_no_ref()
+                    break
+            else:
+                assert False, 'If stage is in factory it should have a widget'
+
+        self.stage_factory.add_stage(stage, last_experiment=True)
+
         widget = StageWidget()
         widget.initialize_display(stage, self)
         self.add_widget(widget)
@@ -337,6 +357,17 @@ class StageWidget(ShowMoreBehavior, BoxLayout):
             shape_widget = StageShapeDisplay()
             shape_widget.initialize_display(shape, self.selection_controller)
             self.shape_widget.add_widget(shape_widget)
+
+    def remove_stage_from_factory_no_ref(self):
+        self.selection_controller.clear_selection()
+        assert not self.stage.parent_stage
+        if self.stage.stage_factory.remove_stage(self.stage):
+            self.parent.remove_widget(self)
+
+        for item in self.get_visible_children():
+            if item.selected:
+                self.selection_controller.deselect_node(item)
+                break
 
     def remove_stage(self):
         self.selection_controller.clear_selection()

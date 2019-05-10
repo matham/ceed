@@ -32,6 +32,9 @@ class NoiseBase(object):
     def get_config(self):
         return {'cls': self.__class__.__name__}
 
+    def get_prop_pretty_name(self):
+        return {}
+
 
 class GaussianNoise(NoiseBase):
 
@@ -53,6 +56,14 @@ class GaussianNoise(NoiseBase):
             config[attr] = getattr(self, attr)
         return config
 
+    def get_prop_pretty_name(self):
+        names = super(GaussianNoise, self).get_prop_pretty_name()
+        names['min_val'] = 'Min'
+        names['max_val'] = 'Max'
+        names['mean_val'] = 'Mean'
+        names['stdev'] = 'STDEV'
+        return names
+
 
 class UniformNoise(NoiseBase):
 
@@ -68,6 +79,12 @@ class UniformNoise(NoiseBase):
         for attr in ('min_val', 'max_val'):
             config[attr] = getattr(self, attr)
         return config
+
+    def get_prop_pretty_name(self):
+        names = super(UniformNoise, self).get_prop_pretty_name()
+        names['min_val'] = 'Min'
+        names['max_val'] = 'Max'
+        return names
 
 
 def register_noise_classes(noise_factory):

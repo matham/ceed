@@ -224,8 +224,11 @@
 
 
 <NoiseSelection@FlatImageButton>:
-    more_widget: None
+    func: None
+    prop_name: ''
     scale_down_color: True
     source: 'flat_dots_vertical.png'
     flat_color: app.theme.accent
-    on_release: self.more_widget.open(root)
+    on_release:
+        app.noise_dropdown_widget.initialize_param(self.func, self.prop_name)
+        app.noise_dropdown_widget.open(root)

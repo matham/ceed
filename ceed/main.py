@@ -38,6 +38,7 @@ from ceed.storage.controller import CeedDataWriterBase, DataSerializerBase
 from ceed.graphics import CeedDragNDrop
 from ceed.remote.remote_view import RemoteViewerListenerBase
 from ceed.player import CeedRemotePlayer
+from ceed.function.func_widgets import FuncNoiseDropDown
 
 if ceed.has_gui_control:
     from kivy.core.window import Window
@@ -70,6 +71,8 @@ class CeedApp(CPLComApp):
     agreed_discard = False
 
     drag_controller = None
+
+    noise_dropdown_widget = None
     '''
     '''
 
@@ -125,6 +128,7 @@ class CeedApp(CPLComApp):
         Builder.load_file(join(base, 'view', 'view_style.kv'))
         Builder.load_file(join(base, 'storage', 'storage_style.kv'))
         self.yesno_prompt = Factory.CeedYesNoPrompt()
+        self.noise_dropdown_widget = FuncNoiseDropDown()
 
         root = Factory.get('MainView')()
         return super(CeedApp, self).build(root)

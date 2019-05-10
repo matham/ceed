@@ -568,5 +568,60 @@ class FuncSettingsDropDown(Factory.FlatDropDown):
 
 class FuncNoiseDropDown(Factory.FlatDropDown):
 
-    def __init__(self, **kwargs):
-        super(FuncNoiseDropDown, self).__init__(**kwargs)
+    noise_param = ObjectProperty(None, allownone=True, rebind=True)
+
+    noise_factory = ObjectProperty(None, rebind=True)
+
+    func = None
+
+    prop_name = ''
+
+    param_container = None
+
+    def initialize_param(self, func, prop_name):
+        self.clear_noise_param()
+        self.func = func
+        self.prop_name = prop_name
+        self.noise_factory = func.function_factory.param_noise_factory
+        self.noise_param = func.noisy_parameters.get(prop_name, None)
+
+    def clear_noise_param(self):
+        for widget in self.param_container.children[::2]:
+            widget.unbind_tracking()
+        self.param_container.clear_widgets()
+
+        self.noise_param = None
+
+    def set_noise_instance(self, cls_name):
+        if self.prop_name in self.func.noisy_parameters:
+            del self.func.noisy_parameters[self.prop_name]
+
+        if cls_name == 'none':
+            return
+
+        self.noise_param = self.noise_factory.get_cls(cls_name)()
+
+    def show_noise_params(self):
+        noise_param = self.noise_param
+        if noise_param is None:
+            return
+
+        label = Factory.FlatXSizedLabel
+        color = App.get_running_app().theme.text_primary
+        grid = self.param_container
+        pretty_names = noise_param.get_prop_pretty_name()
+
+        for prop, val in sorted(
+                noise_param.get_config().items(), key=lambda x: x[0]):
+            if prop == 'cls':
+                continue
+
+            grid.add_widget(
+                label(text=pretty_names.get(prop, prop),
+                      padding_x='10dp', flat_color=color))
+
+            widget = FuncPropTextWidget(input_filter='float')
+            widget.func = noise_param
+            widget.prop_name = prop
+            widget.apply_binding()
+            grid.add_widget(widget)

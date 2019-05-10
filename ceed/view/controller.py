@@ -39,7 +39,7 @@ from cplcom.app import app_error
 from cplcom.utils import yaml_dumps, yaml_loads
 
 import ceed
-from ceed.stage import StageDoneException
+from ceed.stage import StageDoneException, last_experiment_stage_name
 
 if ceed.has_gui_control or ceed.is_view_inst:
     from kivy.core.window import Window
@@ -428,7 +428,8 @@ class ViewControllerBase(EventDispatcher):
         Window.fbind('on_flip', self.flip_callback)
 
         self.current_canvas = canvas
-        self.tick_func = _get_app().stage_factory.tick_stage(stage_name)
+        self.tick_func = _get_app().stage_factory.tick_stage(
+            last_experiment_stage_name)
 
         self._flip_stats['last_call_t'] = self._cpu_stats['last_call_t'] = \
             self._cpu_stats['tstart'] = clock()
@@ -711,6 +712,8 @@ class ControllerSideViewControllerBase(ViewControllerBase):
             self.stage_active = False
             raise ValueError('No stage specified')
 
+        App.get_running_app().knspace.stages.\
+            copy_and_resample_experiment_stage(stage_name)
         App.get_running_app().dump_app_settings_to_file()
         App.get_running_app().load_app_settings_from_file()
         App.get_running_app().ceed_data.prepare_experiment(stage_name)

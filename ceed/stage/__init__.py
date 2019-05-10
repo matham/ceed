@@ -25,6 +25,9 @@ __all__ = ('StageDoneException', 'StageFactoryBase', 'CeedStage', 'StageShape',
            'remove_shapes_upon_deletion')
 
 
+last_experiment_stage_name = 'last_experiment'
+
+
 class StageDoneException(Exception):
     '''Raised as a signal by a :class:`CeedStage` when it is done.
     '''
@@ -112,7 +115,7 @@ class StageFactoryBase(EventDispatcher):
             self._stage_ref[stage.stage] += 1
         return stage
 
-    def add_stage(self, stage):
+    def add_stage(self, stage, last_experiment=False):
         '''Adds the :class:`CeedStage` to the stage factory (:attr:`stages`).
         Remember to check :meth:`can_other_stage_be_added` before adding
         if there's potential for it to return False.
@@ -122,7 +125,11 @@ class StageFactoryBase(EventDispatcher):
             `stage`: :class:`CeedStage`
                 The stage to add.
         '''
-        stage.name = fix_name(stage.name, [s.name for s in self.stages])
+        names = [s.name for s in self.stages]
+        if not last_experiment:
+            names.append(last_experiment_stage_name)
+
+        stage.name = fix_name(stage.name, names)
         stage.fbind('name', self._change_stage_name, stage)
 
         self.stages.append(stage)
@@ -196,7 +203,9 @@ class StageFactoryBase(EventDispatcher):
             raise ValueError(
                 '{} has not been added to the stage'.format(stage))
 
-        new_name = fix_name(stage.name, list(self.stage_names.keys()))
+        new_name = fix_name(
+            stage.name,
+            list(self.stage_names.keys()) + [last_experiment_stage_name])
         self.stage_names[new_name] = stage
         stage.name = new_name
 
@@ -673,6 +682,14 @@ class CeedStage(EventDispatcher):
         obj.apply_state(self.get_state())
         return obj
 
+    def copy_expand_ref(self):
+        obj = self.__class__(
+            stage_factory=self.stage_factory,
+            function_factory=self.function_factory,
+            shape_factory=self.shape_factory)
+        obj.apply_state(self.get_state(expand_ref=True))
+        return obj
+
     def replace_ref_stage_with_source(self, stage_ref):
         i = self.stages.index(stage_ref)
         self.remove_stage(stage_ref)
@@ -913,7 +930,9 @@ class CeedStage(EventDispatcher):
         '''
         raised = False
         for func in self.functions:
-            func = func.copy_expand_ref()
+            # this function should have been copied when it was created for
+            # this experiment in the `last_experiment_stage_name` stage
+            assert not isinstance(func, CeedFuncRef)
             try:
                 if not raised:
                     t = yield
@@ -926,6 +945,11 @@ class CeedStage(EventDispatcher):
             except FuncDoneException:
                 raised = True
         raise FuncDoneException
+
+    def resample_func_parameters(self):
+        for root_func in self.functions:
+            for func in root_func.get_funcs():
+                func.resample_parameters()
 
 
 class CeedStageRef(object):
@@ -972,7 +996,7 @@ class CeedStageRef(object):
         return self.stage_factory.get_stage_ref(stage=self)
 
     def copy_expand_ref(self):
-        return deepcopy(self.stage)
+        return self.stage.copy_expand_ref()
 
 
 class StageShape(EventDispatcher):
