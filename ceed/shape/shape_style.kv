@@ -225,7 +225,7 @@
         size_hint_min_x: self.minimum_width
         orientation: 'horizontal'
         controller: knspace.shapes
-        spacing: '5dp'
+        spacing: '2dp'
         padding: '5dp'
         selectee: root
         DraggingWidget:
@@ -243,6 +243,11 @@
             text: root.shape.name if root.shape else ''
         FlatImageButton:
             scale_down_color: True
+            source: 'flat_delete.png'
+            flat_color: app.theme.accent
+            on_release: knspace.painter.remove_shape(root.shape)
+        FlatImageButton:
+            scale_down_color: True
             source: 'flat_arrow_down_bold.png'
             flat_color: app.theme.accent
             on_release: knspace.painter.move_shape_upwards(root.shape)
@@ -257,11 +262,14 @@
             flat_color: app.theme.accent
             state: 'down' if root.shape and root.shape.locked else 'normal'
             on_state: root.painter.lock_shape(root.shape) if self.state == 'down' else root.painter.unlock_shape(root.shape)
-        FlatImageButton:
-            scale_down_color: True
-            source: 'flat_delete.png'
+        IconSwitchBehavior:
+            source_down: 'eye.png'
+            source_normal: 'eye-off.png'
             flat_color: app.theme.accent
-            on_release: knspace.painter.remove_shape(root.shape)
+            state: 'down'
+            on_state:
+                root.shape.show_shape_in_canvas() if self.state == 'down' else root.shape.hide_shape_in_canvas()
+                if self.state == 'normal': root.painter.lock_shape(root.shape)
     BoxLayout:
         id: more
         spacing: '5dp'

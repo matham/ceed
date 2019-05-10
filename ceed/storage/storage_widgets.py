@@ -86,7 +86,7 @@ class ExperimentLogWidget(BoxLayout):
             self.log_text = ''
             self.experiment_names = []
             for widget in self.log_container.children[:]:
-                self.remove_widget(widget)
+                self.log_container.remove_widget(widget)
         elif name == 'app_log':
             self.log_text = self.data_storage.get_log_data()
         elif name == 'image_add':

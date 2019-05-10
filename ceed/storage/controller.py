@@ -306,8 +306,7 @@ class CeedDataWriterBase(EventDispatcher):
         self.import_file(self.backup_filename)
 
         self.nix_file = nix.File.open(
-            self.backup_filename,
-            nix.FileMode.ReadOnly if read_only else nix.FileMode.ReadWrite)
+            self.backup_filename, nix.FileMode.ReadWrite)
         self.config_changed = self.has_unsaved = True
         Logger.debug(
             'Ceed Controller (storage): Created tempfile {}, from existing '
@@ -365,7 +364,7 @@ class CeedDataWriterBase(EventDispatcher):
         self.close_file(force_remove_autosave=True)
         self.clear_existing_config_data()
         if f:
-            self.open_file(f)
+            self.open_file(f, read_only=self.read_only_file)
         else:
             self.create_file('')
 
@@ -374,13 +373,16 @@ class CeedDataWriterBase(EventDispatcher):
             raise ValueError('{} already exists'.format(filename))
         self.save(filename, True)
         self.open_file(filename)
-        if not self.read_only_file:
-            self.save()
+        self.save()
 
     def save(self, filename=None, force=False):
         '''Saves the changes to the autosave and also saves the changes to
         the file in filename (if None saves to the current filename).
         '''
+        if self.read_only_file and not force:
+            raise TypeError('Cannot save because file was opened as read only. '
+                            'Try saving as a new file')
+
         if not force and not self.has_unsaved and not self.config_changed:
             return
 
@@ -705,6 +707,7 @@ class CeedDataWriterBase(EventDispatcher):
 
             if eof:
                 value()
+                break
             elif msg == 'frame':
                 count, bits, values = value
                 frame_count_buf[frame_i] = count

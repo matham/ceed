@@ -1,7 +1,7 @@
 app: {inspect: true}
-data: {backup_interval: 5.0, root_path: 'C:\Users\Matthew Einhorn\Desktop'}
+data: {backup_interval: 5.0, root_path: /home/cpl/Desktop}
 function: {timebase_denominator: 1, timebase_numerator: 1}
-player: {browse_path: 'C:\Users\Matthew Einhorn\Desktop'}
+player: {browse_path: /home/cpl/Desktop/data/3-11-19}
 point_gray_cam:
   brightness: {abs: true, auto: false, controllable: true, max: 12.4755859375, min: 0.0,
     one_push: false, present: true, relative_value: 880, value: 5.76171875}
@@ -67,10 +67,10 @@ view:
   LED_mode: RGB
   LED_mode_idle: none
   cam_transform:
-  - [0.0037756953749663634, 1.2056361262619808, 0.0, 0.0]
-  - [-1.2056361262619808, 0.0037756953749663634, 0.0, 0.0]
-  - [0.0, 0.0, 1.2056420384274762, 0.0]
-  - [2139.4597087131333, -892.3831874659645, 0.0, 1.0]
+  - [0.017048090836336002, 1.1958588258514562, 0.0, 0.0]
+  - [-1.1958588258514562, 0.017048090836336002, 0.0, 0.0]
+  - [0.0, 0.0, 1.195980337952087, 0.0]
+  - [2127.792141360713, -907.6774355017585, 0.0, 1.0]
   flip_camera: false
   flip_projector: true
   frame_rate: 120.0
@@ -80,10 +80,10 @@ view:
   mea_num_rows: 12
   mea_pitch: 20
   mea_transform:
-  - [5.114540312818914, -0.22483156581131516, 0.0, 0.0]
-  - [0.22483156581131516, 5.114540312818914, 0.0, 0.0]
-  - [0.0, 0.0, 5.119479645865868, 0.0]
-  - [317.55575317862827, 100.14426626080038, 0.0, 1.0]
+  - [4.361798077948739, -0.04203374942311954, 0.0, 0.0]
+  - [0.04203374942311954, 4.361798077948739, 0.0, 0.0]
+  - [0.0, 0.0, 4.362000608538219, 0.0]
+  - [403.19798484892, 81.46820259135251, 0.0, 1.0]
   mirror_mea: true
   output_count: true
   screen_height: 1080
