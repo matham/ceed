@@ -21,7 +21,8 @@ from ceed.shape import CeedPaintCanvasBehavior
 from ceed.storage.controller import DataSerializerBase, CeedDataWriterBase
 from ceed.view.controller import ViewControllerBase
 
-__all__ = ('CeedDataReader', 'EndOfDataException', 'CallableGen')
+__all__ = ('CeedDataReader', 'EndOfDataException', 'CallableGen',
+           'read_nix_prop')
 
 
 class CallableGen(object):
@@ -50,29 +51,79 @@ def partial_func(func):
     return outer_func
 
 
+def read_nix_prop(prop):
+    try:
+        return prop.values[0].value
+    except AttributeError:
+        return prop.values[0][0]
+
+
 class EndOfDataException(Exception):
+    """
+    Exception raised when the data read is after the end of the file.
+    """
     pass
 
 
 class CeedDataReader(object):
 
     filename = ''
+    """The full filename path associated with this :class:`CeedDataReader`
+    instance.
+    """
 
     experiments_in_file = []
+    """Once set in :meth:`open_h5`, it is a list of the experiment names
+    found in the file. The experiments listed can be opened with
+    :meth:`load_experiment`.
+    """
 
     num_images_in_file = 0
-
-    shapes_intensity = {}
+    """Once set in :meth:`open_h5`, it is the number of camera images
+    found in the file. Images can be opened by number with
+    :meth:`get_image_from_file`.
+    """
 
     electrodes_data = {}
+    """Once set in :meth:`load_mcs_data`, it is a mapping whose keys are
+    electrode names and whose values are 1D arrays with the electrode data.
+    """
 
     electrodes_metadata = {}
+    """Similar to :attr:`electrodes_data`, but instead the values are the
+    electrode metadata such as sampling rate etc.
+    """
 
     electrode_dig_data = None
+    """If present, it's an array containing the digital input data as sampled
+    by the MCS system. There should be the same number of samples in the time
+    dimension as for the :attr:`electrodes_data`.
+    """
 
     electrode_intensity_alignment = None
+    """Once set in :meth:`load_experiment` it is the mapping for the ceed
+    array data into MCS data by indices.
+    """
+
+    shapes_intensity = {}
+    """Once set in :meth:`load_experiment`, it is a mapping whose keys are the
+    names of the shapes available in ceed for this experiment and whose values
+    is a 1D array with the intensity value of the shape for each time point.
+
+    This is sampled at the projector frame rate, not the MEA sampling rate.
+    """
 
     led_state = None
+    """The projector lets us set the state of each of the 3 RGB LEDs
+    independently. This is 2D array of Tx4:
+
+    * whose first dimensions is the number of times the LED state was set by
+      the projector,
+    * the first column is the frame number when it was set as indexed into
+      :attr:`shapes_intensity` for each shape,
+    * the remaining 3 columns is the state of the R, G, and B LED as set by
+      the projector.
+    """
 
     view_controller = None
 
@@ -207,7 +258,7 @@ class CeedDataReader(object):
 
         config_data = {}
         for prop in config.props:
-            config_data[prop.name] = yaml_loads(prop.values[0].value)
+            config_data[prop.name] = yaml_loads(read_nix_prop(prop))
 
         self.ceed_version = config_data.get('ceed_version', '')
 
@@ -246,7 +297,7 @@ class CeedDataReader(object):
 
         config_data = {}
         for prop in config.props:
-            config_data[prop.name] = yaml_loads(prop.values[0].value)
+            config_data[prop.name] = yaml_loads(read_nix_prop(prop))
 
         view = self.view_controller = ViewControllerBase()
         ser = self.data_serializer = DataSerializerBase()
@@ -300,7 +351,7 @@ class CeedDataReader(object):
 
             electrodes_metadata[item.name[10:]] = electrode_metadata = {}
             for prop in mcs_metadata.sections[item.name].props:
-                electrode_metadata[prop.name] = yaml_loads(prop.values[0].value)
+                electrode_metadata[prop.name] = yaml_loads(read_nix_prop(prop))
 
     def get_image_from_file(self, image_num):
         block = self._nix_file.blocks['fluorescent_images']

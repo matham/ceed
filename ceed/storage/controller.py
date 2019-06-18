@@ -342,6 +342,7 @@ class CeedDataWriterBase(EventDispatcher):
 
     def import_file(self, filename, stages_only=False):
         '''Loads the file's config data. '''
+        from ceed.analysis import read_nix_prop
         Logger.debug(
             'Ceed Controller (storage): Importing "{}"'.format(self.filename))
         data = {}
@@ -349,7 +350,7 @@ class CeedDataWriterBase(EventDispatcher):
 
         try:
             for prop in f.sections['app_config']:
-                data[prop.name] = yaml_loads(prop.values[0].value)
+                data[prop.name] = yaml_loads(read_nix_prop(prop))
         finally:
             f.close()
 
@@ -448,11 +449,12 @@ class CeedDataWriterBase(EventDispatcher):
         self.has_unsaved = True
 
     def read_config(self, config_section=None):
+        from ceed.analysis import read_nix_prop
         config = config_section if config_section is not None else \
             self.nix_file.sections['app_config']
         data = {}
         for prop in config.props:
-            data[prop.name] = yaml_loads(prop.values[0].value)
+            data[prop.name] = yaml_loads(read_nix_prop(prop))
 
         return data
 
@@ -563,12 +565,13 @@ class CeedDataWriterBase(EventDispatcher):
         return self.read_config(config)
 
     def get_config_mea_matrix_string(self, experiment_block_number=None):
+        from ceed.analysis import read_nix_prop
         if experiment_block_number is not None:
             name = self.get_experiment_block_name(experiment_block_number)
             config = self.nix_file.blocks[name].metadata.sections['app_config']
         else:
             config = self.nix_file.sections['app_config']
-        settings = config.props['app_settings'].values[0].value
+        settings = read_nix_prop(config.props['app_settings'])
 
         m = re.match(self._mea_trans_pat, settings)
         if m is None:
@@ -578,12 +581,13 @@ class CeedDataWriterBase(EventDispatcher):
 
     def set_config_mea_matrix_string(
             self, experiment_block_number, config_string, new_config_string):
+        from ceed.analysis import read_nix_prop
         if config_string == new_config_string:
             raise ValueError('New and old MEA transform are identical')
 
         name = self.get_experiment_block_name(experiment_block_number)
         config = self.nix_file.blocks[name].metadata.sections['app_config']
-        settings = config.props['app_settings'].values[0].value
+        settings = read_nix_prop(config.props['app_settings'])
         settings_new = settings.replace(config_string, new_config_string)
         if settings == settings_new:
             raise ValueError('Could not find the MEA matrix in the config')

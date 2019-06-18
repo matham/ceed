@@ -256,6 +256,7 @@ class CeedMCSDataMerger(object):
 
     def read_ceed_digital_data(self, filename, experiment):
         from ceed.storage.controller import CeedDataWriterBase
+        from ceed.analysis import read_nix_prop
         f = nix.File.open(filename, nix.FileMode.ReadOnly)
 
         block = f.blocks[CeedDataWriterBase.get_experiment_block_name(experiment)]
@@ -273,7 +274,7 @@ class CeedMCSDataMerger(object):
                         format(experiment))
 
             for prop in config:
-                metadata[prop.name] = yaml_loads(prop.values[0].value)
+                metadata[prop.name] = yaml_loads(read_nix_prop(prop))
 
             if not block.data_arrays['frame_bits'].shape or \
                     not block.data_arrays['frame_bits'].shape[0]:
