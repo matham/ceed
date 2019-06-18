@@ -41,9 +41,7 @@ from cplcom.utils import yaml_dumps, yaml_loads
 import ceed
 from ceed.stage import StageDoneException, last_experiment_stage_name
 
-if ceed.has_gui_control or ceed.is_view_inst:
-    from kivy.core.window import Window
-
+ignore_vpixx_import_error = False
 try:
     from pypixxlib import _libdpx as libdpx
     from pypixxlib.propixx import PROPixx
@@ -418,6 +416,7 @@ class ViewControllerBase(EventDispatcher):
         '''Starts the stage. It adds the graphics instructions to the canvas
         and starts playing the shapes.
         '''
+        from kivy.core.window import Window
         if self.tick_event:
             raise TypeError('Cannot start new stage while stage is active')
 
@@ -443,6 +442,7 @@ class ViewControllerBase(EventDispatcher):
     def end_stage(self):
         '''Ends the stage if one is playing.
         '''
+        from kivy.core.window import Window
         if not self.tick_event:
             return
 
@@ -526,6 +526,7 @@ class ViewControllerBase(EventDispatcher):
     def flip_callback(self, *largs):
         '''Called before every GPU frame by the graphics system.
         '''
+        from kivy.core.window import Window
         Window.on_flip()
 
         t = clock()
@@ -600,6 +601,7 @@ class ViewSideViewControllerBase(ViewControllerBase):
         is run periodically to serve the queue and read messages from the main
         GUI.
         '''
+        from kivy.core.window import Window
         read = self.queue_view_read
         write = self.queue_view_write
         while True:
@@ -629,6 +631,7 @@ class ViewSideViewControllerBase(ViewControllerBase):
         '''Called before the app is run to prepare the app according to the
         configuration parameters.
         '''
+        from kivy.core.window import Window
         Window.size = self.screen_width, self.screen_height
         Window.left = self.screen_offset_x
         Window.fullscreen = self.fullscreen
@@ -893,6 +896,8 @@ class ControllerSideViewControllerBase(ViewControllerBase):
             return
 
         if PROPixxCTRL is None:
+            if ignore_vpixx_import_error:
+                return
             raise ImportError('Cannot open PROPixx library')
 
         ctrl = PROPixxCTRL()
@@ -914,6 +919,8 @@ class ControllerSideViewControllerBase(ViewControllerBase):
             return
 
         if libdpx is None:
+            if ignore_vpixx_import_error:
+                return
             raise ImportError('Cannot open PROPixx library')
 
         libdpx.DPxOpen()
@@ -933,6 +940,8 @@ class ControllerSideViewControllerBase(ViewControllerBase):
             return
 
         if PROPixx is None:
+            if ignore_vpixx_import_error:
+                return
             raise ImportError('Cannot open PROPixx library')
 
         dev = PROPixx()

@@ -454,11 +454,21 @@ class FuncPropTextWidget(FlatTextInput):
     '''The name of the property of :attr:`func` that this widget edits.
     '''
 
+    _binding = None
+
     def apply_binding(self):
         if not self.hint_text:
             self.hint_text = self.prop_name
-        self.func.fbind(self.prop_name, self._update_text)
+        uid = self.func.fbind(self.prop_name, self._update_text)
+        self._binding = self.func, self.prop_name, uid
         self._update_text()
+
+    def unbind_tracking(self):
+        if self._binding is None:
+            return
+        obj, prop, uid = self._binding
+        obj.unbind_uid(prop, uid)
+        self._binding = None
 
     def _update_text(self, *largs):
         '''Updates the GUI from the function.

@@ -25,7 +25,12 @@ setup(
     packages=find_packages(),
     install_requires=[
         'ffpyplayer', 'cplcom', 'kivy', 'numpy', 'scikit-image', 'psutil',
-        'nixio', 'tqdm'],
+        'nixio', 'tqdm', 'scipy', 'kivy_garden.graph',
+        'kivy_garden.filebrowser', 'kivy_garden.collider', 'pytest',
+        'pytest-trio', 'McsPyDataTools'],
+    dependency_links=[
+        'https://kivy-garden.github.io/simple/'
+    ],
     package_data={'ceed': ['data/*', '*.kv']},
     entry_points={'console_scripts': ['ceed=ceed.main:run_app']},
     )

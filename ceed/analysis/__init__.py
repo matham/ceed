@@ -1,17 +1,13 @@
 import math
-import sys
 import scipy.io
 import numpy as np
-from fractions import Fraction
-import string
 import sys
 import logging
 import itertools
 import nixio as nix
-import re
 from numpy.lib.format import open_memmap
 
-from cplcom.utils import yaml_dumps, yaml_loads
+from cplcom.utils import yaml_loads
 from cplcom.config import apply_config
 from cplcom.player import Player
 from ffpyplayer.pic import Image, SWScale
@@ -20,10 +16,12 @@ from tqdm import tqdm
 from ffpyplayer.writer import MediaWriter
 
 from ceed.function import FunctionFactoryBase, register_all_functions
-from ceed.stage import StageFactoryBase, StageDoneException
+from ceed.stage import StageFactoryBase
 from ceed.shape import CeedPaintCanvasBehavior
 from ceed.storage.controller import DataSerializerBase, CeedDataWriterBase
 from ceed.view.controller import ViewControllerBase
+
+__all__ = ('CeedDataReader', 'EndOfDataException', 'CallableGen')
 
 
 class CallableGen(object):
@@ -87,24 +85,56 @@ class CeedDataReader(object):
     shape_factory = None
 
     experiment_stage_name = ''
+    """Once set in :meth:`load_experiment`, it is the name of the stage among
+    the stages in :attr:`stage_factory` that was used to run the currently
+    :attr:`loaded_experiment`.
+    """
 
     experiment_notes = ''
+    """The text notes from the currently :attr:`loaded_experiment`.
+    """
 
     experiment_start_time = 0
+    """The timestamp that the currently :attr:`loaded_experiment` started.
+    """
 
     experiment_cam_image = None
+    """The camera image stored for the currently :attr:`loaded_experiment`.
+    """
 
     loaded_experiment = None
+    """The ceed h5 file contains multiple experiments and their data.
+    :meth:`load_experiment` must be called to load a particular experiment.
+    This stores the experiment number currently loaded.
+    """
 
     ceed_version = ''
+    """Once set in :meth:`open_h5`, it is the version of ceed that created
+    the file.
+    """
 
     app_logs = ''
+    """Once set in :meth:`open_h5`, it contains the experimental logs
+    of ceed for the experiments stored in the file.
+    """
 
     app_notes = ''
+    """Once set in :meth:`open_h5`, it contains the overall notes stored
+    with the file.
+    """
 
     app_config = {}
+    """Once set in :meth:`open_h5`, it is the last ceed application
+    configuration options saved in the file. I.e. this is the configuration
+    classes that configure the app when the file was saved. A copy of the
+    options is stored in each experiment, with the configuration options used
+    at the time the experiment was executed - this is the options when the file
+    was last closed/saved.
+    """
 
     _nix_file = None
+    """Nix file handle opened with :meth:`open_h5`.
+    """
 
     _block = None
 

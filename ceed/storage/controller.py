@@ -601,8 +601,11 @@ class CeedDataWriterBase(EventDispatcher):
 
         t = block.metadata['save_time'] if 'save_time' in block.metadata else 0
         notes = block.metadata['notes'] if 'notes' in block.metadata else ''
-        duration_sec = (block.data_arrays['frame_time'][-1] -
-                        block.data_arrays['frame_time'][0])
+        if len(block.data_arrays['frame_time']):
+            duration_sec = (block.data_arrays['frame_time'][-1] -
+                            block.data_arrays['frame_time'][0])
+        else:
+            duration_sec = 0
 
         metadata = {
             'stage': block.metadata['stage'],

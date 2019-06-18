@@ -7,14 +7,10 @@ and records their activity.
 
 import os
 
-__all__ = ('__version__', 'has_gui_control', 'is_view_inst')
+__all__ = ('__version__', 'is_view_inst')
 
 __version__ = '1.0.0-dev'
 
-has_gui_control = False
-'''whether ceed is running from a GUI or if it has been imported as a library.
-If run as a GUI, all the widgets are displayed.
-'''
 is_view_inst = 'CEED_IS_VIEW' in os.environ
 '''Whether ceed is imported from the client code that displays the projector
 output as in :mod:`ceed.view.main`.

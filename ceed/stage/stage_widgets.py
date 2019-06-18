@@ -15,7 +15,7 @@ from kivy.clock import Clock
 from kivy.properties import BooleanProperty, NumericProperty, StringProperty, \
     ObjectProperty, DictProperty, ListProperty, OptionProperty
 from kivy.factory import Factory
-from kivy.garden.graph import MeshLinePlot
+from kivy_garden.graph import MeshLinePlot
 from kivy.metrics import dp
 from kivy.app import App
 from kivy.utils import get_color_from_hex

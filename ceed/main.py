@@ -5,8 +5,6 @@ The main module that runs the GUI.
 '''
 
 import ceed
-if __name__ == '__main__':
-    ceed.has_gui_control = True
 
 from functools import partial
 from os.path import join, dirname
@@ -39,9 +37,9 @@ from ceed.graphics import CeedDragNDrop
 from ceed.remote.remote_view import RemoteViewerListenerBase
 from ceed.player import CeedRemotePlayer
 from ceed.function.func_widgets import FuncNoiseDropDown
+from ceed.shape.shape_widgets import CeedPainter
 
-if ceed.has_gui_control:
-    from kivy.core.window import Window
+from kivy.core.window import Window
 
 __all__ = ('CeedApp', 'run_app')
 
@@ -50,27 +48,27 @@ class CeedApp(CPLComApp):
     '''The app which runs the GUI.
     '''
 
-    function_factory = None
+    function_factory = None  # type: FunctionFactoryBase
 
-    player = None
+    player = None  # type: CeedPlayer
 
-    view_controller = None
+    view_controller = None  # type: ControllerSideViewControllerBase
 
-    ceed_data = None
+    ceed_data = None  # type: CeedDataWriterBase
 
-    data_serializer = None
+    data_serializer = None  # type: DataSerializerBase
 
-    remote_viewer = None
+    remote_viewer = None  # type: RemoteViewerListenerBase
 
-    stage_factory = None
+    stage_factory = None  # type: StageFactoryBase
 
-    shape_factory = None
+    shape_factory = None  # type: CeedPainter
 
-    remote_player = None
+    remote_player = None  # type: CeedRemotePlayer
 
     agreed_discard = False
 
-    drag_controller = None
+    drag_controller = None  # type: CeedDragNDrop
 
     noise_dropdown_widget = None
     '''
@@ -117,7 +115,7 @@ class CeedApp(CPLComApp):
         self.load_app_settings_from_file()
         self.apply_app_settings()
 
-    def build(self):
+    def load_app_kv(self):
         base = dirname(__file__)
         # Builder.load_file(join(base, 'graphics', 'graphics.kv'))
         Builder.load_file(join(base, 'ceed_style.kv'))
@@ -127,6 +125,9 @@ class CeedApp(CPLComApp):
         Builder.load_file(join(base, 'stage', 'stage_style.kv'))
         Builder.load_file(join(base, 'view', 'view_style.kv'))
         Builder.load_file(join(base, 'storage', 'storage_style.kv'))
+
+    def build(self):
+        self.load_app_kv()
         self.yesno_prompt = Factory.CeedYesNoPrompt()
         self.noise_dropdown_widget = FuncNoiseDropDown()
 

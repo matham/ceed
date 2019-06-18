@@ -15,7 +15,7 @@ from kivy.properties import BooleanProperty, NumericProperty, StringProperty, \
     ObjectProperty, DictProperty, ListProperty
 from kivy.event import EventDispatcher
 from kivy.factory import Factory
-from kivy.garden.collider import Collide2DPoly, CollideEllipse
+from kivy_garden.collider import Collide2DPoly, CollideEllipse
 
 from cplcom.painter import PaintCanvasBehavior, PaintCircle, PaintEllipse, \
     PaintPolygon, PaintFreeformPolygon

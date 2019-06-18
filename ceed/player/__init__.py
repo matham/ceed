@@ -328,7 +328,7 @@ class CeedPlayer(KNSpaceBehavior, EventDispatcher):
                 'gamma', 'shutter', 'gain', 'iris', 'frame_rate', 'pan',
                 'tilt']:
             opts = getattr(self.pt_player, setting)
-            if opts['present']:
+            if opts.get('present', False):
                 settings.append(setting)
         return list(sorted(settings))
 

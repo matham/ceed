@@ -64,8 +64,8 @@ class CeedPainter(CeedPaintCanvasBehavior, Widget):
         if before_shape is None:
             self.shape_widgets_list.add_widget(shape.widget)
         else:
-            i = self.shape_widgets_list.index(before_shape.widget)
-            self.shape_widgets_list.add_widget(shape.widget, index=i)
+            i = self.shape_widgets_list.children.index(before_shape.widget)
+            self.shape_widgets_list.add_widget(shape.widget, index=i + 1)
 
     def add_shape(self, shape):
         if super(CeedPainter, self).add_shape(shape):
