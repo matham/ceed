@@ -25,7 +25,7 @@ __all__ = ('StageDoneException', 'StageFactoryBase', 'CeedStage', 'StageShape',
            'remove_shapes_upon_deletion')
 
 
-last_experiment_stage_name = 'last_experiment'
+last_experiment_stage_name = 'experiment_sampled'
 
 
 class StageDoneException(Exception):
@@ -115,7 +115,7 @@ class StageFactoryBase(EventDispatcher):
             self._stage_ref[stage.stage] += 1
         return stage
 
-    def add_stage(self, stage, last_experiment=False):
+    def add_stage(self, stage, allow_last_experiment=True):
         '''Adds the :class:`CeedStage` to the stage factory (:attr:`stages`).
         Remember to check :meth:`can_other_stage_be_added` before adding
         if there's potential for it to return False.
@@ -126,7 +126,7 @@ class StageFactoryBase(EventDispatcher):
                 The stage to add.
         '''
         names = [s.name for s in self.stages]
-        if not last_experiment:
+        if not allow_last_experiment:
             names.append(last_experiment_stage_name)
 
         stage.name = fix_name(stage.name, names)

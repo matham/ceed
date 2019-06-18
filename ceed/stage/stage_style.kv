@@ -259,6 +259,7 @@
     orientation: 'horizontal'
     use_parent: False
     spacing: '5dp'
+    is_visible: self.parent is not None and self.parent.is_visible
     canvas:
         Color:
             rgba: app.theme.primary_light if not self.selected else app.theme.primary

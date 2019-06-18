@@ -70,7 +70,7 @@ class StageList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
             widget.initialize_display(stage, stage_widget.selection_controller)
             stage_widget.stage_widget.add_widget(widget)
         else:
-            self.stage_factory.add_stage(stage)
+            self.stage_factory.add_stage(stage, allow_last_experiment=False)
             widget.initialize_display(stage, self)
             self.add_widget(widget)
         return stage
@@ -82,7 +82,7 @@ class StageList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
                 stage = stage.stage
             stage = deepcopy(stage)
 
-            self.stage_factory.add_stage(stage)
+            self.stage_factory.add_stage(stage, allow_last_experiment=False)
 
             widget = StageWidget()
             widget.initialize_display(stage, self)
@@ -90,7 +90,7 @@ class StageList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
             return
 
         stage = self.stage_factory.make_stage({'cls': 'CeedStage'})
-        self.stage_factory.add_stage(stage)
+        self.stage_factory.add_stage(stage, allow_last_experiment=False)
 
         widget = StageWidget()
         widget.initialize_display(stage, self)
@@ -144,6 +144,7 @@ class StageList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
     def copy_and_resample_experiment_stage(self, stage_name):
         stage = self.stage_factory.stage_names[stage_name]
         stage = stage.copy_expand_ref()
+        # TODO: disable randomness of generated funcs after sampling
         stage.resample_func_parameters()
         stage.name = last_experiment_stage_name
 
@@ -155,7 +156,7 @@ class StageList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
             else:
                 assert False, 'If stage is in factory it should have a widget'
 
-        self.stage_factory.add_stage(stage, last_experiment=True)
+        self.stage_factory.add_stage(stage)
 
         widget = StageWidget()
         widget.initialize_display(stage, self)
@@ -315,6 +316,7 @@ class StageWidget(ShowMoreBehavior, BoxLayout):
         yield self
 
         for stage in self.stage.stages:
+
             for child in stage.display.get_visible_children():
                 if child.is_visible:
                     yield child
@@ -476,6 +478,8 @@ class StageShapeDisplay(BoxSelector):
     selected = BooleanProperty(False)
 
     selection_controller = None
+
+    is_visible = BooleanProperty(True)
 
     @property
     def name(self):
