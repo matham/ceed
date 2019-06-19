@@ -101,8 +101,8 @@ class CeedDataReader(object):
     """
 
     electrode_intensity_alignment = None
-    """Once set in :meth:`load_experiment` it is the mapping for the ceed
-    array data into MCS data by indices.
+    """Once set in :meth:`load_experiment` it is a 1D array, mapping the ceed
+    array data into the MCS :attr:`electrodes_data` by indices.
     """
 
     shapes_intensity = {}
@@ -110,7 +110,9 @@ class CeedDataReader(object):
     names of the shapes available in ceed for this experiment and whose values
     is a 1D array with the intensity value of the shape for each time point.
 
-    This is sampled at the projector frame rate, not the MEA sampling rate.
+    This is sampled at the projector frame rate, not the MEA sampling rate and
+    should have the same size as the shape of
+    :attr:`electrode_intensity_alignment`.
     """
 
     led_state = None
@@ -126,14 +128,34 @@ class CeedDataReader(object):
     """
 
     view_controller = None
+    """Once set in :meth:`load_experiment`, it is the
+    :class:`~ceed.view.controller.ViewControllerBase` instance configured to
+    the same settings as used during the :attr:`loaded_experiment`.
+    """
 
     data_serializer = None
+    """Once set in :meth:`load_experiment`, it is the
+    :class:`~ceed.storage.controller.DataSerializerBase` instance configured to
+    the same settings as used during the :attr:`loaded_experiment`.
+    """
 
     function_factory = None
+    """Once set in :meth:`load_experiment`, it is the
+    :class:`~ceed.function.FunctionFactoryBase` instance configured to
+    the same settings as used during the :attr:`loaded_experiment`.
+    """
 
     stage_factory = None
+    """Once set in :meth:`load_experiment`, it is the
+    :class:`~ceed.stage.StageFactoryBase` instance configured to
+    the same settings as used during the :attr:`loaded_experiment`.
+    """
 
     shape_factory = None
+    """Once set in :meth:`load_experiment`, it is the
+    :class:`~ceed.shape.CeedPaintCanvasBehavior` instance configured to
+    the same settings as used during the :attr:`loaded_experiment`.
+    """
 
     experiment_stage_name = ''
     """Once set in :meth:`load_experiment`, it is the name of the stage among
@@ -179,8 +201,8 @@ class CeedDataReader(object):
     configuration options saved in the file. I.e. this is the configuration
     classes that configure the app when the file was saved. A copy of the
     options is stored in each experiment, with the configuration options used
-    at the time the experiment was executed - this is the options when the file
-    was last closed/saved.
+    at the time the experiment was executed - :attr:`app_config` is the options
+    when the file was last closed/saved.
     """
 
     _nix_file = None
@@ -671,7 +693,9 @@ class CeedDataReader(object):
             draw_pos=draw_pos, draw_pos_hint=draw_pos_hint,
             volt_scale=volt_scale, time_axis_s=time_axis_s, volt_axis=volt_axis)
 
-    def _show_mea_outline(self, config, transform_matrix=None):
+    def _show_mea_outline(
+            self, config, transform_matrix=None,
+            color=(1, 215 / 255, 0, .2)):
         from kivy.graphics import (
             Line, StencilPush, StencilUse, StencilUnUse, StencilPop, Rectangle,
             Color)
@@ -705,7 +729,7 @@ class CeedDataReader(object):
                 mat.set(array=transform_matrix)
                 m = MatrixInstruction()
                 m.matrix = mat
-            Color(1, 215 / 255, 0, .2)
+            Color(*color)
             Line(points=[0, 0, mea_w, 0, mea_w, mea_h, 0, mea_h], close=True)
 
             label = Label(text='A1', font_size=sp(12))
@@ -743,9 +767,10 @@ class CeedDataReader(object):
             Rectangle(pos=pos, size=size)
             StencilPop()
 
-    def show_mea_outline(self, transform_matrix=None):
+    def show_mea_outline(
+            self, transform_matrix=None, color=(1, 215 / 255, 0, .2)):
         return partial_func(self._show_mea_outline)(
-            transform_matrix=transform_matrix)
+            transform_matrix=transform_matrix, color=color)
 
     def generate_movie(
             self, filename, out_fmt='yuv420p', codec='libx264',
