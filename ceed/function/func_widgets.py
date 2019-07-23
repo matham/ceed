@@ -21,7 +21,7 @@ from kivy.uix.widget import Widget
 from kivy.lang import Builder
 
 from cplcom.graphics import FlatTextInput
-from cplcom.drag_n_drop import DraggableLayoutBehavior
+from kivy_garden.drag_n_drop import DraggableLayoutBehavior
 
 from ceed.utils import fix_name
 from ceed.graphics import WidgetList, ShowMoreSelection, ShowMoreBehavior, \

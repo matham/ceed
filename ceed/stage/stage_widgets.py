@@ -28,7 +28,7 @@ from ceed.graphics import WidgetList, ShowMoreSelection, BoxSelector, \
 from ceed.stage import CeedStage, CeedStageRef, last_experiment_stage_name
 from ceed.function.func_widgets import FuncWidget, FuncWidgetGroup, CeedFuncRef
 
-from cplcom.drag_n_drop import DraggableLayoutBehavior
+from kivy_garden.drag_n_drop import DraggableLayoutBehavior
 
 __all__ = ('StageList', 'StageWidget', 'StageShapeDisplay', 'ShapePlot',
            'StageGraph')

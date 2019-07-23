@@ -19,7 +19,7 @@ from kivy.lang import Builder
 from kivy.uix.slider import Slider
 from kivy.utils import get_color_from_hex
 
-from cplcom.drag_n_drop import DraggableController, DraggableObjectBehavior
+from kivy_garden.drag_n_drop import DraggableController, DraggableObjectBehavior
 
 __all__ = ('ShowMoreSelection', 'ShowMoreBehavior',
            'TouchSelectBehavior', 'BoxSelector', 'WidgetList',

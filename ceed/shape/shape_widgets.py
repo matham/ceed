@@ -16,7 +16,7 @@ from kivy.factory import Factory
 from kivy.clock import Clock
 from kivy.app import App
 
-from cplcom.drag_n_drop import DraggableLayoutBehavior
+from kivy_garden.drag_n_drop import DraggableLayoutBehavior
 from cplcom.graphics import HighightButtonBehavior
 
 from ceed.graphics import WidgetList, ShowMoreSelection, BoxSelector, \
