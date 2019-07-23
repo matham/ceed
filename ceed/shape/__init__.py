@@ -10,14 +10,13 @@ instance.
 '''
 import math
 
-from kivy.uix.behaviors.knspace import KNSpaceBehavior, knspace
 from kivy.properties import BooleanProperty, NumericProperty, StringProperty, \
     ObjectProperty, DictProperty, ListProperty
 from kivy.event import EventDispatcher
 from kivy.factory import Factory
 from kivy_garden.collider import Collide2DPoly, CollideEllipse
 
-from cplcom.painter import PaintCanvasBehavior, PaintCircle, PaintEllipse, \
+from kivy_garden.painter import PaintCanvasBehavior, PaintCircle, PaintEllipse, \
     PaintPolygon, PaintFreeformPolygon
 
 from ceed.utils import fix_name
@@ -27,12 +26,12 @@ __all__ = (
     'CeedPaintCircle', 'CeedPaintEllipse', 'CeedPaintPolygon')
 
 
-class CeedPaintCanvasBehavior(KNSpaceBehavior, PaintCanvasBehavior):
+class CeedPaintCanvasBehavior(PaintCanvasBehavior):
     '''Controller base class for drawing and managing the shapes.
 
     A shape is drawn by the user in the GUI and added by
-    :class:`cplcom.painter.PaintCanvasBehavior` to its
-    :attr:`cplcom.painter.PaintCanvasBehavior.shapes` list. This class
+    :class:`kivy_garden.painter.PaintCanvasBehavior` to its
+    :attr:`kivy_garden.painter.PaintCanvasBehavior.shapes` list. This class
     manages all that without any of the associated GUI components that
     is shown to the user. The GUI components is added by the
     :class:`ceed.shape.shape_widgets.CeedPainter`.
@@ -41,7 +40,7 @@ class CeedPaintCanvasBehavior(KNSpaceBehavior, PaintCanvasBehavior):
     the class used, while this class used when e.g. running from the
     interpreter.
 
-    In addition to the :attr:`cplcom.painter.PaintCanvasBehavior.shapes`, the
+    In addition to the :attr:`kivy_garden.painter.PaintCanvasBehavior.shapes`, the
     class adds :attr:`groups` for grouping shapes; a :class:`CeedShapeGroup`
     simply groups a collection of :class:`CeedShape`.
 
@@ -76,7 +75,7 @@ class CeedPaintCanvasBehavior(KNSpaceBehavior, PaintCanvasBehavior):
     __events__ = ('on_remove_shape', 'on_remove_group', 'on_changed')
 
     def add_shape(self, shape):
-        '''Overrides :meth:`cplcom.painter.PaintCanvasBehavior.add_shape`.
+        '''Overrides :meth:`kivy_garden.painter.PaintCanvasBehavior.add_shape`.
 
         It ensures the the name of the :class:`CeedShape` added is unique and
         also displays the widget associated with the :class:`CeedShape` if
@@ -102,7 +101,7 @@ class CeedPaintCanvasBehavior(KNSpaceBehavior, PaintCanvasBehavior):
         return True
 
     def remove_shape(self, shape):
-        '''Overrides :meth:`cplcom.painter.PaintCanvasBehavior.remove_shape`.
+        '''Overrides :meth:`kivy_garden.painter.PaintCanvasBehavior.remove_shape`.
 
         :Params:
 
@@ -206,7 +205,7 @@ class CeedPaintCanvasBehavior(KNSpaceBehavior, PaintCanvasBehavior):
 
     def add_selected_shapes_to_group(self, group=None):
         '''Adds all the
-        :attr:`cplcom.painter.PaintCanvasBehavior.selected_shapes` to the
+        :attr:`kivy_garden.painter.PaintCanvasBehavior.selected_shapes` to the
         ``group``.
 
         :Params:
@@ -252,7 +251,7 @@ class CeedPaintCanvasBehavior(KNSpaceBehavior, PaintCanvasBehavior):
         return d
 
     def create_shape_from_state(self, state, old_name_map):
-        '''Overrides :meth:`cplcom.painter.PaintCanvasBehavior.create_shape_from_state`.
+        '''Overrides :meth:`kivy_garden.painter.PaintCanvasBehavior.create_shape_from_state`.
 
         It takes an additional parameter, ``old_name_map``. When a shape is
         created from the ``state``, the shape's new name could be changed so
@@ -316,9 +315,9 @@ class CeedPaintCanvasBehavior(KNSpaceBehavior, PaintCanvasBehavior):
 
 
 class CeedShape(object):
-    '''A co-base class used with :class:`cplcom.painter.PaintShape` derived
+    '''A co-base class used with :class:`kivy_garden.painter.PaintShape` derived
     classes to add ceed specific functionality to the
-    :class:`cplcom.painter.PaintShape` classes.
+    :class:`kivy_garden.painter.PaintShape` classes.
     '''
 
     name = StringProperty('Shape')
@@ -431,12 +430,12 @@ class CeedShapeGroup(EventDispatcher):
     '''
 
     paint_widget = ObjectProperty(None)
-    '''See :attr:`cplcom.painter.PaintShape.paint_widget`.
+    '''See :attr:`kivy_garden.painter.PaintShape.paint_widget`.
     '''
 
     name = StringProperty('Group')
     '''The name of the group. Similar to
-    See :attr:`cplcom.painter.PaintShape.name`.
+    See :attr:`kivy_garden.painter.PaintShape.name`.
     '''
 
     shapes = []

@@ -1,6 +1,6 @@
 #:import Factory kivy.factory.Factory
 
-<PinnedGraph@KNSpaceBehavior+BoxLayout>
+<PinnedGraph@BoxLayout>
 
 <MainView@BoxLayout>:
     orientation: 'vertical'
@@ -24,6 +24,7 @@
             knsname: 'gui_remote_view'
             size_hint_y: None
             height: video.height
+            on_state: app.use_remote_view = self.state == 'down'
             on_release:
                 app.remote_viewer.start_listener() if self.state == 'down' else app.remote_viewer.stop_listener()
                 if app.view_controller.propixx_lib and self.state == 'down': app.view_controller.set_led_mode(app.view_controller.LED_mode_idle)
@@ -32,6 +33,7 @@
             scale_down_color: True
             flat_color: app.theme.accent
             hover_text: 'Remote viewer ' + ('[b]disconnected[/b]' if self.state == 'normal' else '[b]connected[/b]')
+            test_name: 'remote view'
         FlatDivider:
             size_hint_y: None
             height: video.height
@@ -75,7 +77,8 @@
             on_log_event: if args[3] != 'error': app.ceed_data.add_log_item('{}: {}'.format(args[3], args[2]))
             on_release: self.count = 0
     PinnedGraph:
-        knsname: 'pinned_graph'
+        id: 'pinned_graph'
+        on_kv_post: app.pinned_graph = self
         size_hint_y: None
         height: self.minimum_height
         canvas:
@@ -120,3 +123,7 @@
             if text.text: root.logger.add_item(text.text, 'user')
             text.text = ''
         text: 'Write to log'
+
+
+<Widget>:
+    test_name: ''

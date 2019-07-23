@@ -33,7 +33,6 @@ from kivy.graphics import Color, Point, Fbo, Rectangle, Scale, PushMatrix, \
 from kivy.graphics.texture import Texture
 from kivy.app import App
 from kivy.graphics.transformation import Matrix
-from kivy.uix.behaviors.knspace import knspace
 
 from cplcom.app import app_error
 from cplcom.utils import yaml_dumps, yaml_loads
@@ -642,7 +641,7 @@ def view_process_enter(read, write, settings, app_settings):
     This calls :meth:`ViewSideViewControllerBase.view_process_enter`.
     '''
     from cplcom.app import run_app
-    from ceed.view.main import CeedViewApp, _cleanup
+    from ceed.view.main import CeedViewApp
 
     app = None
     try:
@@ -661,7 +660,7 @@ def view_process_enter(read, write, settings, app_settings):
         Clock.schedule_interval(viewer.view_read, .25)
         Clock.schedule_once(viewer.prepare_view_window, 0)
 
-        run_app(app, _cleanup)
+        run_app(app)
     except Exception as e:
         if app is not None:
             app.handle_exception(e, exc_info=sys.exc_info())
@@ -715,26 +714,26 @@ class ControllerSideViewControllerBase(ViewControllerBase):
             self.stage_active = False
             raise ValueError('No stage specified')
 
-        App.get_running_app().knspace.stages.\
+        app = App.get_running_app()
+        app.stages_container.\
             copy_and_resample_experiment_stage(stage_name)
-        App.get_running_app().dump_app_settings_to_file()
-        App.get_running_app().load_app_settings_from_file()
-        App.get_running_app().ceed_data.prepare_experiment(stage_name)
+        app.dump_app_settings_to_file()
+        app.load_app_settings_from_file()
+        app.ceed_data.prepare_experiment(stage_name)
 
         if self.propixx_lib:
             m = self.LED_mode
             self.set_led_mode(m)
-            App.get_running_app().ceed_data.add_led_state(
+            app.ceed_data.add_led_state(
                 0, 'R' in m, 'G' in m, 'B' in m)
             self.set_pixel_mode(True)
         else:
-            App.get_running_app().ceed_data.add_led_state(0, 1, 1, 1)
+            app.ceed_data.add_led_state(0, 1, 1, 1)
 
         if self.view_process is None:
-            self.start_stage(stage_name, knspace.painter.canvas)
+            self.start_stage(stage_name, app.shape_factory.canvas)
         elif self.queue_view_read is not None:
-            self.initial_cam_image = knspace.player.last_image
-            app = App.get_running_app()
+            self.initial_cam_image = app.player.last_image
             self.queue_view_read.put_nowait(
                 ('config', yaml_dumps(app.ceed_data.gather_config_data_dict())))
             self.queue_view_read.put_nowait(('start_stage', stage_name))
@@ -750,7 +749,7 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         if self.view_process is None:
             self.end_stage()
         elif self.queue_view_read is not None:
-            self.last_cam_image = knspace.player.last_image
+            self.last_cam_image = App.get_running_app().player.last_image
             if self.last_cam_image is self.initial_cam_image:
                 self.last_cam_image = None
             self.queue_view_read.put_nowait(('end_stage', None))
@@ -760,7 +759,7 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         self.stage_active = False
         if state:
             if self.last_cam_image is None:
-                self.last_cam_image = knspace.player.last_image
+                self.last_cam_image = App.get_running_app().player.last_image
 
             if self.last_cam_image is not None:
                 self.proj_size = state['proj_size']

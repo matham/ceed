@@ -27,10 +27,8 @@ setup(
         'ffpyplayer', 'cplcom', 'kivy', 'numpy', 'scikit-image', 'psutil',
         'nixio', 'tqdm', 'scipy', 'kivy_garden.graph',
         'kivy_garden.filebrowser', 'kivy_garden.collider', 'pytest',
-        'pytest-trio', 'McsPyDataTools', 'kivy_garden.drag_n_drop'],
-    dependency_links=[
-        'https://kivy-garden.github.io/simple/'
-    ],
+        'pytest-trio', 'McsPyDataTools', 'kivy_garden.drag_n_drop',
+        'pytest-cov'],
     package_data={'ceed': ['data/*', '*.kv']},
     entry_points={'console_scripts': ['ceed=ceed.main:run_app']},
     )

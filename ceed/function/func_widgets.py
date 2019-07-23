@@ -6,7 +6,6 @@ Defines the GUI components used with :mod:`ceed.function`.
 from collections import defaultdict
 from copy import deepcopy
 
-from kivy.uix.behaviors.knspace import KNSpaceBehavior, knspace
 from kivy.uix.boxlayout import BoxLayout
 from kivy.properties import BooleanProperty, NumericProperty, StringProperty, \
     ObjectProperty, ListProperty, DictProperty
@@ -316,7 +315,7 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
         self.func = func
 
         self.func_controller = func_controller  # or _get_app().function_factory
-        self.selection_controller = selection_controller  # or knspace.funcs
+        self.selection_controller = selection_controller
 
         self.apply_kv()
         if self.ref_func is None:

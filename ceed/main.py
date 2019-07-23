@@ -11,11 +11,11 @@ from os.path import join, dirname
 import time
 
 from cplcom.app import CPLComApp, run_app as run_cpl_app
-from cplcom.graphics import HighightButtonBehavior
+from cplcom.graphics import HighightButtonBehavior, BufferImage
 
-from kivy.uix.behaviors.knspace import knspace
 from kivy.lang import Builder
 from kivy.factory import Factory
+from kivy.properties import ObjectProperty, BooleanProperty
 
 import ceed.graphics
 Builder.load_file(join(dirname(__file__), 'graphics', 'graphics.kv'))
@@ -31,13 +31,15 @@ import ceed.storage.storage_widgets
 
 from ceed.function import FunctionFactoryBase, register_all_functions
 from ceed.stage import StageFactoryBase, remove_shapes_upon_deletion
+from ceed.stage.stage_widgets import StageList
 from ceed.view.controller import ControllerSideViewControllerBase
 from ceed.storage.controller import CeedDataWriterBase, DataSerializerBase
 from ceed.graphics import CeedDragNDrop
 from ceed.remote.remote_view import RemoteViewerListenerBase
 from ceed.player import CeedRemotePlayer
-from ceed.function.func_widgets import FuncNoiseDropDown
-from ceed.shape.shape_widgets import CeedPainter
+from ceed.function.func_widgets import FuncNoiseDropDown, FuncList
+from ceed.shape.shape_widgets import CeedPainter, ShapeList, ShapeGroupList
+from ceed.view.view_widgets import MEAArrayAlign
 
 from kivy.core.window import Window
 
@@ -62,17 +64,36 @@ class CeedApp(CPLComApp):
 
     stage_factory = None  # type: StageFactoryBase
 
-    shape_factory = None  # type: CeedPainter
+    shape_factory = ObjectProperty(None, rebind=True)  # type: CeedPainter
 
     remote_player = None  # type: CeedRemotePlayer
 
     agreed_discard = False
 
-    drag_controller = None  # type: CeedDragNDrop
+    drag_controller = ObjectProperty(None, rebind=True)  # type: CeedDragNDrop
 
     noise_dropdown_widget = None
     '''
     '''
+
+    stages_container = ObjectProperty(None, rebind=True)  # type: StageList
+
+    funcs_container = ObjectProperty(None, rebind=True)  # type: FuncList
+
+    shapes_container = ObjectProperty(None, rebind=True)  # type: ShapeList
+
+    shape_groups_container = ObjectProperty(
+        None, rebind=True)  # type: ShapeGroupList
+
+    pinned_graph = None
+    """PinnedGraph into which the stage graph may be pinned.
+    """
+
+    mea_align_widget = ObjectProperty(None, rebind=True)  # type: MEAArrayAlign
+
+    central_display = ObjectProperty(None, rebind=True)  # type: BufferImage
+
+    use_remote_view = BooleanProperty(False)
 
     @classmethod
     def get_config_classes(cls):
@@ -99,8 +120,7 @@ class CeedApp(CPLComApp):
         return d
 
     def __init__(self, **kwargs):
-        drag = self.drag_controller = CeedDragNDrop()
-        drag.knsname = 'dragger'
+        self.drag_controller = CeedDragNDrop()
         self.function_factory = FunctionFactoryBase()
         register_all_functions(self.function_factory)
         self.stage_factory = StageFactoryBase(
@@ -134,20 +154,22 @@ class CeedApp(CPLComApp):
         root = Factory.get('MainView')()
         return super(CeedApp, self).build(root)
 
+    def _clear_all(self):
+        self.funcs_container.clear_all()
+        self.stages_container.clear_all()
+
     def on_start(self):
-        self.stage_factory.shape_factory = self.shape_factory = knspace.painter
+        self.stage_factory.shape_factory = self.shape_factory
         remove_shapes_upon_deletion(
             self.stage_factory, self.shape_factory,
-            knspace.stages.remove_shape_from_stage)
-        knspace.painter.shape_widgets_list = knspace.shapes
+            self.stages_container.remove_shape_from_stage)
+        self.shape_factory.shape_widgets_list = self.shapes_container
 
-        def clear_all():
-            knspace.funcs.clear_all()
-            knspace.stages.clear_all()
-
-        self.ceed_data.stage_display_callback = knspace.stages.show_stage
-        self.ceed_data.func_display_callback = knspace.funcs.show_function
-        self.ceed_data.clear_all_callback = clear_all
+        self.ceed_data.stage_display_callback = \
+            self.stages_container.show_stage
+        self.ceed_data.func_display_callback = \
+            self.funcs_container.show_function
+        self.ceed_data.clear_all_callback = self._clear_all
 
         HighightButtonBehavior.init_class()
 
@@ -157,7 +179,7 @@ class CeedApp(CPLComApp):
         self.function_factory.fbind('on_changed', self.changed_callback)
         for func in self.function_factory.funcs_inst_default.values():
             func.fbind('on_changed', self.changed_callback)
-        knspace.painter.fbind('on_changed', self.changed_callback)
+        self.shape_factory.fbind('on_changed', self.changed_callback)
         self.view_controller.fbind('on_changed', self.changed_callback)
 
         self.set_tittle()
@@ -167,7 +189,8 @@ class CeedApp(CPLComApp):
         self.ceed_data.fbind('read_only_file', self.set_tittle)
 
         try:
-            self.view_controller.set_led_mode(self.view_controller.LED_mode_idle)
+            self.view_controller.set_led_mode(
+                self.view_controller.LED_mode_idle)
         except ImportError:
             pass
 
@@ -212,20 +235,26 @@ class CeedApp(CPLComApp):
         self.view_controller.request_stage_end()
         return val
 
+    def clean_up(self):
+        super(CeedApp, self).clean_up()
+        if self.ceed_data is not None:
+            if self.ceed_data.backup_event is not None:
+                self.ceed_data.backup_event.cancel()
+                self.ceed_data.backup_event = None
+        if self.remote_viewer:
+            self.remote_viewer.stop_listener()
+        CeedPlayer.exit_players()
+        if self.view_controller is not None:
+            self.view_controller.stop_process()
+            self.view_controller.finish_stop_process()
+        if self.ceed_data is not None:
+            self.ceed_data.stop_experiment()
 
-def _cleanup(app, *largs):
-    if app.remote_viewer:
-        app.remote_viewer.stop_listener()
-    CeedPlayer.exit_players()
-    if app.view_controller is not None:
-        app.view_controller.stop_process()
-        app.view_controller.finish_stop_process()
-    if app.ceed_data is not None:
-        app.ceed_data.stop_experiment()
-    app.dump_app_settings_to_file()
+        self.dump_app_settings_to_file()
+        HighightButtonBehavior.uninit_class()
 
 
-run_app = partial(run_cpl_app, CeedApp, _cleanup)
+run_app = partial(run_cpl_app, CeedApp)
 '''The function that starts the GUI and the entry point for
 the main script.
 '''

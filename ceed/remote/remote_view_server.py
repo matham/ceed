@@ -970,28 +970,27 @@ class CeedRemoteViewApp(CPLComApp):
     def get_logger(self):
         return Logger
 
+    def clean_up(self):
+        super(CeedRemoteViewApp, self).clean_up()
+        if self.from_kivy_queue is not None:
+            self.from_kivy_queue.put(('eof', None))
+            if self.server_thread is not None:
+                self.server_thread.join()
 
-def _cleanup(app):
-    if app.from_kivy_queue is not None:
-        app.from_kivy_queue.put(('eof', None))
-        if app.server_thread is not None:
-            app.server_thread.join()
+        self.close_tsi_cam(join=True)
 
-    app.close_tsi_cam(join=True)
+        if self.image_save_queue is not None:
+            self.image_save_queue.put(('eof', None))
+            if self.image_save_thread is not None:
+                self.image_save_thread.join()
 
-    if app.image_save_queue is not None:
-        app.image_save_queue.put(('eof', None))
-        if app.image_save_thread is not None:
-            app.image_save_thread.join()
-
-    if app.vpixx_thread_queue is not None:
-        app.vpixx_thread_queue.put(('eof', None))
-        if app.vpixx_thread is not None:
-            app.vpixx_thread.join()
+        if self.vpixx_thread_queue is not None:
+            self.vpixx_thread_queue.put(('eof', None))
+            if self.vpixx_thread is not None:
+                self.vpixx_thread.join()
 
 
-
-run_app = partial(run_cpl_app, CeedRemoteViewApp, _cleanup)
+run_app = partial(run_cpl_app, CeedRemoteViewApp)
 '''The function that starts the GUI and the entry point for
 the main script.
 '''

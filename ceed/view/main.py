@@ -144,7 +144,7 @@ class CeedViewApp(CPLComApp):
         return False
 
     def handle_exception(self, exception, exc_info=None, event=None, obj=None,
-                         error_indicator='', level='error', *largs):
+                         level='error', *largs):
         '''Should be called whenever an exception is caught in the app.
 
         :parameters:
@@ -177,11 +177,7 @@ class CeedViewApp(CPLComApp):
         return Logger
 
 
-def _cleanup(app):
-    pass
-
-
-run_app = partial(run_cpl_app, CeedViewApp, _cleanup)
+run_app = partial(run_cpl_app, CeedViewApp)
 '''The function that starts the GUI and the entry point for
 the main script.
 '''

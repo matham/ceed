@@ -7,7 +7,6 @@ from itertools import chain, islice
 
 from kivy.uix.widget import Widget
 from kivy.uix.behaviors.compoundselection import CompoundSelectionBehavior
-from kivy.uix.behaviors.knspace import KNSpaceBehavior
 from kivy.uix.behaviors.focus import FocusBehavior
 from kivy.event import EventDispatcher
 from kivy.properties import BooleanProperty, ObjectProperty, StringProperty
@@ -126,7 +125,7 @@ class BoxSelector(TouchSelectBehavior, BoxLayout):
     pass
 
 
-class WidgetList(KNSpaceBehavior, CompoundSelectionBehavior, FocusBehavior):
+class WidgetList(CompoundSelectionBehavior, FocusBehavior):
     '''A
     :class:`kivy.uix.behaviors.compoundselection.CompoundSelectionBehavior`
     based class with some convenience methods.
@@ -144,7 +143,7 @@ class WidgetList(KNSpaceBehavior, CompoundSelectionBehavior, FocusBehavior):
 
     def keyboard_on_key_down(self, window, keycode, text, modifiers):
         if super(WidgetList, self).keyboard_on_key_down(
-            window, keycode, text, modifiers):
+                window, keycode, text, modifiers):
             return True
         if self.select_with_key_down(window, keycode, text, modifiers):
             return True
@@ -203,7 +202,7 @@ class WidgetList(KNSpaceBehavior, CompoundSelectionBehavior, FocusBehavior):
         return nodes[i], i
 
 
-class CeedDragNDrop(KNSpaceBehavior, DraggableController):
+class CeedDragNDrop(DraggableController):
     '''Adds ``KNSpaceBehavior`` to the drag controller.
     '''
     pass
@@ -253,7 +252,7 @@ class FilterTouchEagerlyBehavior(object):
         return super(FilterTouchEagerlyBehavior, self).on_touch_up(touch)
 
 
-class KNSlider(KNSpaceBehavior, Slider):
+class KNSlider(Slider):
 
     __events__ = ('on_release', )
 

@@ -16,7 +16,6 @@ from cplcom.player import PTGrayPlayer, FFmpegPlayer, VideoMetadata, Player
 from cplcom.utils import pretty_space, pretty_time
 
 from kivy.event import EventDispatcher
-from kivy.uix.behaviors.knspace import KNSpaceBehavior, knspace
 from kivy.properties import BooleanProperty, NumericProperty, StringProperty
 from kivy.clock import Clock
 from kivy.uix.dropdown import DropDown
@@ -34,12 +33,13 @@ class CeedPlayerBase(object):
     def display_frame(self, *largs):
         '''The displays the last image to the user.
         '''
-        widget = knspace.central_display
+        app = App.get_running_app()
+        widget = app.central_display
         img = self.last_image
         if widget is not None and img is not None:
             widget.update_img(img[0])
-            knspace.player.last_image = img[0]
-            if knspace.gui_remote_view.state == 'down':
+            app.player.last_image = img[0]
+            if app.use_remote_view:
                 App.get_running_app().remote_viewer.send_image(img[0])
 
 
@@ -68,14 +68,15 @@ class CeedRemotePlayer(CeedPlayerBase):
     def display_frame(self, *largs):
         '''The displays the last image to the user.
         '''
-        widget = knspace.central_display
+        app = App.get_running_app()
+        widget = app.central_display
         img = self.last_image
         if widget is not None and img is not None:
             widget.update_img(img)
-            knspace.player.last_image = img
+            app.player.last_image = img
 
 
-class CeedPlayer(KNSpaceBehavior, EventDispatcher):
+class CeedPlayer(EventDispatcher):
     '''Controls the media player/recorder in ceed.
 
     A singlton instance of this class controls both a :class:`CeedPTGrayPlayer`
@@ -413,11 +414,11 @@ class CeedPlayer(KNSpaceBehavior, EventDispatcher):
                 raise Exception('Could not find image in {}'.format(fname))
             img = images[0][0]
 
-        knspace.central_display.update_img(img)
+        App.get_running_app().central_display.update_img(img)
         self.last_image = img
 
     def set_screenshot(self, image):
-        knspace.central_display.update_img(image)
+        App.get_running_app().central_display.update_img(image)
         self.last_image = image
 
     def save_screenshot(self, img, path, selection, filename):
@@ -521,6 +522,7 @@ class CeedPlayer(KNSpaceBehavior, EventDispatcher):
                 except:
                     pass
             player.save_config()
+            CeedPlayer.player_singleton = None
 
     @staticmethod
     def is_player_active():

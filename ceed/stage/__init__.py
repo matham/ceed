@@ -278,7 +278,7 @@ class StageFactoryBase(EventDispatcher):
             A list of the intensity values for each shape.
 
             Each item in the list is a 2-tuple of ``(name, values)``. ``name``
-            is the :attr:`cplcom.painter.PaintShape.name` of the shape.
+            is the :attr:`kivy_garden.painter.PaintShape.name` of the shape.
             ``values`` is a list of color values and each item in that list is
             a 4-tuple of ``(r, g, b, a)``. Any of these values can be None, in
             which case that color remains the same. This way a shape can be
@@ -322,7 +322,7 @@ class StageFactoryBase(EventDispatcher):
 
         :returns:
 
-            a dict whose keys is the :attr:`cplcom.painter.PaintShape.name` of
+            a dict whose keys is the :attr:`kivy_garden.painter.PaintShape.name` of
             the :class:`ceed.shape.CeedShape` and whose value is the Kivy
             ``Color`` instruction instance that controls the color of the
             shape.
@@ -1016,7 +1016,7 @@ class StageShape(EventDispatcher):
 
     name = StringProperty('')
     '''The :attr:`ceed.shape.CeedShapeGroup.name` or
-    :attr:`cplcom.painter.PaintShape.name` of the instance wrapped.
+    :attr:`kivy_garden.painter.PaintShape.name` of the instance wrapped.
     '''
 
     display = None

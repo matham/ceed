@@ -867,7 +867,7 @@ Factory.register('FormulaVariableBehavior', cls=FormulaVariableBehavior)
 
 class OpticsApp(App):
 
-    theme = ObjectProperty(ColorTheme(), rebind=True)
+    theme = ObjectProperty(None, rebind=True)
 
     formula_container_widget = ObjectProperty(None)
 
@@ -884,6 +884,7 @@ class OpticsApp(App):
     cam_lens_closer2 = ObjectProperty(None)
 
     def __init__(self, **kwargs):
+        self.theme = ColorTheme()
         super(OpticsApp, self).__init__(**kwargs)
         self.focal_len_from_io_f = LensFocalLengthFormula()
         self.image_from_f = LensFixedObjectFormula()

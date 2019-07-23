@@ -1,4 +1,3 @@
-#:import knspace kivy.uix.behaviors.knspace.knspace
 #:import get_color_from_hex kivy.utils.get_color_from_hex
 #:import ceil math.ceil
 
@@ -39,6 +38,7 @@
             StageList:
                 id: stages
                 knsname: 'stages'
+                on_kv_post: app.stages_container = self
                 orientation: 'vertical'
                 spacing: '3dp'
                 padding: '0dp', 0, 0, '12dp'

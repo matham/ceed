@@ -5,7 +5,6 @@ Defines the GUI components used with :mod:`ceed.shape`.
 '''
 import math
 
-from kivy.uix.behaviors.knspace import KNSpaceBehavior, knspace
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
 from kivy.properties import BooleanProperty, NumericProperty, StringProperty, \
@@ -49,7 +48,9 @@ class CeedPainter(CeedPaintCanvasBehavior, Widget):
 
     @property
     def selected_groups(self):
-        return [widget.group for widget in knspace.shape_groups.selected_nodes]
+        app = App.get_running_app()
+        return [widget.group
+                for widget in app.shape_groups_container.selected_nodes]
 
     def create_shape_with_touch(self, touch):
         shape = super(CeedPainter, self).create_shape_with_touch(touch)
@@ -163,14 +164,16 @@ class CeedPainter(CeedPaintCanvasBehavior, Widget):
     def select_shape(self, shape):
         if super(CeedPainter, self).select_shape(shape):
             if shape.widget is not None:
-                knspace.shapes.select_node(shape.widget)
+                App.get_running_app().shapes_container.select_node(
+                    shape.widget)
             return True
         return False
 
     def deselect_shape(self, shape):
         if super(CeedPainter, self).deselect_shape(shape):
             if shape.widget is not None:
-                knspace.shapes.deselect_node(shape.widget)
+                App.get_running_app().shapes_container.deselect_node(
+                    shape.widget)
             return True
         return False
 
@@ -182,10 +185,11 @@ class ShapeGroupDraggableLayoutBehavior(DraggableLayoutBehavior):
     def handle_drag_release(self, index, drag_widget):
         group = self.group_widget.group
 
-        knspace.painter.add_shape_to_group(
+        App.get_running_app().shape_factory.add_shape_to_group(
             group, drag_widget.obj_dragged.shape)
         if drag_widget.obj_dragged.selected:
-            knspace.painter.add_selected_shapes_to_group(group)
+            App.get_running_app().shape_factory.add_selected_shapes_to_group(
+                group)
 
 
 class ShapeGroupList(
@@ -201,19 +205,20 @@ class ShapeGroupList(
         if self.selected_nodes:
             group = self.selected_nodes[-1].group
 
-        self.knspace.painter.add_selected_shapes_to_group(group)
+        App.get_running_app().shape_factory.add_selected_shapes_to_group(group)
 
     def handle_drag_release(self, index, drag_widget):
+        app = App.get_running_app()
         if drag_widget.drag_cls == 'shape':
-            group = self.knspace.painter.add_group()
-            self.knspace.painter.add_shape_to_group(
+            group = app.shape_factory.add_group()
+            app.shape_factory.add_shape_to_group(
                 group, drag_widget.obj_dragged.shape)
             if drag_widget.obj_dragged.selected:
-                self.knspace.painter.add_selected_shapes_to_group(group)
+                app.shape_factory.add_selected_shapes_to_group(group)
         else:
-            group = self.knspace.painter.add_group()
+            group = app.shape_factory.add_group()
             for shape in drag_widget.obj_dragged.group.shapes:
-                self.knspace.painter.add_shape_to_group(group, shape)
+                app.shape_factory.add_shape_to_group(group, shape)
 
 
 class WidgetShapeGroup(ShowMoreBehavior, BoxLayout):
@@ -237,13 +242,13 @@ class WidgetShapeGroup(ShowMoreBehavior, BoxLayout):
     def show_widget(self):
         '''Displays this widget group.
         '''
-        knspace.shape_groups.add_widget(self)
+        App.get_running_app().shape_groups_container.add_widget(self)
 
     def hide_widget(self):
         '''Hides this widget group.
         '''
-        knspace.shape_groups.deselect_node(self)
-        knspace.shape_groups.remove_widget(self)
+        App.get_running_app().shape_groups_container.deselect_node(self)
+        App.get_running_app().shape_groups_container.remove_widget(self)
 
     @property
     def shape_widgets(self):
@@ -283,7 +288,7 @@ class ShapeGroupItem(BoxLayout):
 
     @property
     def name(self):
-        '''The :attr:`cplcom.painter.PaintShape.name` of the shape.
+        '''The :attr:`kivy_garden.painter.PaintShape.name` of the shape.
         '''
         return self.shape.name
 
@@ -295,21 +300,22 @@ class ShapeList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
 
     def select_node(self, node):
         if super(ShapeList, self).select_node(node):
-            knspace.painter.select_shape(node.shape)
+            App.get_running_app().shape_factory.select_shape(node.shape)
             return True
         return False
 
     def deselect_node(self, node):
         if super(ShapeList, self).deselect_node(node):
-            knspace.painter.deselect_shape(node.shape)
+            App.get_running_app().shape_factory.deselect_shape(node.shape)
             return True
         return False
 
     def handle_drag_release(self, index, drag_widget):
         if drag_widget.obj_dragged.selected:
-            self.knspace.painter.duplicate_selected_shapes()
+            App.get_running_app().shape_factory.duplicate_selected_shapes()
         else:
-            self.knspace.painter.duplicate_shape(drag_widget.obj_dragged.shape)
+            App.get_running_app().shape_factory.duplicate_shape(
+                drag_widget.obj_dragged.shape)
 
 
 class WidgetShape(ShowMoreBehavior, BoxLayout):
@@ -347,7 +353,7 @@ class WidgetShape(ShowMoreBehavior, BoxLayout):
     '''
 
     selected = BooleanProperty(False)
-    '''Whether the shape is :attr:`cplcom.painter.PaintShape.selected`.
+    '''Whether the shape is :attr:`kivy_garden.painter.PaintShape.selected`.
     '''
 
     _shape_update_trigger = None
@@ -362,7 +368,7 @@ class WidgetShape(ShowMoreBehavior, BoxLayout):
 
     @property
     def name(self):
-        '''The :attr:`cplcom.painter.PaintShape.name` of the shape.
+        '''The :attr:`kivy_garden.painter.PaintShape.name` of the shape.
         '''
         return self.shape.name
 
@@ -370,10 +376,11 @@ class WidgetShape(ShowMoreBehavior, BoxLayout):
         '''Displays this widget in the list of shape widgets.
         '''
         if index is None:
-            knspace.shapes.add_widget(self)
+            App.get_running_app().shapes_container.add_widget(self)
         else:
-            knspace.shapes.add_widget(
-                self, index=len(knspace.shapes.children) - index)
+            App.get_running_app().shapes_container.add_widget(
+                self, index=len(
+                    App.get_running_app().shapes_container.children) - index)
 
         self.fbind('show_label', self._show_label)
         self.shape.fbind('name', self._label_text)
@@ -390,7 +397,7 @@ class WidgetShape(ShowMoreBehavior, BoxLayout):
         '''Hides this widget from the list of shape widgets.
         '''
         self.shape.funbind('on_update', self._shape_update_trigger)
-        knspace.shapes.remove_widget(self)
+        App.get_running_app().shapes_container.remove_widget(self)
 
         label = self.label
         label.funbind('size', self._shape_update_trigger)

@@ -51,13 +51,16 @@
                         transform: mea_align.make_matrix(app.view_controller.cam_transform)
                         on_transform: if not mea_align.compare_mat(self.transform, app.view_controller.cam_transform): app.view_controller.cam_transform = self.transform.tolist()
                     CeedPainter:
+                        on_kv_post: app.shape_factory = self
                         knsname: 'painter'
+                        test_name: 'painter'
                         id: painter
                         size_hint: None, None
                         size: app.view_controller.screen_width, app.view_controller.screen_height
                         move_cam: False
                         move_array: False
                     MEAArrayAlign:
+                        on_kv_post: app.mea_align_widget = self
                         knsname: 'mea_align'
                         id: mea_align
                         do_scale: painter.locked and painter.move_array
@@ -130,6 +133,7 @@
             min: min((root.width - dp(65)) / app.view_controller.screen_width, (root.height - dp(50)) / app.view_controller.screen_height)
             value: 1.
             on_value: scatter.scale = self.value
+            test_name: 'screen zoom silder'
 
 
 <ControlBar@BoxLayout>:

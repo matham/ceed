@@ -9,7 +9,6 @@ if not os.environ.get('KIVY_DOC_INCLUDE', None):
     from scipy.signal import decimate
 import numpy as np
 
-from kivy.uix.behaviors.knspace import KNSpaceBehavior, knspace
 from kivy.uix.boxlayout import BoxLayout
 from kivy.clock import Clock
 from kivy.properties import BooleanProperty, NumericProperty, StringProperty, \
@@ -994,7 +993,7 @@ class StageGraph(Factory.FlatSplitter):
         '''
         self.parent.remove_widget(self)
         if state:
-            knspace.pinned_graph.add_widget(self)
+            App.get_running_app().pinned_graph.add_widget(self)
             self.unpinned_root.dismiss()
         else:
             self.unpinned_parent.add_widget(self)

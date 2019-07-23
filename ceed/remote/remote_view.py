@@ -8,7 +8,6 @@ from kivy.event import EventDispatcher
 from kivy.properties import StringProperty, NumericProperty, BooleanProperty
 from kivy.clock import Clock
 from kivy.app import App
-from kivy.uix.behaviors.knspace import knspace
 from queue import Queue, Empty
 from cplcom.app import app_error
 from cplcom.utils import yaml_dumps, yaml_loads
@@ -184,6 +183,7 @@ class RemoteViewerListenerBase(EventDispatcher):
 
     @app_error
     def process_in_kivy_thread(self, *largs):
+        app = App.get_running_app()
         while self.to_kivy_queue is not None:
             try:
                 msg, value = self.to_kivy_queue.get(block=False)
@@ -198,19 +198,19 @@ class RemoteViewerListenerBase(EventDispatcher):
                     App.get_running_app().handle_exception(
                         e, exc_info=exec_info)
                 elif msg == 'track_cam_setting':
-                    player = knspace.player
+                    player = app.player
                     if player is not None:
                         player.bind_pt_remote_setting(value)
                 elif msg == 'get_cam_settings':
-                    player = knspace.player
+                    player = app.player
                     if player is not None:
                         self.send_cam_settings('cam_settings', player.get_valid_pt_settings())
                 elif msg == 'set_cam_setting':
-                    player = knspace.player
+                    player = app.player
                     if player is not None:
                         player.change_pt_setting_opt(*value)
                 elif msg == 'reload_cam_setting':
-                    player = knspace.player
+                    player = app.player
                     if player is not None:
                         player.reload_pt_setting_opt(value)
                 elif msg == 'remote_image':

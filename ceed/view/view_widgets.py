@@ -6,7 +6,6 @@ These are displayed when the second process of the viewer is running.
 '''
 from math import isclose
 
-from kivy.uix.behaviors.knspace import KNSpaceBehavior
 from kivy.uix.behaviors.focus import FocusBehavior
 from kivy.uix.stencilview import StencilView
 from kivy.uix.scatter import Scatter
@@ -63,7 +62,7 @@ class ViewRootFocusBehavior(FocusBehavior):
         return True
 
 
-class MEAArrayAlign(KNSpaceBehavior, Scatter):
+class MEAArrayAlign(Scatter):
 
     num_rows = NumericProperty(12)
 

@@ -7,7 +7,7 @@
     source: 'flat_arrow_right.png' if not self.is_open else 'flat_arrow_down.png'
 
 <DraggingWidget@CeedDraggableObjectBehavior+FlatImage>:
-    drag_controller: knspace.dragger
+    drag_controller: app.drag_controller
     source: 'flat_copy.png' if self.drag_copy else 'reorder-horizontal.png'
     flat_color: app.theme.accent
 

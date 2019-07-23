@@ -40,7 +40,7 @@
                         flat_drop_text_color: app.theme.text_primary
                         flat_border_color: app.theme.divider
                     DraggingWidget:
-                        drag_controller: knspace.dragger
+                        drag_controller: app.drag_controller
                         drag_widget: func_spin.__self__
                         obj_dragged: func_spin.__self__
                         drag_cls: 'func_spinner'
@@ -53,6 +53,7 @@
             bar_width: '10dp'
             scroll_type: ['bars']
             FuncList:
+                on_kv_post: app.funcs_container = self
                 id: funcs
                 drag_append_end: True
                 spacer_props: {'size_hint_y': None, 'height': '50dp', 'size_hint_min_x': '40dp'}

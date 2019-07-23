@@ -29,7 +29,6 @@ from kivy.properties import StringProperty, NumericProperty, ListProperty, \
     DictProperty, BooleanProperty, ObjectProperty
 from kivy.app import App
 from kivy.clock import Clock
-from kivy.uix.behaviors.knspace import knspace
 from kivy.logger import Logger
 
 from cplcom.app import app_error
@@ -77,13 +76,15 @@ class CeedDataWriterBase(EventDispatcher):
     _mea_trans_pat = re.compile(
         '.+(mea_transform:[ \n\\-\\[\\],0-9.]+\\]).+', flags=re.DOTALL)
 
+    backup_event = None
+
     __events__ = ('on_experiment_change', )
 
     def __init__(self, **kwargs):
         super(CeedDataWriterBase, self).__init__(**kwargs)
         if (not os.environ.get('KIVY_DOC_INCLUDE', None) and
                 self.backup_interval):
-            Clock.schedule_interval(
+            self.backup_event = Clock.schedule_interval(
                 partial(self.write_changes, scheduled=True),
                 self.backup_interval)
 
@@ -762,8 +763,9 @@ class CeedDataWriterBase(EventDispatcher):
 
         block.metadata = sec
 
-        if hasattr(knspace, 'player') and knspace.player.last_image:
-            self.write_fluorescent_image(block, knspace.player.last_image)
+        app = App.get_running_app()
+        if app.player and app.player.last_image:
+            self.write_fluorescent_image(block, app.player.last_image)
 
         shapes = {}
         for shape in App.get_running_app().shape_factory.shapes:
