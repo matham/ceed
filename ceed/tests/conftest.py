@@ -1,21 +1,15 @@
 import os
-os.environ['KIVY_EVENTLOOP'] = 'trio'
-os.environ['KIVY_USE_DEFAULTCONFIG'] = '1'
 import pytest
 import trio
+import time
 import gc
+import weakref
 from collections import defaultdict
 
-from kivy.config import Config
-Config.set('graphics', 'width', '1200')
-Config.set('graphics', 'height', '800')
-for items in Config.items('input'):
-    Config.remove_option('input', items[0])
-
-from ceed.main import CeedApp, _cleanup
+os.environ['KIVY_EVENTLOOP'] = 'trio'
+os.environ['KIVY_USE_DEFAULTCONFIG'] = '1'
 
 file_count = defaultdict(int)
-kv_loaded = False
 
 
 @pytest.fixture()
@@ -30,97 +24,21 @@ def temp_file(tmp_path):
     return temp_file_gen
 
 
-class CeedTestApp(CeedApp):
-
-    app_has_started = False
-
-    def __init__(self, ini_file, **kwargs):
-        self._ini_config_filename = ini_file
-        self._data_path = os.path.dirname(ini_file)
-        super(CeedTestApp, self).__init__(**kwargs)
-
-        def started_app(*largs):
-            self.app_has_started = True
-        self.fbind('on_start', started_app)
-
-    def load_app_kv(self):
-        global kv_loaded
-        if kv_loaded:
-            return
-
-        super(CeedTestApp, self).load_app_kv()
-        kv_loaded = True
-
-    def check_close(self):
-        super(CeedTestApp, self).check_close()
-        return True
-
-    def handle_exception(self, msg, exc_info=None, error_indicator='',
-                         level='error', *largs):
-        super(CeedApp, self).handle_exception(
-            msg, exc_info, error_indicator, level, *largs)
-
-        if isinstance(exc_info, str):
-            self.get_logger().error(msg)
-            self.get_logger().error(exc_info)
-        elif exc_info is not None:
-            tp, value, tb = exc_info
-            try:
-                if value is None:
-                    value = tp()
-                if value.__traceback__ is not tb:
-                    raise value.with_traceback(tb)
-                raise value
-            finally:
-                value = None
-                tb = None
-        elif level in ('error', 'exception'):
-            raise Exception(msg)
-
-    async def wait_clock_frames(self, n, sleep_time=0.1):
-        from kivy.clock import Clock
-        frames_start = Clock.frames
-        while Clock.frames < frames_start + n:
-            await trio.sleep(sleep_time)
-
-    def get_widget_pos_pixel(self, widget, pos):
-        from kivy.graphics import (
-            Translate, Fbo, ClearColor, ClearBuffers, Scale)
-
-        canvas_parent_index = -2
-        if widget.parent is not None:
-            canvas_parent_index = widget.parent.canvas.indexof(widget.canvas)
-            if canvas_parent_index > -1:
-                widget.parent.canvas.remove(widget.canvas)
-
-        w, h = int(widget.width), int(widget.height)
-        fbo = Fbo(size=(w, h), with_stencilbuffer=True)
-
-        with fbo:
-            ClearColor(0, 0, 0, 0)
-            ClearBuffers()
-
-        fbo.add(widget.canvas)
-        fbo.draw()
-        pixels = fbo.pixels
-        fbo.remove(widget.canvas)
-
-        if widget.parent is not None and canvas_parent_index > -1:
-            widget.parent.canvas.insert(canvas_parent_index, widget.canvas)
-
-        values = []
-        for x, y in pos:
-            x = int(x)
-            y = int(y)
-            i = y * w * 4 + x * 4
-            values.append(tuple(pixels[i:i + 4]))
-
-        return values
-
+apps = []
 
 @pytest.fixture()
 async def ceed_app(request, nursery, temp_file, tmp_path):
+    ts0 = time.perf_counter()
+    from ceed.tests.ceed_app import CeedTestApp
     from kivy.core.window import Window
+    from kivy.context import Context
+    from kivy.clock import ClockBase
+    from kivy.base import stopTouchApp
+
+    context = Context(init=False)
+    context['Clock'] = ClockBase(async_lib='trio')
+    context.push()
+
     Window.create_window()
     Window.register()
     Window.initialized = True
@@ -133,19 +51,45 @@ async def ceed_app(request, nursery, temp_file, tmp_path):
         json_config_path=temp_file('config.yaml'),
         ini_file=temp_file('config.ini'))
     app.ceed_data.root_path = str(tmp_path)
-    nursery.start_soon(app.async_run)
 
-    def fin():
-        from kivy.base import stopTouchApp
-        stopTouchApp()
-        for child in Window.children[:]:
-            Window.remove_widget(child)
-        _cleanup(app)
-        gc.collect()
+    async def run_app():
+        await app.async_run()
 
-    request.addfinalizer(fin)
+    nursery.start_soon(run_app)
 
+    ts = time.perf_counter()
     while not app.app_has_started:
         await trio.sleep(.1)
+        if time.perf_counter() - ts >= 10:
+            raise TimeoutError()
+
     await app.wait_clock_frames(5)
-    return app
+
+    ts1 = time.perf_counter()
+    yield app
+    ts2 = time.perf_counter()
+
+    stopTouchApp()
+
+    ts = time.perf_counter()
+    while not app.app_has_stopped:
+        await trio.sleep(.1)
+        if time.perf_counter() - ts >= 10:
+            raise TimeoutError()
+
+    for child in Window.children[:]:
+        Window.remove_widget(child)
+    context.pop()
+    del context
+    app = weakref.ref(app)
+    apps.append(app)
+    gc.collect()
+    ts3 = time.perf_counter()
+
+    print(ts1 - ts0, ts2 - ts1, ts3 - ts2, app())
+    if len(apps) >= 3 and apps[-3]() is not None:
+        import objgraph
+        objgraph.show_backrefs([apps[-3]()], filename=r'E:\sample-graph.png', too_many=1, max_depth=50)
+        # objgraph.show_chain(
+        #     objgraph.find_backref_chain(apps[-3](), objgraph.is_proper_module), filename=r'E:\sample-graph.png')
+        assert False

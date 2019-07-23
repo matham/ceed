@@ -1,4 +1,4 @@
-from ceed.tests.conftest import CeedTestApp
+from ceed.tests.ceed_app import CeedTestApp
 
 
 async def test_open_app(ceed_app: CeedTestApp):
