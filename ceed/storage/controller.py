@@ -120,7 +120,7 @@ class CeedDataWriterBase(EventDispatcher):
                 requires_app_settings or 'app_settings' in data):
             app_settings = data['app_settings']
             # filter classes that are not of this app
-            classes = app.get_config_classes()
+            classes = app.get_app_config_classes()
             app.app_settings = {cls: app_settings[cls] for cls in classes}
             app.apply_app_settings()
 

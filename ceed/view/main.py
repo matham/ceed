@@ -72,17 +72,18 @@ class CeedViewApp(CPLComApp):
     @classmethod
     def get_config_classes(cls):
         d = super(CeedViewApp, cls).get_config_classes()
-        app = cls.get_running_app()
-        if app is None:
-            d['view'] = ViewSideViewControllerBase
-            d['data'] = CeedDataWriterBase
-            d['serializer'] = DataSerializerBase
-            d['function'] = FunctionFactoryBase
-        else:
-            d['view'] = app.view_controller
-            d['data'] = app.ceed_data
-            d['serializer'] = app.data_serializer
-            d['function'] = app.function_factory
+        d['view'] = ViewSideViewControllerBase
+        d['data'] = CeedDataWriterBase
+        d['serializer'] = DataSerializerBase
+        d['function'] = FunctionFactoryBase
+        return d
+
+    def get_app_config_classes(self):
+        d = super(CeedViewApp, self).get_app_config_classes()
+        d['view'] = self.view_controller
+        d['data'] = self.ceed_data
+        d['serializer'] = self.data_serializer
+        d['function'] = self.function_factory
         return d
 
     def __init__(self, **kwargs):

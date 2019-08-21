@@ -92,8 +92,10 @@ texinfo_documents = [
 
 def setup(app):
     create_doc_listener(app, ceed)
+    if CeedApp.get_running_app() is not None:
+        classes = CeedApp.get_running_app().get_app_config_classes()
+    else:
+        classes = CeedApp.get_config_classes()
+
     app.connect(
-        'build-finished',
-        partial(write_config_attrs_rst, CeedApp.get_config_classes(),
-                ceed)
-    )
+        'build-finished', partial(write_config_attrs_rst, classes, ceed))

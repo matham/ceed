@@ -404,6 +404,7 @@ paired_tests = [
     (FreeformPolygonShapeP1, FreeformPolygonShapeP2),
 ]
 
+
 @pytest.fixture
 async def paint_app(ceed_app: CeedTestApp):
     from kivy.metrics import dp

@@ -647,7 +647,7 @@ def view_process_enter(read, write, settings, app_settings):
     try:
         app = CeedViewApp()
 
-        classes = app.get_config_classes()
+        classes = app.get_app_config_classes()
         app.app_settings = {cls: app_settings[cls] for cls in classes}
         app.apply_app_settings()
 

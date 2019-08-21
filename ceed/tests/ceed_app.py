@@ -1,4 +1,5 @@
 import os
+import trio
 
 from kivy.config import Config
 Config.set('graphics', 'width', '1600')
@@ -10,8 +11,6 @@ for items in Config.items('input'):
 from ceed.main import CeedApp
 from kivy.tests.async_common import UnitKivyApp
 
-kv_loaded = False
-
 
 class CeedTestApp(CeedApp, UnitKivyApp):
 
@@ -20,13 +19,8 @@ class CeedTestApp(CeedApp, UnitKivyApp):
         self._data_path = os.path.dirname(ini_file)
         super(CeedTestApp, self).__init__(**kwargs)
 
-    def load_app_kv(self):
-        global kv_loaded
-        if kv_loaded:
-            return
-
-        super(CeedTestApp, self).load_app_kv()
-        kv_loaded = True
+    async def async_sleep(self, dt):
+        await trio.sleep(dt)
 
     def check_close(self):
         super(CeedTestApp, self).check_close()

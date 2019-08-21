@@ -158,8 +158,8 @@ class CeedPlayer(EventDispatcher):
         pt = self.pt_player = CeedPTGrayPlayer()
         pt.estimate_record_rate = True
         self.ff_player = CeedFFmpegPlayer()
-        Clock.schedule_once(self.bind_players)
-        Clock.schedule_interval(self.update_cycle, 0.1)
+        # Clock.schedule_once(self.bind_players)
+        # Clock.schedule_interval(self.update_cycle, 0.1)
 
     def update_cycle(self, *largs):
         '''Runs periodically to update the status and statistics.

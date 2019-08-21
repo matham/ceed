@@ -250,24 +250,6 @@
             ThemedLabel:
                 size_hint: None, None
                 size: self.texture_size
-                text: 'Rate timebase numerator'
-            FlatSizedTextInput:
-                #background_color: root.flat_color
-                input_filter: 'float'
-                text: str(app.function_factory.timebase_numerator)
-                on_text_validate: app.function_factory.timebase_numerator = float(self.text)
-            ThemedLabel:
-                size_hint: None, None
-                size: self.texture_size
-                text: 'Rate timebase denominator'
-            FlatSizedTextInput:
-                #background_color: root.flat_color
-                input_filter: 'float'
-                text: str(app.function_factory.timebase_denominator)
-                on_text_validate: app.function_factory.timebase_denominator = float(self.text)
-            ThemedLabel:
-                size_hint: None, None
-                size: self.texture_size
                 text: 'Projector Video mode'
             ThemedSpinner:
                 values: app.view_controller.video_modes

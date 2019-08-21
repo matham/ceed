@@ -49,6 +49,10 @@ class CeedApp(CPLComApp):
     '''The app which runs the GUI.
     '''
 
+    kv_loaded = False
+    """For tests, we don't want to load kv multiple times.
+    """
+
     function_factory = None  # type: FunctionFactoryBase
 
     player = None  # type: CeedPlayer
@@ -105,17 +109,20 @@ class CeedApp(CPLComApp):
         d['point_gray_cam'] = CeedPTGrayPlayer
         d['video_file_playback'] = CeedFFmpegPlayer
         d['remote_viewer'] = RemoteViewerListenerBase
+        return d
 
-        app = cls.get_running_app()
-        if app is not None:
-            d['function'] = app.function_factory
-            d['view'] = app.view_controller
-            d['data'] = app.ceed_data
-            d['serializer'] = app.data_serializer
-            p = d['player'] = app.player
-            d['point_gray_cam'] = p.pt_player
-            d['video_file_playback'] = p.ff_player
-            d['remote_viewer'] = app.remote_viewer
+    def get_app_config_classes(self):
+        d = super(CeedApp, self).get_app_config_classes()
+        d['function'] = self.function_factory
+        d['view'] = self.view_controller
+        d['data'] = self.ceed_data
+        d['serializer'] = self.data_serializer
+
+        p = d['player'] = self.player
+        d['point_gray_cam'] = p.pt_player
+        d['video_file_playback'] = p.ff_player
+        d['remote_viewer'] = self.remote_viewer
+
         return d
 
     def __init__(self, **kwargs):
@@ -135,6 +142,10 @@ class CeedApp(CPLComApp):
         self.apply_app_settings()
 
     def load_app_kv(self):
+        if CeedApp.kv_loaded:
+            return
+        CeedApp.kv_loaded = True
+
         base = dirname(__file__)
         # Builder.load_file(join(base, 'graphics', 'graphics.kv'))
         Builder.load_file(join(base, 'ceed_style.kv'))
@@ -240,6 +251,18 @@ class CeedApp(CPLComApp):
             if self.ceed_data.backup_event is not None:
                 self.ceed_data.backup_event.cancel()
                 self.ceed_data.backup_event = None
+            self.ceed_data.clear_all_callback = None
+        if self.stage_factory is not None:
+            self.stage_factory.funbind('on_changed', self.changed_callback)
+        if self.function_factory is not None:
+            self.function_factory.funbind('on_changed', self.changed_callback)
+        if self.shape_factory is not None:
+            self.shape_factory.funbind('on_changed', self.changed_callback)
+        if self.view_controller is not None:
+            self.view_controller.funbind('on_changed', self.changed_callback)
+
+        for func in self.function_factory.funcs_inst_default.values():
+            func.funbind('on_changed', self.changed_callback)
         if self.remote_viewer:
             self.remote_viewer.stop_listener()
         CeedPlayer.exit_players()
@@ -248,6 +271,11 @@ class CeedApp(CPLComApp):
             self.view_controller.finish_stop_process()
         if self.ceed_data is not None:
             self.ceed_data.stop_experiment()
+
+            self.ceed_data.funbind('filename', self.set_tittle)
+            self.ceed_data.funbind('config_changed', self.set_tittle)
+            self.ceed_data.funbind('has_unsaved', self.set_tittle)
+            self.ceed_data.funbind('read_only_file', self.set_tittle)
 
         self.dump_app_settings_to_file()
         HighightButtonBehavior.uninit_class()
