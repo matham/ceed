@@ -14,11 +14,12 @@
         size_hint_y: None
         height: self.minimum_height
         orientation: 'lr-tb'
-        VideoControl
-            id: video
+        # VideoControl
+        #     id: video
         FlatDivider:
+            id: video
             size_hint_y: None
-            height: video.height
+            height: '34dp'
             color: app.theme.divider
         FlatImageToggleButton:
             knsname: 'gui_remote_view'
