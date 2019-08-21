@@ -591,7 +591,7 @@ class CeedStage(EventDispatcher):
     def on_changed(self, *largs, **kwargs):
         pass
 
-    def get_state(self, state=None, expand_ref=False):
+    def get_state(self, expand_ref=False):
         '''Returns a dict representation of the stage so that it can be
         reconstructed later with :meth:`apply_state`.
 
@@ -617,11 +617,7 @@ class CeedStage(EventDispatcher):
             for f in self.functions]
         d['shapes'] = [s.name for s in self.shapes]
 
-        if state is None:
-            state = d
-        else:
-            state.update(d)
-        return state
+        return d
 
     def apply_state(self, state={}, clone=False, func_name_map={},
                     old_name_to_shape_map=None):
@@ -976,12 +972,11 @@ class CeedStageRef(object):
         self.shape_factory = shape_factory
         self.function_factory = function_factory
 
-    def get_state(self, state=None, expand_ref=False):
+    def get_state(self, expand_ref=False):
         if expand_ref:
             return self.stage.get_state(expand_ref=True)
 
-        if state is None:
-            state = {}
+        state = {}
         state['ref_name'] = self.stage.name
         state['cls'] = 'CeedStageRef'
         return state
