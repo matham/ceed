@@ -3,7 +3,6 @@
 
 The main module that runs the GUI.
 '''
-
 import ceed
 
 from functools import partial

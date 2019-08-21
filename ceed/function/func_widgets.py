@@ -51,12 +51,7 @@ class FuncList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
             dragged = drag_widget.obj_dragged
             func = dragged.ref_func or dragged.func
 
-        func = deepcopy(func)
-        self.function_factory.add_func(func)
-
-        widget = FuncWidget.get_display_cls(func)()
-        widget.initialize_display(func, self.function_factory, self)
-        self.add_widget(widget)
+        self.add_func_to_listing(deepcopy(func))
 
     def add_func(self, name):
         '''Adds a copy of the the function with the given ``name`` to the
@@ -77,18 +72,23 @@ class FuncList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
         if parent:
             if parent.can_other_func_be_added(src_func):
                 func = self.function_factory.get_func_ref(func=src_func)
-                parent.add_func(func, after=after)
-
-                widget = FuncWidget.get_display_cls(func)()
-                widget.initialize_display(func, self.function_factory, self)
-                parent.display.add_widget(widget)
+                self.add_child_func_to_func(parent, func, after)
         else:
-            func = deepcopy(src_func)
-            self.function_factory.add_func(func)
+            self.add_func_to_listing(deepcopy(src_func))
 
-            widget = FuncWidget.get_display_cls(func)()
-            widget.initialize_display(func, self.function_factory, self)
-            self.add_widget(widget)
+    def add_child_func_to_func(self, parent_func, child_func, after_func=None):
+        parent_func.add_func(child_func, after=after_func)
+
+        widget = FuncWidget.get_display_cls(child_func)()
+        widget.initialize_display(child_func, self.function_factory, self)
+        parent_func.display.add_widget(widget)
+
+    def add_func_to_listing(self, func):
+        self.function_factory.add_func(func)
+
+        widget = FuncWidget.get_display_cls(func)()
+        widget.initialize_display(func, self.function_factory, self)
+        self.add_widget(widget)
 
     def get_selectable_nodes(self):
         # a ref func will never be in the root list, so get_funcs will not be

@@ -59,12 +59,11 @@ class ConstFunc(CeedFunc):
             name=name, description=description, **kwargs)
 
     def __call__(self, t):
-        if not self.check_domain(t) and self.tick_loop(t):
-            raise FuncDoneException
+        super().__call__(t)
         return self.a
 
-    def get_gui_props(self, properties=None):
-        d = super(ConstFunc, self).get_gui_props(properties)
+    def get_gui_props(self):
+        d = super(ConstFunc, self).get_gui_props()
         d['a'] = None
         return d
 
@@ -96,13 +95,12 @@ class LinearFunc(CeedFunc):
         super(LinearFunc, self).__init__(**kwargs)
 
     def __call__(self, t):
-        if not self.check_domain(t) and self.tick_loop(t):
-            raise FuncDoneException
+        super().__call__(t)
         t = t - self.t_start + self.t_offset
         return self.m * t + self.b
 
-    def get_gui_props(self, properties=None):
-        d = super(LinearFunc, self).get_gui_props(properties)
+    def get_gui_props(self):
+        d = super(LinearFunc, self).get_gui_props()
         d['m'] = None
         d['b'] = None
         return d
@@ -143,13 +141,12 @@ class ExponentialFunc(CeedFunc):
         super(ExponentialFunc, self).__init__(**kwargs)
 
     def __call__(self, t):
-        if not self.check_domain(t) and self.tick_loop(t):
-            raise FuncDoneException
+        super().__call__(t)
         t = t - self.t_start + self.t_offset
         return self.A * exp(-t / self.tau1) + self.B * exp(-t / self.tau2)
 
-    def get_gui_props(self, properties=None):
-        d = super(ExponentialFunc, self).get_gui_props(properties)
+    def get_gui_props(self):
+        d = super(ExponentialFunc, self).get_gui_props()
         d['A'] = None
         d['B'] = None
         d['tau1'] = None
@@ -195,14 +192,13 @@ class CosFunc(CeedFunc):
         super(CosFunc, self).__init__(**kwargs)
 
     def __call__(self, t):
-        if not self.check_domain(t) and self.tick_loop(t):
-            raise FuncDoneException
+        super().__call__(t)
         t = t - self.t_start + self.t_offset
         return self.A * cos(
             2 * pi * self.f * t + self.th0 * pi / 180.) + self.b
 
-    def get_gui_props(self, properties=None):
-        d = super(CosFunc, self).get_gui_props(properties)
+    def get_gui_props(self):
+        d = super(CosFunc, self).get_gui_props()
         d['f'] = None
         d['b'] = None
         d['A'] = None

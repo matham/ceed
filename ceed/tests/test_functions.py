@@ -7,7 +7,7 @@ def func_factory():
     return FunctionFactoryBase()
 
 
-def test_function_factory(func_factory):
+def function_factory(func_factory):
     assert not func_factory.funcs_cls
     assert not func_factory.funcs_user
     assert not func_factory.funcs_inst
