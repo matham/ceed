@@ -1,41 +1,52 @@
-'''Function plugins
+"""Function plugins
 =====================
 
 Defines a plugin architecture so that new functions can be defined at runtime
-and made available to the :attr:`ceed.function.FunctionFactoryBase`
-used in the GUI and for later analysis.
+and made available to the :class:`ceed.function.FunctionFactoryBase`
+used in the GUI to list available functions, and for :mod:`analysis`.
 
-When :mod:`ceed.function` is imported, it automatically calls
-:func:`import_plugins` which imports all the ``.py`` files that don't start
-with an underscore in ``ceed/function/plugin``.
+When :func:`ceed.function.register_all_functions` is called with a
+:class:`ceed.function.FunctionFactoryBase`, it calls
+:func:`get_plugin_functions` to get all the functions exported by all plugins
+in the ``ceed/function/plugin`` directory and registers them with the
+:class:`ceed.function.FunctionFactoryBase`.
 
 Files in ``ceed/function/plugin`` that want to define new function classes
 should define a function in the file called ``get_ceed_functions`` that returns
 a list of functions that will be automatically registered with the function
 factory :attr:`ceed.function.FunctionFactoryBase` using
-:meth:`~ceed.function.FunctionFactoryBase.register`. See this
-``ceed/function/plugin/__init__.py`` file for an example.
-'''
+:meth:`~ceed.function.FunctionFactoryBase.register`. See the
+``ceed/function/plugin/__init__.py`` file and :func:`get_ceed_functions` for
+an example.
+"""
 
 import importlib
 from os import listdir
 from os.path import dirname
 from math import exp, cos, pi
+from typing import Iterable
 
 from kivy.properties import NumericProperty
 
-from ceed.function import CeedFunc, FuncDoneException
+from ceed.function import CeedFunc, FuncBase
 
 __all__ = (
     'get_plugin_functions', 'ConstFunc', 'LinearFunc', 'ExponentialFunc',
     'CosFunc', 'get_ceed_functions')
 
 
-def get_plugin_functions():
-    '''Imports all the ``.py`` files that don't start with an underscore in
-    ``ceed/function/plugin``. This is called by
-    :func:`~ceed.function.register_all_functions`.
-    '''
+def get_plugin_functions() -> Iterable[FuncBase]:
+    """Imports all the ``.py`` files that don't start with an underscore in
+    the ``ceed/function/plugin`` directory. For each imported module, it calls
+    its ``get_ceed_functions`` function which should return all the function
+    classes exported by the module.
+
+    It then returns all these exported functions.
+
+    ``get_ceed_functions`` takes no parameters and returns a iterable of
+    function classes exported by the module. See :func:`get_ceed_functions`
+    for an example.
+    """
     funcs = list(get_ceed_functions())  # get functions from this file
     for name in listdir(dirname(__file__)):
         if name.startswith('_') or not name.endswith('.py'):
@@ -47,12 +58,14 @@ def get_plugin_functions():
 
 
 class ConstFunc(CeedFunc):
-    '''Defines a function which returns a constant value.
+    """Defines a function which returns a constant value.
 
     The function is defined as ``y(t) = a``.
-    '''
+    """
 
     a = NumericProperty(0.)
+    """The amplitude value of the function.
+    """
 
     def __init__(self, name='Const', description='y(t) = a', **kwargs):
         super(ConstFunc, self).__init__(
@@ -79,15 +92,19 @@ class ConstFunc(CeedFunc):
 
 
 class LinearFunc(CeedFunc):
-    '''Defines a linearly increasing function.
+    """Defines a linearly increasing function.
 
     The function is defined as ``y(t_in) = mt + b``, where
     ``t = (t_in - t_start + t_offset)``.
-    '''
+    """
 
     m = NumericProperty(1.)
+    """The line's slope.
+    """
 
     b = NumericProperty(0.)
+    """The line's zero intercept.
+    """
 
     def __init__(self, **kwargs):
         kwargs.setdefault('name', 'Linear')
@@ -119,19 +136,27 @@ class LinearFunc(CeedFunc):
 
 
 class ExponentialFunc(CeedFunc):
-    '''Defines a double exponential function.
+    """Defines a double exponential function.
 
     The function is defined as ``y(t_in) = Ae^-t/tau1 + Be^-t/tau2``, where
     ``t = (t_in - t_start + t_offset)``.
-    '''
+    """
 
     A = NumericProperty(1.)
+    """The amplitude of the first exponential.
+    """
 
     B = NumericProperty(0.)
+    """The amplitude of the second exponential.
+    """
 
     tau1 = NumericProperty(1.)
+    """The time constant of the first exponential.
+    """
 
     tau2 = NumericProperty(1.)
+    """The time constant of the second exponential.
+    """
 
     def __init__(self, **kwargs):
         kwargs.setdefault('name', 'Exp')
@@ -171,19 +196,27 @@ class ExponentialFunc(CeedFunc):
 
 
 class CosFunc(CeedFunc):
-    '''Defines a cosine function.
+    """Defines a cosine function.
 
     The function is defined as ``y(t_in) = Acos(2pi*f*t + th0*pi/180) + b``,
     where ``t = (t_in - t_start + t_offset)``.
-    '''
+    """
 
     f = NumericProperty(1.)
+    """The function's frequency in Hz.
+    """
 
     A = NumericProperty(1.)
+    """The function's amplitude.
+    """
 
     th0 = NumericProperty(0.)
+    """The function's angle offset in degrees.
+    """
 
     b = NumericProperty(0.)
+    """The function's y offset.
+    """
 
     def __init__(self, **kwargs):
         kwargs.setdefault('name', 'Cos')
@@ -222,7 +255,8 @@ class CosFunc(CeedFunc):
         return val
 
 
-def get_ceed_functions():
-    '''Returns all the functions defined in the file.
-    '''
+def get_ceed_functions() -> Iterable[FuncBase]:
+    """Returns all the function classes defined and exported in this file
+    (:class:`ConstFunc`, :class:`LinearFunc`, etc.).
+    """
     return ConstFunc, LinearFunc, ExponentialFunc, CosFunc

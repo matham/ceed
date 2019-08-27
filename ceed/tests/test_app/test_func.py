@@ -2,6 +2,7 @@ import pytest
 import math
 from typing import Type, List
 from ceed.tests.ceed_app import CeedTestApp
+from ceed.function import FuncBase, FuncGroup, FunctionFactoryBase
 from .funcs import func_classes
 
 
@@ -52,7 +53,8 @@ class TestFunctions(object):
             assert func.loop == ceed_func.loop
             if hasattr(ceed_func, 't_offset'):
                 assert func.t_offset == ceed_func.t_offset
-            assert math.isclose(func.duration_min_total, ceed_func.duration_min_total)
+            assert math.isclose(
+                func.duration_min_total, ceed_func.duration_min_total)
             assert func.timebase[0] == ceed_func.timebase_numerator
             assert func.timebase[1] == ceed_func.timebase_denominator
             assert func.timebase[0] / func.timebase[1] == \

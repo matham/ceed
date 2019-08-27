@@ -5,6 +5,13 @@ Defines the functions used with :mod:`ceed.shape` to create time-varying
 intensities of the shapes during an experiment. :mod:`ceed.stage` combines
 functions with shapes and visualizes them during a stage in an experiment.
 
+Although the functions' range is ``(-infinity, +infinity)`` and this module
+places no restriction on the function output so that it may return any
+scalar value, the graphics system can only accept values in the ``[0, 1]``
+range for each red, green, or blue channel. Consequently, the graphics system
+(at :meth:`ceed.stage.StageFactoryBase.fill_shape_gl_color_values`) will clip
+the function output to that range.
+
 Function factory and plugins
 ----------------------------
 
@@ -428,7 +435,7 @@ E.g. ::
     >>> function_factory.return_func_ref(ref_func)
 """
 from __future__ import annotations
-from typing import Type, List, Tuple, Dict
+from typing import Type, List, Tuple, Dict, Optional
 from copy import deepcopy
 from collections import defaultdict
 from fractions import Fraction
@@ -614,7 +621,7 @@ class FunctionFactoryBase(EventDispatcher):
         self.funcs_inst_default[f.name] = f
         self.dispatch('on_changed')
 
-    def get(self, name: str) -> FuncBase:
+    def get(self, name: str) -> Optional[Type[FuncBase]]:
         """Returns the class with name ``name`` that was registered with
         :meth:`register`.
 
@@ -721,6 +728,7 @@ class FunctionFactoryBase(EventDispatcher):
         new_name = fix_name(func.name, self.funcs_inst)
         self.funcs_inst[new_name] = func
         func.name = new_name
+        self.dispatch('on_changed')
 
     def clear_added_funcs(self, force=False):
         """Removes all the functions registered with :meth:`add_func`.
@@ -1872,8 +1880,9 @@ line 934, in __call__
 
             if f.duration < 0:
                 infinite = True
-            duration_min += f.duration_min_total
+            duration_min += f.duration_min_total * f.get_timebase()
 
+        duration_min = float(duration_min / self.get_timebase())
         self.duration_min = duration_min
         self.duration = -1 if infinite else duration_min
 

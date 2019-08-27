@@ -6,16 +6,18 @@ from fractions import Fraction
 from math import exp, cos, pi
 import itertools
 
+from ceed.function import FuncBase, FuncGroup, FunctionFactoryBase
+
 
 class Function(object):
 
-    app = None  # type: CeedTestApp
+    app: CeedTestApp = None
 
-    function_factory = None
+    function_factory: FunctionFactoryBase = None
 
     funcs_container = None
 
-    func = None
+    func: FuncBase = None
 
     name = ''
 
@@ -37,7 +39,7 @@ class Function(object):
 
     func_values = []
 
-    fail_func_values = []
+    fail_func_times = []
 
     def __init__(self, app: CeedTestApp, manually_add=True):
         super().__init__()
@@ -62,18 +64,34 @@ class Function(object):
         from ceed.function import FuncDoneException
         func = self.func
         func.init_func(self.t_start)
+
         times = list(itertools.chain(*self.func_times))
         assert len(times) == len(self.func_values)
 
-        for t, val in zip(times, self.func_values):
-            assert math.isclose(func(t), val), \
-                't={}, func(t)={}, expected={}'.format(t, func(t), val)
+        i = 0
+        values = self.func_values
+        for loop, (pre_times, times) in enumerate(zip(
+                self.fail_func_times, self.func_times)):
+            # first call the function with times from the current loop
+            for t in times:
+                val = values[i]
+                assert math.isclose(func(t), val), \
+                    't={}, func(t)={}, expected={}'.format(t, func(t), val)
+                i += 1
 
-        for group in self.fail_func_values:
-            for t in group:
-                with pytest.raises(FuncDoneException):
+            # now we're sure that the current loop has been incremented as we
+            # caled it with times from the this loop we can test the times
+            # from before the current loop
+            assert func.loop_count == loop
+            for t in pre_times:
+                with pytest.raises((FuncDoneException, ValueError)):
                     func(t)
                     pytest.fail('t={}'.format(t))
+
+        for t in self.fail_func_times[-1]:
+            with pytest.raises((FuncDoneException, ValueError)):
+                func(t)
+                pytest.fail('t={}'.format(t))
 
 
 class FunctionF1(object):
@@ -95,8 +113,8 @@ class FunctionF1(object):
          t_start + loop * duration - .001)
     ]
 
-    fail_func_values = [
-        (-1, 0, 1, 2, 2.5), (t_start + loop * duration + .0001, )
+    fail_func_times = [
+        (-1, 0, 1, 2, 2.5), (3, 5, 8), (t_start + loop * duration + .0001, )
     ]
 
 
@@ -120,8 +138,10 @@ class FunctionF2(object):
          t_start + loop * duration / timebase[1] - .2)
     ]
 
-    fail_func_values = [
+    fail_func_times = [
         (-1, 0, 1, 1.5, 1.8, 1.9),
+        (2, 3, 5),
+        (6, 8, 9),
         (t_start + loop * duration / timebase[1] + .1, )
     ]
 
@@ -142,8 +162,10 @@ class FunctionF3(object):
         (t_start, ), (t_start + Fraction(1, 25), ),
         (t_start + Fraction(2, 25), )]
 
-    fail_func_values = [
+    fail_func_times = [
         (-1, 0, 1, 2, 3, 4.5),
+        (t_start, ),
+        (t_start + Fraction(1, 25), ),
         (t_start + Fraction(3, 25), t_start + Fraction(4, 25), )
     ]
 
@@ -162,7 +184,7 @@ class FunctionF4(object):
 
     func_times = [(t_start, )]
 
-    fail_func_values = [
+    fail_func_times = [
         (-1, 0, 1, 2, 3, 4.5),
         (t_start + Fraction(1, 23), )
     ]
@@ -184,7 +206,7 @@ class FunctionF5(object):
         (t_start, t_start + Fraction(1, 21), t_start + Fraction(2, 21))
     ]
 
-    fail_func_values = [
+    fail_func_times = [
         (-1, 0, 1, 2, 3, 4.5),
         (t_start + Fraction(3, 21), )
     ]
@@ -195,9 +217,10 @@ class ConstFunction(Function):
     a = 0
 
     def create_func(self):
+        from ceed.function.plugin import ConstFunc
         cls = self.function_factory.get('ConstFunc')
         num, denom = self.timebase
-        self.func = cls(
+        self.func: ConstFunc = cls(
             function_factory=self.function_factory, name=self.name,
             loop=self.loop, timebase_numerator=num, timebase_denominator=denom,
             a=self.a, t_offset=self.t_offset, duration=self.duration)
@@ -258,9 +281,10 @@ class LinearFunction(Function):
     b = 0
 
     def create_func(self):
+        from ceed.function.plugin import LinearFunc
         cls = self.function_factory.get('LinearFunc')
         num, denom = self.timebase
-        self.func = cls(
+        self.func: LinearFunc = cls(
             function_factory=self.function_factory, name=self.name,
             loop=self.loop, timebase_numerator=num, timebase_denominator=denom,
             t_offset=self.t_offset, duration=self.duration, m=self.m, b=self.b)
@@ -338,9 +362,10 @@ class ExponentialFunction(Function):
     tau2 = 0
 
     def create_func(self):
+        from ceed.function.plugin import ExponentialFunc
         cls = self.function_factory.get('ExponentialFunc')
         num, denom = self.timebase
-        self.func = cls(
+        self.func: ExponentialFunc = cls(
             function_factory=self.function_factory, name=self.name,
             loop=self.loop, timebase_numerator=num, timebase_denominator=denom,
             t_offset=self.t_offset, duration=self.duration, A=self.A, B=self.B,
@@ -462,9 +487,10 @@ class CosFunction(Function):
     b = 0
 
     def create_func(self):
+        from ceed.function.plugin import CosFunc
         cls = self.function_factory.get('CosFunc')
         num, denom = self.timebase
-        self.func = cls(
+        self.func: CosFunc = cls(
             function_factory=self.function_factory, name=self.name,
             loop=self.loop, timebase_numerator=num, timebase_denominator=denom,
             t_offset=self.t_offset, duration=self.duration, f=self.f, A=self.A,
@@ -601,6 +627,12 @@ class GroupFunction(Function):
 
     @classmethod
     def set_func_times(cls):
+        def tb(obj):
+            num, denum = obj.timebase
+            if not num:
+                return 1
+            return Fraction(num, denum)
+
         times = cls.func_times = []
         t_start = cls.t_start
         for i in range(cls.loop):
@@ -610,16 +642,39 @@ class GroupFunction(Function):
                 for time_group in func_cls.func_times:
                     for t in time_group:
                         loop_times.append(t - cls_t_start + t_start)
-                t_start += func_cls.duration_min_total
+                t_start += func_cls.duration_min_total * tb(func_cls)
             times.append(loop_times)
+
+        fail_times = cls.fail_func_times = []
+        t_start = cls.t_start
+        func_cls = cls.wrapper_classes[0]
+        cls_t_start = func_cls.t_start
+
+        for i in range(cls.loop):
+            loop_fail_times = []
+            for t in func_cls.fail_func_times[0]:
+                loop_fail_times.append(t - cls_t_start + t_start)
+            t_start += func_cls.duration_min_total * tb(func_cls)
+            fail_times.append(loop_fail_times)
+
+        func_cls = cls.wrapper_classes[-1]
+        func_min_duration = func_cls.duration_min_total * tb(func_cls)
+        duration = sum((
+            c.duration_min_total for c in cls.wrapper_classes)) * tb(func_cls)
+        total_duration = duration * cls.loop
+        func_fail_times = [
+            t - func_min_duration + total_duration
+            for t in func_cls.fail_func_times[-1]]
+        fail_times.append(func_fail_times)
 
     def create_func(self):
         funcs = self.wrapper_funcs = []
         cls = self.function_factory.get('FuncGroup')
         num, denom = self.timebase
-        self.func = func_group = cls(
+        func_group: FuncGroup = cls(
             function_factory=self.function_factory, loop=self.loop,
             name=self.name, timebase_numerator=num, timebase_denominator=denom)
+        self.func: FuncGroup = func_group
 
         for wrapper_cls in self.wrapper_classes:
             wrapper_func = wrapper_cls(app=self.app)
@@ -649,8 +704,6 @@ class GroupFunctionF1(GroupFunction):
 
     name = 'group and flat'
 
-    fail_func_values = []
-
 
 class GroupFunctionF2(GroupFunction):
 
@@ -665,8 +718,6 @@ class GroupFunctionF2(GroupFunction):
     t_start = 11
 
     name = 'group and up'
-
-    fail_func_values = []
 
 
 class GroupFunctionF3(GroupFunction):
@@ -683,8 +734,6 @@ class GroupFunctionF3(GroupFunction):
 
     name = 'group and sides'
 
-    fail_func_values = []
-
 
 class GroupFunctionF4(GroupFunction):
 
@@ -700,8 +749,6 @@ class GroupFunctionF4(GroupFunction):
 
     name = 'group and low'
 
-    fail_func_values = []
-
 
 class GroupFunctionF5(GroupFunction):
 
@@ -716,8 +763,6 @@ class GroupFunctionF5(GroupFunction):
     t_start = 6
 
     name = 'group and slide'
-
-    fail_func_values = []
 
 
 func_classes = [

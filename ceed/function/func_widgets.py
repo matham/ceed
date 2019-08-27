@@ -1,47 +1,58 @@
-'''Function Widgets
+"""Function Widgets
 =======================
 
 Defines the GUI components used with :mod:`ceed.function`.
-'''
+"""
+from __future__ import annotations
 from collections import defaultdict
 from copy import deepcopy
 
 from kivy.uix.boxlayout import BoxLayout
 from kivy.properties import BooleanProperty, NumericProperty, StringProperty, \
     ObjectProperty, ListProperty, DictProperty
-from kivy.core.window import Window
 from kivy.clock import Clock
 from kivy.factory import Factory
 from kivy.compat import string_types
 from kivy.app import App
-from kivy.graphics import Color, Rectangle
-from kivy.metrics import dp
 from kivy.uix.widget import Widget
 from kivy.lang import Builder
+from typing import Optional, Union, Type
 
 from cplcom.graphics import FlatTextInput
 from kivy_garden.drag_n_drop import DraggableLayoutBehavior
 
 from ceed.utils import fix_name
-from ceed.graphics import WidgetList, ShowMoreSelection, ShowMoreBehavior, \
-    BoxSelector
-from ceed.function import CeedFuncRef, CeedFunc, FuncGroup
+from ceed.graphics import WidgetList, ShowMoreSelection, ShowMoreBehavior
+from ceed.function import CeedFuncRef, FuncBase, FuncGroup, FunctionFactoryBase
 
 __all__ = ('FuncList', 'FuncWidget', 'FuncWidgetGroup', 'FuncPropTextWidget',
-           'FuncNamePropTextWidget')
+           'FuncNamePropTextWidget', 'FuncSettingsDropDown',
+           'FuncNoiseDropDown')
 
 _get_app = App.get_running_app
+
+FuncOrRef = Union[FuncBase, CeedFuncRef, FuncGroup]
 
 
 class FuncList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
                BoxLayout):
-    '''Widgets that shows the list of available functions and allows for the
-    creation of new functions.
-    '''
+    """Widget that shows the list of available functions to the user and
+    also allows for the creation of new functions to be added to the list.
 
-    function_factory = None
+    The functions come from :class:`ceed.function.FunctionFactoryBase`.
+    """
+
+    function_factory: FunctionFactoryBase = None
+    """The :class:`ceed.function.FunctionFactoryBase` that is used for the list
+    of functions available to the user and with whom new functions created in
+    the GUI are registered.
+    """
 
     is_visible = BooleanProperty(True)
+    """Whether the list is currently visible.
+
+    It is used by the selection logic and it's always True for this class.
+    """
 
     def handle_drag_release(self, index, drag_widget):
         if drag_widget.drag_cls == 'func_spinner':
@@ -53,12 +64,14 @@ class FuncList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
 
         self.add_func_to_listing(deepcopy(func))
 
-    def add_func(self, name):
-        '''Adds a copy of the the function with the given ``name`` to the
-        available functions or to a function group.
-        '''
-        parent = None
-        after = None
+    def add_func(self, name: str):
+        """Adds a copy of the the function with the given ``name`` from
+        :attr:`function_factory` to the available functions in
+         :attr:`function_factory` (with a new name of course) or to a function
+        group.
+        """
+        parent: Optional[FuncGroup] = None
+        after: Optional[FuncBase] = None
         if self.selected_nodes:
             widget = self.selected_nodes[-1]
             if isinstance(widget, FuncWidgetGroup):
@@ -67,23 +80,38 @@ class FuncList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
                 after = widget.func
                 parent = after.parent_func
 
-        src_func = self.function_factory.funcs_inst[name]
+        src_func: FuncBase = self.function_factory.funcs_inst[name]
 
-        if parent:
+        if parent is not None:
             if parent.can_other_func_be_added(src_func):
                 func = self.function_factory.get_func_ref(func=src_func)
                 self.add_child_func_to_func(parent, func, after)
         else:
             self.add_func_to_listing(deepcopy(src_func))
 
-    def add_child_func_to_func(self, parent_func, child_func, after_func=None):
+    def add_child_func_to_func(
+            self, parent_func: FuncGroup, child_func: FuncOrRef,
+            after_func: Optional[FuncOrRef] = None):
+        """Adds the child function to the parent and displays the child
+        function in the GUI as the child of the parent.
+
+        :param parent_func: Function child is added to.
+        :param child_func: the child function.
+        :param after_func: If not None, the child is added to the parent after
+            this function in the parent's function list.
+        """
         parent_func.add_func(child_func, after=after_func)
 
         widget = FuncWidget.get_display_cls(child_func)()
         widget.initialize_display(child_func, self.function_factory, self)
         parent_func.display.add_widget(widget)
 
-    def add_func_to_listing(self, func):
+    def add_func_to_listing(self, func: FuncBase):
+        """Adds the function to the :attr:`function_factory` and shows it
+        in the GUI.
+
+        :param func: The :class:`ceed.function.FuncBase` to add.
+        """
         self.function_factory.add_func(func)
 
         widget = FuncWidget.get_display_cls(func)()
@@ -98,21 +126,36 @@ class FuncList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
             f in func.get_funcs(step_into_ref=False) if f.display.is_visible]))
 
     def clear_all(self):
+        """Removes all the widgets associated with the registered functions in
+        :attr:`function_factory` from the GUI.
+        """
         for widget in self.children[:]:
             self.remove_widget(widget)
 
-    def show_function(self, func):
+    def show_function(self, func: FuncOrRef):
+        """Displays the function (that is in the :attr:`function_factory`) in
+        the GUI.
+
+        :param func: The :class:`ceed.function.FuncBase` to display.
+        """
         widget = FuncWidget.get_display_cls(func)()
         widget.initialize_display(func, self.function_factory, self)
         self.add_widget(widget)
 
 
 class GroupFuncList(DraggableLayoutBehavior, BoxLayout):
+    """The widget that displays the list of sub-functions contained by a
+    :class:`ceed.function.FuncGroup`.
+    """
 
     is_visible = BooleanProperty(False)
+    """Whether the function list is currently expanded and visible to the user.
+    """
 
-    group_widget = None
-    """The function's widget containing this list. """
+    group_widget: FuncWidgetGroup = None
+    """The group function's :class:`FuncWidgetGroup` to whom this widget is
+    attached to.
+    """
 
     def handle_drag_release(self, index, drag_widget):
         group_widget = self.group_widget
@@ -156,65 +199,91 @@ class GroupFuncList(DraggableLayoutBehavior, BoxLayout):
 
 
 class FuncWidget(ShowMoreBehavior, BoxLayout):
-    '''The widget associated with :class:`ceed.function.CeedFunc`.
+    """The widget that represents a :class:`ceed.function.CeedFunc` instance.
 
     It contains all the configuration options of the function.
 
     The class is reused anywhere a function is shown in the GUI, including
-    in stages.
-    '''
+    in :mod:`ceed.stage` so it is abstracted.
+    """
 
-    func = None
-    '''The :class:`ceed.function.BaseFunc` instance associated with this
-    widget.
+    func: FuncOrRef = None
+    '''The :class:`ceed.function.BaseFunc` or
+    :class:`ceed.function.CeedFuncRef` instance associated with this widget.
     '''
 
     ref_func = None
-    '''Func being referenced, if func is the ref. '''
+    '''If :attr:`func` is a :class:`ceed.function.CeedFuncRef`, this is the
+    actual :class:`ceed.function.BaseFunc` :attr:`func` is internally
+    referencing. Otherwise, it's None.
+    '''
 
     selected = BooleanProperty(False)
-    '''Whether the function is selected in the GUI.
+    '''Whether the function is currently selected in the GUI.
     '''
 
     selection_controller = None
     '''The container that gets called to select the widget when the user
     selects it with a touch. E.g. :class:`FuncList` in the function listing
-    case.
+    case or :class:`~ceed.stage.stage_widgets.StageFuncChildrenList` if it
+    belongs to a stage.
     '''
 
     func_controller = ObjectProperty(None)
     '''The controller to which the function is added or removed from.
     This is e.g. :attr:`ceed.function.FunctionFactoryBase` in the function list
-    case or the stage to which the function is attached.
+    case or the :class:`!ceed.stage.CeedStage` to which the function is
+    attached.
     '''
 
     is_visible = BooleanProperty(False)
-
-    _selector = None
+    '''Whether the function is currently visible in the GUI. I.e. when all of
+    it's parents all the way to the root is visible.
+    '''
 
     _settings = None
+    """The settings widget contained in the :class:`FuncSettingsDropDown`
+    representing this widget.
+    """
 
     theme_interpolation = 0
+    """The fraction by which :meth:`cplcom.utils.ColorTheme.interpolate`
+    interpolates the two given colors
+    (:attr:`cplcom.utils.ColorTheme.primary_light` and
+    :attr:`cplcom.utils.ColorTheme.primary`).
+    """
 
-    settings_root = None
+    settings_root: FuncSettingsDropDown = None
+    """The :class:`FuncSettingsDropDown`used by this function to show settings.
+    """
 
     @property
     def name(self):
+        """The :attr:`ceed.function.FuncBase.name` of the function.
+        """
         if self.ref_func:
             return self.ref_func.name
         return self.func.name
 
     @staticmethod
-    def get_display_cls(func):
+    def get_display_cls(func: Union[FuncBase, FuncGroup]) -> Type[FuncWidget]:
+        """Gets the widget class to use to display the function.
+
+        :param func: The :class:`ceed.function.FuncBase` instance.
+        :return: The widget class to use to display it in the GUI.
+        """
         if isinstance(func, FuncGroup):
             return FuncWidgetGroup
         return FuncWidget
 
     def display_properties(self):
-        '''Constructs the configuration option widgets for the function using
-        :meth:`ceed.function.FuncBase.get_gui_elements` and
-        :meth:`ceed.function.FuncBase.get_gui_props`.
-        '''
+        """Constructs the function's configuration option widgets that is used
+        by the user to customize the function in the GUI.
+
+        It uses e.g. :meth:`ceed.function.FuncBase.get_gui_elements` and
+        :meth:`ceed.function.FuncBase.get_gui_props` to get the options to
+        show.
+        """
         func = self.func
         items = func.get_gui_elements()
         kwargs = func.get_gui_props()
@@ -304,11 +373,10 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
             add(item)
 
     def initialize_display(
-            self, func, func_controller, selection_controller):
-        '''Fills in the values of :attr:`selection_controller`,
-        :attr:`func_controller` of all the
-        functions and sub-functions of this function.
-        '''
+            self, func: FuncOrRef, func_controller, selection_controller):
+        """Sets :attr:`selection_controller` and :attr:`func_controller`,
+        and generates and applies the kv GUI rules for the widget.
+        """
         if isinstance(func, CeedFuncRef):
             self.ref_func = func.func
         func.display = self
@@ -322,6 +390,9 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
             self.display_properties()
 
     def remove_func(self):
+        """Removes the function from its parent and removes it from the GUI.
+        This is used when deleting the function in the GUI.
+        """
         if self.func.parent_func:
             self.func.parent_func.remove_func(self.func)
             self.parent.remove_widget(self)
@@ -340,9 +411,16 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
             self.selection_controller.deselect_node(self)
 
     def handle_expand_widget(self, expand):
+        """Called from kv to hide the widget that exapnds the group view when
+        the function being represented is not a group.
+        """
         expand.parent.remove_widget(expand)
 
     def replace_ref_func_with_source(self):
+        """If this :attr:`func` is a :class:`ceed.function.CeedFuncRef`, this
+        will replace the reference with the a copy of the original function
+        being referenced and the GUI will also be updated to reflect that.
+        """
         assert self.ref_func is not None
         if self.func.parent_func is not None:
             controller = self.func.parent_func
@@ -362,6 +440,13 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
         self.func.function_factory.return_func_ref(self.func)
 
     def apply_kv(self):
+        """Applies the kv rules to the widget.
+
+        The rules are manually applied to the class because we want to have
+        a chance to initialize some instance variables before the kv rules is
+        applied so they can be referred to from kv without having to check
+        if they are None.
+        """
         func = self.ref_func or self.func
         app = _get_app()
         func.fbind('on_changed', app.changed_callback)
@@ -375,10 +460,14 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
 
 
 class FuncWidgetGroup(FuncWidget):
-    '''The widget associated with :class:`ceed.function.FuncGroup`.
-    '''
+    """The widget used to display a :class:`ceed.function.FuncGroup` instance
+    in the GUI.
+    """
 
     children_container = None
+    """The widget instance that displays all the widgets representing the
+    children functions of this function.
+    """
 
     theme_interpolation = 0.25
 
@@ -441,9 +530,9 @@ class FuncWidgetGroup(FuncWidget):
 
 
 class FuncPropTextWidget(FlatTextInput):
-    '''The widget used to edit a specific configuration option of a
+    """The widget used to allow editing a text based configuration option of a
     :class:`ceed.function.FuncBase`.
-    '''
+    """
 
     func = None
     '''The :class:`ceed.function.FuncBase` instance it's associated with.
@@ -456,6 +545,9 @@ class FuncPropTextWidget(FlatTextInput):
     _binding = None
 
     def apply_binding(self):
+        """Starts tracking the :attr:`prop_name` of the associated
+        :attr:`func` and updates the GUI with changes.
+        """
         if not self.hint_text:
             self.hint_text = self.prop_name
         uid = self.func.fbind(self.prop_name, self._update_text)
@@ -463,6 +555,8 @@ class FuncPropTextWidget(FlatTextInput):
         self._update_text()
 
     def unbind_tracking(self):
+        """Stops the tracking initialized with :meth:`apply_binding`.
+        """
         if self._binding is None:
             return
         obj, prop, uid = self._binding
@@ -470,13 +564,15 @@ class FuncPropTextWidget(FlatTextInput):
         self._binding = None
 
     def _update_text(self, *largs):
-        '''Updates the GUI from the function.
-        '''
+        """Updates the GUI whenever the :attr:`func` changes the property
+        being tracked.
+        """
         self.text = '{}'.format(getattr(self.func, self.prop_name))
 
     def _update_attr(self, text):
-        '''Updates the function property from the GUI.
-        '''
+        """Updates the :attr:`func` property property being tracked whenever
+        the GUI changes.
+        """
         if not text:
             self._update_text()
             return
@@ -487,9 +583,9 @@ class FuncPropTextWidget(FlatTextInput):
 
 
 class FuncNamePropTextWidget(FuncPropTextWidget):
-    '''The widget used to edit the :attr:`ceed.function.FuncBase.name` of a
+    """The widget used to edit the :attr:`ceed.function.FuncBase.name` of a
     :class:`ceed.function.FuncBase`.
-    '''
+    """
 
     def _update_attr(self, text):
         if not text:
@@ -502,6 +598,10 @@ class FuncNamePropTextWidget(FuncPropTextWidget):
 
 
 class TrackOptionsSpinner(Factory.SizedCeedFlatSpinner):
+    """Similar to :class:`FuncPropTextWidget`, except this class
+    allows customizing in the GUI a :attr:`func` property that can be on of a
+    given list of options.
+    """
 
     func = None
     '''The :class:`ceed.function.FuncBase` instance it's associated with.
@@ -512,6 +612,8 @@ class TrackOptionsSpinner(Factory.SizedCeedFlatSpinner):
     '''
 
     allow_empty = False
+    """Whether the option accepts an empty string as a valid value.
+    """
 
     track_obj = None
 
@@ -567,8 +669,12 @@ class TrackOptionsSpinner(Factory.SizedCeedFlatSpinner):
 
 
 class FuncSettingsDropDown(Factory.FlatDropDown):
+    """A dropdown widget used to show settings when customizing functions.
+    """
 
-    func_widget = ObjectProperty(None)
+    func_widget: FuncWidget = ObjectProperty(None)
+    """The :class:`FuncWidget` this dropdown is displaying settings for.
+    """
 
     def __init__(self, func_widget, **kwargs):
         self.func_widget = func_widget
@@ -576,6 +682,9 @@ class FuncSettingsDropDown(Factory.FlatDropDown):
 
 
 class FuncNoiseDropDown(Factory.FlatDropDown):
+    """Widget for displaying options to add randomness to the functions.
+
+    """
 
     noise_param = ObjectProperty(None, allownone=True, rebind=True)
 
