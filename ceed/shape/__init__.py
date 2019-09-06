@@ -30,7 +30,8 @@ from ceed.utils import fix_name
 
 __all__ = (
     'CeedPaintCanvasBehavior', 'CeedShape', 'CeedShapeGroup',
-    'CeedPaintCircle', 'CeedPaintEllipse', 'CeedPaintPolygon')
+    'CeedPaintCircle', 'CeedPaintEllipse', 'CeedPaintPolygon',
+    'CeedPaintFreeformPolygon')
 
 
 class CeedPaintCanvasBehavior(PaintCanvasBehavior):

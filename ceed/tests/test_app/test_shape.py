@@ -7,35 +7,6 @@ from ceed.tests.test_app.examples.shapes import paired_tests, PolygonShapeP1, \
     EnclosingPolygon
 
 
-@pytest.fixture
-async def paint_app(ceed_app: CeedTestApp):
-    from kivy.metrics import dp
-    await ceed_app.wait_clock_frames(2)
-
-    assert ceed_app.shape_factory is not None
-    assert not ceed_app.shape_factory.shapes
-
-    painter_widget = ceed_app.resolve_widget().down(
-        test_name='painter')()
-    assert tuple(painter_widget.size) == (
-        ceed_app.view_controller.screen_width,
-        ceed_app.view_controller.screen_height)
-
-    # expand shape splitter so shape widgets are fully visible
-    splitter = ceed_app.resolve_widget().down(
-        test_name='shape splitter')().children[-1]
-    async for _ in ceed_app.do_touch_drag(widget=splitter, dx=-dp(100)):
-        pass
-    await ceed_app.wait_clock_frames(2)
-
-    # expand shape splitter so shape widgets are fully visible
-    slider = ceed_app.resolve_widget().down(test_name='screen zoom silder')()
-    slider.value = slider.min
-    await ceed_app.wait_clock_frames(2)
-
-    yield ceed_app
-
-
 @pytest.mark.parametrize(
     "shape_cls",
     [PolygonShapeP1, CircleShapeP1, EllipseShapeP1, FreeformPolygonShapeP1])

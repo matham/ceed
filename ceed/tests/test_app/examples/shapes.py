@@ -33,8 +33,14 @@ class Shape(object):
         if manually_add:
             self.manually_add()
 
-    def manually_add(self):
+    def make_shape(self):
         raise NotImplementedError
+
+    def manually_add(self):
+        if self.shape is None:
+            self.make_shape()
+        self.painter.add_shape(self.shape)
+        self.shape.add_shape_to_canvas(self.painter)
 
     def remove(self):
         self.painter.remove_shape(self.shape)
@@ -95,6 +101,9 @@ class Shape(object):
         pixels_vals = [max(p[:3]) for p in points]
         return sum(pixels_vals) / len(pixels_vals)
 
+    def assert_shape_prop_same(self, compare_name=False):
+        raise NotImplementedError
+
 
 class CircleShape(Shape):
 
@@ -104,9 +113,10 @@ class CircleShape(Shape):
 
     activate_btn_name = 'draw circle'
 
-    def manually_add(self):
-        self.shape = self.painter.create_add_shape(
+    def make_shape(self):
+        self.shape = self.painter.create_shape(
             'circle', center=self.center, radius=self.radius, name=self.name)
+        return self.shape
 
     async def draw(self):
         # place center
@@ -133,6 +143,17 @@ class CircleShape(Shape):
         new_radius = math.sqrt(ratio) * self.radius
         assert new_radius * 0.99 < self.shape.radius < new_radius * 1.01
 
+    def assert_shape_prop_same(self, compare_name=False):
+        from ceed.shape import CeedPaintCircle
+        from kivy_garden.painter import PaintCircle
+        assert isinstance(self.shape, CeedPaintCircle)
+        assert isinstance(self.shape, PaintCircle)
+        if compare_name:
+            assert self.shape.name == self.name
+
+        assert self.shape.center == self.center
+        assert self.shape.radius == self.radius
+
 
 class EllipseShape(Shape):
 
@@ -144,10 +165,11 @@ class EllipseShape(Shape):
 
     activate_btn_name = 'draw ellipse'
 
-    def manually_add(self):
-        self.shape = self.painter.create_add_shape(
+    def make_shape(self):
+        self.shape = self.painter.create_shape(
             'ellipse', center=self.center, radius_x=self.radius_x,
             radius_y=self.radius_y, name=self.name)
+        return self.shape
 
     async def draw(self):
         # place center
@@ -181,6 +203,18 @@ class EllipseShape(Shape):
         new_radius_y = math.sqrt(ratio) * self.radius_y
         assert new_radius_y * 0.99 < self.shape.radius_y < new_radius_y * 1.01
 
+    def assert_shape_prop_same(self, compare_name=False):
+        from ceed.shape import CeedPaintEllipse
+        from kivy_garden.painter import PaintEllipse
+        assert isinstance(self.shape, CeedPaintEllipse)
+        assert isinstance(self.shape, PaintEllipse)
+        if compare_name:
+            assert self.shape.name == self.name
+
+        assert self.shape.center == self.center
+        assert self.shape.radius_x == self.radius_x
+        assert self.shape.radius_y == self.radius_y
+
 
 class PolygonShape(Shape):
 
@@ -188,10 +222,11 @@ class PolygonShape(Shape):
 
     activate_btn_name = 'draw polygon'
 
-    def manually_add(self):
-        self.shape = self.painter.create_add_shape(
+    def make_shape(self):
+        self.shape = self.painter.create_shape(
             'polygon', points=self.points, selection_point=self.points[:2],
             name=self.name)
+        return self.shape
 
     async def draw(self):
         # place until last point
@@ -230,15 +265,27 @@ class PolygonShape(Shape):
                 new_y = oy - (1 - factor) * (oy - cy)
             assert new_y * 0.99 < y < new_y * 1.01
 
+    def assert_shape_prop_same(self, compare_name=False):
+        from ceed.shape import CeedPaintPolygon
+        from kivy_garden.painter import PaintPolygon
+        assert isinstance(self.shape, CeedPaintPolygon)
+        assert isinstance(self.shape, PaintPolygon)
+        if compare_name:
+            assert self.shape.name == self.name
+
+        assert self.shape.points == self.points
+        assert self.shape.selection_point == self.points[:2]
+
 
 class FreeofrmPolygonShape(PolygonShape):
 
     activate_btn_name = 'draw freeform'
 
-    def manually_add(self):
-        self.shape = self.painter.create_add_shape(
+    def make_shape(self):
+        self.shape = self.painter.create_shape(
             'freeform', points=self.points, selection_point=self.points[:2],
             name=self.name)
+        return self.shape
 
     async def draw(self):
         # place until last point
@@ -247,6 +294,17 @@ class FreeofrmPolygonShape(PolygonShape):
                 path=points, axis_widget=self.painter):
             pass
         self.shape = self.painter.shapes[-1]
+
+    def assert_shape_prop_same(self, compare_name=False):
+        from ceed.shape import CeedPaintFreeformPolygon
+        from kivy_garden.painter import PaintFreeformPolygon
+        assert isinstance(self.shape, CeedPaintFreeformPolygon)
+        assert isinstance(self.shape, PaintFreeformPolygon)
+        if compare_name:
+            assert self.shape.name == self.name
+
+        assert self.shape.points == self.points
+        assert self.shape.selection_point == self.points[:2]
 
 
 class CircleShapeP1(CircleShape):
@@ -289,7 +347,7 @@ class EllipseShapeP1(EllipseShape):
 
     inside_point = center
 
-    name = 'happy circle'
+    name = 'happy ellipse'
 
     drag_point = test_points[:2]
 
@@ -304,7 +362,7 @@ class EllipseShapeP2(EllipseShape):
 
     inside_point = center
 
-    name = 'sad circle'
+    name = 'sad ellipse'
 
     drag_point = test_points[:2]
 
@@ -389,10 +447,10 @@ class EnclosingPolygon(PolygonShape):
 
     def __init__(self, *largs, shape=None, points=(), outside_point=(),
                  **kwargs):
-        super(EnclosingPolygon, self).__init__(*largs, **kwargs)
         self.shape = shape
         self.points = self.test_points = points
         self.outside_point = outside_point
+        super(EnclosingPolygon, self).__init__(*largs, **kwargs)
 
 
 paired_tests = [
@@ -400,4 +458,11 @@ paired_tests = [
     (CircleShapeP1, CircleShapeP2),
     (EllipseShapeP1, EllipseShapeP2),
     (FreeformPolygonShapeP1, FreeformPolygonShapeP2),
+]
+
+shape_classes = [
+    PolygonShapeP1, PolygonShapeP2,
+    CircleShapeP1, CircleShapeP2,
+    EllipseShapeP1, EllipseShapeP2,
+    FreeformPolygonShapeP1, FreeformPolygonShapeP2,
 ]
