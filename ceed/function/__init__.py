@@ -412,7 +412,8 @@ Reference functions
 Sometimes you may want to create a function group containing other functions.
 Instead of explicitly defining these sub-functions, we may want to refer to
 existing registered functions and let these sub-functions update when the
-existing function's parameters are updated.
+existing function's parameters are updated. They are mostly meant to be used
+from the GUI, although work work perfectly otherwise.
 
 :class:`CeedFuncRef` allows one to reference functions in such a manner.
 Instead of copying a function, just get a reference to it with
@@ -421,6 +422,15 @@ Instead of copying a function, just get a reference to it with
 When destroyed, such function references must be explicitly released with
 :meth:`FunctionFactoryBase.release_func_ref`, otherwise the original function
 cannot be deleted in the GUI.
+
+Methods that accept functions (such as :meth:`FuncGroup.add_func`) should also
+accept :class:`CeedFuncRef` functions.
+
+:class:`CeedFuncRef` cannot be used directly, unlike normal function.
+Therefore, they or any functions that contain them must first copy them and
+expand them to refer to the orignal functions being referenced before using
+them with :meth:`FuncBase.copy_expand_ref` or
+:meth:`CeedFuncRef.copy_expand_ref`.
 
 E.g. ::
 
@@ -433,6 +443,29 @@ E.g. ::
     >>> ref_func.func
     <ceed.function.plugin.LinearFunc at 0x1a2cf679c18>
     >>> function_factory.return_func_ref(ref_func)
+
+Copying functions
+-----------------
+
+Functions can be copied automatically using ``deepcopy`` or
+:meth:`FuncBase.copy_expand_ref`. The former makes a full copy of all the
+functions, but any :class:`CeedFuncRef` functions encountered will be copied
+by a new :class:`CeedFuncRef`. The latter, instead of copying the
+:class:`CeedFuncRef`, it'll replace the :class:`CeedFuncRef` with copies of
+the class it refers to.
+
+Functions can be manually copied with :meth:`FuncBase.get_state` and
+:meth:`FuncBase.set_state`.
+
+Customizing function in the GUI
+-------------------------------
+
+Function properties are customizable in the GUI by the user according to the
+values returned by :meth:`FuncBase.get_gui_props`,
+:meth:`FuncBase.get_prop_pretty_name`, and :meth:`FuncBase.get_gui_elements`.
+
+These methods control what properties are editable by the user and the values
+they may potentially take.
 """
 from __future__ import annotations
 from typing import Type, List, Tuple, Dict, Optional
@@ -478,7 +511,7 @@ class FunctionFactoryBase(EventDispatcher):
 
     __events__ = ('on_changed', )
 
-    funcs_cls = {}
+    funcs_cls: Dict[str, Type[FuncBase]] = {}
     '''Dict whose keys is the name of the function classes registered
     with :meth:`register` and whose values is the corresponding classes.::
 
@@ -490,14 +523,14 @@ class FunctionFactoryBase(EventDispatcher):
          'CosFunc': ceed.function.plugin.CosFunc}
     '''
 
-    funcs_user = []
+    funcs_user: List[FuncBase] = []
     '''List of the function instances registered with :meth:`add_func`.
 
     It does not include the instances automatically created and stored in
     :attr:`funcs_inst_default` when a function class is :meth:`register`.
     '''
 
-    funcs_inst = DictProperty({})
+    funcs_inst: Dict[str, FuncBase] = DictProperty({})
     '''Dict whose keys is the function :attr:`name` and whose values is the
     corresponding function instances.
 
@@ -561,7 +594,9 @@ class FunctionFactoryBase(EventDispatcher):
         """Returns a :class:`CeedFuncRef` instance that refers to the
         original function. See :mod:`ceed.function` for details.
 
-        One of ``name`` or ``func`` must be specified.
+        One of ``name`` or ``func`` must be specified. The function being
+        referenced by ``func`` should have been registered with this class,
+        although it is not explicitly enforced currently.
 
         If used, :meth:`return_func_ref` must be called when the reference
         is not used anymore.
@@ -584,8 +619,12 @@ class FunctionFactoryBase(EventDispatcher):
 
         :param func_ref: Instance returned by :meth:`get_func_ref`.
         """
+        if func_ref.func not in self._ref_funcs:
+            raise ValueError("Returned function that wasn't added")
         self._ref_funcs[func_ref.func] -= 1
+
         if not self._ref_funcs[func_ref.func]:
+            del self._ref_funcs[func_ref.func]
             func_ref.func.has_ref = False
 
     def register(self, cls: Type[FuncBase], instance: FuncBase = None):
@@ -741,9 +780,6 @@ class FunctionFactoryBase(EventDispatcher):
         """
         for f in self.funcs_user[:]:
             self.remove_func(f, force=force)
-
-        if force:
-            self._ref_funcs = defaultdict(int)
 
     def make_func(self, state: dict, instance: FuncBase = None,
                   clone: bool = False) -> FuncBase:
@@ -985,7 +1021,7 @@ class FuncBase(EventDispatcher):
     :attr:`timebase_numerator` ``/`` :attr:`timebase_denominator`. It returns
     either a float, or a Fraction instance when the numerator and
     denominator are ints.
-    
+
     To set, :attr:`timebase_numerator` and :attr:`timebase_denominator` must
     be set individually. To use, call :meth:`get_timebase`, rather than
     using :attr:`timebase` directly.
@@ -1000,13 +1036,19 @@ class FuncBase(EventDispatcher):
     When :attr:`timebase` is not 0 this :attr:`timebase` is used instead.
 
     See :mod:`ceed.function` and :meth:`get_timebase` for more details.
+
+    .. note::
+
+        This property is dispatched whenever the value returned by
+        :meth:`get_timebase` would change, even if :attr:`timebase` didn't
+        change. E.g. when a parent's timebase changes.
     '''
 
     t_start = 0
     '''The time offset subtracted from the time passed to the function.
 
     The value is in seconds. See :mod:`ceed.function` for more details.
-    
+
     Don't set directly, it is set with :meth:`init_func` and
     :meth:`init_loop_iteration`.
     '''
@@ -1073,6 +1115,12 @@ class FuncBase(EventDispatcher):
             * If it's None, we look at the value of the property
               in the instance and display accordingly (e.g. if it's a str type
               property, a string property is displayed to the user).
+
+              .. note::
+
+                The default value determines the type. So if the default value
+                is ``0``, the type will be int and a user won't be able to
+                enter a float. Use e.g. ``0.0`` in the latter case.
 
         E.g.::
 
@@ -1448,10 +1496,22 @@ class CeedFuncRef(object):
 
     def __deepcopy__(self, memo):
         assert self.__class__ is CeedFuncRef
-        return self.function_factory.get_func_ref(func=self)
+        return self.function_factory.get_func_ref(func=self.func)
 
     def copy_expand_ref(self):
         return self.func.copy_expand_ref()
+
+    def __call__(self, t):
+        raise TypeError(
+            'A CeedFuncRef fucntion instance cannot be called like a normal '
+            'function. To use, copy it into a normal function with '
+            'copy_expand_ref')
+
+    def init_func(self, t_start):
+        raise TypeError(
+            'A CeedFuncRef fucntion instance cannot be called like a normal '
+            'function. To use, copy it into a normal function with '
+            'copy_expand_ref')
 
 
 class CeedFunc(FuncBase):
@@ -1461,7 +1521,7 @@ class CeedFunc(FuncBase):
     this class.
     """
 
-    t_offset = NumericProperty(0)
+    t_offset = NumericProperty(0.)
     '''The amount of time in seconds to add the function time when computing 
     the result. It allows some additional control over the function.
 
@@ -1470,7 +1530,9 @@ class CeedFunc(FuncBase):
     ``y(t) = mt + b`` with time ``t = (t_in - t_start + t_offset)``.
     
     The :attr:`duration` of the function is not affected by this property as
-    it is independent of this.
+    it is independent of this. I.e. we check whether a time value is in the
+    function's :meth:`get_domain` ignoring :attr:`t_offset` but we then
+    add it to the given time before computing the function's output.
     '''
 
     def __call__(self, t):
@@ -1745,6 +1807,7 @@ line 934, in __call__
     def __init__(self, name='Group', **kwargs):
         super(FuncGroup, self).__init__(name=name, **kwargs)
         self.funcs = []
+        self.fbind('timebase', self._dispatch_timebase)
 
     def init_func(self, t_start):
         super(FuncGroup, self).init_func(t_start)
@@ -1795,15 +1858,21 @@ line 934, in __call__
         """Given the :class:`CeedFuncRef`, it'll locate it in :attr:`func` and
         replace it with the underlying function.
 
+        The caller is responsible for returning the reference with
+        :meth:`FunctionFactoryBase.return_func_ref`.
+
         :param func_ref: The :class:`CeedFuncRef` to replace in :attr:`func`.
         :return: A tuple of ``(func, i)`` where ``func`` is the
             :class:`FuncBase` that replaced the reference function. And ``i``
             is the index in :attr:`funcs` where it was found.
 
         """
+        if not isinstance(func_ref, CeedFuncRef):
+            raise ValueError('Function must be a CeedFuncRef')
+
         i = self.funcs.index(func_ref)
         self.remove_func(func_ref)
-        func = func_ref.copy_expand_ref()
+        func = deepcopy(func_ref.func)
         self.add_func(func, index=i)
         return func, i
 
@@ -1838,10 +1907,13 @@ line 934, in __call__
 
         if isinstance(func, CeedFuncRef):
             func.func.fbind('duration', self._update_duration)
+            func.func.fbind('timebase', self._update_duration)
             func.func.fbind('duration_min_total', self._update_duration)
         else:
             func.fbind('duration', self._update_duration)
+            func.fbind('timebase', self._update_duration)
             func.fbind('duration_min_total', self._update_duration)
+
         self._update_duration()
         self.dispatch('on_changed', op='add', index=index)
 
@@ -1859,15 +1931,24 @@ line 934, in __call__
 
         if isinstance(func, CeedFuncRef):
             func.func.funbind('duration', self._update_duration)
+            func.func.funbind('timebase', self._update_duration)
             func.func.funbind('duration_min_total', self._update_duration)
         else:
             func.funbind('duration', self._update_duration)
+            func.funbind('timebase', self._update_duration)
             func.funbind('duration_min_total', self._update_duration)
+
         index = self.funcs.index(func)
         del self.funcs[index]
         self._update_duration()
         self.dispatch('on_changed', op='remove', index=index)
         return True
+
+    def _dispatch_timebase(self, *largs):
+        # this is a O(N^2), but it's a simpler implementation
+        for func in self.funcs[:]:
+            if not func.timebase_numerator:
+                func.property('timebase').dispatch(func)
 
     def _update_duration(self, *largs):
         """Computes duration as a function of its children.

@@ -21,7 +21,7 @@ class Function(object):
 
     name = ''
 
-    drop_down_cls_name = ''
+    cls_name = ''
 
     duration_min_total = 0
 
@@ -41,7 +41,11 @@ class Function(object):
 
     fail_func_times = []
 
+    editor_props = {}
+
     def __init__(self, app: CeedTestApp, manually_add=True):
+        self.timebase_numerator = self.timebase[0]
+        self.timebase_denominator = self.timebase[1]
         super().__init__()
         self.app = app
         self.function_factory = app.function_factory
@@ -216,6 +220,17 @@ class ConstFunction(Function):
 
     a = 0
 
+    cls_name = 'Const'
+
+    editor_props = {
+        'loop': int,
+        'timebase_numerator': int,
+        'timebase_denominator': int,
+        'duration': float,
+        't_offset': float,
+        'a': float,
+    }
+
     def create_func(self):
         from ceed.function.plugin import ConstFunc
         cls = self.function_factory.get('ConstFunc')
@@ -279,6 +294,18 @@ class LinearFunction(Function):
     m = 0
 
     b = 0
+
+    cls_name = 'Linear'
+
+    editor_props = {
+        'loop': int,
+        'timebase_numerator': int,
+        'timebase_denominator': int,
+        'duration': float,
+        't_offset': float,
+        'm': float,
+        'b': float,
+    }
 
     def create_func(self):
         from ceed.function.plugin import LinearFunc
@@ -360,6 +387,20 @@ class ExponentialFunction(Function):
     tau1 = 0
 
     tau2 = 0
+
+    cls_name = 'Exp'
+
+    editor_props = {
+        'loop': int,
+        'timebase_numerator': int,
+        'timebase_denominator': int,
+        'duration': float,
+        't_offset': float,
+        'A': float,
+        'B': float,
+        'tau1': float,
+        'tau2': float,
+    }
 
     def create_func(self):
         from ceed.function.plugin import ExponentialFunc
@@ -486,6 +527,20 @@ class CosFunction(Function):
 
     b = 0
 
+    cls_name = 'Cos'
+
+    editor_props = {
+        'loop': int,
+        'timebase_numerator': int,
+        'timebase_denominator': int,
+        'duration': float,
+        't_offset': float,
+        'f': float,
+        'A': float,
+        'th0': float,
+        'b': float,
+    }
+
     def create_func(self):
         from ceed.function.plugin import CosFunc
         cls = self.function_factory.get('CosFunc')
@@ -608,6 +663,14 @@ class GroupFunction(Function):
 
     wrapper_funcs = []
 
+    cls_name = 'Group'
+
+    editor_props = {
+        'loop': int,
+        'timebase_numerator': int,
+        'timebase_denominator': int,
+    }
+
     @property
     def duration(self):
         return sum((cls.duration_min_total for cls in self.wrapper_classes))
@@ -677,7 +740,7 @@ class GroupFunction(Function):
         self.func: FuncGroup = func_group
 
         for wrapper_cls in self.wrapper_classes:
-            wrapper_func = wrapper_cls(app=self.app)
+            wrapper_func = wrapper_cls(app=self.app, manually_add=False)
             wrapper_func.create_func()
             funcs.append(wrapper_func)
             func_group.add_func(wrapper_func.func)
@@ -775,4 +838,10 @@ func_classes = [
     CosFunctionF1, CosFunctionF2, CosFunctionF3, CosFunctionF4, CosFunctionF5,
     GroupFunctionF1, GroupFunctionF2, GroupFunctionF3, GroupFunctionF4,
     GroupFunctionF5
+]
+
+
+func_classes_dedup = [
+    ConstFunctionF5, LinearFunctionF5, ExponentialFunctionF5, CosFunctionF5,
+    GroupFunctionF5,
 ]

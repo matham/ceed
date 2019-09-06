@@ -694,9 +694,12 @@ class CeedStage(EventDispatcher):
         return stage, i
 
     def replace_ref_func_with_source(self, func_ref):
+        if not isinstance(func_ref, CeedFuncRef):
+            raise ValueError('Function must be a CeedFuncRef')
+
         i = self.functions.index(func_ref)
         self.remove_func(func_ref)
-        func = func_ref.copy_expand_ref()
+        func = deepcopy(func_ref.func)
         self.add_func(func, index=i)
         return func, i
 

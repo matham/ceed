@@ -32,6 +32,7 @@
                     spacing: '5dp'
                     FlatSpinner:
                         id: func_spin
+                        test_name: 'func spinner'
                         values: sorted(app.function_factory.funcs_inst.keys()) if app.function_factory.funcs_inst else []
                         text_autoupdate: True
                         size_hint_min_x: self.minimum_width
@@ -41,11 +42,13 @@
                         flat_drop_text_color: app.theme.text_primary
                         flat_border_color: app.theme.divider
                     DraggingWidget:
+                        test_name: 'func list drag'
                         drag_controller: app.drag_controller
                         drag_widget: func_spin.__self__
                         obj_dragged: func_spin.__self__
                         drag_cls: 'func_spinner'
                     FlatImageButton:
+                        test_name: 'func add'
                         scale_down_color: True
                         source: 'flat_plus.png'
                         flat_color: app.theme.accent
@@ -56,6 +59,7 @@
             FuncList:
                 on_kv_post: app.funcs_container = self
                 id: funcs
+                test_name: 'func list'
                 drag_append_end: True
                 spacer_props: {'size_hint_y': None, 'height': '50dp', 'size_hint_min_x': '40dp'}
                 drag_classes: ['func', 'func_spinner']
@@ -107,6 +111,7 @@
                 pos: self.pos
         DraggingWidget:
             id: dragger
+            test_name: 'func drag btn'
             drag_widget: selector.__self__
             obj_dragged: root.__self__
             drag_cls: 'func'
@@ -118,6 +123,7 @@
             on_kv_post: root.handle_expand_widget(expand)
         FlatLabel:
             id: func_label
+            test_name: 'func label'
             center_texture: False
             padding: '5dp', '5dp'
             flat_color: app.theme.text_primary
@@ -125,12 +131,14 @@
             size_hint_min_x: self.texture_size[0]
         FlatImageButton:
             id: del_btn
+            test_name: 'del_btn_func'
             scale_down_color: True
             source: 'flat_delete.png'
             flat_color: app.theme.accent
             disabled: root.func.has_ref if root.ref_func is None else False
             on_release: root.remove_func()
         FlatImageButton:
+            test_name: 'func settings open'
             scale_down_color: True
             source: 'flat_dots_vertical.png' if root.ref_func is None else 'call-split.png'
             flat_color: app.theme.accent
@@ -140,6 +148,7 @@
                 if root.ref_func is None: root.settings_root.splitter.width = max(selector.width, root.settings_root.splitter.width)
 
 <FuncSettingsDropDown>:
+    test_name: 'func settings'
     do_scroll: False, False
     flat_color: app.theme.primary_text
     flat_border_color: app.theme.divider
@@ -160,18 +169,14 @@
             padding: '5dp'
             height: self.minimum_height
             size_hint_min_x: self.minimum_width
-            Button:
-                text: 'Hello'
-                size_hint_y: None
-                height: '55dp'
-                on_release: self.spinner.open(self)
-                on_parent: self.spinner = Factory.FlatDropDown()
             FuncNamePropTextWidget:
+                test_name: 'func name'
                 func: root.func_widget.ref_func or root.func_widget.func
                 prop_name: 'name'
                 on_parent: if self.parent is not None: self.apply_binding()
                 disabled: root.func_widget.func.parent_func is not None or not isinstance(root.func_widget.func_controller, FunctionFactoryBase)
             FlatLabel:
+                test_name: 'func description'
                 padding: '5dp', '5dp'
                 size_hint_y: None
                 halign: 'center'

@@ -1,14 +1,21 @@
-'''Shapes
+"""Shapes
 ============
 
 Defines the shapes which are used with a :mod:`ceed.function` to create regions
-with time-varying intensity during the experiemtal :mod:`ceed.stage`.
+with time-varying intensity during an experiment :mod:`ceed.stage`.
 
-Shapes are created automatically when the user draws regions in the GUI. The
-controller keeping track of these shapes is a :class:`CeedPaintCanvasBehavior`
-instance.
-'''
+:class:`~kivy_garden.painter.PaintCanvasBehavior` provides the widget
+functionality such that when a user draws on the screen,
+:class:`~kivy_garden.painter.PaintShape` instances are created and added to the
+widget.
+
+:class:`CeedPaintCanvasBehavior` provides a more specialized painter canvas.
+Specifically, in addition to being able to draw shapes, it adds the ability
+to organize shapes into :attr:`CeedPaintCanvasBehavior.groups`.
+"""
+from __future__ import annotations
 import math
+from typing import Type, List, Tuple, Dict, Optional, Union
 
 from kivy.properties import BooleanProperty, NumericProperty, StringProperty, \
     ObjectProperty, DictProperty, ListProperty
@@ -16,8 +23,8 @@ from kivy.event import EventDispatcher
 from kivy.factory import Factory
 from kivy_garden.collider import Collide2DPoly, CollideEllipse
 
-from kivy_garden.painter import PaintCanvasBehavior, PaintCircle, PaintEllipse, \
-    PaintPolygon, PaintFreeformPolygon
+from kivy_garden.painter import PaintCanvasBehavior, PaintCircle,\
+    PaintEllipse, PaintPolygon, PaintFreeformPolygon
 
 from ceed.utils import fix_name
 
@@ -27,22 +34,24 @@ __all__ = (
 
 
 class CeedPaintCanvasBehavior(PaintCanvasBehavior):
-    '''Controller base class for drawing and managing the shapes.
+    """Controller base class for drawing and managing the shapes.
 
     A shape is drawn by the user in the GUI and added by
     :class:`kivy_garden.painter.PaintCanvasBehavior` to its
     :attr:`kivy_garden.painter.PaintCanvasBehavior.shapes` list. This class
     manages all that without any of the associated GUI components that
-    is shown to the user. The GUI components is added by the
-    :class:`ceed.shape.shape_widgets.CeedPainter`.
+    is shown to the user (e.g. the ability name shapes etc.). The GUI
+    components is added by the :class:`ceed.shape.shape_widgets.CeedPainter`.
 
-    So when run from the GUI :class:`ceed.shape.shape_widgets.CeedPainter` is
-    the class used, while this class used when e.g. running from the
-    interpreter.
+    So when run from the GUI, an instance of
+    :class:`ceed.shape.shape_widgets.CeedPainter` is the class used to manage
+    the shapes. When running during analysis, and instance of this class is
+    used instead as no visualizations is required..
 
-    In addition to the :attr:`kivy_garden.painter.PaintCanvasBehavior.shapes`, the
-    class adds :attr:`groups` for grouping shapes; a :class:`CeedShapeGroup`
-    simply groups a collection of :class:`CeedShape`.
+    In addition to the :attr:`kivy_garden.painter.PaintCanvasBehavior.shapes`,
+    the class adds :attr:`groups` for grouping shapes; a
+    :class:`CeedShapeGroup` simply groups a collection of :class:`CeedShape`
+    by their name.
 
     :Events:
 
@@ -56,43 +65,29 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
             Triggered whenever a :class:`CeedShape` or :class:`CeedShapeGroup`
             is added or removed, or if a configuration option of the objects
             is changed.
-    '''
+    """
 
-    groups = ListProperty([])
+    groups: List[CeedShapeGroup] = ListProperty([])
     '''List of :class:`CeedShapeGroup` instances.
     '''
 
-    shape_names = DictProperty([])
+    shape_names: Dict[str, CeedShape] = DictProperty({})
     '''The name -> :class:`CeedShape` dict. The key is the shape's name
     and the corresponding value is the :class:`CeedShape` instance.
     '''
 
-    shape_group_names = DictProperty([])
+    shape_group_names: Dict[str, CeedShapeGroup] = DictProperty({})
     '''The name -> :class:`CeedShapeGroup` dict. The key is the group's name
     and the corresponding value is the :class:`CeedShapeGroup` instance.
     '''
 
     __events__ = ('on_remove_shape', 'on_remove_group', 'on_changed')
 
-    def add_shape(self, shape):
-        '''Overrides :meth:`kivy_garden.painter.PaintCanvasBehavior.add_shape`.
-
-        It ensures the the name of the :class:`CeedShape` added is unique and
-        also displays the widget associated with the :class:`CeedShape` if
-        :attr:`show_widgets`.
-
-        :Params:
-
-            `shape`: :class:`CeedShape`
-                The shape to add.
-
-        :returns:
-
-            True if the shape was added, False otherwise.
-        '''
+    def add_shape(self, shape: CeedShape):
         if not super(CeedPaintCanvasBehavior, self).add_shape(shape):
             return False
 
+        # make sure the name is unique
         name = fix_name(
             shape.name, self.shape_names, self.shape_group_names)
         self.shape_names[name] = shape
@@ -100,18 +95,7 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
         self.dispatch('on_changed')
         return True
 
-    def remove_shape(self, shape):
-        '''Overrides :meth:`kivy_garden.painter.PaintCanvasBehavior.remove_shape`.
-
-        :Params:
-
-            `shape`: :class:`CeedShape`
-                The shape to remove.
-
-        :returns:
-
-            True if the shape was removed, False otherwise.
-        '''
+    def remove_shape(self, shape: CeedShape):
         if not super(CeedPaintCanvasBehavior, self).remove_shape(shape):
             return False
 
@@ -121,14 +105,20 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
         self.dispatch('on_changed')
         return True
 
-    def reorder_shape(self, shape, before_shape=None):
+    def reorder_shape(self, shape: CeedShape, before_shape: CeedShape = None):
         self.dispatch('on_changed')
         return super(CeedPaintCanvasBehavior, self).reorder_shape(
             shape, before_shape=before_shape)
 
-    def move_shape_lower(self, shape):
-        '''Moves it below the shape below it
-        '''
+    def move_shape_lower(self, shape: CeedShape):
+        """Moves the shape one shape down. I.e. if there are two shapes and
+        this shape is at index 1, it gets moved to index 0.
+
+        This changes the depth ordering of the shapes.
+
+        :param shape: The :class:`CeedShape` instance to move. It must exist in
+            :attr:`shapes`.
+        """
         i = self.shapes.index(shape)
         if not i:
             return
@@ -136,7 +126,15 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
         before_shape = self.shapes[i - 1]
         self.reorder_shape(shape, before_shape)
 
-    def move_shape_upwards(self, shape):
+    def move_shape_upwards(self, shape: CeedShape):
+        """Moves the shape one shape up. I.e. if there are two shapes and
+        this shape is at index 0, it gets moved to index 1.
+
+        This changes the depth ordering of the shapes.
+
+        :param shape: The :class:`CeedShape` instance to move. It must exist in
+            :attr:`shapes`.
+        """
         i = self.shapes.index(shape)
         if i == len(self.shapes) - 1:
             return
@@ -147,19 +145,19 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
             before_shape = self.shapes[i + 2]
         self.reorder_shape(shape, before_shape)
 
-    def add_group(self, group=None):
-        '''Similar to :meth:`add_shape` but for a :class:`CeedShapeGroup`.
+    def add_group(self, group: CeedShapeGroup = None):
+        """Similar to :meth:`add_shape` but for a :class:`CeedShapeGroup`.
 
         :Params:
 
             `group`: :class:`CeedShapeGroup`
                 The group to add. If None, the default, a new
-                :class:`CeedShapeGroup` is created.
+                :class:`CeedShapeGroup` is created and added.
 
         :returns:
 
             The :class:`CeedShapeGroup` added.
-        '''
+        """
         if group is None:
             group = CeedShapeGroup(paint_widget=self)
         self.groups.append(group)
@@ -171,8 +169,8 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
         self.dispatch('on_changed')
         return group
 
-    def remove_group(self, group):
-        '''Similar to :meth:`remove_shape` but for a :class:`CeedShapeGroup`.
+    def remove_group(self, group: CeedShapeGroup):
+        """Similar to :meth:`remove_shape` but for a :class:`CeedShapeGroup`.
 
         :Params:
 
@@ -182,7 +180,7 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
         :returns:
 
             True if the group was removed, False otherwise.
-        '''
+        """
         del self.shape_group_names[group.name]
         self.groups.remove(group)
         self.dispatch('on_remove_group', group)
@@ -190,21 +188,32 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
         return True
 
     def remove_all_groups(self):
-        '''Removes all the :class:`CeedShapeGroup` instances.
-        '''
+        """Removes all the :class:`CeedShapeGroup` instances in :attr:`groups`.
+        """
         for group in self.groups[:]:
             self.remove_group(group)
 
-    def add_shape_to_group(self, group, shape):
+    def add_shape_to_group(self, group: CeedShapeGroup, shape: CeedShape):
+        """Adds the shape to the group.
+
+        :param group: The :class:`CeedShapeGroup` to which to add the shape.
+        :param shape: The :class:`CeedShape` to add.
+        """
         group.add_shape(shape)
         self.dispatch('on_changed')
 
-    def remove_shape_from_group(self, group, shape):
+    def remove_shape_from_group(self, group: CeedShapeGroup, shape: CeedShape):
+        """Removes the shape from the group.
+
+        :param group: The :class:`CeedShapeGroup` from which to remove the
+            shape.
+        :param shape: The :class:`CeedShape` to remove.
+        """
         group.remove_shape(shape)
         self.dispatch('on_changed')
 
-    def add_selected_shapes_to_group(self, group=None):
-        '''Adds all the
+    def add_selected_shapes_to_group(self, group: CeedShapeGroup = None):
+        """Adds all the
         :attr:`kivy_garden.painter.PaintCanvasBehavior.selected_shapes` to the
         ``group``.
 
@@ -217,7 +226,7 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
         :returns:
 
             The :class:`CeedShapeGroup` passed in or created.
-        '''
+        """
         if group is None:
             group = self.add_group()
 
@@ -226,23 +235,23 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
                 self.add_shape_to_group(group, shape)
         return group
 
-    def remove_shape_from_groups(self, shape):
-        '''Removes the :class:`CeedShape` from all the groups.
+    def remove_shape_from_groups(self, shape: CeedShape):
+        """Removes the :class:`CeedShape` from all the groups.
 
         :Params:
 
             `shape`: :class:`CeedShape`
                 The shape to remove.
-        '''
+        """
         for group in self.groups:
             if shape in group.shapes:
                 self.remove_shape_from_group(group, shape)
 
     def get_state(self):
-        '''Returns a dictionary containing all the configuration data for all
+        """Returns a dictionary containing all the configuration data for all
         the shapes and groups. It is used with :meth:`set_state` to later
         restore the state.
-        '''
+        """
         d = {
             'shapes': [s.get_state() for s in self.shapes],
             'groups': [{'name': g.name, 'shapes': [s.name for s in g.shapes]}
@@ -250,15 +259,18 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
         }
         return d
 
-    def create_shape_from_state(self, state, old_name_map):
-        '''Overrides :meth:`kivy_garden.painter.PaintCanvasBehavior.create_shape_from_state`.
+    def create_shape_from_state(
+            self, state: dict, old_name_map: Dict[str, CeedShape]):
+        """Overrides
+        :meth:`kivy_garden.painter.PaintCanvasBehavior.create_shape_from_state`
+        and changes its signature.
 
         It takes an additional parameter, ``old_name_map``. When a shape is
-        created from the ``state``, the shape's new name could be changed so
-        that it remains unique. ``old_name_map`` is a dict that is filled in so
-        the key is the old name (if present in ``state``) and the associated
-        value is the actual final shape name.
-        '''
+        created from the given ``state``, the shape's new name could have been
+        changed automatically so that it remained unique. ``old_name_map`` is a
+        dict that is filled in so the key is the old name (if present in
+        ``state``) and the associated value is the actual final shape name.
+        """
         old_name = state.get('name', '')
         shape = super(CeedPaintCanvasBehavior, self).create_shape_from_state(
             state)
@@ -266,10 +278,14 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
             old_name_map[old_name] = shape
         return shape
 
-    def set_state(self, state, old_name_map):
-        '''Takes the dict returned by :meth:`save_state` and adds the shapes
-        and groups to the controller.
-        '''
+    def set_state(
+            self, state: dict,
+            old_name_map: Dict[str, Union[CeedShape, CeedShapeGroup]]):
+        """Takes the dict returned by :meth:`get_state` and adds the shapes
+        and groups created form them.
+
+        ``old_name_map`` is the same as in :meth:`create_shape_from_state`.
+        """
         for s in state['shapes']:
             self.create_shape_from_state(s, old_name_map)
 
@@ -297,8 +313,8 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
         pass
 
     def _change_shape_name(self, shape, name):
-        '''Makes sure that the shape or group name is unique.
-        '''
+        """Makes sure that the shape or group name is unique.
+        """
         if shape.name == name:
             return name
 
@@ -315,12 +331,14 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
 
 
 class CeedShape(object):
-    '''A co-base class used with :class:`kivy_garden.painter.PaintShape` derived
-    classes to add ceed specific functionality to the
+    """A co-base class used with :class:`kivy_garden.painter.PaintShape`
+    derived classes to add ceed specific functionality to the
     :class:`kivy_garden.painter.PaintShape` classes.
-    '''
+    """
 
-    name = StringProperty('Shape')
+    name: str = StringProperty('Shape')
+    """A unique name associated with the shape.
+    """
 
     _collider = None
 
@@ -331,8 +349,14 @@ class CeedShape(object):
     _centroid = None
 
     paint_widget_size = 0, 0
+    """The size of the area used to draw the shapes. A shape is not allowed to
+    have coordinates outside this area.
+    """
 
     widget = None
+    """The :class:`~ceed.shape.shape_widgets.WidgetShape` used by ceed to
+    customize the shape in the GUI.
+    """
 
     def __init__(self, paint_widget_size=(0, 0), **kwargs):
         super(CeedShape, self).__init__(**kwargs)
@@ -362,6 +386,9 @@ class CeedShape(object):
 
     @property
     def bounding_box(self):
+        """Returns the ``(x1, y1, x2, y2)`` describing the lower left and upper
+        right points that define a bounding box for the shape.
+        """
         if self._bounding_box is not None:
             return self._bounding_box
 
@@ -375,6 +402,8 @@ class CeedShape(object):
 
     @property
     def centroid(self):
+        """Returns the estimated ``(x, y)`` centroid of the shape.
+        """
         if self._centroid is not None:
             return self._centroid
 
@@ -387,6 +416,8 @@ class CeedShape(object):
 
     @property
     def area(self):
+        """Returns the estimated area of the shape.
+        """
         if self._area is not None:
             return self._area
 
@@ -398,6 +429,11 @@ class CeedShape(object):
         return area
 
     def set_area(self, area):
+        """Sets the internal area of the shape in pixels. We try to get close
+        to the requested area, but it is not likely to be exact.
+
+        :param area: The area to be set.
+        """
         if not area:
             return
 
@@ -406,6 +442,9 @@ class CeedShape(object):
 
     @property
     def collider(self):
+        """Returns the collider instance from :mod:`kivy_garden.collider` used
+        to manipulate and measure the shapes.
+        """
         if not self.is_valid or not self.finished:
             return None
         if self._collider is not None:
@@ -416,7 +455,7 @@ class CeedShape(object):
 
 
 class CeedShapeGroup(EventDispatcher):
-    '''Holds a collection of :class:`CeedShape` instances.
+    """Holds a collection of :class:`CeedShape` instances.
 
     It is helpful to group them when the same :class:`ceed.function` is to be
     applied to multiple shapes.
@@ -427,23 +466,25 @@ class CeedShapeGroup(EventDispatcher):
             Triggered whenever a child :class:`CeedShape`
             is added or removed, or if a configuration option of the objects
             is changed.
-    '''
+    """
 
     paint_widget = ObjectProperty(None)
-    '''See :attr:`kivy_garden.painter.PaintShape.paint_widget`.
+    '''The same as :attr:`kivy_garden.painter.PaintShape.paint_widget`.
     '''
 
-    name = StringProperty('Group')
-    '''The name of the group. Similar to
-    See :attr:`kivy_garden.painter.PaintShape.name`.
+    name: str = StringProperty('Group')
+    '''The name of the group. Similar to :attr:`CeedShape.name`.
     '''
 
-    shapes = []
-    '''A list that contains the :class:`CeedShape` instances that is part of
+    shapes: List[CeedShape] = []
+    '''A list that contains the :class:`CeedShape` instances that are part of
     this group.
     '''
 
     widget = None
+    """The :class:`~ceed.shape.shape_widgets.WidgetShapeGroup` used by ceed to
+    customize the group in the GUI.
+    """
 
     __events__ = ('on_changed', )
 
@@ -456,13 +497,13 @@ class CeedShapeGroup(EventDispatcher):
         pass
 
     def add_shape(self, shape):
-        '''Adds the shape to the group if it is not already in the group.
+        """Adds the shape to the group if it is not already in the group.
 
         :Params:
 
             `shape`: :class:`CeedShape`
                 The shape to add to :attr:`shapes`.
-        '''
+        """
         if shape in self.shapes:
             return
 
@@ -470,14 +511,14 @@ class CeedShapeGroup(EventDispatcher):
         self.dispatch('on_changed')
 
     def remove_shape(self, shape):
-        '''Removes the shape from the group (and its :attr:`CeedShape.display`)
+        """Removes the shape from the group (and its :attr:`CeedShape.widget`)
         if it is present.
 
         :Params:
 
             `shape`: :class:`CeedShape`
                 The shape to remove from :attr:`shapes`.
-        '''
+        """
         if shape not in self.shapes:
             return
 
@@ -485,15 +526,15 @@ class CeedShapeGroup(EventDispatcher):
         self.dispatch('on_changed')
 
     def remove_all(self):
-        '''Removes all the shapes from the group.
-        '''
+        """Removes all the shapes from the group.
+        """
         for shape in self.shapes:
             self.remove_shape(shape)
 
 
 class CeedPaintCircle(CeedShape, PaintCircle):
-    '''A circle shape.
-    '''
+    """A circle shape.
+    """
 
     def _get_collider(self, size):
         x, y = self.center
@@ -502,8 +543,8 @@ class CeedPaintCircle(CeedShape, PaintCircle):
 
 
 class CeedPaintEllipse(CeedShape, PaintEllipse):
-    '''An ellipse shape.
-    '''
+    """An ellipse shape.
+    """
 
     def _get_collider(self, size):
         x, y = self.center
@@ -512,16 +553,16 @@ class CeedPaintEllipse(CeedShape, PaintEllipse):
 
 
 class CeedPaintPolygon(CeedShape, PaintPolygon):
-    '''A polygonal shape.
-    '''
+    """A polygonal shape.
+    """
 
     def _get_collider(self, size):
         return Collide2DPoly(points=self.points, cache=False)
 
 
 class CeedPaintFreeformPolygon(CeedShape, PaintFreeformPolygon):
-    '''A polygonal shape.
-    '''
+    """A polygonal shape.
+    """
 
     def _get_collider(self, size):
         return Collide2DPoly(points=self.points, cache=False)

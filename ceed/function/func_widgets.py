@@ -104,7 +104,7 @@ class FuncList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
 
         widget = FuncWidget.get_display_cls(child_func)()
         widget.initialize_display(child_func, self.function_factory, self)
-        parent_func.display.add_widget(widget)
+        parent_func.display.children_container.add_widget(widget)
 
     def add_func_to_listing(self, func: FuncBase):
         """Adds the function to the :attr:`function_factory` and shows it
@@ -162,6 +162,8 @@ class GroupFuncList(DraggableLayoutBehavior, BoxLayout):
         group_func = group_widget.func
         function_factory = group_func.function_factory
 
+        # are we dragging a registered function, or some internal anonymous
+        # function
         if drag_widget.drag_cls == 'func_spinner' or \
                 drag_widget.drag_cls == 'func' and \
                 drag_widget.obj_dragged.func_controller is function_factory \
@@ -186,11 +188,11 @@ class GroupFuncList(DraggableLayoutBehavior, BoxLayout):
             self.add_widget(widget, index=index)
         else:
             dragged = drag_widget.obj_dragged
-            if not group_widget.func.can_other_func_be_added(dragged.func):
+            if not group_func.can_other_func_be_added(dragged.func):
                 return
 
             func = deepcopy(dragged.func)
-            group_widget.func.add_func(func, index=len(self.children) - index)
+            group_func.add_func(func, index=len(self.children) - index)
 
             widget = FuncWidget.get_display_cls(func)()
             widget.initialize_display(
@@ -310,7 +312,12 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
                     raise TypeError('"{}" is not a recognized type'.
                                     format(value))
             else:
-                value = getattr(func, key)
+                prop = func.property(key, True)
+                if prop is None:
+                    value = getattr(func, key)
+                else:
+                    value = prop.defaultvalue
+
                 if isinstance(value, int):
                     props['int'].append(key)
                 elif isinstance(value, float):
@@ -327,9 +334,11 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
             color = App.get_running_app().theme.text_primary
             for fmt, keys in sorted(props.items(), key=lambda x: x[0]):
                 for key in sorted(keys):
-                    grid.add_widget(
-                        label(text=pretty_names.get(key, key),
-                              padding_x='10dp', flat_color=color))
+                    label_w = label(
+                        text=pretty_names.get(key, key), padding_x='10dp',
+                        flat_color=color)
+                    label_w.test_name = 'func prop label'
+                    grid.add_widget(label_w)
 
                     widget = FuncPropTextWidget(input_filter=input_filter[fmt])
                     widget.func = func
