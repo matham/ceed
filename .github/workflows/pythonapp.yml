@@ -21,10 +21,13 @@ jobs:
         sudo apt-get -y install python3-setuptools build-essential libgl1-mesa-dev libgles2-mesa-dev
         python3 -m pip install --upgrade pip virtualenv wheel setuptools --user
         /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1280x720x24 -ac +extension GLX
-        python3 -m pip install kivy trio pillow coveralls docutils PyInstaller https://github.com/matham/cplcom/archive/master.zip --user
+        python3 -m pip install https://kivy.org/downloads/ci/linux/kivy/Kivy-2.0.0.dev0-cp37-cp37m-manylinux2010_x86_64.whl trio pillow coveralls docutils PyInstaller https://github.com/matham/cplcom/archive/master.zip --user
         python3 -m pip install -e . --extra-index-url https://kivy-garden.github.io/simple/ --user
     - name: Test with pytest
       env:
         DISPLAY: :99.0
       run: |
+        ls
+        pwd
+        ls ceed
         python3 -m pytest --cov=ceed --cov-report term --cov-report html ceed/tests/test_app/test_app_config.py
