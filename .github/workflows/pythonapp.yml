@@ -20,9 +20,9 @@ jobs:
         sudo apt -y install libsdl2-dev libsdl2-ttf-dev libsdl2-image-dev libsdl2-mixer-dev
         sudo apt-get -y install python3-setuptools build-essential libgl1-mesa-dev libgles2-mesa-dev
         python3 -m pip install --upgrade pip virtualenv wheel setuptools --user
+        /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1280x720x24 -ac +extension GLX
         python3 -m pip install kivy trio pillow coveralls docutils PyInstaller https://github.com/matham/cplcom/archive/master.zip --user
         python3 -m pip install -e . --extra-index-url https://kivy-garden.github.io/simple/ --user
-        /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1280x720x24 -ac +extension GLX
     - name: Lint with flake8
       run: |
         pip install flake8
@@ -31,5 +31,7 @@ jobs:
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
+      env:
+        DISPLAY: :99.0
       run: |
         python3 -m pytest --cov=ceed --cov-report term --cov-report html ceed/tests/test_app/test_app_config.py
