@@ -16,8 +16,7 @@ jobs:
       run: |
         yes | sudo add-apt-repository ppa:kivy-team/kivy-daily
         sudo apt update
-        sudo apt install python3-kivy
-        python3 -c "import kivy.properties"
+        sudo apt -y install python3-kivy
         sudo apt-get -y install python3-setuptools build-essential libgl1-mesa-dev libgles2-mesa-dev
         python3 -m pip install --upgrade pip virtualenv wheel setuptools --user
         python3 -m pip install trio ffpyplayer pillow pytest pytest_trio coveralls docutils PyInstaller numpy nixio psutil https://github.com/matham/cplcom/archive/master.zip --user
