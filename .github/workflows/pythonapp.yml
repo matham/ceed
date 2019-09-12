@@ -23,11 +23,11 @@ jobs:
         /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1280x720x24 -ac +extension GLX
         python3 -m pip install https://kivy.org/downloads/ci/linux/kivy/Kivy-2.0.0.dev0-cp37-cp37m-manylinux2010_x86_64.whl trio pillow coveralls python-coveralls docutils PyInstaller https://github.com/matham/cplcom/archive/master.zip --user
         python3 -m pip install -e . --extra-index-url https://kivy-garden.github.io/simple/ --user
-    - name: Lint with flake8
+    - name: Lint with pycodestyle
       run: |
-        pip install flake8
+        pip install pycodestyle
         # stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --ignore=E125,E126,E127,E128,E402,E741,E731,W503 --show-source --statistics
+        pycodestyle . --count --ignore=E125,E126,E127,E128,E402,E741,E731,W503 --show-source --statistics
     - name: Test with pytest
       env:
         DISPLAY: :99.0
