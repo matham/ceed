@@ -14,6 +14,7 @@ jobs:
         python-version: 3.7
     - name: Install dependencies
       run: |
+        sudo apt update
         sudo apt -y install libsdl2-dev libsdl2-ttf-dev libsdl2-image-dev libsdl2-mixer-dev
         sudo apt-get -y install python3-setuptools build-essential libgl1-mesa-dev libgles2-mesa-dev
         python3 -m pip install --upgrade pip virtualenv wheel setuptools --user
