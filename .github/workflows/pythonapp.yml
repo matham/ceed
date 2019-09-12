@@ -14,13 +14,11 @@ jobs:
         python-version: 3.7
     - name: Install dependencies
       run: |
-        yes | sudo add-apt-repository ppa:kivy-team/kivy-daily
-        sudo apt update
-        sudo apt -y install python3-kivy
+        sudo apt -y install libsdl2-dev libsdl2-ttf-dev libsdl2-image-dev libsdl2-mixer-dev
         sudo apt-get -y install python3-setuptools build-essential libgl1-mesa-dev libgles2-mesa-dev
         python3 -m pip install --upgrade pip virtualenv wheel setuptools --user
-        python3 -m pip install trio ffpyplayer pillow pytest pytest_trio coveralls docutils PyInstaller numpy nixio psutil https://github.com/matham/cplcom/archive/master.zip --user
-        python3 -m pip install kivy_garden.graph kivy_garden.filebrowser kivy_garden.collider --extra-index-url https://kivy-garden.github.io/simple/
+        python3 -m pip install kivy trio ffpyplayer pillow pytest pytest_trio coveralls docutils PyInstaller numpy nixio psutil https://github.com/matham/cplcom/archive/master.zip --user
+        python3 -m pip install kivy_garden.graph kivy_garden.filebrowser kivy_garden.collider --extra-index-url https://kivy-garden.github.io/simple/ --user
         python3 -m pip install -e . --user
         /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1280x720x24 -ac +extension GLX
     - name: Lint with flake8
