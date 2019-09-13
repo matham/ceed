@@ -42,12 +42,11 @@ jobs:
       env:
         DISPLAY: :99.0
       run: |
-        python3 -m pytest --cov=ceed --cov-report term --cov-report xml:coverage.xml --cov-branch ceed/tests/test_app/test_app_config.py
+        python3 -m pytest --cov=ceed --cov-report term --cov-branch ceed/tests/test_app/test_app_config.py
     - name: Coveralls upload
-      uses: coverallsapp/github-action@master
-      with:
-        github-token: ${{ secrets.github_token }}
-        path-to-lcov: coverage.xml
+      env:
+        COVERALLS_REPO_TOKEN: ${{ secrets.github_token }}
+      run: python3 -m coveralls
 
   windows_test:
     runs-on: windows-latest
