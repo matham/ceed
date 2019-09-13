@@ -21,17 +21,16 @@
             BoxLayout:
                 size_hint_min_x: self.minimum_width
                 orientation: 'horizontal'
-                FlatLabel:
-                    text: 'Stages'
-                    width: self.texture_size[0]
-                    size_hint_x: None
-                    flat_color: app.theme.text_primary
-                Widget
                 FlatImageButton:
                     scale_down_color: True
                     source: 'flat_plus.png'
                     flat_color: app.theme.accent
                     on_release: stages.add_empty_stage()
+                FlatLabel:
+                    text: 'Stages'
+                    width: self.texture_size[0]
+                    size_hint_x: None
+                    flat_color: app.theme.text_primary
         ScrollView:
             bar_width: '10dp'
             scroll_type: ['bars']
@@ -67,6 +66,7 @@
     is_visible: self.parent is not None and self.parent.is_visible
     more: more
     show_more: expand.is_open
+    expand_widget: expand
     BoxSelector:
         id: selector
         size_hint_y: None
@@ -91,8 +91,10 @@
             flat_color: .482, .114, 0, 1
         ExpandWidget:
             id: expand
-            state: 'down'
-            on_kv_post: if root.ref_stage is not None: selector.remove_widget(self)
+            state: 'normal'
+            on_kv_post:
+                if root.ref_stage is not None: selector.remove_widget(self)
+                if root.ref_stage is not None: root.expand = None
         FlatLabel:
             id: stage_label
             center_texture: False

@@ -93,6 +93,7 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
             shape.name, self.shape_names, self.shape_group_names)
         self.shape_names[name] = shape
         shape.name = name
+        shape.fbind('name', self._change_shape_name)
         self.dispatch('on_changed')
         return True
 
@@ -100,6 +101,7 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
         if not super(CeedPaintCanvasBehavior, self).remove_shape(shape):
             return False
 
+        shape.funbind('name', self._change_shape_name)
         self.remove_shape_from_groups(shape)
         del self.shape_names[shape.name]
         self.dispatch('on_remove_shape', shape)
@@ -167,6 +169,7 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
             group.name, self.shape_names, self.shape_group_names)
         self.shape_group_names[name] = group
         group.name = name
+        group.fbind('name', self._change_shape_name)
         self.dispatch('on_changed')
         return group
 
@@ -182,6 +185,7 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
 
             True if the group was removed, False otherwise.
         """
+        group.funbind('name', self._change_shape_name)
         del self.shape_group_names[group.name]
         self.groups.remove(group)
         self.dispatch('on_remove_group', group)
@@ -199,9 +203,13 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
 
         :param group: The :class:`CeedShapeGroup` to which to add the shape.
         :param shape: The :class:`CeedShape` to add.
+        :returns: Whether the shape was added (e.g. False if it already is in
+            the group).
         """
-        group.add_shape(shape)
-        self.dispatch('on_changed')
+        if group.add_shape(shape):
+            self.dispatch('on_changed')
+            return True
+        return False
 
     def remove_shape_from_group(self, group: CeedShapeGroup, shape: CeedShape):
         """Removes the shape from the group.
@@ -313,22 +321,34 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
     def on_changed(self, *largs):
         pass
 
-    def _change_shape_name(self, shape, name):
+    def _change_shape_name(self, shape: CeedShape, new_name):
         """Makes sure that the shape or group name is unique.
         """
-        if shape.name == name:
-            return name
-
         if isinstance(shape, CeedShape):
             container = self.shape_names
         else:
             container = self.shape_group_names
 
-        del container[shape.name]
-        name = fix_name(name, self.shape_names, self.shape_group_names)
-        container[name] = shape
-        shape.name = name
-        return name
+        # get the new name
+        for name, s in container.items():
+            if s is shape:
+                if shape.name == name:
+                    return name
+
+                del container[name]
+                # only one change at a time happens because of binding
+                break
+        else:
+            raise ValueError(
+                '{} has not been added to the factory'.format(shape))
+
+        new_name = fix_name(new_name, self.shape_names, self.shape_group_names)
+        container[new_name] = shape
+        shape.name = new_name
+
+        if not new_name:
+            shape.name = fix_name(
+                'name', self.shape_names, self.shape_group_names)
 
 
 class CeedShape(object):
@@ -504,12 +524,17 @@ class CeedShapeGroup(EventDispatcher):
 
             `shape`: :class:`CeedShape`
                 The shape to add to :attr:`shapes`.
+
+        :returns:
+
+            Whether the shape was successfully added to the group.
         """
         if shape in self.shapes:
-            return
+            return False
 
         self.shapes.append(shape)
         self.dispatch('on_changed')
+        return True
 
     def remove_shape(self, shape):
         """Removes the shape from the group (and its :attr:`CeedShape.widget`)

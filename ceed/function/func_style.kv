@@ -30,17 +30,6 @@
                     orientation: 'horizontal'
                     padding: '5dp'
                     spacing: '5dp'
-                    FlatSpinner:
-                        id: func_spin
-                        test_name: 'func spinner'
-                        values: sorted(app.function_factory.funcs_inst.keys()) if app.function_factory.funcs_inst else []
-                        text_autoupdate: True
-                        size_hint_min_x: self.minimum_width
-                        flat_color: app.theme.text_primary
-                        flat_menu_color: app.theme.accent
-                        flat_drop_background_color: app.theme.primary_text
-                        flat_drop_text_color: app.theme.text_primary
-                        flat_border_color: app.theme.divider
                     DraggingWidget:
                         test_name: 'func list drag'
                         drag_controller: app.drag_controller
@@ -53,6 +42,17 @@
                         source: 'flat_plus.png'
                         flat_color: app.theme.accent
                         on_release: funcs.add_func(func_spin.text)
+                    FlatSpinner:
+                        id: func_spin
+                        test_name: 'func spinner'
+                        values: sorted(app.function_factory.funcs_inst.keys()) if app.function_factory.funcs_inst else []
+                        text_autoupdate: True
+                        size_hint_min_x: self.minimum_width
+                        flat_color: app.theme.text_primary
+                        flat_menu_color: app.theme.accent
+                        flat_drop_background_color: app.theme.primary_text
+                        flat_drop_text_color: app.theme.text_primary
+                        flat_border_color: app.theme.divider
         ScrollView:
             bar_width: '10dp'
             scroll_type: ['bars']
@@ -94,6 +94,7 @@
     size_hint_min_x: self.minimum_width
     is_visible: self.parent is not None and self.parent.is_visible
     show_more: expand.is_open
+    expand_widget: expand
     BoxSelector:
         id: selector
         size_hint_y: None
@@ -119,7 +120,7 @@
             flat_color: .196, .122, .063, 1
         ExpandWidget:
             id: expand
-            state: 'down'
+            state: 'normal'
             on_kv_post: root.handle_expand_widget(expand)
         FlatLabel:
             id: func_label

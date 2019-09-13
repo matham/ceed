@@ -197,6 +197,13 @@ async def paint_app(ceed_app: CeedTestApp):
         pass
     await ceed_app.wait_clock_frames(2)
 
+    # expand group splitter to have more space
+    splitter = ceed_app.resolve_widget().down(
+        test_name='expand group splitter')().children[0]
+    async for _ in ceed_app.do_touch_drag(widget=splitter, dy=-dp(200)):
+        pass
+    await ceed_app.wait_clock_frames(2)
+
     # expand shape splitter so shape widgets are fully visible
     slider = ceed_app.resolve_widget().down(test_name='screen zoom silder')()
     slider.value = slider.min

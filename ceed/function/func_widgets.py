@@ -105,6 +105,8 @@ class FuncList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
         widget = FuncWidget.get_display_cls(child_func)()
         widget.initialize_display(child_func, self.function_factory, self)
         parent_func.display.children_container.add_widget(widget)
+        if widget.expand_widget is not None:
+            widget.expand_widget.state = 'down'
 
     def add_func_to_listing(self, func: FuncBase):
         """Adds the function to the :attr:`function_factory` and shows it
@@ -117,6 +119,9 @@ class FuncList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
         widget = FuncWidget.get_display_cls(func)()
         widget.initialize_display(func, self.function_factory, self)
         self.add_widget(widget)
+        if widget.expand_widget is not None:
+            if widget.expand_widget is not None:
+                widget.expand_widget.state = 'down'
 
     def get_selectable_nodes(self):
         # a ref func will never be in the root list, so get_funcs will not be
@@ -186,6 +191,8 @@ class GroupFuncList(DraggableLayoutBehavior, BoxLayout):
             widget.initialize_display(
                 func, function_factory, group_widget.selection_controller)
             self.add_widget(widget, index=index)
+            if widget.expand_widget is not None:
+                widget.expand_widget.state = 'down'
         else:
             dragged = drag_widget.obj_dragged
             if not group_func.can_other_func_be_added(dragged.func):
@@ -198,6 +205,8 @@ class GroupFuncList(DraggableLayoutBehavior, BoxLayout):
             widget.initialize_display(
                 func, function_factory, group_widget.selection_controller)
             self.add_widget(widget, index=index)
+            if widget.expand_widget is not None:
+                widget.expand_widget.state = 'down'
 
 
 class FuncWidget(ShowMoreBehavior, BoxLayout):
@@ -257,6 +266,11 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
 
     settings_root: FuncSettingsDropDown = None
     """The :class:`FuncSettingsDropDown`used by this function to show settings.
+    """
+
+    expand_widget = None
+    """The widget that when pressed will expand to show the :attr:`more`
+    widget.
     """
 
     @property
@@ -424,6 +438,7 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
         the function being represented is not a group.
         """
         expand.parent.remove_widget(expand)
+        self.expand_widget = None
 
     def replace_ref_func_with_source(self):
         """If this :attr:`func` is a :class:`ceed.function.CeedFuncRef`, this
@@ -445,6 +460,8 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
             func, self.func_controller, self.selection_controller)
         parent_widget.add_widget(
             widget, index=len(parent_widget.children) - i)
+        if widget.expand_widget is not None:
+            widget.expand_widget.state = 'down'
 
         self.func.function_factory.return_func_ref(self.func)
 
@@ -506,7 +523,8 @@ class FuncWidgetGroup(FuncWidget):
             return
 
         self.more = self.children_container = func_list = GroupFuncList()
-        self.add_widget(func_list)
+        if self.show_more:
+            self.add_widget(func_list)
         func_list.group_widget = self
 
         Builder.apply_rules(

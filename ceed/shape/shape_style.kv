@@ -86,16 +86,27 @@
                 scroll_type: ['bars']
                 do_scroll_y: False
                 size_hint_y: None
-                height: sshapes_label.texture_size[1]
-                FlatLabel:
-                    id: sshapes_label
-                    text: 'Shapes'
-                    width: max(self.texture_size[0], self.parent.width)
+                height: shapes_label.texture_size[1]
+                BoxLayout:
                     size_hint_x: None
-                    padding: '5dp', '5dp'
-                    flat_color: app.theme.text_primary
-                    center_texture: True
+                    width: self.minimum_width
+                    orientation: 'horizontal'
+                    FlatImageButton:
+                        test_name: 'add group'
+                        scale_down_color: True
+                        source: 'flat_plus.png'
+                        flat_color: app.theme.accent
+                        on_release: app.shape_factory.add_group().widget.expand_widget.state = 'down'
+                    FlatLabel:
+                        id: shapes_label
+                        text: 'Shapes'
+                        width: self.texture_size[0]
+                        size_hint_x: None
+                        padding: '5dp', '5dp'
+                        flat_color: app.theme.text_primary
+                        center_texture: True
             FlatSplitter:
+                test_name: 'expand group splitter'
                 flat_color: app.theme.accent
                 size_hint_min_x: self.minimum_width
                 sizable_from: 'bottom'
@@ -103,12 +114,13 @@
                 size_hint_y: None
                 min_size: 0
                 max_size: root.height
-                height: '50dp'
+                height: '100dp'
                 spacing: '5dp'
                 ScrollView:
                     bar_width: '10dp'
                     scroll_type: ['bars']
                     ShapeGroupList:
+                        test_name: 'shape group container'
                         on_kv_post: app.shape_groups_container = self
                         id: shape_groups
                         knsname: 'shape_groups'
@@ -246,6 +258,7 @@
             id: expand
             test_name: 'shape expand'
         FlatLabel:
+            test_name: 'shape name'
             size_hint_min_x: self.texture_size[0]
             padding: '5dp', '5dp'
             flat_color: app.theme.text_primary
@@ -298,7 +311,7 @@
         FlatSizedTextInput:
             background_color: root.flat_color
             text: root.shape.name if root.shape else ''
-            on_focus: if not self.focus: self.text = root.painter._change_shape_name(root.shape, self.text)
+            on_focus: if not self.focus: root.shape.name = self.text
             test_name: 'shape textname'
         BoxLayout:
             size_hint_y: None
@@ -344,6 +357,7 @@
     show_more: expand.is_open
     spacing: '5dp'
     flat_color: app.theme.primary_light if not root.selected else app.theme.primary
+    expand_widget: expand
     BoxSelector:
         id: selector
         size_hint_y: None
@@ -361,25 +375,30 @@
                 size: self.size
                 pos: self.pos
         DraggingWidget:
+            test_name: 'group drag button'
             drag_widget: selector.__self__
             obj_dragged: root
             drag_cls: 'shape_group'
             flat_color: .835, .278, 0, 1
         ExpandWidget:
             id: expand
+            test_name: 'shape group expand'
         FlatLabel:
+            test_name: 'group name'
             text: root.group.name if root.group else ''
             size_hint_min_x: self.texture_size[0]
             padding: '5dp', '5dp'
             flat_color: app.theme.text_primary
             center_texture: False
         FlatImageButton:
+            test_name: 'shape group delete'
             scale_down_color: True
             source: 'flat_delete.png'
             flat_color: app.theme.accent
             on_release: app.shape_factory.remove_group(root.group)
     BoxShapeDraggableLayoutBehavior:
         id: more
+        test_name: 'shape group obj container'
         spacing: '5dp'
         matched_drag: bool(app.drag_controller.dragging and app.drag_controller.widget_dragged and app.drag_controller.widget_dragged.drag_cls in ('shape', 'shape_group') and expand.is_open)
         padding: '15dp', 0, 0, ('12dp' if self.matched_drag or len(self.children) == 1 else 0)
@@ -403,9 +422,10 @@
                 pos: self.x + dp(11), self.y
                 size: dp(2), self.height - dp(2)
         FlatSizedTextInput:
+            test_name: 'group name input'
             background_color: root.flat_color
             text: root.group.name if root.group else ''
-            on_focus: if not self.focus: self.text = app.shape_factory._change_shape_name(root.group, self.text)
+            on_focus: if not self.focus: root.group.name = self.text
 
 
 <ShapeGroupItem>:
@@ -421,12 +441,14 @@
             size: self.size
             pos: self.pos
     FlatLabel:
+        test_name: 'group shape item label'
         padding: '5dp', '5dp'
         flat_color: app.theme.text_primary
         center_texture: False
         text: root.shape.name if root.shape is not None else ''
         size_hint_min_x: self.texture_size[0]
     FlatImageButton:
+        test_name: 'delete group item'
         scale_down_color: True
         source: 'flat_delete.png'
         flat_color: app.theme.accent

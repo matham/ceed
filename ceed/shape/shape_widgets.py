@@ -107,8 +107,10 @@ class CeedPainter(CeedPaintCanvasBehavior, Widget):
         return False
 
     def add_shape_to_group(self, group, shape):
-        super(CeedPainter, self).add_shape_to_group(group, shape)
-        group.widget.add_shape(shape)
+        if super(CeedPainter, self).add_shape_to_group(group, shape):
+            group.widget.add_shape(shape)
+            return True
+        return False
 
     def remove_shape_from_group(self, group, shape):
         super(CeedPainter, self).remove_shape_from_group(group, shape)
@@ -204,10 +206,12 @@ class ShapeGroupList(
                 group, drag_widget.obj_dragged.shape)
             if drag_widget.obj_dragged.selected:
                 app.shape_factory.add_selected_shapes_to_group(group)
+            group.widget.expand_widget.state = 'down'
         else:
             group = app.shape_factory.add_group()
             for shape in drag_widget.obj_dragged.group.shapes:
                 app.shape_factory.add_shape_to_group(group, shape)
+            group.widget.expand_widget.state = 'down'
 
 
 class WidgetShapeGroup(ShowMoreBehavior, BoxLayout):
@@ -222,6 +226,10 @@ class WidgetShapeGroup(ShowMoreBehavior, BoxLayout):
     group: CeedShapeGroup = ObjectProperty(None, rebind=True)
     '''The :class:`~ceed.shape.CeedShapeGroup` this widget represents.
     '''
+
+    expand_widget = None
+    """The ExpandWidget that when hit wil show the list of shapes of the group.
+    """
 
     @property
     def name(self):

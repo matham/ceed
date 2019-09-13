@@ -68,10 +68,14 @@ class StageList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
 
             widget.initialize_display(stage, stage_widget.selection_controller)
             stage_widget.stage_widget.add_widget(widget)
+            if widget.expand_widget is not None:
+                widget.expand_widget.state = 'down'
         else:
             self.stage_factory.add_stage(stage, allow_last_experiment=False)
             widget.initialize_display(stage, self)
             self.add_widget(widget)
+            if widget.expand_widget is not None:
+                widget.expand_widget.state = 'down'
         return stage
 
     def handle_drag_release(self, index, drag_widget):
@@ -86,6 +90,8 @@ class StageList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
             widget = StageWidget()
             widget.initialize_display(stage, self)
             self.add_widget(widget)
+            if widget.expand_widget is not None:
+                widget.expand_widget.state = 'down'
             return
 
         stage = self.stage_factory.make_stage({'cls': 'CeedStage'})
@@ -94,6 +100,8 @@ class StageList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
         widget = StageWidget()
         widget.initialize_display(stage, self)
         self.add_widget(widget)
+        if widget.expand_widget is not None:
+            widget.expand_widget.state = 'down'
 
         if drag_widget.drag_cls in ('func', 'func_spinner'):
             func_widget = StageFuncChildrenList._handle_drag_release(
@@ -197,6 +205,8 @@ class StageChildrenList(StageChildrenViewList):
         widget = StageWidget()
         widget.initialize_display(new_stage, stage_widget.selection_controller)
         self.add_widget(widget, index=index)
+        if widget.expand_widget is not None:
+            widget.expand_widget.state = 'down'
 
 
 class StageFuncChildrenList(StageChildrenViewList):
@@ -225,6 +235,8 @@ class StageFuncChildrenList(StageChildrenViewList):
 
         widget = FuncWidget.get_display_cls(func)()
         widget.initialize_display(func, stage, selection_controller)
+        if widget.expand_widget is not None:
+            widget.expand_widget.state = 'down'
         return widget
 
     def handle_drag_release(self, index, drag_widget):
@@ -302,6 +314,8 @@ class StageWidget(ShowMoreBehavior, BoxLayout):
     selection_controller = None
 
     settings_root = None
+
+    expand_widget = None
 
     @property
     def name(self):
@@ -415,6 +429,8 @@ class StageWidget(ShowMoreBehavior, BoxLayout):
         widget.initialize_display(stage, self.selection_controller)
         parent_widget.add_widget(
             widget, index=len(parent_widget.children) - i)
+        if widget.expand_widget is not None:
+            widget.expand_widget.state = 'down'
 
         self.stage.stage_factory.return_stage_ref(self.stage)
 

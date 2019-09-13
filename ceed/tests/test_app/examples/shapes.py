@@ -1,14 +1,17 @@
 import math
-from typing import Type, List
+from typing import Type, List, Union
+from ceed.shape import CeedPaintCanvasBehavior, CeedShape
+from ceed.tests.ceed_app import CeedTestApp
+from kivy_garden.painter import PaintShape
 
 
 class Shape(object):
 
-    painter = None
+    painter: CeedPaintCanvasBehavior = None
 
-    app = None
+    app: CeedTestApp = None
 
-    shape = None
+    shape: Union[CeedShape, PaintShape] = None
 
     drag_point = None
 
