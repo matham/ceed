@@ -25,9 +25,8 @@ jobs:
         python3 -m pip install -e . --extra-index-url https://kivy-garden.github.io/simple/ --user
     - name: Lint with pycodestyle
       run: |
-        pip install pycodestyle
-        # stop the build if there are Python syntax errors or undefined names
-        pycodestyle . --count --ignore=E125,E126,E127,E128,E402,E741,E731,W503,F401,W504 --show-source --statistics --max-doc-length=80 --exclude=.git,doc,ceed/player  --exit-zero
+        pip install flake8
+        flake8 . --count --ignore=E125,E126,E127,E128,E402,E741,E731,W503,F401,W504 --show-source --statistics --max-line-length=80 --extend-exclude=.git/,doc/,ceed/player/ --exit-zero
     - name: Test with pytest
       env:
         DISPLAY: :99.0
