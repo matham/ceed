@@ -14,7 +14,6 @@ from functools import partial
 from threading import Thread
 # import cv2
 import numpy as np
-from matplotlib import pyplot as plt
 from scipy.ndimage import zoom
 try:
     from Queue import Empty
