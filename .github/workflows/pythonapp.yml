@@ -42,7 +42,7 @@ jobs:
       env:
         DISPLAY: :99.0
       run: |
-        python3 -m pytest --cov=ceed --cov-report term --cov-branch ceed/tests/test_app/test_app_config.py
+        python3 -m pytest --cov=ceed --cov-report term --cov-branch ceed/tests
     - name: Coveralls upload
       run: python3 -m coveralls
       env:
@@ -67,4 +67,4 @@ jobs:
       env:
         KIVY_GL_BACKEND: angle_sdl2
       run: |
-        python -m pytest --cov=ceed --cov-report term --cov-branch ceed/tests/test_app/test_app_config.py
+        python -m pytest --cov=ceed --cov-report term --cov-branch ceed/tests
