@@ -1756,6 +1756,9 @@ line 934, in __call__
     def _dispatch_timebase(self, *largs):
         # this is a O(N^2), but it's a simpler implementation
         for func in self.funcs[:]:
+            if isinstance(func, CeedFuncRef):
+                func = func.func
+
             if not func.timebase_numerator:
                 func.property('timebase').dispatch(func)
 
@@ -1825,7 +1828,6 @@ def register_all_functions(function_factory):
     :param function_factory: a :class:`FunctionFactoryBase` instance.
     """
     function_factory.register(FuncGroup)
-    function_factory.register(FuncComposit)
     from ceed.function.plugin import get_plugin_functions
     for f in get_plugin_functions():
         function_factory.register(f)
