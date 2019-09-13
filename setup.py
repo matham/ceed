@@ -28,7 +28,7 @@ setup(
         'nixio', 'tqdm', 'scipy', 'kivy_garden.graph',
         'kivy_garden.filebrowser', 'kivy_garden.collider', 'pytest',
         'pytest-trio', 'McsPyDataTools', 'kivy_garden.drag_n_drop',
-        'pytest-cov'],
+        'pytest-cov', 'kivy_garden.painter', 'trio'],
     package_data={'ceed': ['data/*', '*.kv']},
     entry_points={'console_scripts': ['ceed=ceed.main:run_app']},
     )
