@@ -91,15 +91,15 @@ jobs:
         python3 -m pip install -e . --extra-index-url https://kivy-garden.github.io/simple/
     - name: Generate docs
       env:
-        KIVY_DOC: 1
-        KIVY_DOC_INCLUDE: 1
+        GITHUB_CONTEXT: ${{ toJson(github) }}
       run: |
+        echo "$GITHUB_CONTEXT"
         cd packages/doc
         CPLCOM_CONFIG_DOC_PATH=../../prop_docs.json make html
         cd ../../doc
         CPLCOM_CONFIG_DOC_PATH=../prop_docs.json make html
     - name: gh-pages upload
-      if: github.event_name == 'push' && github.ref == 'master'
+      if: github.event_name == 'push' && github.ref == 'refs/heads/master'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
