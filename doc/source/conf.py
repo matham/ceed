@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 
 from functools import partial
-
+import sphinx_rtd_theme
+import os
+import kivy  # this sets the doc include env variable
 import ceed
-import kivy
 from ceed.main import CeedApp
 from cplcom.config import create_doc_listener, write_config_attrs_rst
 
@@ -11,7 +12,8 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.todo',
     'sphinx.ext.coverage',
-    'sphinx.ext.intersphinx'
+    'sphinx.ext.intersphinx',
+    "sphinx_rtd_theme",
 ]
 
 html_sidebars = {
@@ -24,17 +26,13 @@ html_sidebars = {
     ]
 }
 
-html_theme_options = {
-    'github_button': 'true',
-    'github_banner': 'true',
-    'github_user': 'matham',
-    'github_repo': 'ceed'
-}
-
 intersphinx_mapping = {
     'pyflycap2': ('https://matham.github.io/pyflycap2/', None),
     'ffpyplayer': ('https://matham.github.io/ffpyplayer/', None),
     'kivy': ('https://kivy.org/docs/', None),
+    'kivy_garden.drag_n_drop':
+        ('https://kivy-garden.github.io/drag_n_drop/', None),
+    'kivy_garden.painter': ('https://kivy-garden.github.io/painter/', None),
     'cplcom': ('https://matham.github.io/cplcom/', None)
 }
 
@@ -61,7 +59,7 @@ pygments_style = 'sphinx'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'alabaster'
+html_theme = 'sphinx_rtd_theme'
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'Ceeddoc'
@@ -91,11 +89,14 @@ texinfo_documents = [
 
 
 def setup(app):
-    create_doc_listener(app, ceed)
+    fname = os.environ.get('CPLCOM_CONFIG_DOC_PATH', 'config_attrs.json')
+    create_doc_listener(app, ceed, fname)
     if CeedApp.get_running_app() is not None:
         classes = CeedApp.get_running_app().get_app_config_classes()
     else:
         classes = CeedApp.get_config_classes()
 
     app.connect(
-        'build-finished', partial(write_config_attrs_rst, classes, ceed))
+        'build-finished', partial(
+            write_config_attrs_rst, classes, ceed, filename=fname)
+    )
