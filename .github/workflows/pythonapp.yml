@@ -99,7 +99,7 @@ jobs:
         cd ../../doc
         CPLCOM_CONFIG_DOC_PATH=../prop_docs.json make html
     - name: gh-pages upload
-      if: github.event_name == 'push' && github.ref == 'master'
+      if: github.event_name == 'push' && github.ref == 'refs/heads/master'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
