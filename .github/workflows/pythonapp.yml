@@ -90,6 +90,9 @@ jobs:
         cd ..
         python3 -m pip install -e . --extra-index-url https://kivy-garden.github.io/simple/
     - name: Generate docs
+      env:
+        KIVY_DOC: 1
+        KIVY_DOC_INCLUDE: 1
       run: |
         cd packages/doc
         CPLCOM_CONFIG_DOC_PATH=../../prop_docs.json make html
