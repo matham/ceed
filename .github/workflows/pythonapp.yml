@@ -78,6 +78,9 @@ jobs:
       with:
         python-version: 3.7
     - name: Install dependencies
+      env:
+          KIVY_DOC_INCLUDE: 1
+          KIVY_DOC: 1
       run: |
         python3 -m pip install --upgrade pip virtualenv wheel setuptools --user
         python3 -m pip install https://kivy.org/downloads/ci/linux/kivy/Kivy-2.0.0.dev0-cp37-cp37m-manylinux2010_x86_64.whl sphinx --user
