@@ -104,6 +104,8 @@ jobs:
 
         git config --global user.email "moiein2000@gmail.com"
         git config --global user.name "Matthew Einhorn"
+        git remote rm origin || true
+        git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/matham/ceed.git"
 
         git checkout --orphan gh-pages
         echo "Finished checking out gh-pages"
