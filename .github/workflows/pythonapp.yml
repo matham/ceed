@@ -90,10 +90,7 @@ jobs:
         cd ..
         python3 -m pip install -e . --extra-index-url https://kivy-garden.github.io/simple/
     - name: Generate docs
-      env:
-        GITHUB_CONTEXT: ${{ toJson(github) }}
       run: |
-        echo "$GITHUB_CONTEXT"
         cd packages/doc
         CPLCOM_CONFIG_DOC_PATH=../../prop_docs.json make html
         cd ../../doc
@@ -103,7 +100,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        cp -r build/html ~/docs_temp
+        cp -r doc/build/html ~/docs_temp
 
         git config --global credential.helper store
         git config --global user.email "moiein2000@gmail.com"
