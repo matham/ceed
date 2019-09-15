@@ -94,6 +94,7 @@ jobs:
         cd packages/doc
         CPLCOM_CONFIG_DOC_PATH=../../prop_docs.json make html
         cd ../../doc
+        touch source/config.rst  # file must exist before first run otherwise it doesn't show
         CPLCOM_CONFIG_DOC_PATH=../prop_docs.json make html  # generate config.rst file
         CPLCOM_CONFIG_DOC_PATH=../prop_docs.json make html  # generate actual docs
     - name: gh-pages upload
