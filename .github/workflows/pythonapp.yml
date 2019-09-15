@@ -94,7 +94,8 @@ jobs:
         cd packages/doc
         CPLCOM_CONFIG_DOC_PATH=../../prop_docs.json make html
         cd ../../doc
-        CPLCOM_CONFIG_DOC_PATH=../prop_docs.json make html
+        CPLCOM_CONFIG_DOC_PATH=../prop_docs.json make html  # generate config.rst file
+        CPLCOM_CONFIG_DOC_PATH=../prop_docs.json make html  # generate actual docs
     - name: gh-pages upload
       if: github.event_name == 'push' && github.ref == 'refs/heads/master'
       env:
@@ -108,7 +109,6 @@ jobs:
         git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/matham/ceed.git"
 
         git checkout --orphan gh-pages
-        echo "Finished checking out gh-pages"
         cp -r .git ~/docs_git
         cd ..
         rm -rf ceed
@@ -116,8 +116,7 @@ jobs:
         cd ceed
         cp -r ~/docs_git .git
         cp -r ~/docs_temp/* .
-        echo "" > .nojekyll
-        echo "gh-pages ready for push"
+        touch .nojekyll
 
         git add .
         git commit -a -m "Docs for git-$GITHUB_SHA"
