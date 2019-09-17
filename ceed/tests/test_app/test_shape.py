@@ -1172,7 +1172,7 @@ async def test_group_duplicate(paint_app: CeedTestApp):
     assert len(painter.groups) == 1
     group1 = painter.groups[0]
     assert isinstance(group1, CeedShapeGroup)
-    assert group1.shapes == [s1]
+    assert group1.shapes == [s1.shape]
 
     # copy the group by dragging it
     drag_widget = paint_app.resolve_widget(group1.widget).down(
@@ -1185,7 +1185,7 @@ async def test_group_duplicate(paint_app: CeedTestApp):
     group2 = painter.groups[1]
     assert isinstance(group2, CeedShapeGroup)
     assert len(group2.shapes) == 1
-    assert group2.shapes == [s1]
+    assert group2.shapes == [s1.shape]
     assert group1 is not group2
     assert group1 in painter.groups
     assert group2 in painter.groups

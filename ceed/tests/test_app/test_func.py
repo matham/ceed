@@ -298,6 +298,10 @@ async def test_gui_add_funcs(func_app: CeedTestApp):
                 await assert_add_func_to_group(
                     func_app, func, sub_func_cls, add, spinner)
 
+                # deselect the group so the next group will not be added to it
+                if func.func.display.selected:
+                    await touch_widget(func_app, name_label)
+
 
 async def group_recursive_add(func_app: CeedTestApp, add_func):
     from ceed.function.func_widgets import FuncWidgetGroup
