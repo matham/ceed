@@ -10,7 +10,7 @@ from McsPy import ureg
 import McsPy.McsData
 import numpy as np
 import nixio as nix
-from cplcom.utils import yaml_dumps, yaml_loads
+from base_kivy_app.utils import yaml_dumps, yaml_loads
 
 McsPy.McsData.VERBOSE = False
 

@@ -7,9 +7,9 @@ import itertools
 import nixio as nix
 from numpy.lib.format import open_memmap
 
-from cplcom.utils import yaml_loads
-from cplcom.config import apply_config
-from cplcom.player import Player
+from base_kivy_app.utils import yaml_loads
+from base_kivy_app.config import apply_config
+from base_kivy_app.graphics import save_image as ff_save_image
 from ffpyplayer.pic import Image, SWScale
 from ffpyplayer.tools import get_best_pix_fmt
 from tqdm import tqdm
@@ -388,7 +388,7 @@ class CeedDataReader(object):
         return img, notes, save_time
 
     def save_image(self, filename, img, codec='bmp'):
-        Player.save_image(
+        ff_save_image(
             filename, img, codec=codec, pix_fmt=img.get_pixel_format())
 
     def get_electrode_offset_scale(self, electrode):

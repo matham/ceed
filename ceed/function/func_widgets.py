@@ -18,7 +18,7 @@ from kivy.uix.widget import Widget
 from kivy.lang import Builder
 from typing import Optional, Union, Type
 
-from cplcom.graphics import FlatTextInput
+from base_kivy_app.graphics import FlatTextInput
 from kivy_garden.drag_n_drop import DraggableLayoutBehavior
 
 from ceed.utils import fix_name
@@ -258,10 +258,10 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
     """
 
     theme_interpolation = 0
-    """The fraction by which :meth:`cplcom.utils.ColorTheme.interpolate`
+    """The fraction by which :meth:`base_kivy_app.utils.ColorTheme.interpolate`
     interpolates the two given colors
-    (:attr:`cplcom.utils.ColorTheme.primary_light` and
-    :attr:`cplcom.utils.ColorTheme.primary`).
+    (:attr:`base_kivy_app.utils.ColorTheme.primary_light` and
+    :attr:`base_kivy_app.utils.ColorTheme.primary`).
     """
 
     settings_root: FuncSettingsDropDown = None

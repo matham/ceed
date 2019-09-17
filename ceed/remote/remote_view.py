@@ -9,8 +9,8 @@ from kivy.properties import StringProperty, NumericProperty, BooleanProperty
 from kivy.clock import Clock
 from kivy.app import App
 from queue import Queue, Empty
-from cplcom.app import app_error
-from cplcom.utils import yaml_dumps, yaml_loads
+from base_kivy_app.app import app_error
+from base_kivy_app.utils import yaml_dumps, yaml_loads
 import traceback
 import select
 from kivy.logger import Logger

@@ -36,7 +36,7 @@ jobs:
         sudo apt-get -y install python3-setuptools build-essential libgl1-mesa-dev libgles2-mesa-dev
         python3 -m pip install --upgrade pip virtualenv wheel setuptools
         /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1280x720x24 -ac +extension GLX
-        python3 -m pip install cython https://kivy.org/downloads/ci/linux/kivy/Kivy-2.0.0.dev0-cp37-cp37m-manylinux2010_x86_64.whl trio pillow coveralls docutils PyInstaller https://github.com/matham/cplcom/archive/master.zip
+        python3 -m pip install cython https://kivy.org/downloads/ci/linux/kivy/Kivy-2.0.0.dev0-cp37-cp37m-manylinux2010_x86_64.whl trio pillow coveralls docutils PyInstaller https://github.com/matham/base_kivy_app/archive/master.zip
         python3 -m pip install -e . --extra-index-url https://kivy-garden.github.io/simple/
     - name: Test with pytest
       env:
@@ -61,7 +61,7 @@ jobs:
         KIVY_GL_BACKEND: angle_sdl2
       run: |
         python -m pip install --upgrade pip virtualenv wheel setuptools
-        python -m pip install cython kivy_deps.angle kivy_deps.sdl2 kivy_deps.glew https://kivy.org/downloads/ci/win/kivy/Kivy-2.0.0.dev0-cp37-cp37m-win_amd64.whl trio pillow docutils PyInstaller https://github.com/matham/cplcom/archive/master.zip
+        python -m pip install cython kivy_deps.angle kivy_deps.sdl2 kivy_deps.glew https://kivy.org/downloads/ci/win/kivy/Kivy-2.0.0.dev0-cp37-cp37m-win_amd64.whl trio pillow docutils PyInstaller https://github.com/matham/base_kivy_app/archive/master.zip
         python -m pip install -e . --extra-index-url https://kivy-garden.github.io/simple/
     - name: Test with pytest
       env:
@@ -84,7 +84,7 @@ jobs:
       run: |
         python3 -m pip install --upgrade pip virtualenv wheel setuptools
         python3 -m pip install https://kivy.org/downloads/ci/linux/kivy/Kivy-2.0.0.dev0-cp37-cp37m-manylinux2010_x86_64.whl sphinx
-        git clone https://github.com/matham/cplcom.git packages
+        git clone https://github.com/matham/base_kivy_app.git packages
         cd packages
         python3 -m pip install -e .
         cd ..
@@ -92,11 +92,11 @@ jobs:
     - name: Generate docs
       run: |
         cd packages/doc
-        CPLCOM_CONFIG_DOC_PATH=../../prop_docs.json make html
+        BASEKIVYAPP_CONFIG_DOC_PATH=../../prop_docs.json make html
         cd ../../doc
         touch source/config.rst  # file must exist before first run otherwise it doesn't show
-        CPLCOM_CONFIG_DOC_PATH=../prop_docs.json make html  # generate config.rst file
-        CPLCOM_CONFIG_DOC_PATH=../prop_docs.json make html  # generate actual docs
+        BASEKIVYAPP_CONFIG_DOC_PATH=../prop_docs.json make html  # generate config.rst file
+        BASEKIVYAPP_CONFIG_DOC_PATH=../prop_docs.json make html  # generate actual docs
     - name: gh-pages upload
       if: github.event_name == 'push' && github.ref == 'refs/heads/master'
       env:

@@ -6,7 +6,7 @@ import os
 import kivy  # this sets the doc include env variable
 import ceed
 from ceed.main import CeedApp
-from cplcom.config import create_doc_listener, write_config_attrs_rst
+from base_kivy_app.config import create_doc_listener, write_config_attrs_rst
 
 extensions = [
     'sphinx.ext.autodoc',
@@ -33,7 +33,7 @@ intersphinx_mapping = {
     'kivy_garden.drag_n_drop':
         ('https://kivy-garden.github.io/drag_n_drop/', None),
     'kivy_garden.painter': ('https://kivy-garden.github.io/painter/', None),
-    'cplcom': ('https://matham.github.io/cplcom/', None)
+    'base_kivy_app': ('https://matham.github.io/base_kivy_app/', None)
 }
 
 # The suffix of source filenames.

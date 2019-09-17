@@ -33,8 +33,8 @@ from kivy.graphics.texture import Texture
 from kivy.app import App
 from kivy.graphics.transformation import Matrix
 
-from cplcom.app import app_error
-from cplcom.utils import yaml_dumps, yaml_loads
+from base_kivy_app.app import app_error
+from base_kivy_app.utils import yaml_dumps, yaml_loads
 
 import ceed
 from ceed.stage import StageDoneException, last_experiment_stage_name
@@ -639,7 +639,7 @@ def view_process_enter(read, write, settings, app_settings):
     '''Called by the second internal view process when it is created.
     This calls :meth:`ViewSideViewControllerBase.view_process_enter`.
     '''
-    from cplcom.app import run_app
+    from base_kivy_app.app import run_app
     from ceed.view.main import CeedViewApp
 
     app = None

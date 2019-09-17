@@ -12,8 +12,8 @@ from os.path import abspath, isdir, dirname, join, exists
 import psutil
 from ffpyplayer.pic import ImageLoader
 
-from cplcom.player import PTGrayPlayer, FFmpegPlayer, VideoMetadata, Player
-from cplcom.utils import pretty_space, pretty_time
+# from cplcom.player import PTGrayPlayer, FFmpegPlayer, VideoMetadata, Player
+from base_kivy_app.utils import pretty_space, pretty_time
 
 from kivy.event import EventDispatcher
 from kivy.properties import BooleanProperty, NumericProperty, StringProperty
@@ -21,6 +21,8 @@ from kivy.clock import Clock
 from kivy.uix.dropdown import DropDown
 from kivy.compat import clock
 from kivy.app import App
+
+PTGrayPlayer = FFmpegPlayer = object
 
 __all__ = ('CeedPlayerBase', 'CeedPTGrayPlayer', 'CeedFFmpegPlayer',
            'CeedPlayer')

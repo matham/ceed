@@ -22,8 +22,8 @@ from queue import Queue, Empty
 import traceback
 import select
 
-from cplcom.app import run_app as run_cpl_app, app_error, CPLComApp
-from cplcom.utils import yaml_dumps, yaml_loads
+from base_kivy_app.app import run_app as run_cpl_app, app_error, BaseKivyApp
+from base_kivy_app.utils import yaml_dumps, yaml_loads
 from cplcom.player import Player as cplcom_player
 
 from kivy.app import App
@@ -446,7 +446,7 @@ class TSICamera(EventDispatcher):
                 break
 
 
-class CeedRemoteViewApp(CPLComApp):
+class CeedRemoteViewApp(BaseKivyApp):
     '''The app which runs the GUI.
     '''
 

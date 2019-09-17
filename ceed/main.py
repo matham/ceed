@@ -9,8 +9,8 @@ from functools import partial
 from os.path import join, dirname
 import time
 
-from cplcom.app import CPLComApp, run_app as run_cpl_app
-from cplcom.graphics import HighightButtonBehavior, BufferImage
+from base_kivy_app.app import BaseKivyApp, run_app as run_cpl_app
+from base_kivy_app.graphics import HighightButtonBehavior, BufferImage
 
 from kivy.lang import Builder
 from kivy.factory import Factory
@@ -18,7 +18,7 @@ from kivy.properties import ObjectProperty, BooleanProperty
 
 import ceed.graphics
 Builder.load_file(join(dirname(__file__), 'graphics', 'graphics.kv'))
-from ceed.player import CeedPlayer, CeedFFmpegPlayer, CeedPTGrayPlayer
+# from ceed.player import CeedPlayer, CeedFFmpegPlayer, CeedPTGrayPlayer
 import ceed.function.plugin
 import ceed.shape
 import ceed.stage
@@ -45,7 +45,7 @@ from kivy.core.window import Window
 __all__ = ('CeedApp', 'run_app')
 
 
-class CeedApp(CPLComApp):
+class CeedApp(BaseKivyApp):
     '''The app which runs the GUI.
     '''
 
@@ -53,9 +53,14 @@ class CeedApp(CPLComApp):
     """For tests, we don't want to load kv multiple times.
     """
 
+    yesno_prompt = ObjectProperty(None, allownone=True)
+    '''Stores a instance of :class:`YesNoPrompt` that is automatically created
+    by this app class. That class is described in ``base_kivy_app/graphics.kv``.
+    '''
+
     function_factory = None  # type: FunctionFactoryBase
 
-    player = None  # type: CeedPlayer
+    # player = None  # type: CeedPlayer
 
     view_controller = None  # type: ControllerSideViewControllerBase
 
@@ -105,9 +110,9 @@ class CeedApp(CPLComApp):
         d['view'] = ControllerSideViewControllerBase
         d['data'] = CeedDataWriterBase
         d['serializer'] = DataSerializerBase
-        d['player'] = CeedPlayer
-        d['point_gray_cam'] = CeedPTGrayPlayer
-        d['video_file_playback'] = CeedFFmpegPlayer
+        # d['player'] = CeedPlayer
+        # d['point_gray_cam'] = CeedPTGrayPlayer
+        # d['video_file_playback'] = CeedFFmpegPlayer
         d['remote_viewer'] = RemoteViewerListenerBase
         return d
 
@@ -118,9 +123,9 @@ class CeedApp(CPLComApp):
         d['data'] = self.ceed_data
         d['serializer'] = self.data_serializer
 
-        p = d['player'] = self.player
-        d['point_gray_cam'] = p.pt_player
-        d['video_file_playback'] = p.ff_player
+        # p = d['player'] = self.player
+        # d['point_gray_cam'] = p.pt_player
+        # d['video_file_playback'] = p.ff_player
         d['remote_viewer'] = self.remote_viewer
 
         return d
@@ -131,7 +136,7 @@ class CeedApp(CPLComApp):
         register_all_functions(self.function_factory)
         self.stage_factory = StageFactoryBase(
             function_factory=self.function_factory, shape_factory=None)
-        self.player = CeedPlayer()
+        # self.player = CeedPlayer()
         self.view_controller = ControllerSideViewControllerBase()
         self.ceed_data = CeedDataWriterBase()
         self.data_serializer = DataSerializerBase()
@@ -149,7 +154,7 @@ class CeedApp(CPLComApp):
         base = dirname(__file__)
         # Builder.load_file(join(base, 'graphics', 'graphics.kv'))
         Builder.load_file(join(base, 'ceed_style.kv'))
-        Builder.load_file(join(base, 'player', 'player_style.kv'))
+        # Builder.load_file(join(base, 'player', 'player_style.kv'))
         Builder.load_file(join(base, 'shape', 'shape_style.kv'))
         Builder.load_file(join(base, 'function', 'func_style.kv'))
         Builder.load_file(join(base, 'stage', 'stage_style.kv'))
@@ -227,9 +232,9 @@ class CeedApp(CPLComApp):
         self.ceed_data.config_changed = True
 
     def check_close(self):
-        if CeedPlayer.is_player_active():
-            self._close_message = 'Cannot close while player is active.'
-            return False
+        # if CeedPlayer.is_player_active():
+        #     self._close_message = 'Cannot close while player is active.'
+        #     return False
         if self.view_controller.stage_active or self.ceed_data.data_thread:
             self._close_message = 'Cannot close during an experiment.'
             return False
@@ -265,7 +270,7 @@ class CeedApp(CPLComApp):
             func.funbind('on_changed', self.changed_callback)
         if self.remote_viewer:
             self.remote_viewer.stop_listener()
-        CeedPlayer.exit_players()
+        # CeedPlayer.exit_players()
         if self.view_controller is not None:
             self.view_controller.stop_process()
             self.view_controller.finish_stop_process()

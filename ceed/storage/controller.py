@@ -31,8 +31,8 @@ from kivy.app import App
 from kivy.clock import Clock
 from kivy.logger import Logger
 
-from cplcom.app import app_error
-from cplcom.utils import yaml_dumps, yaml_loads
+from base_kivy_app.app import app_error
+from base_kivy_app.utils import yaml_dumps, yaml_loads
 
 __all__ = ('CeedDataWriterBase', 'DataSerializerBase')
 

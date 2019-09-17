@@ -1,5 +1,5 @@
 from kivy.event import EventDispatcher
-from kivy.garden.graph import MeshLinePlot, Graph, LinePlot, ContourPlot, \
+from kivy_garden.graph import MeshLinePlot, Graph, LinePlot, ContourPlot, \
     PointsPlot
 from kivy.properties import NumericProperty, ObjectProperty, DictProperty, \
     ReferenceListProperty, StringProperty, ListProperty, BooleanProperty
@@ -13,8 +13,8 @@ from kivy.logger import Logger
 from kivy.modules import inspector
 import math
 
-from cplcom.utils import ColorTheme
-import cplcom.app
+from base_kivy_app.utils import ColorTheme
+import base_kivy_app.app
 
 import itertools
 import sys
@@ -23,8 +23,8 @@ from os.path import dirname, join, isdir
 from collections import deque
 from skimage import measure
 
-resource_add_path(join(dirname(cplcom.app.__file__), 'media'))
-resource_add_path(join(dirname(cplcom.app.__file__), 'media', 'flat'))
+resource_add_path(join(dirname(base_kivy_app.app.__file__), 'media'))
+resource_add_path(join(dirname(base_kivy_app.app.__file__), 'media', 'flat_icons'))
 
 
 class FormulaGraph(Graph):
@@ -957,13 +957,13 @@ class OpticsApp(App):
 
 
 if __name__ == '__main__':
-    class _CPLComHandler(ExceptionHandler):
+    class _AppHandler(ExceptionHandler):
 
         def handle_exception(self, inst):
             Logger.error(inst, exc_info=sys.exc_info())
             return ExceptionManager.PASS
 
-    handler = _CPLComHandler()
+    handler = _AppHandler()
     ExceptionManager.add_handler(handler)
 
     app = OpticsApp()

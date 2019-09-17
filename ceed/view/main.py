@@ -9,7 +9,7 @@ os.environ['SDL_VIDEO_MINIMIZE_ON_FOCUS_LOSS'] = '0'
 
 from functools import partial
 
-from cplcom.app import run_app as run_cpl_app, app_error, CPLComApp
+from base_kivy_app.app import run_app as run_cpl_app, app_error, BaseKivyApp
 
 from kivy.lang import Builder
 from kivy.graphics import Color, Point, Fbo, Rectangle, Scale, PushMatrix, \
@@ -53,7 +53,7 @@ class ViewRootWidget(ViewRootFocusBehavior, Widget):
     pass
 
 
-class CeedViewApp(CPLComApp):
+class CeedViewApp(BaseKivyApp):
     '''The app which runs the GUI.
     '''
 

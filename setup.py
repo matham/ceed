@@ -24,11 +24,12 @@ setup(
                  'Intended Audience :: Developers'],
     packages=find_packages(),
     install_requires=[
-        'ffpyplayer', 'cplcom', 'kivy', 'numpy', 'scikit-image', 'psutil',
-        'nixio', 'tqdm', 'scipy', 'kivy_garden.graph',
+        'ffpyplayer', 'base_kivy_app', 'kivy', 'numpy', 'scikit-image',
+        'psutil', 'nixio', 'tqdm', 'scipy', 'kivy_garden.graph',
         'kivy_garden.filebrowser', 'kivy_garden.collider', 'pytest',
         'pytest-trio', 'McsPyDataTools', 'kivy_garden.drag_n_drop',
-        'pytest-cov', 'kivy_garden.painter', 'trio', 'sphinx-rtd-theme'],
+        'pytest-cov', 'kivy_garden.painter', 'trio', 'sphinx-rtd-theme',
+        'base_kivy_app'],
     package_data={'ceed': ['data/*', '*.kv']},
     entry_points={'console_scripts': ['ceed=ceed.main:run_app']},
     )
