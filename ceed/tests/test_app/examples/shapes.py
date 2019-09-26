@@ -27,6 +27,8 @@ class Shape(object):
 
     center = None
 
+    bounding_box = []
+
     inside_point = None
 
     def __init__(self, app, painter, manually_add=True):
@@ -323,6 +325,10 @@ class CircleShapeP1(CircleShape):
     name = 'happy circle'
 
     drag_point = test_points[:2]
+
+    bounding_box = (350, 200, 551, 401)
+
+    area = math.pi * CircleShape.radius ** 2
 
 
 class CircleShapeP2(CircleShape):

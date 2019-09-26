@@ -452,4 +452,4 @@
         scale_down_color: True
         source: 'flat_delete.png'
         flat_color: app.theme.accent
-        on_release: app.shape_factory.remove_shape_from_group(root.group.group, root.shape)
+        on_release: root.group.group.remove_shape(root.shape)

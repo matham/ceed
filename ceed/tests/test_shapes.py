@@ -1,9 +1,11 @@
 import pytest
 from copy import deepcopy
+import math
 
 from ceed.shape import CeedPaintCanvasBehavior, CeedShape, CeedShapeGroup
 from .test_app.examples.shapes import Shape, EllipseShapeP1, shape_classes, \
     CircleShapeP1, PolygonShapeP1, FreeformPolygonShapeP1
+from ceed.tests.common import add_prop_watch
 
 
 def assert_shapes_same(
@@ -149,13 +151,13 @@ def assert_add_three_groups(shape_factory: CeedPaintCanvasBehavior):
     group2 = shape_factory.add_group()
     group3 = shape_factory.add_group()
 
-    shape_factory.add_shape_to_group(group, shape.shape)
-    shape_factory.add_shape_to_group(group, shape2.shape)
-    shape_factory.add_shape_to_group(group2, shape2.shape)
-    shape_factory.add_shape_to_group(group2, shape3.shape)
-    shape_factory.add_shape_to_group(group3, shape.shape)
-    shape_factory.add_shape_to_group(group3, shape2.shape)
-    shape_factory.add_shape_to_group(group3, shape3.shape)
+    group.add_shape(shape.shape)
+    group.add_shape(shape2.shape)
+    group2.add_shape(shape2.shape)
+    group2.add_shape(shape3.shape)
+    group3.add_shape(shape.shape)
+    group3.add_shape(shape2.shape)
+    group3.add_shape(shape3.shape)
 
     assert shape_factory.groups == [group, group2, group3]
     assert len(shape_factory.groups) == 3
@@ -327,24 +329,25 @@ def test_add_to_group(shape_factory: CeedPaintCanvasBehavior):
     shape, shape2, shape3 = assert_add_three_shapes(shape_factory)
 
     group = shape_factory.add_group()
-    shape_factory.test_changes_count = 0
-    assert shape_factory.add_shape_to_group(group, shape.shape)
-    assert shape_factory.test_changes_count
+    add_prop_watch(group, 'on_changed', 'test_changes_count')
+    group.test_changes_count = 0
+    assert group.add_shape(shape.shape)
+    assert group.test_changes_count
     assert group.shapes == [shape.shape]
 
     # can't add twice
-    assert not shape_factory.add_shape_to_group(group, shape.shape)
+    assert not group.add_shape(shape.shape)
     assert group.shapes == [shape.shape]
 
     # add second shape
-    shape_factory.test_changes_count = 0
-    assert shape_factory.add_shape_to_group(group, shape2.shape)
-    assert shape_factory.test_changes_count
+    group.test_changes_count = 0
+    assert group.add_shape(shape2.shape)
+    assert group.test_changes_count
     assert group.shapes == [shape.shape, shape2.shape]
 
     # can't add twice
-    assert not shape_factory.add_shape_to_group(group, shape.shape)
-    assert not shape_factory.add_shape_to_group(group, shape2.shape)
+    assert not group.add_shape(shape.shape)
+    assert not group.add_shape(shape2.shape)
     assert group.shapes == [shape.shape, shape2.shape]
 
 
@@ -352,28 +355,45 @@ def test_remove_from_group(shape_factory: CeedPaintCanvasBehavior):
     shape, shape2, shape3 = assert_add_three_shapes(shape_factory)
 
     group = shape_factory.add_group()
-    assert shape_factory.add_shape_to_group(group, shape.shape)
-    assert shape_factory.add_shape_to_group(group, shape2.shape)
+    add_prop_watch(group, 'on_changed', 'test_changes_count')
+    assert group.add_shape(shape.shape)
+    assert group.add_shape(shape2.shape)
     assert group.shapes == [shape.shape, shape2.shape]
 
     # remove first shape
-    shape_factory.test_changes_count = 0
-    shape_factory.remove_shape_from_group(group, shape.shape)
-    assert shape_factory.test_changes_count
+    group.test_changes_count = 0
+    group.remove_shape(shape.shape)
+    assert group.test_changes_count
     assert group.shapes == [shape2.shape]
 
     # removing again does nothing
-    shape_factory.remove_shape_from_group(group, shape.shape)
+    group.remove_shape(shape.shape)
     assert group.shapes == [shape2.shape]
 
     # remove last
-    shape_factory.test_changes_count = 0
-    shape_factory.remove_shape_from_group(group, shape2.shape)
-    assert shape_factory.test_changes_count
+    group.test_changes_count = 0
+    group.remove_shape(shape2.shape)
+    assert group.test_changes_count
     assert not group.shapes
 
     # removing again does nothing
-    shape_factory.remove_shape_from_group(group, shape2.shape)
+    group.remove_shape(shape2.shape)
+    assert not group.shapes
+
+
+def test_remove_all_from_group(shape_factory: CeedPaintCanvasBehavior):
+    shape, shape2, shape3 = assert_add_three_shapes(shape_factory)
+
+    group = shape_factory.add_group()
+    add_prop_watch(group, 'on_changed', 'test_changes_count')
+    assert group.add_shape(shape.shape)
+    assert group.add_shape(shape2.shape)
+    assert group.shapes == [shape.shape, shape2.shape]
+
+    # remove first shape
+    group.test_changes_count = 0
+    group.remove_all()
+    assert group.test_changes_count
     assert not group.shapes
 
 
@@ -384,45 +404,57 @@ def test_add_selection_to_group(shape_factory: CeedPaintCanvasBehavior):
     shape_factory.select_shape(shape2.shape)
 
     group = shape_factory.add_group()
+    add_prop_watch(group, 'on_changed', 'test_changes_count')
 
     # add first shape manually
-    assert shape_factory.add_shape_to_group(group, shape.shape)
+    assert group.add_shape(shape.shape)
     assert group.shapes == [shape.shape]
 
     # add all selected shapes
-    shape_factory.test_changes_count = 0
+    group.test_changes_count = 0
     shape_factory.add_selected_shapes_to_group(group)
-    assert shape_factory.test_changes_count
+    assert group.test_changes_count
     assert group.shapes == [shape.shape, shape2.shape]
 
 
 def test_remove_from_all_groups(shape_factory: CeedPaintCanvasBehavior):
     (group, group2, group3), (shape, shape2, shape3) = \
         assert_add_three_groups(shape_factory)
+    add_prop_watch(group, 'on_changed', 'test_changes_count')
+    add_prop_watch(group2, 'on_changed', 'test_changes_count')
+    add_prop_watch(group3, 'on_changed', 'test_changes_count')
 
     # remove first shape
-    shape_factory.test_changes_count = 0
+    group.test_changes_count = 0
+    group3.test_changes_count = 0
     shape_factory.remove_shape_from_groups(shape.shape)
 
-    assert shape_factory.test_changes_count
+    assert group.test_changes_count
+    assert group3.test_changes_count
     assert group.shapes == [shape2.shape]
     assert group2.shapes == [shape2.shape, shape3.shape]
     assert group3.shapes == [shape2.shape, shape3.shape]
 
     # remove third shape
-    shape_factory.test_changes_count = 0
+    group2.test_changes_count = 0
+    group3.test_changes_count = 0
     shape_factory.remove_shape_from_groups(shape3.shape)
 
-    assert shape_factory.test_changes_count
+    assert group2.test_changes_count
+    assert group3.test_changes_count
     assert group.shapes == [shape2.shape]
     assert group2.shapes == [shape2.shape]
     assert group3.shapes == [shape2.shape]
 
     # remove second shape
-    shape_factory.test_changes_count = 0
+    group.test_changes_count = 0
+    group2.test_changes_count = 0
+    group3.test_changes_count = 0
     shape_factory.remove_shape_from_groups(shape2.shape)
 
-    assert shape_factory.test_changes_count
+    assert group.test_changes_count
+    assert group2.test_changes_count
+    assert group3.test_changes_count
     assert not group.shapes
     assert not group2.shapes
     assert not group3.shapes
@@ -458,3 +490,30 @@ def test_set_factory_state(shape_factory: CeedPaintCanvasBehavior):
     assert_shapes_same(shape.shape, shape4)
     assert_shapes_same(shape2.shape, shape5)
     assert_shapes_same(shape3.shape, shape6)
+
+
+def test_bounding_box(shape_factory: CeedPaintCanvasBehavior):
+    shape = CircleShapeP1(app=None, painter=shape_factory, manually_add=False)
+    shape.make_shape()
+
+    assert shape_factory.add_shape(shape.shape)
+    assert shape.shape.bounding_box == shape.bounding_box
+
+
+def test_center(shape_factory: CeedPaintCanvasBehavior):
+    shape = CircleShapeP1(app=None, painter=shape_factory, manually_add=False)
+    shape.make_shape()
+
+    assert shape_factory.add_shape(shape.shape)
+    assert shape.shape.centroid == tuple(shape.center)
+
+
+def test_area(shape_factory: CeedPaintCanvasBehavior):
+    shape = CircleShapeP1(app=None, painter=shape_factory, manually_add=False)
+    shape.make_shape()
+
+    assert shape_factory.add_shape(shape.shape)
+    assert math.isclose(shape.shape.area, shape.area)
+
+    shape.shape.set_area(shape.shape.area / 4)
+    assert math.isclose(shape.shape.radius, shape.radius / 2)

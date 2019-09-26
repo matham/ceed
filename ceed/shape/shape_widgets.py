@@ -106,16 +106,6 @@ class CeedPainter(CeedPaintCanvasBehavior, Widget):
             return True
         return False
 
-    def add_shape_to_group(self, group, shape):
-        if super(CeedPainter, self).add_shape_to_group(group, shape):
-            group.widget.add_shape(shape)
-            return True
-        return False
-
-    def remove_shape_from_group(self, group, shape):
-        super(CeedPainter, self).remove_shape_from_group(group, shape)
-        group.widget.remove_shape(shape)
-
     def on_show_label(self, *largs):
         """Shows/hides the :attr:`pos_label` label depending on the value
         of :attr:`show_label`.
@@ -175,8 +165,7 @@ class ShapeGroupDraggableLayoutBehavior(DraggableLayoutBehavior):
     def handle_drag_release(self, index, drag_widget):
         group = self.group_widget.group
 
-        App.get_running_app().shape_factory.add_shape_to_group(
-            group, drag_widget.obj_dragged.shape)
+        group.add_shape(drag_widget.obj_dragged.shape)
         if drag_widget.obj_dragged.selected:
             App.get_running_app().shape_factory.add_selected_shapes_to_group(
                 group)
@@ -202,15 +191,14 @@ class ShapeGroupList(
         app = App.get_running_app()
         if drag_widget.drag_cls == 'shape':
             group = app.shape_factory.add_group()
-            app.shape_factory.add_shape_to_group(
-                group, drag_widget.obj_dragged.shape)
+            group.add_shape(drag_widget.obj_dragged.shape)
             if drag_widget.obj_dragged.selected:
                 app.shape_factory.add_selected_shapes_to_group(group)
             group.widget.expand_widget.state = 'down'
         else:
             group = app.shape_factory.add_group()
             for shape in drag_widget.obj_dragged.group.shapes:
-                app.shape_factory.add_shape_to_group(group, shape)
+                group.add_shape(shape)
             group.widget.expand_widget.state = 'down'
 
 

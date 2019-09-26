@@ -198,33 +198,6 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
         for group in self.groups[:]:
             self.remove_group(group)
 
-    def add_shape_to_group(self, group: CeedShapeGroup, shape: CeedShape):
-        """Adds the shape to the group. This should be called when the GUI
-        needs to add a shape to the group, rather than calling
-        :meth:`CeedShapeGroup.add_shape` directly.
-
-        :param group: The :class:`CeedShapeGroup` to which to add the shape.
-        :param shape: The :class:`CeedShape` to add.
-        :returns: Whether the shape was added (e.g. False if it already is in
-            the group).
-        """
-        if group.add_shape(shape):
-            self.dispatch('on_changed')
-            return True
-        return False
-
-    def remove_shape_from_group(self, group: CeedShapeGroup, shape: CeedShape):
-        """Removes the shape from the group. This should be called when the GUI
-        needs to remove a shape from the group, rather than calling
-        :meth:`CeedShapeGroup.remove_shape` directly.
-
-        :param group: The :class:`CeedShapeGroup` from which to remove the
-            shape.
-        :param shape: The :class:`CeedShape` to remove.
-        """
-        group.remove_shape(shape)
-        self.dispatch('on_changed')
-
     def add_selected_shapes_to_group(self, group: CeedShapeGroup = None):
         """Adds all the
         :attr:`kivy_garden.painter.PaintCanvasBehavior.selected_shapes` to the
@@ -245,7 +218,7 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
 
         for shape in self.selected_shapes:
             if shape not in group.shapes:
-                self.add_shape_to_group(group, shape)
+                group.add_shape(shape)
         return group
 
     def remove_shape_from_groups(self, shape: CeedShape):
@@ -258,7 +231,7 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
         """
         for group in self.groups:
             if shape in group.shapes:
-                self.remove_shape_from_group(group, shape)
+                group.remove_shape(shape)
 
     def get_state(self):
         """Returns a dictionary containing all the configuration data for all
@@ -312,7 +285,7 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
                 shape = old_name_map.get(name, None)
                 if shape is None:
                     raise Exception('Cannot find shape {}'.format(name))
-                self.add_shape_to_group(group, shape)
+                group.add_shape(shape)
 
         self.dispatch('on_changed')
 
@@ -537,6 +510,8 @@ class CeedShapeGroup(EventDispatcher):
         if shape in self.shapes:
             return False
 
+        if self.widget is not None:
+            self.widget.add_shape(shape)
         self.shapes.append(shape)
         self.dispatch('on_changed')
         return True
@@ -553,6 +528,8 @@ class CeedShapeGroup(EventDispatcher):
         if shape not in self.shapes:
             return
 
+        if self.widget is not None:
+            self.widget.remove_shape(shape)
         self.shapes.remove(shape)
         self.dispatch('on_changed')
 
