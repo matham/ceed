@@ -148,7 +148,7 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
             before_shape = self.shapes[i + 2]
         self.reorder_shape(shape, before_shape)
 
-    def add_group(self, group: CeedShapeGroup = None):
+    def add_group(self, group: Optional[CeedShapeGroup] = None):
         """Similar to :meth:`add_shape` but for a :class:`CeedShapeGroup`.
 
         :Params:
@@ -199,7 +199,9 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
             self.remove_group(group)
 
     def add_shape_to_group(self, group: CeedShapeGroup, shape: CeedShape):
-        """Adds the shape to the group.
+        """Adds the shape to the group. This should be called when the GUI
+        needs to add a shape to the group, rather than calling
+        :meth:`CeedShapeGroup.add_shape` directly.
 
         :param group: The :class:`CeedShapeGroup` to which to add the shape.
         :param shape: The :class:`CeedShape` to add.
@@ -212,7 +214,9 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
         return False
 
     def remove_shape_from_group(self, group: CeedShapeGroup, shape: CeedShape):
-        """Removes the shape from the group.
+        """Removes the shape from the group. This should be called when the GUI
+        needs to remove a shape from the group, rather than calling
+        :meth:`CeedShapeGroup.remove_shape` directly.
 
         :param group: The :class:`CeedShapeGroup` from which to remove the
             shape.
@@ -349,6 +353,7 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
         if not new_name:
             shape.name = fix_name(
                 'name', self.shape_names, self.shape_group_names)
+        self.dispatch('on_changed')
 
 
 class CeedShape(object):
@@ -517,7 +522,7 @@ class CeedShapeGroup(EventDispatcher):
     def on_changed(self, *largs):
         pass
 
-    def add_shape(self, shape):
+    def add_shape(self, shape: CeedShape):
         """Adds the shape to the group if it is not already in the group.
 
         :Params:
@@ -536,7 +541,7 @@ class CeedShapeGroup(EventDispatcher):
         self.dispatch('on_changed')
         return True
 
-    def remove_shape(self, shape):
+    def remove_shape(self, shape: CeedShape):
         """Removes the shape from the group (and its :attr:`CeedShape.widget`)
         if it is present.
 
@@ -554,7 +559,7 @@ class CeedShapeGroup(EventDispatcher):
     def remove_all(self):
         """Removes all the shapes from the group.
         """
-        for shape in self.shapes:
+        for shape in self.shapes[:]:
             self.remove_shape(shape)
 
 
