@@ -59,7 +59,10 @@ class StageList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
             display.parent.remove_widget(display)
 
     def add_empty_stage(self):
-        stage = self.stage_factory.make_stage({'cls': 'CeedStage'})
+        stage = CeedStage(
+            stage_factory=self.stage_factory,
+            function_factory=self.stage_factory.function_factory,
+            shape_factory=self.stage_factory.shape_factory)
 
         if self.selected_nodes:
             stage_widget = self.selected_nodes[-1]
@@ -81,7 +84,10 @@ class StageList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
             self.show_stage(stage)
             return
 
-        stage = self.stage_factory.make_stage({'cls': 'CeedStage'})
+        stage = CeedStage(
+            stage_factory=self.stage_factory,
+            function_factory=self.stage_factory.function_factory,
+            shape_factory=self.stage_factory.shape_factory)
         self.stage_factory.add_stage(stage, allow_last_experiment=False)
         self.show_stage(stage)
         widget = stage.display

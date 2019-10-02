@@ -176,6 +176,13 @@ async def func_app(ceed_app: CeedTestApp):
     yield ceed_app
 
 
+async def zoom_screen_out(ceed_app: CeedTestApp):
+    # expand shape splitter so shape widgets are fully visible
+    slider = ceed_app.resolve_widget().down(test_name='screen zoom slider')()
+    slider.value = slider.min
+    await ceed_app.wait_clock_frames(2)
+
+
 @pytest.fixture
 async def paint_app(ceed_app: CeedTestApp):
     from kivy.metrics import dp
@@ -204,12 +211,32 @@ async def paint_app(ceed_app: CeedTestApp):
         pass
     await ceed_app.wait_clock_frames(2)
 
-    # expand shape splitter so shape widgets are fully visible
-    slider = ceed_app.resolve_widget().down(test_name='screen zoom silder')()
-    slider.value = slider.min
-    await ceed_app.wait_clock_frames(2)
+    await zoom_screen_out(ceed_app)
 
     yield ceed_app
+
+
+@pytest.fixture
+async def stage_app(paint_app: CeedTestApp):
+    from kivy.metrics import dp
+    await paint_app.wait_clock_frames(2)
+
+    assert paint_app.stage_factory is not None
+    assert not paint_app.stage_factory.stages
+    assert not paint_app.stage_factory.stage_names
+
+    assert not paint_app.stages_container.children
+
+    # expand stage splitter so stage widgets are fully visible
+    splitter = paint_app.resolve_widget().down(
+        test_name='stage splitter')().children[-1]
+    async for _ in paint_app.do_touch_drag(widget=splitter, dx=-dp(100)):
+        pass
+    await paint_app.wait_clock_frames(2)
+
+    await zoom_screen_out(paint_app)
+
+    yield paint_app
 
 
 @pytest.fixture

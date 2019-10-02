@@ -735,7 +735,7 @@ class FunctionFactoryBase(EventDispatcher):
             return False
 
         func.funbind('name', self._track_func_name, func)
-        del self.funcs_inst[func.name]
+
         # we cannot remove by equality check (maybe?)
         for i, f in enumerate(self.funcs_user):
             if f is func:
@@ -743,6 +743,7 @@ class FunctionFactoryBase(EventDispatcher):
                 break
         else:
             raise ValueError('{} was not found in funcs_user'.format(func))
+        del self.funcs_inst[func.name]
 
         self.dispatch('on_changed')
         return True

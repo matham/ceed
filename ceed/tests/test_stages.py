@@ -242,21 +242,21 @@ def test_clear_stages(stage_factory: StageFactoryBase):
     assert not stage_factory.stage_names
 
 
-def test_can_other_stage_be_added(stage_factory: StageFactoryBase):
-    root, g1, g2, s1, s2, s3, s4, s5, s6 = create_recursive_stages(
-        stage_factory)
-
-    assert root.stage.can_other_stage_be_added(g1.stage)
-    assert root.stage.can_other_stage_be_added(g2.stage)
-    assert not root.stage.can_other_stage_be_added(root.stage)
-
-    assert not g1.stage.can_other_stage_be_added(root.stage)
-    assert g1.stage.can_other_stage_be_added(g2.stage)
-    assert not g1.stage.can_other_stage_be_added(g1.stage)
-
-    assert not g2.stage.can_other_stage_be_added(root.stage)
-    assert g2.stage.can_other_stage_be_added(g1.stage)
-    assert not g2.stage.can_other_stage_be_added(g2.stage)
+# def test_can_other_stage_be_added(stage_factory: StageFactoryBase):
+#     root, g1, g2, s1, s2, s3, s4, s5, s6 = create_recursive_stages(
+#         stage_factory)
+#
+#     assert root.stage.can_other_stage_be_added(g1.stage)
+#     assert root.stage.can_other_stage_be_added(g2.stage)
+#     assert not root.stage.can_other_stage_be_added(root.stage)
+#
+#     assert not g1.stage.can_other_stage_be_added(root.stage)
+#     assert g1.stage.can_other_stage_be_added(g2.stage)
+#     assert not g1.stage.can_other_stage_be_added(g1.stage)
+#
+#     assert not g2.stage.can_other_stage_be_added(root.stage)
+#     assert g2.stage.can_other_stage_be_added(g1.stage)
+#     assert not g2.stage.can_other_stage_be_added(g2.stage)
 
 
 def test_stage_ref(stage_factory: StageFactoryBase):

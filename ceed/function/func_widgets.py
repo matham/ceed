@@ -62,7 +62,9 @@ class FuncList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
             dragged = drag_widget.obj_dragged
             func = dragged.ref_func or dragged.func
 
-        self.add_func_to_listing(deepcopy(func))
+        new_func = deepcopy(func)
+        self.function_factory.add_func(new_func)
+        self.show_func_in_listing(new_func)
 
     def add_func(self, name: str):
         """Adds a copy of the the function with the given ``name`` from
@@ -85,37 +87,32 @@ class FuncList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
         if parent is not None:
             if parent.can_other_func_be_added(src_func):
                 func = self.function_factory.get_func_ref(func=src_func)
-                self.add_child_func_to_func(parent, func, after)
+                parent.add_func(func, after=after)
+                self.show_child_func_in_func(parent, func)
         else:
-            self.add_func_to_listing(deepcopy(src_func))
+            func = deepcopy(src_func)
+            self.function_factory.add_func(func)
+            self.show_func_in_listing(func)
 
-    def add_child_func_to_func(
-            self, parent_func: FuncGroup, child_func: FuncOrRef,
-            after_func: Optional[FuncOrRef] = None):
-        """Adds the child function to the parent and displays the child
-        function in the GUI as the child of the parent.
+    def show_child_func_in_func(
+            self, parent_func: FuncGroup, child_func: FuncOrRef):
+        """Displays the child function in the GUI as the child of the parent.
 
         :param parent_func: Function child is added to.
         :param child_func: the child function.
-        :param after_func: If not None, the child is added to the parent after
-            this function in the parent's function list.
         """
-        parent_func.add_func(child_func, after=after_func)
-
         widget = FuncWidget.get_display_cls(child_func)()
         widget.initialize_display(child_func, self.function_factory, self)
         parent_func.display.children_container.add_widget(widget)
         if widget.expand_widget is not None:
             widget.expand_widget.state = 'down'
 
-    def add_func_to_listing(self, func: FuncBase):
-        """Adds the function to the :attr:`function_factory` and shows it
+    def show_func_in_listing(self, func: FuncBase):
+        """Shows the function, previously added to the :attr:`function_factory`
         in the GUI.
 
-        :param func: The :class:`ceed.function.FuncBase` to add.
+        :param func: The :class:`ceed.function.FuncBase` to show.
         """
-        self.function_factory.add_func(func)
-
         widget = FuncWidget.get_display_cls(func)()
         widget.initialize_display(func, self.function_factory, self)
         self.add_widget(widget)

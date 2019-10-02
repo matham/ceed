@@ -6,7 +6,8 @@ from ceed.tests.test_app import replace_text, touch_widget
 from ceed.function import FuncBase, FuncGroup, FunctionFactoryBase
 from .examples.funcs import func_classes, func_classes_dedup, GroupFunction, \
     GroupFunctionF5, Function, LinearFunctionF1, LinearFunctionF2, \
-    GroupFunctionF4, CosFunctionF4, ExponentialFunctionF3
+    GroupFunctionF4, CosFunctionF4, ExponentialFunctionF3, ConstFunctionF1, \
+    LinearFunctionF1, ExponentialFunctionF1, CosFunctionF1, GroupFunctionF1
 
 
 async def select_spinner_func(func_app, func_name, spinner):

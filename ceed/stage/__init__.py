@@ -7,6 +7,8 @@ progresses. This module defines the classes used to compute the
 intensity values for the shapes during an experimental stage.
 
 See :class:`StageFactoryBase` and :class:`CeedStage` for details.
+
+remove_shapes_upon_deletion must be bound
 '''
 from __future__ import annotations
 from copy import deepcopy
@@ -133,8 +135,9 @@ class StageFactoryBase(EventDispatcher):
 
     def make_stage(
             self, state: dict, instance: Union[CeedStage, CeedStageRef] = None,
-            clone=False, func_name_map={},
-            old_name_to_shape_map=None) -> Union[CeedStage, CeedStageRef]:
+            clone=False, func_name_map: dict = {},
+            old_name_to_shape_map: dict = None) -> \
+            Union[CeedStage, CeedStageRef]:
         """Instantiates the stage from the state and returns it.
 
         This method must be used to instantiate a stage from state.
@@ -172,15 +175,26 @@ class StageFactoryBase(EventDispatcher):
         return stage
 
     def add_stage(self, stage, allow_last_experiment=True):
-        '''Adds the :class:`CeedStage` to the stage factory (:attr:`stages`).
+        """Adds the :class:`CeedStage` to the stage factory (:attr:`stages`)
+        and makes it available in the GUI.
+
+        See :mod:`ceed.stage` for details.
+
         Remember to check :meth:`can_other_stage_be_added` before adding
         if there's potential for it to return False.
 
-        :Params:
+        If the :attr:`CeedStage.name` already exists in :attr:`stages`,
+        :attr:`CeedStage.name` will be set to a unique name based on its
+        original name. Once added until removed, anytime the stage's
+        :attr:`CeedStage.name` changes, if it clashes with an existing
+        stage's name, it is automatically renamed.
 
-            `stage`: :class:`CeedStage`
-                The stage to add.
-        '''
+        :param stage: The :class:`CeedStage` to add.
+        :param allow_last_experiment: Whether to allow the stage to have the
+            same name is :attr:`ceed.stage.last_experiment_stage_name`. If
+            False and a stage with that name is added, it is renamed.
+            Otherwise, it's original name is kept.
+        """
         names = [s.name for s in self.stages]
         if not allow_last_experiment:
             names.append(last_experiment_stage_name)
@@ -194,14 +208,19 @@ class StageFactoryBase(EventDispatcher):
         self.dispatch('on_changed')
 
     def remove_stage(self, stage, force=False):
-        '''Removes the :class:`CeedStage` from the stage factory
-        (:attr:`stages`).
+        """Removes a stage previously added with :meth:`add_stage`.
 
         :Params:
 
             `stage`: :class:`CeedStage`
                 The stage to remove.
-        '''
+            `force`: bool
+                If True, it'll remove the stage even if there are references
+                to it created by :meth:`get_stage_ref`.
+
+        :returns: Whether the stage was removed successfully. E.g. if
+            force is False and it has a ref, it won't be removed.
+        """
         if not force and stage in self._stage_ref and self._stage_ref[stage]:
             assert self._stage_ref[stage] > 0
             return False
@@ -221,8 +240,14 @@ class StageFactoryBase(EventDispatcher):
         return True
 
     def clear_stages(self, force=False):
-        '''Removes all the stages from the factory (:class:`stages`).
-        '''
+        """Removes all the stages registered with :meth:`add_stage`.
+
+        :Params:
+
+            `force`: bool
+                If True, it'll remove all stages even if there are
+                references to them created by :meth:`get_stage_ref`.
+        """
         for stage in self.stages[:]:
             self.remove_stage(stage, force)
 
@@ -244,8 +269,9 @@ class StageFactoryBase(EventDispatcher):
                         callback(sub_stage, stage_shape)
 
     def _change_stage_name(self, stage, *largs):
-        '''Makes sure that a stage's name is unique.
-        '''
+        """Fixes the name of the stage instances stored to ensure it's
+        unique.
+        """
         # get the new name
         for name, s in self.stage_names.items():
             if s is stage:
@@ -282,8 +308,9 @@ class StageFactoryBase(EventDispatcher):
         return [s.get_state(expand_ref=False)for s in self.stages]
 
     def recover_stages(
-            self, stage_states: List[dict], func_name_map,
-                old_name_to_shape_map) -> Tuple[List[CeedStage], Dict[str, str]]:
+            self, stage_states: List[dict], func_name_map: dict,
+            old_name_to_shape_map: dict) -> \
+            Tuple[List[CeedStage], Dict[str, str]]:
         """Takes a list of stages states such as returned by
         :meth:`save_stages` and instantiates the stages represented by
         the states and adds (:meth:`add_stage`) the stages to the factory.

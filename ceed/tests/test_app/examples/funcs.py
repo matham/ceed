@@ -9,6 +9,18 @@ import itertools
 from ceed.function import FuncBase, FuncGroup, FunctionFactoryBase
 
 
+def create_funcs(
+        func_app: CeedTestApp = None,
+        function_factory: FunctionFactoryBase = None, manually_add=True):
+    funcs = []
+    for func_cls in (ConstFunctionF1, LinearFunctionF1, ExponentialFunctionF1,
+                     CosFunctionF1, GroupFunctionF1):
+        func = func_cls(app=func_app, function_factory=function_factory,
+                        manually_add=manually_add)
+        funcs.append(func)
+    return funcs
+
+
 class Function(object):
 
     app: CeedTestApp = None
@@ -43,13 +55,18 @@ class Function(object):
 
     editor_props = {}
 
-    def __init__(self, app: CeedTestApp, manually_add=True):
+    def __init__(
+            self, app: CeedTestApp = None,
+            function_factory: FunctionFactoryBase = None, manually_add=True):
         self.timebase_numerator = self.timebase[0]
         self.timebase_denominator = self.timebase[1]
         super().__init__()
         self.app = app
-        self.function_factory = app.function_factory
-        self.funcs_container = app.funcs_container
+        if app is None:
+            self.function_factory = function_factory
+        else:
+            self.function_factory = app.function_factory
+            self.funcs_container = app.funcs_container
 
         if manually_add:
             self.manually_add()
@@ -57,9 +74,10 @@ class Function(object):
     def create_func(self):
         raise NotImplementedError
 
-    def manually_add(self):
+    def manually_add(self, add_func=None, display_func=None):
         self.create_func()
-        self.funcs_container.add_func_to_listing(self.func)
+        (add_func or self.function_factory.add_func)(self.func)
+        (display_func or self.funcs_container.show_func_in_listing)(self.func)
 
     def assert_init(self):
         raise NotImplementedError
@@ -744,6 +762,13 @@ class GroupFunction(Function):
             wrapper_func.create_func()
             funcs.append(wrapper_func)
             func_group.add_func(wrapper_func.func)
+
+    def manually_add(self, add_func=None, display_func=None):
+        super(GroupFunction, self).manually_add(
+            add_func=add_func, display_func=display_func)
+
+        for func in self.wrapper_funcs:
+            self.funcs_container.show_child_func_in_func(self.func, func.func)
 
     def assert_init(self):
         assert len(self.wrapper_funcs) == len(self.func.funcs)

@@ -5,6 +5,69 @@ from ceed.tests.ceed_app import CeedTestApp
 from kivy_garden.painter import PaintShape
 
 
+def assert_add_three_shapes(
+        shape_factory: CeedPaintCanvasBehavior = None,
+        app: CeedTestApp = None, manually_add=False):
+    assert not shape_factory.shapes
+    assert not shape_factory.shape_names
+
+    shape = EllipseShapeP1(
+        app=app, painter=shape_factory, manually_add=manually_add)
+    shape2 = PolygonShapeP1(
+        app=app, painter=shape_factory, manually_add=manually_add)
+    shape3 = CircleShapeP1(
+        app=app, painter=shape_factory, manually_add=manually_add)
+
+    if not manually_add:
+        shape.make_shape()
+        shape2.make_shape()
+        shape3.make_shape()
+
+        assert shape_factory.add_shape(shape.shape)
+        assert shape_factory.add_shape(shape2.shape)
+        assert shape_factory.add_shape(shape3.shape)
+
+    assert shape_factory.shapes == [shape.shape, shape2.shape, shape3.shape]
+    assert len(shape_factory.shapes) == 3
+    assert len(shape_factory.shape_names) == 3
+    for s in (shape, shape2, shape3):
+        assert shape_factory.shape_names[s.name] is s.shape
+    return shape, shape2, shape3
+
+
+def assert_add_three_groups(
+        shape_factory: CeedPaintCanvasBehavior = None,
+        app: CeedTestApp = None, manually_add=False):
+    shape, shape2, shape3 = assert_add_three_shapes(
+        shape_factory, app, manually_add)
+    assert not shape_factory.groups
+    assert not shape_factory.shape_group_names
+
+    group = shape_factory.add_group()
+    group2 = shape_factory.add_group()
+    group3 = shape_factory.add_group()
+
+    group.add_shape(shape.shape)
+    group.add_shape(shape2.shape)
+    group2.add_shape(shape2.shape)
+    group2.add_shape(shape3.shape)
+    group3.add_shape(shape.shape)
+    group3.add_shape(shape2.shape)
+    group3.add_shape(shape3.shape)
+
+    assert shape_factory.groups == [group, group2, group3]
+    assert len(shape_factory.groups) == 3
+    assert len(shape_factory.shape_group_names) == 3
+    for g in (group, group2, group3):
+        assert shape_factory.shape_group_names[g.name] is g
+
+    assert group.shapes == [shape.shape, shape2.shape]
+    assert group2.shapes == [shape2.shape, shape3.shape]
+    assert group3.shapes == [shape.shape, shape2.shape, shape3.shape]
+
+    return (group, group2, group3), (shape, shape2, shape3)
+
+
 class Shape(object):
 
     painter: CeedPaintCanvasBehavior = None
