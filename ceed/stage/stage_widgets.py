@@ -60,22 +60,14 @@ class StageList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
 
     def add_empty_stage(self):
         stage = self.stage_factory.make_stage({'cls': 'CeedStage'})
-        widget = StageWidget()
 
         if self.selected_nodes:
             stage_widget = self.selected_nodes[-1]
             stage_widget.stage.add_stage(stage)
-
-            widget.initialize_display(stage, stage_widget.selection_controller)
-            stage_widget.stage_widget.add_widget(widget)
-            if widget.expand_widget is not None:
-                widget.expand_widget.state = 'down'
+            self.show_sub_stage(stage, stage_widget.stage)
         else:
             self.stage_factory.add_stage(stage, allow_last_experiment=False)
-            widget.initialize_display(stage, self)
-            self.add_widget(widget)
-            if widget.expand_widget is not None:
-                widget.expand_widget.state = 'down'
+            self.show_stage(stage)
         return stage
 
     def handle_drag_release(self, index, drag_widget):
@@ -86,22 +78,13 @@ class StageList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
             stage = deepcopy(stage)
 
             self.stage_factory.add_stage(stage, allow_last_experiment=False)
-
-            widget = StageWidget()
-            widget.initialize_display(stage, self)
-            self.add_widget(widget)
-            if widget.expand_widget is not None:
-                widget.expand_widget.state = 'down'
+            self.show_stage(stage)
             return
 
         stage = self.stage_factory.make_stage({'cls': 'CeedStage'})
         self.stage_factory.add_stage(stage, allow_last_experiment=False)
-
-        widget = StageWidget()
-        widget.initialize_display(stage, self)
-        self.add_widget(widget)
-        if widget.expand_widget is not None:
-            widget.expand_widget.state = 'down'
+        self.show_stage(stage)
+        widget = stage.display
 
         if drag_widget.drag_cls in ('func', 'func_spinner'):
             func_widget = StageFuncChildrenList._handle_drag_release(
@@ -147,6 +130,17 @@ class StageList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
         widget = StageWidget()
         widget.initialize_display(stage, self)
         self.add_widget(widget)
+        if widget.expand_widget is not None:
+            widget.expand_widget.state = 'down'
+
+    def show_sub_stage(self, stage: CeedStage, parent_stage: CeedStage):
+        stage_widget = parent_stage.display
+        widget = StageWidget()
+
+        widget.initialize_display(stage, stage_widget.selection_controller)
+        stage_widget.stage_widget.add_widget(widget)
+        if widget.expand_widget is not None:
+            widget.expand_widget.state = 'down'
 
     def copy_and_resample_experiment_stage(self, stage_name):
         stage = self.stage_factory.stage_names[stage_name]

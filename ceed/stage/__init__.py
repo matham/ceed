@@ -8,56 +8,76 @@ intensity values for the shapes during an experimental stage.
 
 See :class:`StageFactoryBase` and :class:`CeedStage` for details.
 '''
+from __future__ import annotations
 from copy import deepcopy
 from collections import defaultdict
+from typing import Dict, List, Union, Tuple
 
 from kivy.properties import OptionProperty, ListProperty, ObjectProperty, \
     StringProperty, NumericProperty, DictProperty, BooleanProperty
-from kivy.factory import Factory
 from kivy.event import EventDispatcher
 from kivy.graphics import Color
 
-from ceed.function import CeedFunc, FuncDoneException, CeedFuncRef
+from ceed.function import CeedFunc, FuncDoneException, CeedFuncRef, \
+    FunctionFactoryBase
 from ceed.utils import fix_name, update_key_if_other_key
-from ceed.shape import CeedShapeGroup
+from ceed.shape import CeedShapeGroup, CeedPaintCanvasBehavior
 
 __all__ = ('StageDoneException', 'StageFactoryBase', 'CeedStage', 'StageShape',
-           'remove_shapes_upon_deletion')
+           'CeedStageRef', 'remove_shapes_upon_deletion',
+           'last_experiment_stage_name')
 
 
 last_experiment_stage_name = 'experiment_sampled'
 
 
 class StageDoneException(Exception):
-    '''Raised as a signal by a :class:`CeedStage` when it is done.
-    '''
+    """Raised as a signal by a :class:`CeedStage` when it is done.
+    """
     pass
 
 
 class StageFactoryBase(EventDispatcher):
-    '''The stage controller.
+    """A global store of the defined :class:`CeedStage`
+    customized function instances.
+
+    See :mod:`ceed.stage` for details.
 
     :Events:
 
         `on_changed`:
-            Triggered whenever the configuration options of a stage changes
-            or if a stage is added or removed from the factory.
-    '''
+            Triggered whenever a stage is added or removed from the factory.
+    """
 
-    stages = []
+    stages: List[CeedStage] = []
     '''The list of the currently available :class:`CeedStage` instances.
+    These stages are listed in the GUI and can be used by name to start a stage
+    to run.
     '''
 
-    stage_names = DictProperty({})
+    stage_names: Dict[str, CeedStage] = DictProperty({})
     '''A dict of all the stages whose keys are the stage :attr:`CeedStage.name`
-    and whose values are the corresponding :class:`CeedStage`.
+    and whose values are the corresponding :class:`CeedStage` instances.
+
+    This contains the same stages as in :attr:`stages`.
     '''
 
-    function_factory = None
+    function_factory: FunctionFactoryBase = None
+    """The :class:`~ceed.function.FunctionFactoryBase` instance that contains
+    or is associated with all the functions used in the stages.
+    """
 
-    shape_factory = None
+    shape_factory: CeedPaintCanvasBehavior = None
+    """The :class:`~ceed.shape.CeedPaintCanvasBehavior` instance that contains
+    or is associated with all the shapes used in the stages.
+    """
 
     _stage_ref = {}
+    """A dict mapping stages to the number of references to the stage.
+
+    References are :class:`CeedStageRef` and created with with
+    :meth:`get_stage_ref` and released with :meth:`return_stage_ref`.
+    """
 
     __events__ = ('on_changed', )
 
@@ -71,8 +91,21 @@ class StageFactoryBase(EventDispatcher):
     def on_changed(self, *largs, **kwargs):
         pass
 
-    def get_stage_ref(self, name=None, stage=None):
-        """If used, release must be called, even when restored automatically.
+    def get_stage_ref(
+            self, name: str = None, stage: CeedStage = None) -> CeedStageRef:
+        """Returns a :class:`CeedStageRef` instance that refers to the
+        original stage. See :mod:`ceed.stage` for details.
+
+        One of ``name`` or ``stage`` must be specified. The stage being
+        referenced by ``stage`` should have been added to this instance,
+        although it is not explicitly enforced currently.
+
+        If used, :meth:`return_stae_ref` must be called when the reference
+        is not used anymore.
+
+        :param name: The name of the stage to lookup in :attr:`stage_names`.
+        :param stage: Or the actual stage to use.
+        :return: A :class:`CeedStageRef` to the original stage.
         """
         stage = stage or self.stage_names[name]
         if isinstance(stage, CeedStageRef):
@@ -85,15 +118,38 @@ class StageFactoryBase(EventDispatcher):
         stage.has_ref = True
         return ref
 
-    def return_stage_ref(self, stage_ref):
+    def return_stage_ref(self, stage_ref: CeedStageRef):
+        """Releases the stage ref created by :meth:`get_stage_ref`.
+
+        :param stage_ref: Instance returned by :meth:`get_stage_ref`.
+        """
+        if stage_ref.stage not in self._stage_ref:
+            raise ValueError("Returned stage that wasn't added")
+
         self._stage_ref[stage_ref.stage] -= 1
         if not self._stage_ref[stage_ref.stage]:
+            del self._stage_ref[stage_ref.stage]
             stage_ref.stage.has_ref = False
 
-    def make_stage(self, state, instance=None, clone=False, func_name_map={},
-                   old_name_to_shape_map=None):
-        '''Instantiates the function from the state and returns it.
-        '''
+    def make_stage(
+            self, state: dict, instance: Union[CeedStage, CeedStageRef] = None,
+            clone=False, func_name_map={},
+            old_name_to_shape_map=None) -> Union[CeedStage, CeedStageRef]:
+        """Instantiates the stage from the state and returns it.
+
+        This method must be used to instantiate a stage from state.
+        See :mod:`ceed.stage` for details and an example.
+
+        :param state: The state dict representing the stage as returned by
+            :meth:`FuncBase.get_state`.
+        :param instance: If None, a stage instance will be created and state
+            will applied to it. Otherwise, it is applied to the given instance,
+            which must be of the correct class.
+        :param clone: See :meth:`CeedStage.apply_state`.
+        :param func_name_map: See :meth:`CeedStage.apply_state`.
+        :param old_name_to_shape_map: See :meth:`CeedStage.apply_state`.
+        :return: The stage instance created or used.
+        """
         state = dict(state)
         c = state.pop('cls')
         if c == 'CeedStageRef':
@@ -152,7 +208,6 @@ class StageFactoryBase(EventDispatcher):
 
         stage.funbind('name', self._change_stage_name, stage)
 
-        del self.stage_names[stage.name]
         # we cannot remove by equality check (maybe?)
         for i, s in enumerate(self.stages):
             if s is stage:
@@ -160,6 +215,7 @@ class StageFactoryBase(EventDispatcher):
                 break
         else:
             raise ValueError('{} was not found in stages'.format(stage))
+        del self.stage_names[stage.name]
 
         self.dispatch('on_changed')
         return True
@@ -209,11 +265,37 @@ class StageFactoryBase(EventDispatcher):
         self.stage_names[new_name] = stage
         stage.name = new_name
 
-    def save_stages(self):
+        if not new_name:
+            stage.name = fix_name(
+                'name',
+                list(self.stage_names.keys()) + [last_experiment_stage_name])
+        self.dispatch('on_changed')
+
+    def save_stages(self) -> List[dict]:
+        """Returns a dict representation of all the stages added with
+        :meth:`add_stage`.
+
+        It is a list of dicts where each item is the
+        :meth:`CeedStage.get_state` of the corresponding stage in
+        :attr:`stages`.
+        """
         return [s.get_state(expand_ref=False)for s in self.stages]
 
     def recover_stages(
-            self, stage_states, func_name_map, old_name_to_shape_map):
+            self, stage_states: List[dict], func_name_map,
+                old_name_to_shape_map) -> Tuple[List[CeedStage], Dict[str, str]]:
+        """Takes a list of stages states such as returned by
+        :meth:`save_stages` and instantiates the stages represented by
+        the states and adds (:meth:`add_stage`) the stages to the factory.
+
+        :param stage_states: List of stages state.
+        :param func_name_map: See :meth:`CeedStage.apply_state`.
+        :param old_name_to_shape_map: See :meth:`CeedStage.apply_state`.
+        :return: A tuple ``stages, name_map``, ``stages`` is the list of
+            stages, ``name_map`` is a map from the original stage's name
+            to the new name given to the stage (in case a stage with that
+            name already existed).
+        """
         name_map = {}
         stages = []
         for state in stage_states:
@@ -621,19 +703,22 @@ class CeedStage(EventDispatcher):
 
     def apply_state(self, state={}, clone=False, func_name_map={},
                     old_name_to_shape_map=None):
-        '''Takes the state of the stage saved with :meth:`get_state` and
+        """Takes the state of the stage saved with :meth:`get_state` and
         applies it to this stage. it also creates any children functions and
         stages and creates the references to the :attr:`shapes`.
 
-        :Params:
+        It is called internally and should not be used directly. Use
+        :meth:`StageFactoryBase.make_stage` instead.
 
-            `state`: dict
-                The dict to use to reconstruct the stage as returned by
-                :meth:`get_state`.
-            `clone`: bool
-                If True will copy all the state, otherwise it doesn't
-                copy internal parameters.
-        '''
+        :param state: The state dict representing the stage as returned by
+            :meth:`get_state`.
+        :param clone: If False, only user customizable properties of the
+            stage will be set, otherwise, all properties from state are
+            applied to the stage. Clone is meant to be an complete
+            re-instantiation of stage function.
+        :param func_name_map:
+        :param old_name_to_shape_map:
+        """
         stages = state.pop('stages', [])
         functions = state.pop('functions', [])
         shapes_state = state.pop('shapes', [])
@@ -687,9 +772,12 @@ class CeedStage(EventDispatcher):
         return obj
 
     def replace_ref_stage_with_source(self, stage_ref):
+        if not isinstance(stage_ref, CeedStageRef):
+            raise ValueError('Stage must be a CeedStageRef')
+
         i = self.stages.index(stage_ref)
         self.remove_stage(stage_ref)
-        stage = stage_ref.copy_expand_ref()
+        stage = deepcopy(stage_ref.stage)
         self.add_stage(stage, index=i)
         return stage, i
 

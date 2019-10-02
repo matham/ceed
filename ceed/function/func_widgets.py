@@ -120,8 +120,7 @@ class FuncList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
         widget.initialize_display(func, self.function_factory, self)
         self.add_widget(widget)
         if widget.expand_widget is not None:
-            if widget.expand_widget is not None:
-                widget.expand_widget.state = 'down'
+            widget.expand_widget.state = 'down'
 
     def get_selectable_nodes(self):
         # a ref func will never be in the root list, so get_funcs will not be
