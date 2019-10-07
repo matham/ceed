@@ -12,6 +12,13 @@ from .funcs import ConstFunctionF1, LinearFunctionF1, ExponentialFunctionF1, \
 from .shapes import assert_add_three_groups
 
 
+def make_stage(stage_factory: StageFactoryBase, **kwargs):
+    return CeedStage(
+        stage_factory=stage_factory,
+        function_factory=stage_factory.function_factory,
+        shape_factory=stage_factory.shape_factory, **kwargs)
+
+
 def create_stage_funcs(func_app, function_factory):
     funcs = create_funcs(
         func_app=func_app, function_factory=function_factory,

@@ -251,7 +251,7 @@ class StageFactoryBase(EventDispatcher):
         for stage in self.stages[:]:
             self.remove_stage(stage, force)
 
-    def remove_shape_from_all(self, _, shape, callback):
+    def find_shape_in_all_stages(self, _, shape, process_shape_callback):
         '''Removes the :class:`ceed.shape.CeedShape` instance from all the
         :class:`CeedStage` instances that it is a associated with.
 
@@ -266,7 +266,7 @@ class StageFactoryBase(EventDispatcher):
             for sub_stage in stage.get_stages():
                 for stage_shape in sub_stage.shapes:
                     if stage_shape.shape is shape:
-                        callback(sub_stage, stage_shape)
+                        process_shape_callback(sub_stage, stage_shape)
 
     def _change_stage_name(self, stage, *largs):
         """Fixes the name of the stage instances stored to ensure it's
@@ -1145,10 +1145,25 @@ class StageShape(EventDispatcher):
         self.name = self.shape.name
 
 
-def remove_shapes_upon_deletion(stage_factory, shape_factory, callback):
+def remove_shapes_upon_deletion(
+        stage_factory, shape_factory, process_shape_callback):
+    """Once called, whenever a shape or group of shapes is deleted in the
+    ``shape_factory``, it'll also remove the shape or group from all stages
+    that reference it.
+
+    :param stage_factory: The :class:`StageFactoryBase` that lists all the
+        stages.
+    :param shape_factory: The :class:`~ceed.shape.CeedPaintCanvasBehavior` that
+        lists all the shapes.
+    :param process_shape_callback: For each stage in ``stage_factory`` that
+        contains the shape, ``process_shape_callback`` will be called with 2
+        parameters: the :class:`CeedStage` and :class:`StageShape` instances.
+        The callback may e.g. then hide the shape in the GUI or whatever else
+        it needs.
+    """
     shape_factory.fbind(
-        'on_remove_shape', stage_factory.remove_shape_from_all,
-        callback=callback)
+        'on_remove_shape', stage_factory.find_shape_in_all_stages,
+        callback=process_shape_callback)
     shape_factory.fbind(
-        'on_remove_group', stage_factory.remove_shape_from_all,
-        callback=callback)
+        'on_remove_group', stage_factory.find_shape_in_all_stages,
+        callback=process_shape_callback)

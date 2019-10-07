@@ -1,13 +1,14 @@
-'''Stage widgets
+"""Stage widgets
 ===================
 
 Defines the GUI components used with :mod:`ceed.stage`.
-'''
+"""
+from __future__ import annotations
 from copy import deepcopy
 import os
-if not os.environ.get('KIVY_DOC_INCLUDE', None):
-    from scipy.signal import decimate
+from scipy.signal import decimate
 import numpy as np
+from typing import Optional, Union, Type
 
 from kivy.uix.boxlayout import BoxLayout
 from kivy.clock import Clock
@@ -18,47 +19,70 @@ from kivy_garden.graph import MeshLinePlot
 from kivy.metrics import dp
 from kivy.app import App
 from kivy.utils import get_color_from_hex
-from kivy.uix.gridlayout import GridLayout
 from kivy.lang import Builder
 from kivy.graphics import Rectangle, Color, Line
 
 from ceed.graphics import WidgetList, ShowMoreSelection, BoxSelector, \
     ShowMoreBehavior
-from ceed.stage import CeedStage, CeedStageRef, last_experiment_stage_name
-from ceed.function.func_widgets import FuncWidget, FuncWidgetGroup, CeedFuncRef
+from ceed.stage import CeedStage, StageFactoryBase, CeedStageRef, \
+    last_experiment_stage_name, StageShape
+from ceed.function.func_widgets import FuncWidget, FuncWidgetGroup
+from ceed.function import CeedFuncRef, FunctionFactoryBase
 
 from kivy_garden.drag_n_drop import DraggableLayoutBehavior
 
-__all__ = ('StageList', 'StageWidget', 'StageShapeDisplay', 'ShapePlot',
-           'StageGraph')
+__all__ = (
+    'StageList', 'StageWidget', 'StageChildrenViewList', 'StageChildrenList',
+    'StageFuncChildrenList', 'StageShapesChildrenList', 'StageShapeDisplay',
+    'ShapePlot', 'StageGraph')
 
 
 _get_app = App.get_running_app
+StageOrRef = Union[CeedStage, CeedStageRef]
 
 
 class StageList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
                 BoxLayout):
-    '''Widget that shows the list of all the stages.
-    '''
+    """Widget that shows the list of available stages to the user and
+    also allows for the creation of new stages to be added to the list.
+
+    The functions come from :class:`ceed.stage.StageFactoryBase`.
+    """
 
     is_visible = BooleanProperty(True)
+    """Whether the list is currently visible.
 
-    paint_controller = None
+    It is used by the selection logic and it's always True for this class.
+    """
 
-    stage_factory = None
+    stage_factory: StageFactoryBase = None
+    """The :class:`ceed.stage.StageFactoryBase` that is used for the list
+    of stages available to the user and with whom new stages created in
+    the GUI are registered.
+    """
 
     def __init__(self, **kwargs):
         super(StageList, self).__init__(**kwargs)
         self.nodes_order_reversed = False
 
-    def remove_shape_from_stage(self, stage, stage_shape):
-        self.clear_selection()
-        stage.remove_shape(stage_shape)
-        display = stage_shape.display
-        if display is not None:
-            display.parent.remove_widget(display)
+    def remove_shape_from_stage(
+            self, stage: CeedStage, stage_shape: StageShape):
+        """This is called to remove a shape from being referenced by a stage.
 
-    def add_empty_stage(self):
+        :param stage: The :class:`CeedStage` that references the shape.
+        :param stage_shape: The :class:`StageShape` to be removed.
+        """
+        if stage_shape.display is not None:
+            stage_shape.display.remove_shape()
+
+    def add_empty_stage(self) -> CeedStage:
+        """Creates and adds a new stage to the :attr:`stage_factory`.
+
+        The stage is added as a child of any stage currently selected in the
+        GUI, or globally if non is selected.
+
+        :return: The newly created stage.
+        """
         stage = CeedStage(
             stage_factory=self.stage_factory,
             function_factory=self.stage_factory.function_factory,
@@ -75,6 +99,7 @@ class StageList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
 
     def handle_drag_release(self, index, drag_widget):
         if drag_widget.drag_cls == 'stage':
+            # we dragged a stage so we need to copy it
             stage = drag_widget.obj_dragged.stage
             if isinstance(drag_widget.obj_dragged.stage, CeedStageRef):
                 stage = stage.stage
@@ -84,6 +109,7 @@ class StageList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
             self.show_stage(stage)
             return
 
+        # otherwise, create a new empty stage
         stage = CeedStage(
             stage_factory=self.stage_factory,
             function_factory=self.stage_factory.function_factory,
@@ -92,8 +118,9 @@ class StageList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
         self.show_stage(stage)
         widget = stage.display
 
+        # what did we drag, function, shape, or stage into stage?
         if drag_widget.drag_cls in ('func', 'func_spinner'):
-            func_widget = StageFuncChildrenList._handle_drag_release(
+            func_widget = StageFuncChildrenList.handle_func_drag_release(
                 index, drag_widget, self, stage)
             widget.func_widget.add_widget(func_widget, index=index)
         elif drag_widget.drag_cls in ('shape', 'shape_group'):
@@ -110,17 +137,13 @@ class StageList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
 
             shape = stage.add_shape(item)
             if shape is not None:
-                shape_widget = StageShapeDisplay()
-                shape_widget.initialize_display(shape, self)
-                widget.shape_widget.add_widget(shape_widget)
+                self.show_shape_in_stage(stage, shape)
 
             if drag_widget.obj_dragged.selected:
                 for shape in selection:
                     shape = stage.add_shape(shape)
                     if shape is not None:
-                        shape_widget = StageShapeDisplay()
-                        shape_widget.initialize_display(shape, self)
-                        widget.shape_widget.add_widget(shape_widget)
+                        self.show_shape_in_stage(stage, shape)
         else:
             assert False
 
@@ -129,17 +152,35 @@ class StageList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
                 for d in stage.display.get_visible_children()]
 
     def clear_all(self):
+        """Removes all the widgets associated with the registered stages in
+        :attr:`stage_factory` from the GUI.
+        """
         for widget in self.children[:]:
             self.remove_widget(widget)
 
-    def show_stage(self, stage):
+    def show_stage(self, stage, expand_stage=True):
+        """Displays the widget of the stage in the GUI. This is for displaying
+        registered stages, not a sub-stage.
+
+        :param stage: The :class:`CeedStage` to show.
+        :param expand_stage: Whether to expand the stage options in the GUI.
+            If true the user could e.g. edit the name without having to click
+            first to expand the edit options.
+        """
         widget = StageWidget()
         widget.initialize_display(stage, self)
         self.add_widget(widget)
         if widget.expand_widget is not None:
-            widget.expand_widget.state = 'down'
+            widget.expand_widget.state = 'down' if expand_stage else 'normal'
 
     def show_sub_stage(self, stage: CeedStage, parent_stage: CeedStage):
+        """Displays the widget of the stage in the GUI. This is for displaying
+        a sub-stages within the parent stage.
+
+        :param stage: The :class:`CeedStage` to show.
+        :param parent_stage: The parent :class:`CeedStage` within which to show
+            the stage.
+        """
         stage_widget = parent_stage.display
         widget = StageWidget()
 
@@ -148,7 +189,29 @@ class StageList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
         if widget.expand_widget is not None:
             widget.expand_widget.state = 'down'
 
+    def show_shape_in_stage(self, stage: CeedStage, shape: StageShape):
+        """Displays the widget of the shape in the GUI as belonging to the
+        stage.
+
+        :param stage: The :class:`CeedStage` to show.
+        :param shape: The :class:`~ceed.stage.StageShape` to display.
+        """
+        shape_widget = StageShapeDisplay()
+        shape_widget.initialize_display(shape, self)
+        stage.display.shape_widget.add_widget(shape_widget)
+
     def copy_and_resample_experiment_stage(self, stage_name):
+        """Makes a stage ready to be run as an experiment.
+
+        It takes the stage, copies it and expands all sub-stages that are
+        references, then samples all the parameters and finally adds this stage
+        to the :attr:`stage_factory`.
+
+        The stage is then named :attr:`ceed.stage.last_experiment_stage_name`.
+        If a stage with that name already exists, that stage is first removed.
+
+        :param stage_name: The name of the registered stage to copy.
+        """
         stage = self.stage_factory.stage_names[stage_name]
         stage = stage.copy_expand_ref()
         # TODO: disable randomness of generated funcs after sampling
@@ -164,20 +227,26 @@ class StageList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
                 assert False, 'If stage is in factory it should have a widget'
 
         self.stage_factory.add_stage(stage)
-
-        widget = StageWidget()
-        widget.initialize_display(stage, self)
-        self.add_widget(widget)
+        self.show_stage(stage, expand_stage=False)
 
 
 class StageChildrenViewList(DraggableLayoutBehavior, BoxLayout):
+    """The base class used by the GUI to list a stages functions, stages, or
+    shapes.
+    """
 
     is_visible = BooleanProperty(False)
+    """Whether the list is currently expanded and visible to the user.
+    """
 
-    stage_widget = None
+    stage_widget: StageWidget = None
+    """The :class:`StageWidget` to whom this widget belongs.
+    """
 
 
 class StageChildrenList(StageChildrenViewList):
+    """The container that displays the stage's sub-stage children in the GUI.
+    """
 
     def handle_drag_release(self, index, drag_widget):
         stage_widget = self.stage_widget
@@ -210,9 +279,22 @@ class StageChildrenList(StageChildrenViewList):
 
 
 class StageFuncChildrenList(StageChildrenViewList):
+    """The container that displays the stage's functions in the GUI.
+    """
 
     @staticmethod
-    def _handle_drag_release(index, drag_widget, selection_controller, stage):
+    def handle_func_drag_release(
+            index, drag_widget, selection_controller, stage):
+        """Takes a function widget being dragged into the stage and adds the
+        function to the stage and creates the widget to display the function.
+
+        :param index: The index where the widgets was dragged into.
+        :param drag_widget: The widget being dragged.
+        :param selection_controller: The controller that handles selection
+            for the list into which the function was dragged into.
+        :param stage: The associated stage.
+        :return: The widget created to display the function.
+        """
         stage_factory = stage.stage_factory
         function_factory = stage.function_factory
 
@@ -242,12 +324,14 @@ class StageFuncChildrenList(StageChildrenViewList):
     def handle_drag_release(self, index, drag_widget):
         stage_widget = self.stage_widget
         stage = stage_widget.stage
-        widget = self._handle_drag_release(
+        widget = self.handle_func_drag_release(
             index, drag_widget, stage_widget.selection_controller, stage)
         self.add_widget(widget, index=index)
 
 
 class StageShapesChildrenList(StageChildrenViewList):
+    """The container that displays the stage's shapes in the GUI.
+    """
 
     def handle_drag_release(self, index, drag_widget):
         stage_widget = self.stage_widget
@@ -280,50 +364,72 @@ class StageShapesChildrenList(StageChildrenViewList):
 
 
 class StageWidget(ShowMoreBehavior, BoxLayout):
-    '''The widget displayed for an :class:`ceed.stage.CeedStage` instance.
-    '''
+    """The widget displayed for an :class:`ceed.stage.CeedStage` instance.
+    """
 
-    stage = None
-    '''The :class:`ceed.stage.CeedStage` instance attached to the widget.
+    stage: StageOrRef = None
+    '''The :class:`ceed.stage.CeedStage` or :class:`ceed.stage.CeedStageRef`
+    instance attached to the widget.
     '''
 
     ref_stage = None
+    '''If :attr:`stage` is a :class:`ceed.stage.CeedStageRef`, this is the
+    actual :class:`ceed.stage.CeedStage` :attr:`stage` is internally
+    referencing. Otherwise, it's None.
+    '''
 
     selected = BooleanProperty(False)
+    '''Whether the stage is currently selected in the GUI.
+    '''
 
-    stage_widget = None
+    stage_widget: StageChildrenList = None
     '''The internal widget container to which children
     :class:`StageWidget` widget instances are added.
     '''
 
-    func_widget = None
+    func_widget: StageFuncChildrenList = None
     '''The internal widget container to which children
     :class:`ceed.func_widgets.FuncWidget` or
     :class:`ceed.func_widgets.FuncWidgetGroup` widget instances are added.
     '''
 
-    shape_widget = None
+    shape_widget: StageShapesChildrenList = None
     '''The internal widget container to which children
     :class:`StageShapeDisplay` widget instances are added.
     '''
 
     is_visible = BooleanProperty(False)
-
-    children_container = None
+    '''Whether the stage is currently visible in the GUI. I.e. when all of
+    it's parents all the way to the root is visible.
+    '''
 
     selection_controller = None
+    '''The container that gets called to select the stage widget when the user
+    selects it with a touch. E.g. :class:`StageList` in the global stage
+    listing case or :class:`StageChildrenList` if it belongs to a stage.
+    '''
 
     settings_root = None
+    """The dropdown used by this function to show settings.
+    """
 
     expand_widget = None
+    """The widget that when pressed will expand to show the :attr:`more`
+    widget.
+    """
 
     @property
     def name(self):
-        '''The :attr:`ceed.stage.CeedStage.name` of the stage.
-        '''
+        """The :attr:`ceed.stage.CeedStage.name` of the stage.
+        """
         return self.stage.name
 
     def get_visible_children(self):
+        """Iterates and yields all the widgets representing the sub-stages,
+        functions, and shapes belonging to the stage, including the stage's
+        widget itself, if they are visible. The currently collapsed/hidden
+        widgets are skipped.
+        """
         if not self.is_visible:
             return
         yield self
@@ -348,6 +454,10 @@ class StageWidget(ShowMoreBehavior, BoxLayout):
                 yield shape.display
 
     def initialize_display(self, stage, selection_controller):
+        """Sets :attr:`selection_controller` and generates and applies the kv
+        GUI rules for the widget and it's children (sub-stages, functions,
+        and shapes).
+        """
         if isinstance(stage, CeedStageRef):
             self.ref_stage = stage.stage
         stage.display = self
@@ -374,17 +484,30 @@ class StageWidget(ShowMoreBehavior, BoxLayout):
             self.shape_widget.add_widget(shape_widget)
 
     def remove_stage_from_factory_no_ref(self):
+        """Removes the stage from the :attr:`stage_factory` and GUI.
+
+        This can only be called if the stage is not representing a
+        :class:`CeedStageRef`.
+        """
         self.selection_controller.clear_selection()
         assert not self.stage.parent_stage
-        if self.stage.stage_factory.remove_stage(self.stage):
-            self.parent.remove_widget(self)
 
         for item in self.get_visible_children():
             if item.selected:
                 self.selection_controller.deselect_node(item)
                 break
 
+        if self.stage.stage_factory.remove_stage(self.stage):
+            self.parent.remove_widget(self)
+
     def remove_stage(self):
+        """Removes the stage from the :attr:`stage_factory` and from the GUI.
+        """
+        for item in self.get_visible_children():
+            if item.selected:
+                self.selection_controller.deselect_node(item)
+                break
+
         self.selection_controller.clear_selection()
         if self.stage.parent_stage:
             self.stage.parent_stage.remove_stage(self.stage)
@@ -410,12 +533,11 @@ class StageWidget(ShowMoreBehavior, BoxLayout):
                             if isinstance(func, CeedFuncRef):
                                 func.function_factory.return_func_ref(func)
 
-        for item in self.get_visible_children():
-            if item.selected:
-                self.selection_controller.deselect_node(item)
-                break
-
     def replace_ref_with_source(self):
+        """If this :attr:`stage` is a :class:`ceed.stage.CeedStageRef`, this
+        will replace the reference with the a copy of the original stage
+        being referenced and the GUI will also be updated to reflect that.
+        """
         self.selection_controller.clear_selection()
         assert self.ref_stage is not None
         assert self.stage.parent_stage is not None
@@ -435,6 +557,13 @@ class StageWidget(ShowMoreBehavior, BoxLayout):
         self.stage.stage_factory.return_stage_ref(self.stage)
 
     def apply_kv(self):
+        """Applies the kv rules to the widget.
+
+        The rules are manually applied to the class because we want to have
+        a chance to initialize some instance variables before the kv rules is
+        applied so they can be referred to from kv without having to check
+        if they are None.
+        """
         app = _get_app()
         stage = self.ref_stage or self.stage
         stage.fbind('on_changed', app.changed_callback)
@@ -454,6 +583,12 @@ class StageWidget(ShowMoreBehavior, BoxLayout):
             self.add_stage_containers(more)
 
     def add_stage_containers(self, more_widget):
+        """Adds the widget containers for the sub-stage, functions, and shapes
+        widgets of this stage.
+
+        :param more_widget: The widget to which the containers are added. This
+            widget can be made invisible in the GUI.
+        """
         stage_widget = self.stage_widget = StageChildrenList()
         stage_widget.stage_widget = self
         stage_widget.drag_classes = ['stage']
@@ -483,26 +618,38 @@ class StageWidget(ShowMoreBehavior, BoxLayout):
 
 
 class StageShapeDisplay(BoxSelector):
-    '''The widget used for the :class:`ceed.stage.StageShape`.
-    '''
+    """The widget used to display a :class:`ceed.stage.StageShape`
+    representation of the shape in the stage.
+    """
 
-    stage_shape = None
+    stage_shape: StageShape = None
     '''The :class:`ceed.stage.StageShape` instance that this widget displays.
     '''
 
     selected = BooleanProperty(False)
+    """Whether the widget is currently selected.
+    Read only.
+    """
 
     selection_controller = None
+    '''The container that gets called to select the shape widget when the user
+    selects it with a touch.
+    '''
 
     is_visible = BooleanProperty(True)
+    """Whether the shape is currently visible in the stage shape's list.
+    """
 
     @property
     def name(self):
-        '''The :attr:`ceed.stage.StageShape.name` of the shape or shape group.
-        '''
+        """The :attr:`ceed.stage.StageShape.name` of the shape or shape group.
+        """
         return self.stage_shape.name
 
     def initialize_display(self, stage_shape, selection_controller):
+        """Sets :attr:`selection_controller` and generates and applies the kv
+        GUI rules for the widget (``StageShapeDisplayStyle``).
+        """
         stage_shape.display = self
         self.stage_shape = stage_shape
         self.controller = self.selection_controller = selection_controller
@@ -511,6 +658,9 @@ class StageShapeDisplay(BoxSelector):
             self, 'StageShapeDisplayStyle', dispatch_kv_post=True)
 
     def remove_shape(self):
+        """Removes the shape from being referenced by the stage and also
+        removes it from the GUI.
+        """
         self.stage_shape.stage.remove_shape(self.stage_shape)
         if self.selected:
             self.selection_controller.deselect_node(self)

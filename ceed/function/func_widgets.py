@@ -6,6 +6,7 @@ Defines the GUI components used with :mod:`ceed.function`.
 from __future__ import annotations
 from collections import defaultdict
 from copy import deepcopy
+from typing import Optional, Union, Type
 
 from kivy.uix.boxlayout import BoxLayout
 from kivy.properties import BooleanProperty, NumericProperty, StringProperty, \
@@ -16,7 +17,6 @@ from kivy.compat import string_types
 from kivy.app import App
 from kivy.uix.widget import Widget
 from kivy.lang import Builder
-from typing import Optional, Union, Type
 
 from base_kivy_app.graphics import FlatTextInput
 from kivy_garden.drag_n_drop import DraggableLayoutBehavior

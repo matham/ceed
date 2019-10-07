@@ -23,6 +23,7 @@
                 size_hint_min_x: self.minimum_width
                 orientation: 'horizontal'
                 FlatImageButton:
+                    test_name: 'add empty stage'
                     scale_down_color: True
                     source: 'flat_plus.png'
                     flat_color: app.theme.accent
@@ -98,6 +99,7 @@
                 if root.ref_stage is not None: root.expand = None
         FlatLabel:
             id: stage_label
+            test_name: 'stage label'
             center_texture: False
             padding: ('5dp', '5dp')
             flat_color: app.theme.text_primary

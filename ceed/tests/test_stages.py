@@ -5,19 +5,12 @@ import math
 from ceed.function import FunctionFactoryBase
 from ceed.stage import StageFactoryBase, CeedStage, CeedStageRef
 from .test_app.examples.stages import ParaAllStage, ParaAnyStage, \
-    SerialAllStage, SerialAnyStage, assert_stages_same
+    SerialAllStage, SerialAnyStage, assert_stages_same, make_stage
 from .test_app.test_shape import make_4_shapes
 from .test_app.examples.shapes import Shape, EllipseShapeP1, \
     CircleShapeP1, PolygonShapeP1, FreeformPolygonShapeP1, EllipseShapeP2, \
     CircleShapeP2, PolygonShapeP2, FreeformPolygonShapeP2
 from .test_app.examples.funcs import LinearFunctionF1, ConstFunctionF1
-
-
-def make_stage(stage_factory: StageFactoryBase, **kwargs):
-    return CeedStage(
-        stage_factory=stage_factory,
-        function_factory=stage_factory.function_factory,
-        shape_factory=stage_factory.shape_factory, **kwargs)
 
 
 def create_recursive_stages(

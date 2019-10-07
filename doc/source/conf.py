@@ -39,6 +39,8 @@ intersphinx_mapping = {
 # The suffix of source filenames.
 source_suffix = '.rst'
 
+autodoc_member_order = 'bysource'
+
 # The master toctree document.
 master_doc = 'index'
 
