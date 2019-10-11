@@ -679,7 +679,7 @@ class GroupFunction(Function):
 
     wrapper_classes = []
 
-    wrapper_funcs = []
+    wrapper_funcs: List[Function] = []
 
     cls_name = 'Group'
 

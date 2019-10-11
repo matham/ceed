@@ -1,4 +1,4 @@
-'''Stages
+"""Stages
 =================
 
 A :class:`CeedStage` combines :mod:`ceed.shapes` on the screen with a
@@ -9,7 +9,7 @@ intensity values for the shapes during an experimental stage.
 See :class:`StageFactoryBase` and :class:`CeedStage` for details.
 
 remove_shapes_upon_deletion must be bound
-'''
+"""
 from __future__ import annotations
 from copy import deepcopy
 from collections import defaultdict
@@ -1163,7 +1163,7 @@ def remove_shapes_upon_deletion(
     """
     shape_factory.fbind(
         'on_remove_shape', stage_factory.find_shape_in_all_stages,
-        callback=process_shape_callback)
+        process_shape_callback=process_shape_callback)
     shape_factory.fbind(
         'on_remove_group', stage_factory.find_shape_in_all_stages,
-        callback=process_shape_callback)
+        process_shape_callback=process_shape_callback)

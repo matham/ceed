@@ -259,14 +259,14 @@ class StageChildrenList(StageChildrenViewList):
             return
 
         assert drag_widget.drag_cls == 'stage'
-        if stage.parent_stage is None:
-            assert stage in stage_factory.stages
+        if not stage.can_other_stage_be_added(dragged_stage):
+            return
+
+        if dragged_stage.parent_stage is None:
+            assert dragged_stage in stage_factory.stages
 
             new_stage = stage_factory.get_stage_ref(stage=dragged_stage)
         else:
-            if not stage.can_other_stage_be_added(dragged_stage):
-                return
-
             new_stage = deepcopy(dragged_stage)
 
         stage.add_stage(new_stage, index=len(self.children) - index)
@@ -433,6 +433,10 @@ class StageWidget(ShowMoreBehavior, BoxLayout):
         if not self.is_visible:
             return
         yield self
+
+        # ref stage has no children
+        if self.ref_stage is not None:
+            return
 
         for stage in self.stage.stages:
 
@@ -615,6 +619,10 @@ class StageWidget(ShowMoreBehavior, BoxLayout):
         more_widget.add_widget(shape_widget)
         Builder.apply_rules(
             shape_widget, 'StageContainerListStyle', dispatch_kv_post=True)
+
+        stage_widget.test_name = 'stage child list'
+        func_widget.test_name = 'stage func list'
+        shape_widget.test_name = 'stage shape list'
 
 
 class StageShapeDisplay(BoxSelector):

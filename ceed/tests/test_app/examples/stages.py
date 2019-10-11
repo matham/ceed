@@ -1,10 +1,10 @@
 from __future__ import annotations
-from typing import List
+from typing import List, Tuple, Union
 
 from ceed.tests.ceed_app import CeedTestApp
 from ceed.stage import CeedStage, StageFactoryBase
 from ceed.function import FuncBase
-from ceed.shape import CeedShape
+from ceed.shape import CeedShape, CeedShapeGroup
 from .shapes import Shape
 from ceed.function import FuncBase, FuncGroup, FunctionFactoryBase
 from .funcs import ConstFunctionF1, LinearFunctionF1, ExponentialFunctionF1, \
@@ -31,7 +31,8 @@ def create_stage_funcs(func_app, function_factory):
 
 def create_test_stages(
         stage_app: CeedTestApp = None, stage_factory: StageFactoryBase = None,
-        manually_add=True):
+        manually_add=True, add_func=True, add_shapes=True) -> \
+        Tuple[Tuple[StageWrapper], List[Union[Shape, CeedShapeGroup]]]:
     if stage_app is None:
         function_factory = stage_factory.function_factory
         shape_factory = stage_factory.shape_factory
@@ -41,30 +42,32 @@ def create_test_stages(
         stage_factory = stage_app.stage_factory
 
     # create shapes
-    (group, group2, group3), (shape, shape2, shape3) = assert_add_three_groups(
-        shape_factory=shape_factory, app=stage_app, manually_add=manually_add)
-    shapes = [group3, shape, shape2, shape3]
+    if add_shapes:
+        (group, group2, group3), (shape, shape2, shape3) = \
+            assert_add_three_groups(
+                shape_factory=shape_factory, app=stage_app,
+                manually_add=manually_add)
+        shapes = [group3, shape, shape2, shape3]
+    else:
+        shapes = []
+
+    if add_func:
+        funcs = lambda: create_stage_funcs(
+            func_app=stage_app, function_factory=function_factory)
+    else:
+        funcs = lambda: []
 
     s1 = ParaAnyStage(
         stage_factory=stage_factory, manually_add=manually_add, shapes=shapes,
-        functions=create_stage_funcs(
-            func_app=stage_app, function_factory=function_factory),
-        app=stage_app
-    )
+        functions=funcs(), app=stage_app)
 
     s2 = ParaAllStage(
         stage_factory=stage_factory, manually_add=manually_add, shapes=shapes,
-        functions=create_stage_funcs(
-            func_app=stage_app, function_factory=function_factory),
-        app=stage_app
-    )
+        functions=funcs(), app=stage_app)
 
     s3 = SerialAnyStage(
         stage_factory=stage_factory, manually_add=manually_add, shapes=shapes,
-        functions=create_stage_funcs(
-            func_app=stage_app, function_factory=function_factory),
-        parent_wrapper_stage=s2, app=stage_app
-    )
+        functions=funcs(), app=stage_app, parent_wrapper_stage=s2)
     return (s1, s2, s3), shapes
 
 
@@ -222,3 +225,6 @@ class SerialAnyStage(StageWrapper):
     complete_on = 'any'
 
     color_g = True
+
+
+stage_classes = (ParaAllStage, ParaAnyStage, SerialAnyStage, SerialAllStage)

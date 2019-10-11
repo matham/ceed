@@ -38,6 +38,7 @@
             scroll_type: ['bars']
             StageList:
                 id: stages
+                test_name: 'stage list'
                 knsname: 'stages'
                 on_kv_post: app.stages_container = self
                 orientation: 'vertical'
@@ -86,6 +87,7 @@
                 pos: self.pos
         DraggingWidget:
             id: dragger
+            test_name: 'stage drag btn'
             drag_widget: selector
             obj_dragged: root.__self__
             drag_cls: 'stage'
@@ -107,12 +109,14 @@
             size_hint_min_x: self.texture_size[0]
         FlatImageButton:
             id: del_btn
+            test_name: 'del btn stage'
             scale_down_color: True
             source: 'flat_delete.png'
             flat_color: app.theme.accent
             disabled: root.stage.has_ref if root.ref_stage is None else False
             on_release: root.remove_stage()
         FlatImageButton:
+            test_name: 'stage settings open'
             scale_down_color: True
             source: 'flat_dots_vertical.png' if root.ref_stage is None else 'call-split.png'
             flat_color: app.theme.accent
@@ -155,6 +159,7 @@
 
 
 <StageSettingsDropdownStyle@object>:
+    test_name: 'stage settings'
     do_scroll: (False, False)
     flat_color: app.theme.primary_text
     flat_border_color: app.theme.divider
@@ -176,6 +181,7 @@
         height: self.minimum_height
         size_hint_min_x: self.minimum_width
         FlatSizedTextInput:
+            test_name: 'stage name'
             background_color: app.theme.primary_text
             text: root.stage_widget.stage.name
             on_focus: if not self.focus: root.stage_widget.stage.name = self.text
@@ -185,14 +191,17 @@
             height: '34dp'
             spacing: '5dp'
             LightThemedToggleButton:
+                test_name: 'stage color r'
                 text: 'R'
                 state: 'down' if root.stage_widget.stage.color_r else 'normal'
                 on_state: root.stage_widget.stage.color_r = self.state == 'down'
             LightThemedToggleButton:
+                test_name: 'stage color g'
                 text: 'G'
                 state: 'down' if root.stage_widget.stage.color_g else 'normal'
                 on_state: root.stage_widget.stage.color_g = self.state == 'down'
             LightThemedToggleButton:
+                test_name: 'stage color b'
                 text: 'B'
                 state: 'down' if root.stage_widget.stage.color_b else 'normal'
                 on_state: root.stage_widget.stage.color_b = self.state == 'down'
@@ -214,6 +223,7 @@
                 height: self.minimum_height
                 size_hint_min_x: self.minimum_width
                 LightThemedToggleButton:
+                    test_name: 'stage serial'
                     size_hint_y: None
                     padding: ('5dp', '5dp')
                     text: 'Serial'
@@ -222,6 +232,7 @@
                     state: 'down' if root.stage_widget.stage.order == 'serial' else 'normal'
                     on_state: root.stage_widget.stage.order = 'serial' if self.state == 'down' else 'parallel'
                 LightThemedToggleButton:
+                    test_name: 'stage parallel'
                     size_hint_y: None
                     padding: ('5dp', '5dp')
                     text: 'Parallel'
@@ -240,6 +251,7 @@
                 height: self.minimum_height
                 size_hint_min_x: self.minimum_width
                 LightThemedToggleButton:
+                    test_name: 'stage finish all'
                     size_hint_y: None
                     padding: ('5dp', '5dp')
                     text: 'All'
@@ -248,6 +260,7 @@
                     state: 'down' if root.stage_widget.stage.complete_on == 'all' else 'normal'
                     on_state: root.stage_widget.stage.complete_on = 'all' if self.state == 'down' else 'any'
                 LightThemedToggleButton:
+                    test_name: 'stage finish any'
                     size_hint_y: None
                     padding: ('5dp', '5dp')
                     text: 'Any'
@@ -272,12 +285,14 @@
             size: self.size
             pos: self.pos
     FlatLabel:
+        test_name: 'stage shape name'
         padding: '5dp', '5dp'
         flat_color: app.theme.text_primary
         center_texture: False
         text: root.stage_shape.name
         size_hint_min_x: self.texture_size[0]
     FlatImageButton:
+        test_name: 'stage shape del'
         scale_down_color: True
         source: 'flat_delete.png'
         flat_color: app.theme.accent

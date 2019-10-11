@@ -10,7 +10,7 @@ from ceed.tests.common import add_prop_watch
 
 def assert_shapes_same(
         shape1: CeedShape, shape2: CeedShape, compare_name=False):
-    assert isinstance(shape1, shape2.__class__)
+    assert type(shape1) == type(shape2)
 
     keys = set(shape1.get_state().keys()) | set(shape2.get_state().keys())
     assert 'name' in keys

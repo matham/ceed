@@ -1,23 +1,14 @@
 import pytest
 import math
-from typing import Type, List
+from typing import Type, List, Union
 from ceed.tests.ceed_app import CeedTestApp
-from ceed.tests.test_app import replace_text, touch_widget
-from ceed.function import FuncBase, FuncGroup, FunctionFactoryBase
+from ceed.tests.test_app import replace_text, touch_widget, \
+    select_spinner_value as select_spinner_func, escape
+from ceed.function import FuncBase, FuncGroup, FunctionFactoryBase, CeedFuncRef
 from .examples.funcs import func_classes, func_classes_dedup, GroupFunction, \
     GroupFunctionF5, Function, LinearFunctionF1, LinearFunctionF2, \
     GroupFunctionF4, CosFunctionF4, ExponentialFunctionF3, ConstFunctionF1, \
     LinearFunctionF1, ExponentialFunctionF1, CosFunctionF1, GroupFunctionF1
-
-
-async def select_spinner_func(func_app, func_name, spinner):
-    from kivy.metrics import dp
-    async for _ in func_app.do_touch_down_up(
-            pos=spinner.to_window(spinner.x + dp(30), spinner.center_y)):
-        pass
-    await func_app.wait_clock_frames(2)
-    label = func_app.resolve_widget().down(text=func_name)()
-    await touch_widget(func_app, label)
 
 
 async def assert_set_params_in_gui(
@@ -47,7 +38,7 @@ async def assert_set_params_in_gui(
     return settings
 
 
-async def assert_params_in_gui(
+async def assert_func_params_in_gui(
         func_app: CeedTestApp, func: Function, settings=None):
     opened_settings = settings is None
     if opened_settings:
@@ -73,17 +64,33 @@ async def assert_params_in_gui(
     return settings
 
 
-async def escape(func_app: CeedTestApp):
-    async for _ in func_app.do_keyboard_key(key='escape'):
-        pass
+def assert_funcs_same(
+        func1: Union[FuncBase, FuncGroup], func2: Union[FuncBase, FuncGroup],
+        compare_name=False):
+    assert type(func1) == type(func2)
+
+    keys = set(func1.get_state(recurse=False).keys()) | \
+        set(func2.get_state(recurse=False).keys())
+    assert 'name' in keys
+    if not compare_name:
+        keys.remove('name')
+    keys.remove('cls')
+
+    if isinstance(func1, FuncGroup):
+        keys.remove('funcs')
+        assert len(func1.funcs) == len(func2.funcs)
+
+    for key in keys:
+        assert getattr(func1, key) == getattr(func2, key)
 
 
 async def replace_last_ref_with_original_func(
-        func_app: CeedTestApp, func: FuncGroup, name: str):
+        func_app: CeedTestApp,
+        funcs: List[Union[CeedFuncRef, FuncBase, FuncGroup]], name: str):
     from ceed.function import CeedFuncRef
 
-    start_funcs = func.funcs[:]
-    ref_func = func.funcs[-1]
+    start_funcs = funcs[:]
+    ref_func = funcs[-1]
     # it should be a ref to start with
     assert isinstance(ref_func, CeedFuncRef)
     # make sure the class name matches - we added the right class
@@ -91,7 +98,8 @@ async def replace_last_ref_with_original_func(
 
     # the label of the new sub-func
     sub_func_widget = ref_func.display
-    name_w = func_app.resolve_widget(sub_func_widget).down(text=name)()
+    name_w = func_app.resolve_widget(sub_func_widget).down(
+        test_name='func label')()
     assert name_w.text == name
     # replace the ref with a copy of the func
     ref_btn = func_app.resolve_widget(sub_func_widget).down(
@@ -99,16 +107,16 @@ async def replace_last_ref_with_original_func(
     await touch_widget(func_app, ref_btn)
 
     # should now have replaced the ref with a copy of the original
-    assert ref_func not in func.funcs
-    assert len(func.funcs) == len(start_funcs)
+    assert ref_func not in funcs
+    assert len(funcs) == len(start_funcs)
 
-    new_func = func.funcs[-1]
+    new_func = funcs[-1]
     assert ref_func is not new_func
-    assert func.funcs[:-1] == start_funcs[:-1]
+    assert funcs[:-1] == start_funcs[:-1]
     # it should not be a ref anymore
     assert not isinstance(new_func, CeedFuncRef)
-    # make sure the class name matches - we got the right class
-    assert new_func.name == name
+
+    assert_funcs_same(ref_func.func, new_func)
 
     return new_func
 
@@ -218,7 +226,7 @@ async def assert_add_func_to_group(
     assert func.func.funcs[-1] not in original_funcs
 
     sub_func.func = await replace_last_ref_with_original_func(
-        func_app, func.func, sub_func.cls_name)
+        func_app, func.func.funcs, sub_func.cls_name)
 
     name = func_app.resolve_widget(
         sub_func.func.display).down(text=sub_func.cls_name)()
@@ -333,7 +341,7 @@ async def group_recursive_add(func_app: CeedTestApp, add_func):
     await select_spinner_func(func_app, 'Group', spinner)
     await add_func(g1)
     g2: FuncGroup = await replace_last_ref_with_original_func(
-        func_app, g1, 'Group')
+        func_app, g1.funcs, 'Group')
     g2_widget = g2.display
 
     # add linear to the inner group
@@ -344,7 +352,7 @@ async def group_recursive_add(func_app: CeedTestApp, add_func):
     await select_spinner_func(func_app, 'Linear', spinner)
     await add_func(g2)
     f2: FuncBase = await replace_last_ref_with_original_func(
-        func_app, g2, 'Linear')
+        func_app, g2.funcs, 'Linear')
 
     # add linear to the outer group
     name_label = func_app.resolve_widget(g1_widget).down(
@@ -352,7 +360,7 @@ async def group_recursive_add(func_app: CeedTestApp, add_func):
     await touch_widget(func_app, name_label)
     await add_func(g1)
     f1: FuncBase = await replace_last_ref_with_original_func(
-        func_app, g1, 'Linear')
+        func_app, g1.funcs, 'Linear')
 
     settings = []
     for wrapper_cls, f in (
@@ -426,7 +434,7 @@ async def test_duplicate_func_globally(func_app: CeedTestApp):
     wrapper_func2.func = func_app.function_factory.funcs_user[-1]
     assert wrapper_func.func is not wrapper_func2.func
     assert isinstance(wrapper_func2.func, CosFunc)
-    await assert_params_in_gui(func_app, wrapper_func2)
+    await assert_func_params_in_gui(func_app, wrapper_func2)
 
 
 async def global_ref_func_and_replace(func_app: CeedTestApp, add_func):
@@ -477,7 +485,7 @@ async def global_ref_func_and_replace(func_app: CeedTestApp, add_func):
     label = func_app.resolve_widget(exp_wrapper2.func.display).down(
         test_name='func label')()
     assert label.text == exp_wrapper2.cls_name
-    await assert_params_in_gui(func_app, exp_wrapper2)
+    await assert_func_params_in_gui(func_app, exp_wrapper2)
 
 
 async def test_drag_global_ref_func_and_replace(func_app: CeedTestApp):
