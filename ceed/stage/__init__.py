@@ -374,7 +374,7 @@ class StageFactoryBase(EventDispatcher):
 
         To use it, create the iterator, then for every time point call `next()`
         on the iterator and then send the monotonically increasing time to
-        the function using `send()` and in return the iterator will return
+        the function using `send()` and in return the iterator will yield
         the associated intensity values for each shape for that time point.
 
         :Params:
@@ -387,7 +387,8 @@ class StageFactoryBase(EventDispatcher):
             A list of the intensity values for each shape.
 
             Each item in the list is a 2-tuple of ``(name, values)``. ``name``
-            is the :attr:`kivy_garden.painter.PaintShape.name` of the shape.
+            is the :attr:`kivy_garden.painter.PaintShape.name` of the shape
+            and is listed only once in the list.
             ``values`` is a list of color values and each item in that list is
             a 4-tuple of ``(r, g, b, a)``. Any of these values can be None, in
             which case that color remains the same. This way a shape can be

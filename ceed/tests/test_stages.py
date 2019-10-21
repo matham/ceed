@@ -1,9 +1,12 @@
 import pytest
 from copy import deepcopy, copy
 import math
+from collections import defaultdict
+from fractions import Fraction
 
 from ceed.function import FunctionFactoryBase
-from ceed.stage import StageFactoryBase, CeedStage, CeedStageRef
+from ceed.stage import StageFactoryBase, CeedStage, CeedStageRef, \
+    StageDoneException
 from .test_app.examples.stages import ParaAllStage, ParaAnyStage, \
     SerialAllStage, SerialAnyStage, assert_stages_same, make_stage
 from .test_app.test_shape import make_4_shapes
@@ -15,106 +18,72 @@ from .test_app.examples.funcs import LinearFunctionF1, ConstFunctionF1
 
 def create_recursive_stages(
         stage_factory: StageFactoryBase, manually_add=False):
-    from ceed.function.plugin import ConstFunc
-    f1, f2, f3, f4, f5, f6, f7, f8, f9 = [
-        ConstFunc(function_factory=stage_factory.function_factory, a=a / 10,
-                  duration=4) for a in range(1, 10)]
-
-    shape = EllipseShapeP1(
-        app=None, painter=stage_factory.shape_factory,
-        manually_add=manually_add)
-    if not manually_add:
-        shape.make_shape()
     root = SerialAllStage(
-        stage_factory=stage_factory, manually_add=manually_add, shapes=[shape],
-        functions=[f1])
+        stage_factory=stage_factory, manually_add=manually_add)
     root.create_stage()
 
-    shape = CircleShapeP1(
-        app=None, painter=stage_factory.shape_factory,
-        manually_add=manually_add)
-    if not manually_add:
-        shape.make_shape()
     g1 = ParaAllStage(
         stage_factory=stage_factory, manually_add=manually_add,
-        parent_wrapper_stage=root,
-        shapes=[shape], functions=[f2])
+        parent_wrapper_stage=root)
     g1.create_stage()
 
-    shape = FreeformPolygonShapeP1(
-        app=None, painter=stage_factory.shape_factory,
-        manually_add=manually_add)
-    if not manually_add:
-        shape.make_shape()
     s1 = SerialAnyStage(
         stage_factory=stage_factory, manually_add=manually_add,
-        parent_wrapper_stage=g1,
-        shapes=[shape], functions=[f3])
+        parent_wrapper_stage=g1)
     s1.create_stage()
-    shape = PolygonShapeP1(
-        app=None, painter=stage_factory.shape_factory,
-        manually_add=manually_add)
-    if not manually_add:
-        shape.make_shape()
     s2 = SerialAllStage(
         stage_factory=stage_factory, manually_add=manually_add,
-        parent_wrapper_stage=g1,
-        shapes=[shape], functions=[f4])
+        parent_wrapper_stage=g1)
     s2.create_stage()
 
-    shape = CircleShapeP2(
-        app=None, painter=stage_factory.shape_factory,
-        manually_add=manually_add)
-    if not manually_add:
-        shape.make_shape()
     s3 = SerialAnyStage(
         stage_factory=stage_factory, manually_add=manually_add,
-        parent_wrapper_stage=root,
-        shapes=[shape], functions=[f5])
+        parent_wrapper_stage=root)
     s3.create_stage()
-    shape = EllipseShapeP2(
-        app=None, painter=stage_factory.shape_factory,
-        manually_add=manually_add)
-    if not manually_add:
-        shape.make_shape()
     s4 = SerialAllStage(
         stage_factory=stage_factory, manually_add=manually_add,
-        parent_wrapper_stage=root,
-        shapes=[shape], functions=[f6])
+        parent_wrapper_stage=root)
     s4.create_stage()
 
-    shape = EllipseShapeP1(
-        app=None, painter=stage_factory.shape_factory,
-        manually_add=manually_add)
-    if not manually_add:
-        shape.make_shape()
     g2 = ParaAllStage(
         stage_factory=stage_factory, manually_add=manually_add,
-        parent_wrapper_stage=root,
-        shapes=[shape], functions=[f7])
+        parent_wrapper_stage=root)
     g2.create_stage()
-    shape = PolygonShapeP2(
-        app=None, painter=stage_factory.shape_factory,
-        manually_add=manually_add)
-    if not manually_add:
-        shape.make_shape()
     s5 = SerialAnyStage(
         stage_factory=stage_factory, manually_add=manually_add,
-        parent_wrapper_stage=g2,
-        shapes=[shape], functions=[f8])
+        parent_wrapper_stage=g2)
     s5.create_stage()
-    shape = FreeformPolygonShapeP2(
-        app=None, painter=stage_factory.shape_factory,
-        manually_add=manually_add)
-    if not manually_add:
-        shape.make_shape()
     s6 = SerialAllStage(
         stage_factory=stage_factory, manually_add=manually_add,
-        parent_wrapper_stage=g2,
-        shapes=[shape], functions=[f9])
+        parent_wrapper_stage=g2)
     s6.create_stage()
 
     return root, g1, g2, s1, s2, s3, s4, s5, s6
+
+
+def get_stage_time_intensity(
+        stage_factory: StageFactoryBase, stage_name: str, frame_rate):
+    tick = stage_factory.tick_stage(stage_name)
+    # the sampling rate at which we sample the functions
+    frame_rate = int(frame_rate)
+
+    obj_values = defaultdict(list)
+    count = 0
+    while True:
+        count += 1
+
+        try:
+            next(tick)
+            shape_values = tick.send(Fraction(count, frame_rate))
+        except StageDoneException:
+            break
+
+        values = stage_factory.fill_shape_gl_color_values(
+            None, shape_values)
+        for name, r, g, b, a in values:
+            obj_values[name].append((r, g, b, a))
+
+    return obj_values, count - 1
 
 
 def test_factory_stage_unique_names(stage_factory: StageFactoryBase):
@@ -235,21 +204,21 @@ def test_clear_stages(stage_factory: StageFactoryBase):
     assert not stage_factory.stage_names
 
 
-# def test_can_other_stage_be_added(stage_factory: StageFactoryBase):
-#     root, g1, g2, s1, s2, s3, s4, s5, s6 = create_recursive_stages(
-#         stage_factory)
-#
-#     assert root.stage.can_other_stage_be_added(g1.stage)
-#     assert root.stage.can_other_stage_be_added(g2.stage)
-#     assert not root.stage.can_other_stage_be_added(root.stage)
-#
-#     assert not g1.stage.can_other_stage_be_added(root.stage)
-#     assert g1.stage.can_other_stage_be_added(g2.stage)
-#     assert not g1.stage.can_other_stage_be_added(g1.stage)
-#
-#     assert not g2.stage.can_other_stage_be_added(root.stage)
-#     assert g2.stage.can_other_stage_be_added(g1.stage)
-#     assert not g2.stage.can_other_stage_be_added(g2.stage)
+def test_can_other_stage_be_added(stage_factory: StageFactoryBase):
+    root, g1, g2, s1, s2, s3, s4, s5, s6 = create_recursive_stages(
+        stage_factory)
+
+    assert root.stage.can_other_stage_be_added(g1.stage)
+    assert root.stage.can_other_stage_be_added(g2.stage)
+    assert not root.stage.can_other_stage_be_added(root.stage)
+
+    assert not g1.stage.can_other_stage_be_added(root.stage)
+    assert g1.stage.can_other_stage_be_added(g2.stage)
+    assert not g1.stage.can_other_stage_be_added(g1.stage)
+
+    assert not g2.stage.can_other_stage_be_added(root.stage)
+    assert g2.stage.can_other_stage_be_added(g1.stage)
+    assert not g2.stage.can_other_stage_be_added(g2.stage)
 
 
 def test_stage_ref(stage_factory: StageFactoryBase):
@@ -699,3 +668,42 @@ def test_group_remove_stage(stage_factory: StageFactoryBase):
 
     g1.remove_stage(ref_g2)
     assert list(g1.get_stages(step_into_ref=False)) == [g1,]
+
+
+def test_simple_stage_intensity(stage_factory: StageFactoryBase):
+    from ceed.function.plugin import LinearFunc
+    shape = EllipseShapeP1(
+        app=None, painter=stage_factory.shape_factory, manually_add=False)
+    shape.make_shape()
+    stage_factory.shape_factory.add_shape(shape.shape)
+
+    shape2 = EllipseShapeP2(
+        app=None, painter=stage_factory.shape_factory, manually_add=False)
+    shape2.make_shape()
+    stage_factory.shape_factory.add_shape(shape2.shape)
+
+    f: LinearFunc = LinearFunc(
+        function_factory=stage_factory.function_factory, b=0, m=.1, duration=5)
+
+    stage = make_stage(
+        stage_factory, color_r=True, color_g=False, color_b=True)
+    stage_factory.add_stage(stage)
+    stage.add_func(f)
+    stage.add_shape(shape.shape)
+    stage.add_shape(shape2.shape)
+
+    values, n = get_stage_time_intensity(stage_factory, stage.name, 10)
+    assert len(values) == 2
+    colors = values[shape.name]
+    colors2 = values[shape2.name]
+    assert len(colors) == 10 * 5
+
+    for i, (r, g, b, a) in enumerate(colors):
+        assert math.isclose(r, i / 10 * .1)
+        assert math.isclose(b, i / 10 * .1)
+        assert g == 0
+
+    for i, (r, g, b, a) in enumerate(colors2):
+        assert math.isclose(r, i / 10 * .1)
+        assert math.isclose(b, i / 10 * .1)
+        assert g == 0
