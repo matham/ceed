@@ -15,6 +15,8 @@ Contents:
 
    api/api.rst
 
+   optics/optics.rst
+
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
