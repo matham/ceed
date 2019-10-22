@@ -8,6 +8,7 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
+   blueprint.rst
    installation.rst
    getting_started.rst
 
