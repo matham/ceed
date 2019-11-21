@@ -659,8 +659,11 @@ def view_process_enter(read, write, settings, app_settings):
     except Exception as e:
         if app is not None:
             app.handle_exception(e, exc_info=sys.exc_info())
-
-    write.put_nowait(('eof', None))
+        else:
+            exc_info = ''.join(traceback.format_exception(*sys.exc_info()))
+            write.put_nowait(('exception', yaml_dumps((str(e), exc_info))))
+    finally:
+        write.put_nowait(('eof', None))
 
 
 class ControllerSideViewControllerBase(ViewControllerBase):
