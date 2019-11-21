@@ -102,7 +102,7 @@ jobs:
       run: |
         cd package_base_kivy_app/doc
         BASEKIVYAPP_CONFIG_DOC_PATH=../../prop_docs.json make html
-        cd ../../doc
+        cd ../../
         cd package_cpl_media/doc
         BASEKIVYAPP_CONFIG_DOC_PATH=../../prop_docs.json make html
         cd ../../doc
