@@ -1,6 +1,13 @@
+"""Optics App
+==============
+
+App to help designs the a lens system, such as used by the Ceed projector
+to project onto the tissue.
+
+"""
 from kivy.event import EventDispatcher
 from kivy_garden.graph import MeshLinePlot, Graph, LinePlot, ContourPlot, \
-    PointsPlot
+    PointPlot
 from kivy.properties import NumericProperty, ObjectProperty, DictProperty, \
     ReferenceListProperty, StringProperty, ListProperty, BooleanProperty
 from kivy.utils import get_color_from_hex as rgb
@@ -23,8 +30,14 @@ from os.path import dirname, join, isdir
 from collections import deque
 from skimage import measure
 
+__all__ = (
+    'OpticsApp', 'PlotWidget', 'FormulaVariableBehavior',
+    'PropertyDisplayBinding', 'FormulaWidget', 'LensFocalLengthFormula',
+    'LensFixedObjectFormula', 'CeedFormula', 'FormulaPlot', 'FormulaGraph')
+
 resource_add_path(join(dirname(base_kivy_app.app.__file__), 'media'))
-resource_add_path(join(dirname(base_kivy_app.app.__file__), 'media', 'flat_icons'))
+resource_add_path(
+    join(dirname(base_kivy_app.app.__file__), 'media', 'flat_icons'))
 
 
 class FormulaGraph(Graph):
@@ -259,7 +272,7 @@ class FormulaPlot(EventDispatcher):
             self.plot = plot = LinePlot(color=next(self.colors), line_width=2)
         graph.add_plot(plot)
 
-        self._value_plot = PointsPlot(color=next(self.colors), point_size=3)
+        self._value_plot = PointPlot(color=next(self.colors), point_size=3)
         graph.add_plot(self._value_plot)
 
     def refresh_plot(self, from_variables=True):
