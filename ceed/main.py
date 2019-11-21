@@ -11,6 +11,8 @@ import time
 
 from base_kivy_app.app import BaseKivyApp, run_app as run_cpl_app
 from base_kivy_app.graphics import HighightButtonBehavior, BufferImage
+from base_kivy_app.app import report_exception_in_app
+import cpl_media
 
 from kivy.lang import Builder
 from kivy.factory import Factory
@@ -18,7 +20,6 @@ from kivy.properties import ObjectProperty, BooleanProperty
 
 import ceed.graphics
 Builder.load_file(join(dirname(__file__), 'graphics', 'graphics.kv'))
-# from ceed.player import CeedPlayer, CeedFFmpegPlayer, CeedPTGrayPlayer
 import ceed.function.plugin
 import ceed.shape
 import ceed.stage
@@ -34,8 +35,7 @@ from ceed.stage.stage_widgets import StageList
 from ceed.view.controller import ControllerSideViewControllerBase
 from ceed.storage.controller import CeedDataWriterBase, DataSerializerBase
 from ceed.graphics import CeedDragNDrop
-from ceed.remote.remote_view import RemoteViewerListenerBase
-from ceed.player import CeedRemotePlayer
+from ceed.player import CeedPlayer
 from ceed.function.func_widgets import FuncNoiseDropDown, FuncList
 from ceed.shape.shape_widgets import CeedPainter, ShapeList, ShapeGroupList
 from ceed.view.view_widgets import MEAArrayAlign
@@ -60,7 +60,7 @@ class CeedApp(BaseKivyApp):
 
     function_factory = None  # type: FunctionFactoryBase
 
-    # player = None  # type: CeedPlayer
+    player = None  # type: CeedPlayer
 
     view_controller = None  # type: ControllerSideViewControllerBase
 
@@ -68,13 +68,11 @@ class CeedApp(BaseKivyApp):
 
     data_serializer = None  # type: DataSerializerBase
 
-    remote_viewer = None  # type: RemoteViewerListenerBase
-
     stage_factory = None  # type: StageFactoryBase
 
     shape_factory = ObjectProperty(None, rebind=True)  # type: CeedPainter
 
-    remote_player = None  # type: CeedRemotePlayer
+    # remote_player = None  # type: CeedRemotePlayer
 
     agreed_discard = False
 
@@ -101,8 +99,6 @@ class CeedApp(BaseKivyApp):
 
     central_display = ObjectProperty(None, rebind=True)  # type: BufferImage
 
-    use_remote_view = BooleanProperty(False)
-
     @classmethod
     def get_config_classes(cls):
         d = super(CeedApp, cls).get_config_classes()
@@ -110,24 +106,16 @@ class CeedApp(BaseKivyApp):
         d['view'] = ControllerSideViewControllerBase
         d['data'] = CeedDataWriterBase
         d['serializer'] = DataSerializerBase
-        # d['player'] = CeedPlayer
-        # d['point_gray_cam'] = CeedPTGrayPlayer
-        # d['video_file_playback'] = CeedFFmpegPlayer
-        d['remote_viewer'] = RemoteViewerListenerBase
+        d['player'] = CeedPlayer
         return d
 
-    def get_app_config_classes(self):
-        d = super(CeedApp, self).get_app_config_classes()
+    def get_config_instances(self):
+        d = super(CeedApp, self).get_config_instances()
         d['function'] = self.function_factory
         d['view'] = self.view_controller
         d['data'] = self.ceed_data
         d['serializer'] = self.data_serializer
-
-        # p = d['player'] = self.player
-        # d['point_gray_cam'] = p.pt_player
-        # d['video_file_playback'] = p.ff_player
-        d['remote_viewer'] = self.remote_viewer
-
+        d['player'] = self.player
         return d
 
     def __init__(self, **kwargs):
@@ -136,12 +124,10 @@ class CeedApp(BaseKivyApp):
         register_all_functions(self.function_factory)
         self.stage_factory = StageFactoryBase(
             function_factory=self.function_factory, shape_factory=None)
-        # self.player = CeedPlayer()
+        self.player = CeedPlayer()
         self.view_controller = ControllerSideViewControllerBase()
         self.ceed_data = CeedDataWriterBase()
         self.data_serializer = DataSerializerBase()
-        self.remote_viewer = RemoteViewerListenerBase()
-        self.remote_player = CeedRemotePlayer()
         super(CeedApp, self).__init__(**kwargs)
         self.load_app_settings_from_file()
         self.apply_app_settings()
@@ -154,7 +140,7 @@ class CeedApp(BaseKivyApp):
         base = dirname(__file__)
         # Builder.load_file(join(base, 'graphics', 'graphics.kv'))
         Builder.load_file(join(base, 'ceed_style.kv'))
-        # Builder.load_file(join(base, 'player', 'player_style.kv'))
+        Builder.load_file(join(base, 'player', 'player_style.kv'))
         Builder.load_file(join(base, 'shape', 'shape_style.kv'))
         Builder.load_file(join(base, 'function', 'func_style.kv'))
         Builder.load_file(join(base, 'stage', 'stage_style.kv'))
@@ -165,6 +151,7 @@ class CeedApp(BaseKivyApp):
         self.load_app_kv()
         self.yesno_prompt = Factory.CeedYesNoPrompt()
         self.noise_dropdown_widget = FuncNoiseDropDown()
+        self.player.create_widgets()
 
         root = Factory.get('MainView')()
         return super(CeedApp, self).build(root)
@@ -203,11 +190,7 @@ class CeedApp(BaseKivyApp):
         self.ceed_data.fbind('has_unsaved', self.set_tittle)
         self.ceed_data.fbind('read_only_file', self.set_tittle)
 
-        try:
-            self.view_controller.set_led_mode(
-                self.view_controller.LED_mode_idle)
-        except ImportError:
-            pass
+        self.view_controller.set_led_mode(self.view_controller.LED_mode_idle)
 
     def set_tittle(self, *largs):
         ''' Sets the title of the window using the currently running
@@ -232,12 +215,10 @@ class CeedApp(BaseKivyApp):
         self.ceed_data.config_changed = True
 
     def check_close(self):
-        # if CeedPlayer.is_player_active():
-        #     self._close_message = 'Cannot close while player is active.'
-        #     return False
         if self.view_controller.stage_active or self.ceed_data.data_thread:
             self._close_message = 'Cannot close during an experiment.'
             return False
+        self.player.stop()
         self.view_controller.stop_process()
         self.view_controller.finish_stop_process()
         if not self.ceed_data.ui_close(app_close=True):
@@ -268,9 +249,6 @@ class CeedApp(BaseKivyApp):
 
         for func in self.function_factory.funcs_inst_default.values():
             func.funbind('on_changed', self.changed_callback)
-        if self.remote_viewer:
-            self.remote_viewer.stop_listener()
-        # CeedPlayer.exit_players()
         if self.view_controller is not None:
             self.view_controller.stop_process()
             self.view_controller.finish_stop_process()
@@ -283,6 +261,7 @@ class CeedApp(BaseKivyApp):
             self.ceed_data.funbind('read_only_file', self.set_tittle)
 
         self.dump_app_settings_to_file()
+        self.player.clean_up()
         HighightButtonBehavior.uninit_class()
 
 

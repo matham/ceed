@@ -14,27 +14,8 @@
         size_hint_y: None
         height: self.minimum_height
         orientation: 'lr-tb'
-        # VideoControl
-        #     id: video
-        FlatDivider:
+        VideoControl
             id: video
-            size_hint_y: None
-            height: '34dp'
-            color: app.theme.divider
-        FlatImageToggleButton:
-            knsname: 'gui_remote_view'
-            size_hint_y: None
-            height: video.height
-            on_state: app.use_remote_view = self.state == 'down'
-            on_release:
-                app.remote_viewer.start_listener() if self.state == 'down' else app.remote_viewer.stop_listener()
-                if app.view_controller.propixx_lib and self.state == 'down': app.view_controller.set_led_mode(app.view_controller.LED_mode_idle)
-            state: 'down' if app.remote_viewer.running else 'normal'
-            source: 'ic_cast_white_24dp_1x.png' if self.state == 'normal' else 'ic_cast_connected_white_24dp_1x.png'
-            scale_down_color: True
-            flat_color: app.theme.accent
-            hover_text: 'Remote viewer ' + ('[b]disconnected[/b]' if self.state == 'normal' else '[b]connected[/b]')
-            test_name: 'remote view'
         FlatDivider:
             size_hint_y: None
             height: video.height

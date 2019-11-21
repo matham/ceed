@@ -90,7 +90,7 @@ class ViewControllerBase(EventDispatcher):
         'screen_width', 'screen_height', 'frame_rate',
         'use_software_frame_rate', 'output_count', 'screen_offset_x',
         'fullscreen', 'video_mode', 'LED_mode', 'LED_mode_idle',
-        'vpixx_remote', 'mirror_mea', 'mea_num_rows', 'mea_num_cols',
+        'mirror_mea', 'mea_num_rows', 'mea_num_cols',
         'mea_pitch', 'mea_diameter', 'mea_transform', 'cam_transform',
         'flip_projector', 'flip_camera')
 
@@ -175,10 +175,6 @@ class ViewControllerBase(EventDispatcher):
 
     propixx_lib = BooleanProperty(False)
     '''True when the propixx python library is available. Read-only.
-    '''
-
-    vpixx_remote = BooleanProperty(False)
-    '''Whether the vpixx library interactions should happen remotely.
     '''
 
     video_modes = ['RGB', 'RB3D', 'RGB240', 'RGB180', 'QUAD4X', 'QUAD12X',
@@ -888,11 +884,6 @@ class ControllerSideViewControllerBase(ViewControllerBase):
 
     @app_error
     def set_pixel_mode(self, state):
-        if self.vpixx_remote:
-            App.get_running_app().remote_viewer.send_vpixx_command(
-                'pixel_mode', (state, ))
-            return
-
         if PROPixxCTRL is None:
             if ignore_vpixx_import_error:
                 return
@@ -911,11 +902,6 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         '''Sets the projector's LED mode. ``mode`` can be one of
         :attr:`ViewControllerBase.led_modes`.
         '''
-        if self.vpixx_remote:
-            App.get_running_app().remote_viewer.send_vpixx_command(
-                'led_mode', ('PROPixx', self.led_modes[mode]))
-            return
-
         if libdpx is None:
             if ignore_vpixx_import_error:
                 return
@@ -932,11 +918,6 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         '''Sets the projector's video mode. ``mode`` can be one of
         :attr:`ViewControllerBase.video_modes`.
         '''
-        if self.vpixx_remote:
-            App.get_running_app().remote_viewer.send_vpixx_command(
-                'video_mode', (mode, ))
-            return
-
         if PROPixx is None:
             if ignore_vpixx_import_error:
                 return

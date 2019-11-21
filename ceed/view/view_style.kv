@@ -35,7 +35,7 @@
                     #         pos: 0, self.height
                     #         size: self.width, max(0, layout.height - self.height)
                     BufferImage:
-                        knsname: 'central_display'
+                        on_kv_post: app.central_display = self.__self__
                         flip: app.view_controller.flip_camera
                         auto_bring_to_front: False
                         size_hint: None, None
@@ -52,7 +52,6 @@
                         on_transform: if not mea_align.compare_mat(self.transform, app.view_controller.cam_transform): app.view_controller.cam_transform = self.transform.tolist()
                     CeedPainter:
                         on_kv_post: app.shape_factory = self
-                        knsname: 'painter'
                         test_name: 'painter'
                         id: painter
                         size_hint: None, None
@@ -61,7 +60,6 @@
                         move_array: False
                     MEAArrayAlign:
                         on_kv_post: app.mea_align_widget = self
-                        knsname: 'mea_align'
                         id: mea_align
                         do_scale: painter.locked and painter.move_array
                         do_translation: self.do_scale, self.do_scale

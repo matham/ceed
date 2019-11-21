@@ -92,7 +92,7 @@ class CeedViewApp(BaseKivyApp):
         self.data_serializer = DataSerializerBase()
         self.function_factory = FunctionFactoryBase()
         register_all_functions(self.function_factory)
-        self.shape_factory = CeedPaintCanvasBehavior(knsname='painter')
+        self.shape_factory = CeedPaintCanvasBehavior()
         self.stage_factory = StageFactoryBase(
             function_factory=self.function_factory,
             shape_factory=self.shape_factory)

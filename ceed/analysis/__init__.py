@@ -388,7 +388,7 @@ class CeedDataReader(object):
         return img, notes, save_time
 
     def save_image(self, filename, img, codec='bmp'):
-        ff_save_image(
+        BaseRecorder.save_image(
             filename, img, codec=codec, pix_fmt=img.get_pixel_format())
 
     def get_electrode_offset_scale(self, electrode):

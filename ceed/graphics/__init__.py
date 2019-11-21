@@ -252,20 +252,6 @@ class FilterTouchEagerlyBehavior(object):
         return super(FilterTouchEagerlyBehavior, self).on_touch_up(touch)
 
 
-class KNSlider(Slider):
-
-    __events__ = ('on_release', )
-
-    def on_release(self, *largs):
-        pass
-
-    def on_touch_up(self, touch):
-        if super(KNSlider, self).on_touch_up(touch):
-            if touch.grab_current == self:
-                self.dispatch('on_release', self)
-            return True
-
-
 Factory.register(classname='ShowMoreSelection', cls=ShowMoreSelection)
 Factory.register(classname='ShowMoreBehavior', cls=ShowMoreBehavior)
 Factory.register(classname='TouchSelectBehavior', cls=TouchSelectBehavior)
