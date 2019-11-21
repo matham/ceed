@@ -1,3 +1,10 @@
+"""Ceed data analysis
+======================
+
+Code to read the load the recorded Ceed experimental data.
+
+"""
+
 import math
 import scipy.io
 import numpy as np
@@ -9,7 +16,7 @@ from numpy.lib.format import open_memmap
 
 from base_kivy_app.utils import yaml_loads
 from base_kivy_app.config import apply_config
-from base_kivy_app.graphics import save_image as ff_save_image
+from cpl_media.recorder import BaseRecorder
 from ffpyplayer.pic import Image, SWScale
 from ffpyplayer.tools import get_best_pix_fmt
 from tqdm import tqdm

@@ -1,3 +1,9 @@
+"""Projector test app
+=====================
+
+App to test the projector - MCS hardware data link.
+
+"""
 from kivy.app import App
 from kivy.lang import Builder
 from kivy.factory import Factory
@@ -13,6 +19,7 @@ try:
 except ImportError:
     libdpx = PROPixx = PROPixxCTRL = None
 
+__all__ = ('IOApp', )
 
 kv = '''
 BoxLayout:

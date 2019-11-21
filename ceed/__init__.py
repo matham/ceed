@@ -9,7 +9,7 @@ import os
 
 __all__ = ('__version__', 'is_view_inst')
 
-__version__ = '1.0.0-dev'
+__version__ = '1.0.0.dev0'
 
 is_view_inst = 'CEED_IS_VIEW' in os.environ
 '''Whether ceed is imported from the client code that displays the projector

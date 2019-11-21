@@ -1,3 +1,10 @@
+"""Ceed-MCS data merging
+=========================
+
+The classes to merge and align the Ceed and MCS recording data into a single
+file.
+"""
+
 import sys
 import datetime
 from tqdm import tqdm
@@ -11,6 +18,9 @@ import McsPy.McsData
 import numpy as np
 import nixio as nix
 from base_kivy_app.utils import yaml_dumps, yaml_loads
+
+__all__ = ('CeedMCSDataMerger', 'DigitalDataStore', 'MCSDigitalData',
+           'CeedDigitalData', 'AlignmentException')
 
 McsPy.McsData.VERBOSE = False
 

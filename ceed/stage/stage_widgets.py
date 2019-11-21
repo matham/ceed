@@ -1082,7 +1082,7 @@ class StageGraph(Factory.FlatSplitter):
 
     def apply_selection_all(self, channel):
         '''Hides or shows all the plots for a color ``channel``, e.g. red,
-        depending on the state of the corresponding :attr:``r_selected.
+        depending on the state of the corresponding :attr:`` r_selected.
 
         It cycles between selecting all and derselecting all of that channel.
 

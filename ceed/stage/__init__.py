@@ -393,7 +393,7 @@ class StageFactoryBase(EventDispatcher):
             a 4-tuple of ``(r, g, b, a)``. Any of these values can be None, in
             which case that color remains the same. This way a shape can be
             updated from multiple sub-stages, where only e.g. the ``r`` value
-             is changed.
+            is changed.
 
         :raises:
 
@@ -473,6 +473,7 @@ class StageFactoryBase(EventDispatcher):
             A list of the colors each shape was set to. Each item in the list
             is ``(name, r, g, b, a)``, where ``name`` is the shape's name and
             ``r``, ``g``, ``b``, ``a`` is the color value it was set to.
+            Each ``name`` occurs at most once in the list.
 
 
 
@@ -580,8 +581,6 @@ class CeedStage(EventDispatcher):
     evaluated. That means the shapes associated with the root stage intensity
     values is updated as are the the intensity values of the shapes from the
     sub-stage.
-
-    .. image:: Stage_order.png
 
     E.g. if we have a root stage (blue) which contains 4 children
     :attr:`stages` A, B, C, D (purple to orange) as in the image.

@@ -1,3 +1,10 @@
+"""Storage widgets
+==================
+
+Kivy widgets visualizing the data storage.
+
+"""
+
 from kivy.uix.boxlayout import BoxLayout
 from kivy.app import App
 from kivy.properties import NumericProperty, BooleanProperty, ObjectProperty, \
@@ -7,6 +14,9 @@ from base_kivy_app.utils import yaml_dumps
 
 from ceed.graphics import ShowMoreBehavior
 from ceed.storage.controller import CeedDataWriterBase
+
+__all__ = (
+    'LogWidgetBase', 'StageLogWidget', 'ImageLogWidget', 'ExperimentLogWidget')
 
 
 class ExperimentLogWidget(BoxLayout):

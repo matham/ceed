@@ -1,3 +1,5 @@
+.. _ceed-root-api:
+
 ####################
   The Ceed API
 ####################
@@ -6,12 +8,12 @@
    :maxdepth: 2
 
    ceed.rst
-   main.rst
-   player.rst
-   utils.rst
+   analysis/api.rst
    function/api.rst
    shape/api.rst
    stage/api.rst
    view/api.rst
    storage/api.rst
+   player.rst
+   utils.rst
    graphics/api.rst

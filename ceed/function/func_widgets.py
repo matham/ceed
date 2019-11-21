@@ -69,7 +69,7 @@ class FuncList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
     def add_func(self, name: str):
         """Adds a copy of the the function with the given ``name`` from
         :attr:`function_factory` to the available functions in
-         :attr:`function_factory` (with a new name of course) or to a function
+        :attr:`function_factory` (with a new name of course) or to a function
         group.
         """
         parent: Optional[FuncGroup] = None
@@ -261,7 +261,8 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
     """
 
     settings_root: FuncSettingsDropDown = None
-    """The :class:`FuncSettingsDropDown`used by this function to show settings.
+    """The :class:`FuncSettingsDropDown` used by this function to show
+    settings.
     """
 
     expand_widget = None

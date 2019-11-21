@@ -1,5 +1,15 @@
-# -*- coding: utf-8 -*-
+# Configuration file for the Sphinx documentation builder.
+#
+# This file only contains a selection of the most common options. For a full
+# list see the documentation:
+# http://www.sphinx-doc.org/en/master/config
 
+# -- Path setup --------------------------------------------------------------
+
+# If extensions (or modules to document with autodoc) are in another directory,
+# add these directories to sys.path here. If the directory is relative to the
+# documentation root, use os.path.abspath to make it absolute, like shown here.
+#
 from functools import partial
 import sphinx_rtd_theme
 import os
@@ -8,6 +18,18 @@ import ceed
 from ceed.main import CeedApp
 from base_kivy_app.config import create_doc_listener, write_config_attrs_rst
 
+# -- Project information -----------------------------------------------------
+
+project = 'Ceed'
+copyright = '2019, Matthew Einhorn'
+author = 'Matthew Einhorn'
+
+
+# -- General configuration ---------------------------------------------------
+
+# Add any Sphinx extension module names here, as strings. They can be
+# extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
+# ones.
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.todo',
@@ -16,89 +38,47 @@ extensions = [
     "sphinx_rtd_theme",
 ]
 
-html_sidebars = {
-    '**': [
-        'about.html',
-        'navigation.html',
-        'relations.html',
-        'searchbox.html',
-        'sourcelink.html'
-    ]
-}
-
 intersphinx_mapping = {
-    'pyflycap2': ('https://matham.github.io/pyflycap2/', None),
     'ffpyplayer': ('https://matham.github.io/ffpyplayer/', None),
-    'kivy': ('https://kivy.org/docs/', None),
+    'kivy': ('https://kivy.org/doc/stable/', None),
     'kivy_garden.drag_n_drop':
         ('https://kivy-garden.github.io/drag_n_drop/', None),
     'kivy_garden.painter': ('https://kivy-garden.github.io/painter/', None),
-    'base_kivy_app': ('https://matham.github.io/base_kivy_app/', None)
+    'base_kivy_app': ('https://matham.github.io/base_kivy_app/', None),
+    'cpl_media': ('https://matham.github.io/cpl_media/', None)
 }
 
-# The suffix of source filenames.
-source_suffix = '.rst'
-
-autodoc_member_order = 'bysource'
-
-# The master toctree document.
-master_doc = 'index'
-
-# General information about the project.
-project = u'Ceed'
-
-# The short X.Y version.
-version = ceed.__version__
-# The full version, including alpha/beta/rc tags.
-release = ceed.__version__
+# Add any paths that contain templates here, relative to this directory.
+templates_path = ['_templates']
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
+# This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = []
 
-# The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'
+
+# -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
+#
 html_theme = 'sphinx_rtd_theme'
 
-# Output file base name for HTML help builder.
-htmlhelp_basename = 'Ceeddoc'
-
-latex_elements = {}
-
-latex_documents = [
-  ('index', 'Ceed.tex', u'Ceed Documentation',
-   u'Matthew Einhorn', 'manual'),
-]
-
-# One entry per manual page. List of tuples
-# (source start file, name, description, authors, manual section).
-man_pages = [
-    ('index', 'Ceed', u'Ceed Documentation',
-     [u'Matthew Einhorn'], 1)
-]
-
-# Grouping the document tree into Texinfo files. List of tuples
-# (source start file, target name, title, author,
-#  dir menu entry, description, category)
-texinfo_documents = [
-  ('index', 'Ceed', u'Ceed Documentation',
-   u'Matthew Einhorn', 'Ceed', 'One line description of project.',
-   'Miscellaneous'),
-]
+# Add any paths that contain custom static files (such as style sheets) here,
+# relative to this directory. They are copied after the builtin static files,
+# so a file named "default.css" will overwrite the builtin "default.css".
+html_static_path = ['_static']
 
 
 def setup(app):
-    fname = os.environ.get('CPLCOM_CONFIG_DOC_PATH', 'config_attrs.json')
+    fname = os.environ.get('BASEKIVYAPP_CONFIG_DOC_PATH', 'config_attrs.json')
     create_doc_listener(app, ceed, fname)
     if CeedApp.get_running_app() is not None:
-        classes = CeedApp.get_running_app().get_app_config_classes()
+        obj = CeedApp.get_running_app()
     else:
-        classes = CeedApp.get_config_classes()
+        obj = CeedApp
 
     app.connect(
         'build-finished', partial(
-            write_config_attrs_rst, classes, ceed, filename=fname)
+            write_config_attrs_rst, obj, ceed, filename=fname)
     )
