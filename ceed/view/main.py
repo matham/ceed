@@ -78,8 +78,8 @@ class CeedViewApp(BaseKivyApp):
         d['function'] = FunctionFactoryBase
         return d
 
-    def get_app_config_classes(self):
-        d = super(CeedViewApp, self).get_app_config_classes()
+    def get_config_instances(self):
+        d = super(CeedViewApp, self).get_config_instances()
         d['view'] = self.view_controller
         d['data'] = self.ceed_data
         d['serializer'] = self.data_serializer

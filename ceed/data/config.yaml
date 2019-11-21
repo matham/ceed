@@ -1,7 +1,87 @@
 app: {inspect: true}
 data: {backup_interval: 5.0, root_path: E:\msys64\home\matte}
 function: {}
-remote_viewer: {port: 10000, server: 128.253.57.120, timeout: 0.1}
+player:
+  ffmpeg:
+    dshow_filename: ''
+    dshow_opt: ''
+    dshow_rate: 0
+    dshow_true_filename: ''
+    file_fmt: ''
+    icodec: ''
+    metadata_play: ['', 0, 0, 0]
+    metadata_play_used: [yuv420p, 1920, 1080, 29.833333333333332]
+    play_filename: ''
+    use_dshow: false
+  image_file_recorder:
+    compression: raw
+    extension: tiff
+    metadata_record: ['', 0, 0, 0]
+    record_directory: '~'
+    record_prefix: image_
+  network_client:
+    metadata_play: ['', 0, 0, 0]
+    metadata_play_used: ['', 0, 0, 0]
+    port: 0
+    server: ''
+    timeout: 0.01
+  player_name: ffmpeg
+  ptgray:
+    brightness: {}
+    cam_config_opts: {}
+    exposure: {}
+    frame_rate: {}
+    gain: {}
+    gamma: {}
+    hue: {}
+    ip: ''
+    iris: {}
+    metadata_play: ['', 0, 0, 0]
+    metadata_play_used: ['', 0, 0, 0]
+    mirror: false
+    pan: {}
+    saturation: {}
+    serial: 0
+    sharpness: {}
+    shutter: {}
+    tilt: {}
+  thor:
+    binning_x: 0
+    binning_x_range: [0, 0]
+    binning_y: 0
+    binning_y_range: [0, 0]
+    black_level: 0
+    black_level_range: [0, 100]
+    color_gain: [1, 1, 1]
+    exposure_ms: 0
+    exposure_range: [0, 100]
+    frame_queue_size: 1
+    freq: 20 MHz
+    gain: 0
+    gain_range: [0, 100]
+    metadata_play: ['', 0, 0, 0]
+    metadata_play_used: ['', 0, 0, 0]
+    num_queued_frames: 0
+    roi_height: 0
+    roi_width: 0
+    roi_x: 0
+    roi_y: 0
+    sensor_size: [0, 0]
+    serial: ''
+    serials: []
+    supported_freqs: [20 MHz]
+    supported_taps: ['1']
+    supported_triggers: [SW Trigger, HW Trigger]
+    supports_color: false
+    taps: '1'
+    trigger_count: 1
+    trigger_type: SW Trigger
+  video_recorder:
+    estimate_record_rate: false
+    metadata_record: ['', 0, 0, 0]
+    record_directory: '~'
+    record_fname: video{}.mkv
+    record_fname_count: 3
 serializer:
   clock_idx: 2
   count_indices: [19, 20]
@@ -37,4 +117,3 @@ view:
   screen_width: 1920
   use_software_frame_rate: false
   video_mode: RGB
-  vpixx_remote: true

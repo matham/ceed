@@ -299,8 +299,10 @@ class CeedDataReader(object):
         stage = StageFactoryBase(
             function_factory=func, shape_factory=shape)
 
-        apply_config(config_data['app_settings'], {
-            'view': view, 'serializer': ser, 'function': func})
+        for name, obj in {
+                'view': view, 'serializer': ser, 'function': func}.items():
+            if name in config_data['app_settings']:
+                apply_config(obj, config_data['app_settings'][name])
         self.populate_config(config_data, shape, func, stage)
 
         self.app_config = {
@@ -336,8 +338,10 @@ class CeedDataReader(object):
         stage = self.stage_factory = StageFactoryBase(
             function_factory=func, shape_factory=shape)
 
-        apply_config(config_data['app_settings'], {
-            'view': view, 'serializer': ser, 'function': func})
+        for name, obj in {
+                'view': view, 'serializer': ser, 'function': func}.items():
+            if name in config_data['app_settings']:
+                apply_config(obj, config_data['app_settings'][name])
         self.populate_config(config_data, shape, func, stage)
 
         self.experiment_cam_image = self.read_image_from_block(
