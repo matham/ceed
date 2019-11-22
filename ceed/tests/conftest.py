@@ -99,6 +99,9 @@ async def ceed_app(request, nursery, temp_file, tmp_path, tmp_path_factory):
     Window.initialized = True
     Window.canvas.clear()
 
+    from kivy.clock import Clock
+    Clock._max_fps = 0
+
     import ceed.view.controller
     ceed.view.controller.ignore_vpixx_import_error = True
 
@@ -106,47 +109,48 @@ async def ceed_app(request, nursery, temp_file, tmp_path, tmp_path_factory):
         base = str(tmp_path_factory.getbasetemp() / params['persist_config'])
         app = CeedTestApp(
             json_config_path=base + 'config.yaml',
-            ini_file=base + 'config.ini')
+            ini_file=base + 'config.ini', open_player_thread=False)
     else:
         app = CeedTestApp(
             json_config_path=temp_file('config.yaml'),
-            ini_file=temp_file('config.ini'))
+            ini_file=temp_file('config.ini'), open_player_thread=False)
     app.ceed_data.root_path = str(tmp_path)
 
-    async def run_app():
-        await app.async_run(async_lib='trio')
+    try:
+        app.set_async_lib('trio')
+        nursery.start_soon(app.async_run)
 
-    nursery.start_soon(run_app)
+        ts = time.perf_counter()
+        while not app.app_has_started:
+            await trio.sleep(.1)
+            if time.perf_counter() - ts >= 20:
+                raise TimeoutError()
 
-    ts = time.perf_counter()
-    while not app.app_has_started:
-        await trio.sleep(.1)
-        if time.perf_counter() - ts >= 10:
-            raise TimeoutError()
+        await app.wait_clock_frames(5)
 
-    await app.wait_clock_frames(5)
+        ts1 = time.perf_counter()
+        yield app
+        ts2 = time.perf_counter()
 
-    ts1 = time.perf_counter()
-    yield app
-    ts2 = time.perf_counter()
+        stopTouchApp()
 
-    stopTouchApp()
+        ts = time.perf_counter()
+        while not app.app_has_stopped:
+            await trio.sleep(.1)
+            if time.perf_counter() - ts >= 20:
+                raise TimeoutError()
 
-    ts = time.perf_counter()
-    while not app.app_has_stopped:
-        await trio.sleep(.1)
-        if time.perf_counter() - ts >= 10:
-            raise TimeoutError()
+    finally:
+        stopTouchApp()
+        app.clean_up()
+        for child in Window.children[:]:
+            Window.remove_widget(child)
 
-    app.clean_up()
-    for child in Window.children[:]:
-        Window.remove_widget(child)
-
-    context.pop()
-    del context
-    LoggerHistory.clear_history()
-    apps.append((weakref.ref(app), request))
-    del app
+        context.pop()
+        del context
+        LoggerHistory.clear_history()
+        apps.append((weakref.ref(app), request))
+        del app
 
     ts3 = time.perf_counter()
     print(ts1 - ts0, ts2 - ts1, ts3 - ts2)

@@ -109,12 +109,12 @@ class CeedPlayer(EventDispatcher):
         d['video_recorder'] = self.video_recorder
         return d
 
-    def __init__(self, **kwargs):
+    def __init__(self, open_player_thread=True, **kwargs):
         super(CeedPlayer, self).__init__(**kwargs)
 
         self.ffmpeg_player = FFmpegPlayer()
-        self.ptgray_player = PTGrayPlayer()
-        self.thor_player = ThorCamPlayer()
+        self.ptgray_player = PTGrayPlayer(open_thread=open_player_thread)
+        self.thor_player = ThorCamPlayer(open_thread=open_player_thread)
         self.client_player = RemoteVideoPlayer()
 
         self.image_file_recorder = ImageFileRecorder()

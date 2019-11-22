@@ -118,13 +118,13 @@ class CeedApp(BaseKivyApp):
         d['player'] = self.player
         return d
 
-    def __init__(self, **kwargs):
+    def __init__(self, open_player_thread=True, **kwargs):
         self.drag_controller = CeedDragNDrop()
         self.function_factory = FunctionFactoryBase()
         register_all_functions(self.function_factory)
         self.stage_factory = StageFactoryBase(
             function_factory=self.function_factory, shape_factory=None)
-        self.player = CeedPlayer()
+        self.player = CeedPlayer(open_player_thread=open_player_thread)
         self.view_controller = ControllerSideViewControllerBase()
         self.ceed_data = CeedDataWriterBase()
         self.data_serializer = DataSerializerBase()
