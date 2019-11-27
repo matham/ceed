@@ -318,9 +318,9 @@ between 2 and 10 for each frame at 120fps::
     Fraction(0, 1)
     >>> f1.get_timebase()  # it's in seconds
     1
-    >>> # because we specify a timebase for the group, all the sub-functions will
-    >>> # share the same timebase. Unless a sub function specifically sets its
-    >>> # own timebase
+    >>> # because we specify a timebase for the group, all the sub-functions
+    >>> # will share the same timebase. Unless a sub function specifically sets
+    >>> # its own timebase
     >>> f = FuncGroup(function_factory=function_factory, \
 timebase_numerator=1, timebase_denominator=120, loop=2)
     >>> f.add_func(f1)
@@ -895,8 +895,8 @@ class FuncBase(EventDispatcher):
 
     name = StringProperty('Abstract')
     '''The name of the function instance. The name must be unique within a
-    :attr:`FunctionFactoryBase` once it is added 
-    (:meth:`FunctionFactoryBase.add_func`) to the 
+    :attr:`FunctionFactoryBase` once it is added
+    (:meth:`FunctionFactoryBase.add_func`) to the
     :attr:`FunctionFactoryBase`, otherwise it's automatically renamed.
     '''
 
@@ -920,7 +920,7 @@ class FuncBase(EventDispatcher):
     For :class:`FuncGroup` this is automatically computed as the sum of all the
     sub-function duration. If any of them are negative, this will also be
     negative.
-    
+
     See :mod:`ceed.function` for more details.
 
     The value is in :meth:`get_timebase` units.
@@ -929,11 +929,11 @@ class FuncBase(EventDispatcher):
     duration_min = NumericProperty(0.)
     '''Same as :attr:`duration`, except it excludes any infinite portions of
     the function duration.
-    
+
     I.e. any sub function whose duration is negative will be read as zero. This
     gives the estimated minimum duration not including any infinite portions
     of a single loop iteration.
-    
+
     See :mod:`ceed.function` for more details.
 
     The value is in :meth:`get_timebase` units and is read only.
@@ -942,11 +942,11 @@ class FuncBase(EventDispatcher):
     duration_min_total = NumericProperty(0)
     '''The total duration of the function including all the loops, excluding
     any infinite portions of the function duration.
-    
+
     Similar to :attr:`duration_min`, except it includes all the loops. So e.g.
     if :attr:`duration_min` is ``5`` and :attr:`loop` is ``2``,
     :attr:`duration_min_total` would typically be ``10``.
-    
+
     See :mod:`ceed.function` for more details.
 
     The value is in :meth:`get_timebase` units and is read only.
@@ -955,7 +955,7 @@ class FuncBase(EventDispatcher):
     loop = NumericProperty(1)
     '''The number of times the function loops through before it is considered
      done.
-     
+
     At the end of each loop :attr:`loop_count` is incremented until done, 
     starting from zero.
     
@@ -1523,13 +1523,13 @@ class CeedFunc(FuncBase):
     """
 
     t_offset = NumericProperty(0.)
-    '''The amount of time in seconds to add the function time when computing 
+    '''The amount of time in seconds to add the function time when computing
     the result. It allows some additional control over the function.
 
     All functions that inherit from this class must add this time. E.g. the
     :class:`~ceed.function.plugin.LinearFunc` defines its function as
     ``y(t) = mt + b`` with time ``t = (t_in - t_start + t_offset)``.
-    
+
     The :attr:`duration` of the function is not affected by this property as
     it is independent of this. I.e. we check whether a time value is in the
     function's :meth:`get_domain` ignoring :attr:`t_offset` but we then

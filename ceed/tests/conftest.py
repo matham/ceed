@@ -72,7 +72,8 @@ async def ceed_app(request, nursery, temp_file, tmp_path, tmp_path_factory):
             #     filename=r'E:\chain.png')
 
         # assert last_app() is None, \
-        #     'Memory leak: failed to release app for test ' + repr(last_request)
+        #     'Memory leak: failed to release app for test ' + repr(
+        #     last_request)
 
     params = request.param if hasattr(
         request, 'param') and request.param else {}

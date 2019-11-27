@@ -45,11 +45,11 @@ class DigitalDataStore(object):
 
     data = None
     '''raw data.
-    
+
     maps the values from data at indices_center using the maps at xxx_map
     for each array item and saves it into xxx_data. xxx_map is formed from
     xxx_indices.
-    
+
     data_indices_xxx are the indices in data where each xxx_data array item
     came from.
     '''
@@ -123,7 +123,7 @@ class MCSDigitalData(DigitalDataStore):
         self.count_map = count_map
 
     def parse_data(
-            self, data, t_start, f, find_offset=None,  estimated_start=None):
+            self, data, t_start, f, find_offset=None, estimated_start=None):
         self.data = data
         clock_index = self.clock_index
         clock_bit = 1 << clock_index
@@ -269,7 +269,8 @@ class CeedMCSDataMerger(object):
         from ceed.analysis import read_nix_prop
         f = nix.File.open(filename, nix.FileMode.ReadOnly)
 
-        block = f.blocks[CeedDataWriterBase.get_experiment_block_name(experiment)]
+        block = f.blocks[
+            CeedDataWriterBase.get_experiment_block_name(experiment)]
         section = block.metadata
         start_t = datetime.datetime(1970, 1, 1) + \
             datetime.timedelta(seconds=block.created_at)
@@ -281,7 +282,7 @@ class CeedMCSDataMerger(object):
             except KeyError:
                 raise Exception(
                     'Did not find config in experiment info for experiment {}'.
-                        format(experiment))
+                    format(experiment))
 
             for prop in config:
                 metadata[prop.name] = yaml_loads(read_nix_prop(prop))
@@ -500,7 +501,8 @@ class CeedMCSDataMerger(object):
 
 if __name__ == '__main__':
     ceed_file = r'/home/cpl/Desktop/data/3-11-19/slice2.h5'
-    mcs_file = r'/home/cpl/Desktop/data/3-11-19/2019-03-11T17-13-30McsRecording.h5'
+    mcs_file = \
+        r'/home/cpl/Desktop/data/3-11-19/2019-03-11T17-13-30McsRecording.h5'
     output_file = r'/home/cpl/Desktop/data/3-11-19/slice2_merged.h5'
     notes = ''
     notes_filename = None

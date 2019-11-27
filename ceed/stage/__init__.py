@@ -432,7 +432,8 @@ class StageFactoryBase(EventDispatcher):
 
         :returns:
 
-            a dict whose keys is the :attr:`kivy_garden.painter.PaintShape.name` of
+            a dict whose keys is the
+            :attr:`kivy_garden.painter.PaintShape.name` of
             the :class:`ceed.shape.CeedShape` and whose value is the Kivy
             ``Color`` instruction instance that controls the color of the
             shape.
@@ -683,7 +684,8 @@ class CeedStage(EventDispatcher):
 
     __events__ = ('on_changed', )
 
-    def __init__(self, stage_factory, function_factory, shape_factory, **kwargs):
+    def __init__(self, stage_factory, function_factory, shape_factory,
+                 **kwargs):
         self.stage_factory = stage_factory
         self.function_factory = function_factory
         self.shape_factory = shape_factory

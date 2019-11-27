@@ -74,8 +74,13 @@ class FormulaGraph(Graph):
                 plot_widget.mouse_y_val = 0
             else:
                 n = plot.num_points
-                xi = max(min(int(n * (x - plot.start) / (plot.end - plot.start)), n - 1), 0)
-                yi = max(min(int(n * (y - plot.x2_start) / (plot.x2_end - plot.x2_start)), n - 1), 0)
+                xi = max(min(
+                    int(n * (x - plot.start) / (plot.end - plot.start)),
+                    n - 1), 0)
+                yi = max(min(
+                    int(n * (y - plot.x2_start) /
+                        (plot.x2_end - plot.x2_start)),
+                    n - 1), 0)
                 plot_widget.mouse_y_val = float(plot._yvals[xi, yi])
 
     def on_touch_down(self, touch):
@@ -244,7 +249,7 @@ class FormulaPlot(EventDispatcher):
             'label_options': {
                 'color': rgb('444444'),
                 'bold': True},
-            #'background_color': rgb('f8f8f2'),
+            # 'background_color': rgb('f8f8f2'),
             'tick_color': rgb('808080'),
             'border_color': rgb('808080'),
             'xlabel': '{} -- {}'.format(
@@ -254,7 +259,7 @@ class FormulaPlot(EventDispatcher):
             'ylabel': self.formula.variable_descriptions.get(
                 yvar, yvar),
             'x_ticks_minor': 5,
-            #'y_ticks_minor': 5,
+            # 'y_ticks_minor': 5,
             'y_grid_label': True,
             'x_grid_label': True,
             'padding': 5,
@@ -363,7 +368,8 @@ class FormulaPlot(EventDispatcher):
                 input_variables=input_variables)
 
             if not isinstance(
-                    yvals, (np.ndarray, np.generic)) or n > 1 and len(yvals) == 1:
+                    yvals,
+                    (np.ndarray, np.generic)) or n > 1 and len(yvals) == 1:
                 yvals = np.zeros((n, )) + float(yvals)
             else:
                 yvals[np.logical_or(np.logical_or(

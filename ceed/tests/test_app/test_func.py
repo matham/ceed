@@ -8,7 +8,7 @@ from ceed.function import FuncBase, FuncGroup, FunctionFactoryBase, CeedFuncRef
 from .examples.funcs import func_classes, func_classes_dedup, GroupFunction, \
     GroupFunctionF5, Function, LinearFunctionF1, LinearFunctionF2, \
     GroupFunctionF4, CosFunctionF4, ExponentialFunctionF3, ConstFunctionF1, \
-    LinearFunctionF1, ExponentialFunctionF1, CosFunctionF1, GroupFunctionF1
+    ExponentialFunctionF1, CosFunctionF1, GroupFunctionF1
 
 
 async def assert_set_params_in_gui(

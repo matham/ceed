@@ -38,4 +38,4 @@ setup(
         'cpl_media'],
     package_data={'ceed': ['data/*', '*.kv']},
     entry_points={'console_scripts': ['ceed=ceed.main:run_app']},
-    )
+)

@@ -31,7 +31,7 @@ BoxLayout:
             rgba: 1, 1, 1, 1
         Rectangle:
             texture: app.bits_texture
-            pos: 0, self.height - 1 
+            pos: 0, self.height - 1
             size: 1, 1
     Widget:
         size_hint_y: None
@@ -69,10 +69,10 @@ BoxLayout:
         size_hint: None, None
         size: self.minimum_size
     Widget
-    
-    
+
+
 <BitToggleButton@ToggleButton>:
-    padding: '5dp', '5dp' 
+    padding: '5dp', '5dp'
     size_hint: None, None
     size: '45dp', self.texture_size[1]
     on_state: app.update_bits()

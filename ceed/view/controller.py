@@ -152,7 +152,7 @@ class ViewControllerBase(EventDispatcher):
     output_count = BooleanProperty(True)
     '''Whether the corner pixel is used to output frame information on the
     PROPixx controller IO pot. If True,
-    :class:`ceed.storage.controller.DataSerializerBase` is used to set the 24 
+    :class:`ceed.storage.controller.DataSerializerBase` is used to set the 24
     bits of the corner pixel.
     '''
 
@@ -354,9 +354,9 @@ class ViewControllerBase(EventDispatcher):
                     s = Scale(group=self.canvas_name)
                     s.x = s.y = 0.5
                     s.origin = 0, 0
-                instructs = _get_app(
-                    ).stage_factory.get_shapes_gl_color_instructions(
-                        canvas, self.canvas_name)
+                instructs = _get_app().\
+                    stage_factory.get_shapes_gl_color_instructions(
+                    canvas, self.canvas_name)
                 with canvas:
                     PopMatrix(group=self.canvas_name)
                 self.shape_views.append(instructs)

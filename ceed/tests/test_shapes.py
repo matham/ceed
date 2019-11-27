@@ -160,7 +160,6 @@ def test_move_shape_upwards(shape_factory: CeedPaintCanvasBehavior):
 
 
 def test_group_name(shape_factory: CeedPaintCanvasBehavior):
-    from ceed.shape import CeedShapeGroup
     assert not shape_factory.groups
     assert not shape_factory.shape_group_names
 
@@ -215,7 +214,6 @@ def test_group_name(shape_factory: CeedPaintCanvasBehavior):
 
 
 def test_add_remove_group(shape_factory: CeedPaintCanvasBehavior):
-    from ceed.shape import CeedShapeGroup
     assert not shape_factory.groups
     assert not shape_factory.shape_group_names
 

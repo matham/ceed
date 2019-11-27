@@ -1067,7 +1067,7 @@ def test_group_remove_func(function_factory: FunctionFactoryBase):
     assert g1.duration_min_total == 2
 
     g1.remove_func(ref_g2)
-    assert list(g1.get_funcs(step_into_ref=False)) == [g1,]
+    assert list(g1.get_funcs(step_into_ref=False)) == [g1, ]
     assert g1.duration == 0
     assert g1.duration_min == 0
     assert g1.duration_min_total == 0

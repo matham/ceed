@@ -27,7 +27,7 @@ print('The file notes is:\n{}\n'.format(reader.app_notes.strip()))
 print('Experiment names found in the file: {}'.format(
       reader.experiments_in_file))
 
-print('Number of saved images found in the file (excluding images within the ' 
+print('Number of saved images found in the file (excluding images within the '
       'experiments): {}'.format(reader.num_images_in_file))
 for i in range(reader.num_images_in_file):
     img, notes, save_time = reader.get_image_from_file(i)

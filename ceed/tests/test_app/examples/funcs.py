@@ -653,7 +653,7 @@ class CosFunctionF4(FunctionF4, CosFunction):
 
     name = 'cos and low'
 
-    func_values = [A * cos(2 * pi * f * 0 + th0 * pi / 180.) + b,]
+    func_values = [A * cos(2 * pi * f * 0 + th0 * pi / 180.) + b, ]
 
 
 class CosFunctionF5(FunctionF5, CosFunction):

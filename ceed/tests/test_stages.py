@@ -204,7 +204,7 @@ def test_clear_stages(stage_factory: StageFactoryBase):
     assert not stage_factory.stage_names
 
 
-def test_can_other_stage_be_added(stage_factory: StageFactoryBase):
+def can_other_stage_be_added(stage_factory: StageFactoryBase):
     root, g1, g2, s1, s2, s3, s4, s5, s6 = create_recursive_stages(
         stage_factory)
 
@@ -667,7 +667,7 @@ def test_group_remove_stage(stage_factory: StageFactoryBase):
     assert list(g1.get_stages(step_into_ref=False)) == [g1, ref_g2]
 
     g1.remove_stage(ref_g2)
-    assert list(g1.get_stages(step_into_ref=False)) == [g1,]
+    assert list(g1.get_stages(step_into_ref=False)) == [g1, ]
 
 
 def test_simple_stage_intensity(stage_factory: StageFactoryBase):

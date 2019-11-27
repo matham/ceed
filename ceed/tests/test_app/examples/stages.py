@@ -3,7 +3,6 @@ from typing import List, Tuple, Union
 
 from ceed.tests.ceed_app import CeedTestApp
 from ceed.stage import CeedStage, StageFactoryBase
-from ceed.function import FuncBase
 from ceed.shape import CeedShape, CeedShapeGroup
 from .shapes import Shape
 from ceed.function import FuncBase, FuncGroup, FunctionFactoryBase
