@@ -42,9 +42,10 @@ jobs:
         python3 -m pip install https://github.com/matham/base_kivy_app/archive/master.zip
         python3 -m pip install https://github.com/matham/cpl_media/archive/master.zip
         python3 -m pip install -e . --extra-index-url https://kivy-garden.github.io/simple/
+        python3 -m pip uninstall pytest-asyncio -y
     - name: Test with pytest
       run: |
-        KIVY_EVENTLOOP=trio python3 -m pytest --cov=ceed --cov-report term --cov-branch ceed/tests -x
+        python3 -m pytest --cov=ceed --cov-report term --cov-branch ceed/tests -x
     - name: Coveralls upload
       run: python3 -m coveralls
       env:
@@ -67,11 +68,12 @@ jobs:
         python -m pip install https://github.com/matham/base_kivy_app/archive/master.zip
         python -m pip install https://github.com/matham/cpl_media/archive/master.zip
         python -m pip install -e . --extra-index-url https://kivy-garden.github.io/simple/
+        python3 -m pip uninstall pytest-asyncio -y
     - name: Test with pytest
       env:
         KIVY_GL_BACKEND: angle_sdl2
       run: |
-        KIVY_EVENTLOOP=trio python -m pytest --cov=ceed --cov-report term --cov-branch ceed/tests -x
+        python -m pytest --cov=ceed --cov-report term --cov-branch ceed/tests -x
 
   docs:
     runs-on: ubuntu-18.04
