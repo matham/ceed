@@ -44,7 +44,7 @@ jobs:
         python3 -m pip install -e . --extra-index-url https://kivy-garden.github.io/simple/
     - name: Test with pytest
       run: |
-        python3 -m pytest --cov=ceed --cov-report term --cov-branch ceed/tests -x
+        KIVY_EVENTLOOP=trio python3 -m pytest --cov=ceed --cov-report term --cov-branch ceed/tests -x
     - name: Coveralls upload
       run: python3 -m coveralls
       env:
@@ -71,7 +71,7 @@ jobs:
       env:
         KIVY_GL_BACKEND: angle_sdl2
       run: |
-        python -m pytest --cov=ceed --cov-report term --cov-branch ceed/tests -x
+        KIVY_EVENTLOOP=trio python -m pytest --cov=ceed --cov-report term --cov-branch ceed/tests -x
 
   docs:
     runs-on: ubuntu-18.04

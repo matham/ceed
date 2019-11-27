@@ -956,9 +956,9 @@ class FuncBase(EventDispatcher):
     '''The number of times the function loops through before it is considered
      done.
 
-    At the end of each loop :attr:`loop_count` is incremented until done, 
+    At the end of each loop :attr:`loop_count` is incremented until done,
     starting from zero.
-    
+
     See :mod:`ceed.function` for more details.
     '''
 
@@ -971,7 +971,7 @@ class FuncBase(EventDispatcher):
     has_ref = BooleanProperty(False)
     """Whether there's a CeedFuncRef pointing to this function. If True,
     the function should not be deleted from the function factory that holds it.
-    
+
     This is automatically set by :meth:`FunctionFactoryBase.get_func_ref`
     and :meth:`FunctionFactoryBase.return_func_ref`.
     """
