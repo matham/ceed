@@ -7,10 +7,10 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
     - uses: actions/checkout@v1
-    - name: Set up Python 3.x
+    - name: Set up Python 3.7
       uses: actions/setup-python@v1
       with:
-        python-version: 3.x
+        python-version: 3.7
     - name: Install dependencies
       run: |
         python3 -m pip install --upgrade pip virtualenv wheel setuptools
@@ -25,10 +25,10 @@ jobs:
       DISPLAY: :99.0
     steps:
     - uses: actions/checkout@v1
-    - name: Set up Python 3.x
+    - name: Set up Python 3.7
       uses: actions/setup-python@v1
       with:
-        python-version: 3.x
+        python-version: 3.7
     - name: Install dependencies
       run: |
         sudo apt update
@@ -57,10 +57,10 @@ jobs:
       KIVY_GL_BACKEND: angle_sdl2
     steps:
     - uses: actions/checkout@v1
-    - name: Set up Python 3.x
+    - name: Set up Python 3.7
       uses: actions/setup-python@v1
       with:
-        python-version: 3.x
+        python-version: 3.7
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip virtualenv wheel setuptools
@@ -79,7 +79,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v1
       with:
-        python-version: 3.x
+        python-version: 3.7
     - name: Install dependencies
       env:
           KIVY_DOC_INCLUDE: 1
