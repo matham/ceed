@@ -7,10 +7,10 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
     - uses: actions/checkout@v1
-    - name: Set up Python 3.7
+    - name: Set up Python 3.x
       uses: actions/setup-python@v1
       with:
-        python-version: 3.7
+        python-version: 3.x
     - name: Install dependencies
       run: |
         python3 -m pip install --upgrade pip virtualenv wheel setuptools
@@ -25,10 +25,10 @@ jobs:
       DISPLAY: :99.0
     steps:
     - uses: actions/checkout@v1
-    - name: Set up Python 3.7
+    - name: Set up Python 3.x
       uses: actions/setup-python@v1
       with:
-        python-version: 3.7
+        python-version: 3.x
     - name: Install dependencies
       run: |
         sudo apt update
@@ -53,43 +53,40 @@ jobs:
 
   windows_test:
     runs-on: windows-latest
+    env:
+      KIVY_GL_BACKEND: angle_sdl2
     steps:
     - uses: actions/checkout@v1
-    - name: Set up Python 3.7
+    - name: Set up Python 3.x
       uses: actions/setup-python@v1
       with:
-        python-version: 3.7
+        python-version: 3.x
     - name: Install dependencies
-      env:
-        KIVY_GL_BACKEND: angle_sdl2
       run: |
         python -m pip install --upgrade pip virtualenv wheel setuptools
-        python -m pip install kivy[win_full] --pre --extra-index-url  https://kivy.org/downloads/simple/
+        python -m pip install kivy[base,dev] --pre --extra-index-url  https://kivy.org/downloads/simple/
         python -m pip install https://github.com/matham/base_kivy_app/archive/master.zip
         python -m pip install https://github.com/matham/cpl_media/archive/master.zip
         python -m pip install -e . --extra-index-url https://kivy-garden.github.io/simple/
-        python3 -m pip uninstall pytest-asyncio -y
+        python -m pip uninstall pytest-asyncio -y
     - name: Test with pytest
-      env:
-        KIVY_GL_BACKEND: angle_sdl2
-      run: |
-        python -m pytest --cov=ceed --cov-report term --cov-branch ceed/tests -x
+      run: python -m pytest --cov=ceed --cov-report term --cov-branch ceed/tests -x
 
   docs:
     runs-on: ubuntu-18.04
     steps:
     - uses: actions/checkout@v1
-    - name: Set up Python 3.7
+    - name: Set up Python
       uses: actions/setup-python@v1
       with:
-        python-version: 3.7
+        python-version: 3.x
     - name: Install dependencies
       env:
           KIVY_DOC_INCLUDE: 1
           KIVY_DOC: 1
       run: |
         python3 -m pip install --upgrade pip virtualenv wheel setuptools
-        python3 -m pip install https://kivy.org/downloads/ci/linux/kivy/Kivy-2.0.0.dev0-cp37-cp37m-manylinux2010_x86_64.whl sphinx
+        python3 -m pip install kivy[base,dev] --pre --extra-index-url https://kivy.org/downloads/simple/ sphinx
         git clone https://github.com/matham/base_kivy_app.git package_base_kivy_app
         cd package_base_kivy_app
         python3 -m pip install -e .

@@ -265,10 +265,13 @@ class CeedApp(BaseKivyApp):
         HighightButtonBehavior.uninit_class()
 
 
-run_app = partial(run_cpl_app, CeedApp)
-'''The function that starts the GUI and the entry point for
-the main script.
-'''
+def run_app():
+    """The function that starts the GUI and the entry point for
+    the main script.
+    """
+    cpl_media.error_callback = report_exception_in_app
+    return run_cpl_app(CeedApp)
+
 
 if __name__ == '__main__':
     run_app()

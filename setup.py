@@ -4,14 +4,6 @@ import ceed
 with open('README.rst') as fh:
     long_description = fh.read()
 
-
-def get_garden(package):
-    return (
-        'kivy_garden.{0} @ '
-        'https://github.com/kivy-garden/{0}/archive/master.zip'
-        '#egg=kivy_garden.{0}'.format(package))
-
-
 setup(
     name='Ceed',
     version=ceed.__version__,
@@ -31,10 +23,10 @@ setup(
     packages=find_packages(),
     install_requires=[
         'ffpyplayer', 'base_kivy_app', 'kivy', 'numpy', 'scikit-image',
-        'psutil', 'nixio', 'tqdm', 'scipy', get_garden('graph'),
-        get_garden('filebrowser'), get_garden('collider'), 'pytest',
-        'pytest-trio', 'McsPyDataTools', get_garden('drag_n_drop'),
-        'pytest-cov', get_garden('painter'), 'trio', 'sphinx-rtd-theme',
+        'psutil', 'nixio', 'tqdm', 'scipy', 'kivy_garden.graph~=0.4.0',
+        'kivy_garden.collider~=0.1.0', 'pytest',
+        'pytest-trio', 'McsPyDataTools', 'kivy_garden.drag_n_drop~=0.1.0',
+        'pytest-cov', 'kivy_garden.painter~=0.2.0', 'trio', 'sphinx-rtd-theme',
         'cpl_media'],
     package_data={'ceed': ['data/*', '*.kv']},
     entry_points={'console_scripts': ['ceed=ceed.main:run_app']},
