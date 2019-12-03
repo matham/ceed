@@ -45,7 +45,7 @@ jobs:
         python3 -m pip uninstall pytest-asyncio -y
     - name: Test with pytest
       run: |
-        python3 -m pytest --cov=ceed --cov-report term --cov-branch ceed/tests -x
+        python3 -m pytest --cov=ceed --cov-report term --cov-branch ceed/tests
     - name: Coveralls upload
       run: python3 -m coveralls
       env:
@@ -70,7 +70,7 @@ jobs:
         python -m pip install -e . --extra-index-url https://kivy-garden.github.io/simple/
         python -m pip uninstall pytest-asyncio -y
     - name: Test with pytest
-      run: python -m pytest --cov=ceed --cov-report term --cov-branch ceed/tests -x
+      run: python -m pytest --cov=ceed --cov-report term --cov-branch ceed/tests
 
   docs:
     runs-on: ubuntu-18.04
