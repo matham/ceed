@@ -19,6 +19,8 @@ async def replace_text(app, text_widget, new_text):
         async for _ in app.do_keyboard_key(key=key):
             pass
 
+    await app.wait_clock_frames(2)
+
 
 async def touch_widget(app, widget):
     async for _ in app.do_touch_down_up(widget=widget):
@@ -39,3 +41,4 @@ async def select_spinner_value(func_app, func_name, spinner):
 async def escape(app):
     async for _ in app.do_keyboard_key(key='escape'):
         pass
+    await app.wait_clock_frames(2)

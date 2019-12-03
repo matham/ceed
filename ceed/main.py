@@ -238,6 +238,7 @@ class CeedApp(BaseKivyApp):
                 self.ceed_data.backup_event.cancel()
                 self.ceed_data.backup_event = None
             self.ceed_data.clear_all_callback = None
+
         if self.stage_factory is not None:
             self.stage_factory.funbind('on_changed', self.changed_callback)
         if self.function_factory is not None:
@@ -249,12 +250,12 @@ class CeedApp(BaseKivyApp):
 
         for func in self.function_factory.funcs_inst_default.values():
             func.funbind('on_changed', self.changed_callback)
+
         if self.view_controller is not None:
             self.view_controller.stop_process()
             self.view_controller.finish_stop_process()
         if self.ceed_data is not None:
             self.ceed_data.stop_experiment()
-
             self.ceed_data.funbind('filename', self.set_tittle)
             self.ceed_data.funbind('config_changed', self.set_tittle)
             self.ceed_data.funbind('has_unsaved', self.set_tittle)

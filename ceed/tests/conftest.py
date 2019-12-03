@@ -49,31 +49,40 @@ def temp_file_sess(tmp_path_factory):
     return temp_file_gen
 
 
-apps = []
+@pytest.fixture(scope='session')
+def app_list():
+    apps = []
 
+    yield apps
 
-@pytest.fixture()
-async def ceed_app(request, nursery, temp_file, tmp_path, tmp_path_factory):
     gc.collect()
-    if len(apps) >= 2:
-        last_app, last_request = apps.pop()
+    alive_apps = []
+    for i, (app, request) in enumerate(apps[1:-1]):
+        app = app()
+        request = request()
+        if request is None:
+            request = '<dead request>'
 
-        if last_app() is not None:
+        if app is not None:
+            alive_apps.append((app, request))
             logging.error(
-                'Memory leak: failed to release app for test ' +
-                repr(last_request))
-            # import objgraph
-            # objgraph.show_backrefs(
-            #     [last_app()], filename=r'E:\backrefs.png', max_depth=50,
-            #     too_many=1)
+                'Memory leak: failed to release app for test ' + repr(request))
+
+            import objgraph
+            objgraph.show_backrefs(
+                [app], filename=r'E:\backrefs{}.png'.format(i), max_depth=50,
+                too_many=1)
             # objgraph.show_chain(
             #     objgraph.find_backref_chain(
             #         last_app(), objgraph.is_proper_module),
             #     filename=r'E:\chain.png')
 
-        # assert last_app() is None, \
-        #     'Memory leak: failed to release app for test ' + repr(
-        #     last_request)
+    assert not len(alive_apps), 'Memory leak: failed to release all apps'
+
+
+@pytest.fixture()
+async def ceed_app(
+        request, nursery, temp_file, tmp_path, tmp_path_factory, app_list):
 
     params = request.param if hasattr(
         request, 'param') and request.param else {}
@@ -81,6 +90,7 @@ async def ceed_app(request, nursery, temp_file, tmp_path, tmp_path_factory):
     from kivy.core.window import Window
     from kivy.context import Context
     from kivy.clock import ClockBase
+    from kivy.animation import Animation
     from kivy.base import stopTouchApp
     from kivy.factory import FactoryBase, Factory
     from kivy.lang.builder import BuilderBase, Builder
@@ -124,13 +134,13 @@ async def ceed_app(request, nursery, temp_file, tmp_path, tmp_path_factory):
         ts = time.perf_counter()
         while not app.app_has_started:
             await trio.sleep(.1)
-            if time.perf_counter() - ts >= 20:
+            if time.perf_counter() - ts >= 40:
                 raise TimeoutError()
 
         await app.wait_clock_frames(5)
 
         ts1 = time.perf_counter()
-        yield app
+        yield weakref.proxy(app)
         ts2 = time.perf_counter()
 
         stopTouchApp()
@@ -138,11 +148,13 @@ async def ceed_app(request, nursery, temp_file, tmp_path, tmp_path_factory):
         ts = time.perf_counter()
         while not app.app_has_stopped:
             await trio.sleep(.1)
-            if time.perf_counter() - ts >= 20:
+            if time.perf_counter() - ts >= 40:
                 raise TimeoutError()
 
     finally:
         stopTouchApp()
+        for anim in list(Animation._instances):
+            anim._unregister()
         app.clean_up()
         for child in Window.children[:]:
             Window.remove_widget(child)
@@ -150,8 +162,8 @@ async def ceed_app(request, nursery, temp_file, tmp_path, tmp_path_factory):
         context.pop()
         del context
         LoggerHistory.clear_history()
-        apps.append((weakref.ref(app), request))
-        del app
+
+    app_list.append((weakref.ref(app), weakref.ref(request)))
 
     ts3 = time.perf_counter()
     print(ts1 - ts0, ts2 - ts1, ts3 - ts2)

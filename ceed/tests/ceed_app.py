@@ -4,6 +4,7 @@ import trio
 from kivy.config import Config
 Config.set('graphics', 'width', '1600')
 Config.set('graphics', 'height', '900')
+Config.set('modules', 'touchring', '')
 for items in Config.items('input'):
     Config.remove_option('input', items[0])
 
