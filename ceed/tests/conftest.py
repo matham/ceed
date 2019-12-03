@@ -134,7 +134,7 @@ async def ceed_app(
         ts = time.perf_counter()
         while not app.app_has_started:
             await trio.sleep(.1)
-            if time.perf_counter() - ts >= 40:
+            if time.perf_counter() - ts >= 120:
                 raise TimeoutError()
 
         await app.wait_clock_frames(5)
