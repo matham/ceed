@@ -173,7 +173,7 @@
                 test_name: 'func name'
                 func: root.func_widget.ref_func or root.func_widget.func
                 prop_name: 'name'
-                on_parent: if self.parent is not None: self.apply_binding()
+                on_kv_post: self.apply_binding()
                 disabled: root.func_widget.func.parent_func is not None or not isinstance(root.func_widget.func_controller, FunctionFactoryBase)
             FlatLabel:
                 test_name: 'func description'

@@ -160,7 +160,7 @@
         flat_color: app.theme.accent
         hover_text: '[b]hide[/b] / show projector window' if self.state == 'normal' else 'hide / [b]show[/b] projector window'
     FlatImageButton:
-        on_parent: self.stage_graph = Factory.StageGraphPopup()
+        on_kv_post: self.stage_graph = Factory.StageGraphPopup()
         on_release: self.stage_graph.open()
         source: 'flat_chart_line.png'
         scale_down_color: True
@@ -172,7 +172,7 @@
         padding_x: '5dp'
         width: self.texture_size[0]
     FlatImageButton:
-        on_parent: self.more_widget = Factory.ViewConfig()
+        on_kv_post: self.more_widget = Factory.ViewConfig()
         scale_down_color: True
         source: 'flat_dots_vertical.png'
         flat_color: app.theme.accent

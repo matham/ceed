@@ -48,7 +48,7 @@
             flat_color: app.theme.accent
             size_hint_y: None
             height: video.height
-            on_parent:
+            on_kv_post:
                 app.error_indicator = self
                 w = Factory.UserLogText()
                 w.logger = self

@@ -507,7 +507,7 @@ class FunctionFactoryBase(EventDispatcher):
             from the factory or if a class is registered.
     """
 
-    __settings_attrs__ = ()
+    __config_props__ = ()
 
     __events__ = ('on_changed', )
 

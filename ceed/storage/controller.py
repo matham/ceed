@@ -39,7 +39,7 @@ __all__ = ('CeedDataWriterBase', 'DataSerializerBase')
 
 class CeedDataWriterBase(EventDispatcher):
 
-    __settings_attrs__ = ('root_path', 'backup_interval')
+    __config_props__ = ('root_path', 'backup_interval')
 
     root_path = StringProperty('')
 
@@ -843,7 +843,7 @@ class CeedDataWriterBase(EventDispatcher):
 
 class DataSerializerBase(EventDispatcher):
 
-    __settings_attrs__ = ('counter_bit_width', 'clock_idx', 'count_indices',
+    __config_props__ = ('counter_bit_width', 'clock_idx', 'count_indices',
                           'short_count_indices', 'projector_to_aquisition_map')
 
     counter_bit_width = NumericProperty(32)

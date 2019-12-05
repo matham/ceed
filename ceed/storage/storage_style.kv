@@ -11,7 +11,7 @@
         size_hint_x: None
         width: self.minimum_width
         id: box
-        on_parent:
+        on_kv_post:
             Clock.schedule_once(lambda *x: self.remove_widget(data_view.__self__))
             Clock.schedule_once(lambda *x: self.remove_widget(more.__self__))
         FlatImageButton:

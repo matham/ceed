@@ -124,7 +124,7 @@
     size_hint_min_y: max(self.minimum_height, self.graph_min_height)
     FormulaGraph:
         id: graph
-        on_parent: root.plot.graph = self.__self__
+        on_kv_post: root.plot.graph = self.__self__
         precision: '%.2f'
         plot_widget: root.__self__
         FlatLabel:

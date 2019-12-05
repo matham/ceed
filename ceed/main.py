@@ -149,7 +149,7 @@ class CeedApp(BaseKivyApp):
 
     def build(self):
         self.load_app_kv()
-        self.yesno_prompt = Factory.CeedYesNoPrompt()
+        self.yesno_prompt = Factory.FlatYesNoPrompt()
         self.noise_dropdown_widget = FuncNoiseDropDown()
         self.player.create_widgets()
 

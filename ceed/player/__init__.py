@@ -30,7 +30,7 @@ __all__ = ('CeedPlayer', )
 
 class CeedPlayer(EventDispatcher):
 
-    __settings_attrs__ = ('player_name', )
+    __config_props__ = ('player_name', )
 
     ffmpeg_player: FFmpegPlayer = None
 
