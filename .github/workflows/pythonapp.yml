@@ -85,8 +85,8 @@ jobs:
           KIVY_DOC_INCLUDE: 1
           KIVY_DOC: 1
       run: |
-        python3 -m pip install --upgrade pip virtualenv wheel setuptools
-        python3 -m pip install kivy[base,dev] --pre --extra-index-url https://kivy.org/downloads/simple/ sphinx
+        python3 -m pip install --upgrade pip virtualenv wheel setuptools sphinx
+        python3 -m pip install kivy[base,dev] --pre --extra-index-url https://kivy.org/downloads/simple/
         git clone https://github.com/matham/base_kivy_app.git package_base_kivy_app
         cd package_base_kivy_app
         python3 -m pip install -e .
