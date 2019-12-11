@@ -17,7 +17,7 @@ from kivy.graphics.transformation import Matrix
 from kivy.graphics.context_instructions import Color
 from kivy.factory import Factory
 
-__all__ = ('ViewRootFocusBehavior', )
+__all__ = ('ViewRootFocusBehavior', 'MEAArrayAlign')
 
 _get_app = App.get_running_app
 

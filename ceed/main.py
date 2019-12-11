@@ -272,7 +272,3 @@ def run_app():
     """
     cpl_media.error_callback = report_exception_in_app
     return run_cpl_app(CeedApp)
-
-
-if __name__ == '__main__':
-    run_app()
