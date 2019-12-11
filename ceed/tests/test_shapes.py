@@ -24,14 +24,14 @@ def assert_shapes_same(
 
 @pytest.mark.parametrize("shape_cls", shape_classes)
 def test_shape_instantiate(shape_factory: CeedPaintCanvasBehavior, shape_cls):
-    shape = shape_cls(app=None, painter=shape_factory, manually_add=False)
+    shape = shape_cls(app=None, painter=shape_factory, show_in_gui=False)
     shape.make_shape()
     shape.assert_shape_prop_same(compare_name=True)
 
 
 @pytest.mark.parametrize("shape_cls", shape_classes)
 def test_shape_copy(shape_factory: CeedPaintCanvasBehavior, shape_cls):
-    shape = shape_cls(app=None, painter=shape_factory, manually_add=False)
+    shape = shape_cls(app=None, painter=shape_factory, show_in_gui=False)
     shape.make_shape()
     shape.assert_shape_prop_same(compare_name=True)
 
@@ -43,7 +43,7 @@ def test_shape_copy(shape_factory: CeedPaintCanvasBehavior, shape_cls):
 def test_shape_add_remove(shape_factory: CeedPaintCanvasBehavior, shape_cls):
     assert not shape_factory.shapes
     assert not shape_factory.shape_names
-    shape = shape_cls(app=None, painter=shape_factory, manually_add=False)
+    shape = shape_cls(app=None, painter=shape_factory, show_in_gui=False)
     shape.make_shape()
 
     # add shape
@@ -74,7 +74,7 @@ def test_shape_add_remove(shape_factory: CeedPaintCanvasBehavior, shape_cls):
 def test_shape_name(shape_factory: CeedPaintCanvasBehavior):
     assert not shape_factory.shapes
     assert not shape_factory.shape_names
-    shape = EllipseShapeP1(app=None, painter=shape_factory, manually_add=False)
+    shape = EllipseShapeP1(app=None, painter=shape_factory, show_in_gui=False)
     shape.make_shape()
 
     # add first shape
@@ -88,7 +88,7 @@ def test_shape_name(shape_factory: CeedPaintCanvasBehavior):
     assert shape_factory.test_changes_count
 
     shape2 = EllipseShapeP1(
-        app=None, painter=shape_factory, manually_add=False)
+        app=None, painter=shape_factory, show_in_gui=False)
     shape2.make_shape()
 
     # add second shape
@@ -436,7 +436,7 @@ def test_set_factory_state(shape_factory: CeedPaintCanvasBehavior):
 
 
 def test_bounding_box(shape_factory: CeedPaintCanvasBehavior):
-    shape = CircleShapeP1(app=None, painter=shape_factory, manually_add=False)
+    shape = CircleShapeP1(app=None, painter=shape_factory, show_in_gui=False)
     shape.make_shape()
 
     assert shape_factory.add_shape(shape.shape)
@@ -444,7 +444,7 @@ def test_bounding_box(shape_factory: CeedPaintCanvasBehavior):
 
 
 def test_center(shape_factory: CeedPaintCanvasBehavior):
-    shape = CircleShapeP1(app=None, painter=shape_factory, manually_add=False)
+    shape = CircleShapeP1(app=None, painter=shape_factory, show_in_gui=False)
     shape.make_shape()
 
     assert shape_factory.add_shape(shape.shape)
@@ -452,7 +452,7 @@ def test_center(shape_factory: CeedPaintCanvasBehavior):
 
 
 def test_area(shape_factory: CeedPaintCanvasBehavior):
-    shape = CircleShapeP1(app=None, painter=shape_factory, manually_add=False)
+    shape = CircleShapeP1(app=None, painter=shape_factory, show_in_gui=False)
     shape.make_shape()
 
     assert shape_factory.add_shape(shape.shape)

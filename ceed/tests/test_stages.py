@@ -17,46 +17,46 @@ from .test_app.examples.funcs import LinearFunctionF1, ConstFunctionF1
 
 
 def create_recursive_stages(
-        stage_factory: StageFactoryBase, manually_add=False):
+        stage_factory: StageFactoryBase, show_in_gui=False):
     root = SerialAllStage(
-        stage_factory=stage_factory, manually_add=manually_add)
-    root.create_stage()
+        stage_factory=stage_factory, show_in_gui=show_in_gui,
+        create_add_to_parent=not show_in_gui)
 
     g1 = ParaAllStage(
-        stage_factory=stage_factory, manually_add=manually_add,
-        parent_wrapper_stage=root)
-    g1.create_stage()
+        stage_factory=stage_factory, show_in_gui=show_in_gui,
+        parent_wrapper_stage=root,
+        create_add_to_parent=not show_in_gui)
 
     s1 = SerialAnyStage(
-        stage_factory=stage_factory, manually_add=manually_add,
-        parent_wrapper_stage=g1)
-    s1.create_stage()
+        stage_factory=stage_factory, show_in_gui=show_in_gui,
+        parent_wrapper_stage=g1,
+        create_add_to_parent=not show_in_gui)
     s2 = SerialAllStage(
-        stage_factory=stage_factory, manually_add=manually_add,
-        parent_wrapper_stage=g1)
-    s2.create_stage()
+        stage_factory=stage_factory, show_in_gui=show_in_gui,
+        parent_wrapper_stage=g1,
+        create_add_to_parent=not show_in_gui)
 
     s3 = SerialAnyStage(
-        stage_factory=stage_factory, manually_add=manually_add,
-        parent_wrapper_stage=root)
-    s3.create_stage()
+        stage_factory=stage_factory, show_in_gui=show_in_gui,
+        parent_wrapper_stage=root,
+        create_add_to_parent=not show_in_gui)
     s4 = SerialAllStage(
-        stage_factory=stage_factory, manually_add=manually_add,
-        parent_wrapper_stage=root)
-    s4.create_stage()
+        stage_factory=stage_factory, show_in_gui=show_in_gui,
+        parent_wrapper_stage=root,
+        create_add_to_parent=not show_in_gui)
 
     g2 = ParaAllStage(
-        stage_factory=stage_factory, manually_add=manually_add,
-        parent_wrapper_stage=root)
-    g2.create_stage()
+        stage_factory=stage_factory, show_in_gui=show_in_gui,
+        parent_wrapper_stage=root,
+        create_add_to_parent=not show_in_gui)
     s5 = SerialAnyStage(
-        stage_factory=stage_factory, manually_add=manually_add,
-        parent_wrapper_stage=g2)
-    s5.create_stage()
+        stage_factory=stage_factory, show_in_gui=show_in_gui,
+        parent_wrapper_stage=g2,
+        create_add_to_parent=not show_in_gui)
     s6 = SerialAllStage(
-        stage_factory=stage_factory, manually_add=manually_add,
-        parent_wrapper_stage=g2)
-    s6.create_stage()
+        stage_factory=stage_factory, show_in_gui=show_in_gui,
+        parent_wrapper_stage=g2,
+        create_add_to_parent=not show_in_gui)
 
     return root, g1, g2, s1, s2, s3, s4, s5, s6
 
@@ -89,7 +89,7 @@ def get_stage_time_intensity(
 def test_factory_stage_unique_names(stage_factory: StageFactoryBase):
     assert not stage_factory.stages
     assert not stage_factory.stage_names
-    stage = SerialAllStage(stage_factory=stage_factory, manually_add=False)
+    stage = SerialAllStage(stage_factory=stage_factory, show_in_gui=False)
     stage.create_stage()
     stage = stage.stage
 
@@ -103,7 +103,7 @@ def test_factory_stage_unique_names(stage_factory: StageFactoryBase):
     assert stage is stage_factory.stage_names[stage.name]
     assert stage_factory.test_changes_count
 
-    stage2 = SerialAllStage(stage_factory=stage_factory, manually_add=False)
+    stage2 = SerialAllStage(stage_factory=stage_factory, show_in_gui=False)
     stage2.create_stage()
     stage2 = stage2.stage
     stage2.name = stage.name
@@ -159,7 +159,7 @@ def test_shape_add_remove(stage_factory: StageFactoryBase):
     assert not stage_factory.stages
     assert not stage_factory.stage_names
 
-    stage = SerialAllStage(stage_factory=stage_factory, manually_add=False)
+    stage = SerialAllStage(stage_factory=stage_factory, show_in_gui=False)
     stage.create_stage()
     stage = stage.stage
 
@@ -187,10 +187,10 @@ def test_clear_stages(stage_factory: StageFactoryBase):
     assert not stage_factory.stages
     assert not stage_factory.stage_names
 
-    stage = SerialAllStage(stage_factory=stage_factory, manually_add=False)
+    stage = SerialAllStage(stage_factory=stage_factory, show_in_gui=False)
     stage.create_stage()
     stage = stage.stage
-    stage2 = SerialAllStage(stage_factory=stage_factory, manually_add=False)
+    stage2 = SerialAllStage(stage_factory=stage_factory, show_in_gui=False)
     stage2.create_stage()
     stage2 = stage2.stage
     stage_factory.add_stage(stage)
@@ -204,7 +204,7 @@ def test_clear_stages(stage_factory: StageFactoryBase):
     assert not stage_factory.stage_names
 
 
-def can_other_stage_be_added(stage_factory: StageFactoryBase):
+def test_can_other_stage_be_added(stage_factory: StageFactoryBase):
     root, g1, g2, s1, s2, s3, s4, s5, s6 = create_recursive_stages(
         stage_factory)
 
@@ -673,12 +673,12 @@ def test_group_remove_stage(stage_factory: StageFactoryBase):
 def test_simple_stage_intensity(stage_factory: StageFactoryBase):
     from ceed.function.plugin import LinearFunc
     shape = EllipseShapeP1(
-        app=None, painter=stage_factory.shape_factory, manually_add=False)
+        app=None, painter=stage_factory.shape_factory, show_in_gui=False)
     shape.make_shape()
     stage_factory.shape_factory.add_shape(shape.shape)
 
     shape2 = EllipseShapeP2(
-        app=None, painter=stage_factory.shape_factory, manually_add=False)
+        app=None, painter=stage_factory.shape_factory, show_in_gui=False)
     shape2.make_shape()
     stage_factory.shape_factory.add_shape(shape2.shape)
 

@@ -214,7 +214,7 @@ async def assert_add_func_to_group(
     if spinner is None:
         spinner = func_app.resolve_widget().down(test_name='func spinner')()
 
-    sub_func = sub_func_cls(app=func_app, manually_add=False)
+    sub_func = sub_func_cls(app=func_app, show_in_gui=False)
     # select the function class to add
     await select_spinner_func(func_app, sub_func.cls_name, spinner)
 
@@ -251,7 +251,7 @@ async def test_gui_add_funcs(func_app: CeedTestApp):
     spinner = func_app.resolve_widget().down(test_name='func spinner')()
     add = func_app.resolve_widget().down(test_name='func add')()
     for func_cls in func_classes:
-        func = func_cls(app=func_app, manually_add=False)
+        func = func_cls(app=func_app, show_in_gui=False)
         funcs.append(func)
 
         # don't keep more than two function so the list is not too long
@@ -366,7 +366,7 @@ async def group_recursive_add(func_app: CeedTestApp, add_func):
     for wrapper_cls, f in (
             (LinearFunctionF1, f2), (LinearFunctionF2, f1),
             (GroupFunctionF5, g1), (GroupFunctionF4, g2)):
-        wrapper = wrapper_cls(app=func_app, manually_add=False)
+        wrapper = wrapper_cls(app=func_app, show_in_gui=False)
         wrapper.func = f
 
         setting = await assert_set_params_in_gui(func_app, wrapper)
@@ -419,7 +419,7 @@ async def test_duplicate_func_globally(func_app: CeedTestApp):
     await touch_widget(func_app, add)
 
     # update its params
-    wrapper_func = CosFunctionF4(app=func_app, manually_add=False)
+    wrapper_func = CosFunctionF4(app=func_app, show_in_gui=False)
     wrapper_func.func = func_app.function_factory.funcs_user[-1]
     assert isinstance(wrapper_func.func, CosFunc)
     await assert_set_params_in_gui(func_app, wrapper_func)
@@ -430,7 +430,7 @@ async def test_duplicate_func_globally(func_app: CeedTestApp):
             widget=drag_btn, target_widget=func_app.funcs_container):
         pass
 
-    wrapper_func2 = CosFunctionF4(app=func_app, manually_add=False)
+    wrapper_func2 = CosFunctionF4(app=func_app, show_in_gui=False)
     wrapper_func2.func = func_app.function_factory.funcs_user[-1]
     assert wrapper_func.func is not wrapper_func2.func
     assert isinstance(wrapper_func2.func, CosFunc)
@@ -447,7 +447,7 @@ async def global_ref_func_and_replace(func_app: CeedTestApp, add_func):
     await select_spinner_func(func_app, 'Exp', spinner)
     await touch_widget(func_app, add)
 
-    exp_wrapper = ExponentialFunctionF3(app=func_app, manually_add=False)
+    exp_wrapper = ExponentialFunctionF3(app=func_app, show_in_gui=False)
     exp_wrapper.func = func_app.function_factory.funcs_user[-1]
     assert isinstance(exp_wrapper.func, ExponentialFunc)
     await assert_set_params_in_gui(func_app, exp_wrapper)
@@ -478,7 +478,7 @@ async def global_ref_func_and_replace(func_app: CeedTestApp, add_func):
     await touch_widget(func_app, ref_btn)
 
     assert len(g.funcs) == 1
-    exp_wrapper2 = ExponentialFunctionF3(app=func_app, manually_add=False)
+    exp_wrapper2 = ExponentialFunctionF3(app=func_app, show_in_gui=False)
     exp_wrapper2.func = g.funcs[-1]
     assert isinstance(exp_wrapper2.func, ExponentialFunc)
     assert exp_wrapper2.func is not exp_wrapper.func

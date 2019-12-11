@@ -175,7 +175,7 @@ async def open_stage_settings(app: CeedTestApp, stage: CeedStage):
 
 async def test_stage_find_shape_in_all_stages(stage_app: CeedTestApp):
     (s1, s2, s3), (group, shape1, shape2, shape3) = create_test_stages(
-        stage_app=stage_app, manually_add=True)
+        stage_app=stage_app, show_in_gui=True)
     await stage_app.wait_clock_frames(2)
 
     for shape in (shape1, shape2, shape3):
@@ -253,7 +253,7 @@ async def test_gui_add_stages(stage_app: CeedTestApp):
     stages = []
     add_stage = stage_app.resolve_widget().down(test_name='add empty stage')()
     for i, stage_cls in enumerate(stage_classes):
-        stage = stage_cls(app=stage_app, manually_add=False)
+        stage = stage_cls(app=stage_app, show_in_gui=False)
         stages.append(stage)
 
         # don't keep more than two stages so the list is not too long
@@ -312,7 +312,7 @@ async def test_gui_add_sub_stages(stage_app: CeedTestApp):
 
     stages = []
     for i, stage_cls in enumerate(stage_classes[:4]):
-        stage = stage_cls(app=stage_app, manually_add=False)
+        stage = stage_cls(app=stage_app, show_in_gui=False)
         stages.append(stage)
 
         # don't keep more than two stages so the list is not too long
@@ -340,7 +340,7 @@ async def test_gui_drag_shape_to_stage(stage_app: CeedTestApp):
     (group, group2, group3), (shape1, shape2, shape3) = \
         assert_add_three_groups(
             shape_factory=stage_app.shape_factory, app=stage_app,
-            manually_add=True)
+            show_in_gui=True)
     await stage_app.wait_clock_frames(2)
 
     (s1, s2, s3), _ = create_test_stages(
@@ -393,7 +393,7 @@ async def test_gui_drag_shape_to_stage(stage_app: CeedTestApp):
 
 
 async def test_gui_drag_func_to_stage(stage_app: CeedTestApp):
-    global_funcs = create_funcs(func_app=stage_app, manually_add=True)
+    global_funcs = create_funcs(func_app=stage_app, show_in_gui=True)
     group_func: GroupFunction = global_funcs[-1]
     ff1 = group_func.wrapper_funcs[0]
     ff2 = group_func.wrapper_funcs[1]
@@ -452,10 +452,10 @@ async def test_gui_drag_func_to_stage(stage_app: CeedTestApp):
 
 async def test_gui_drag_stage_to_stage(stage_app: CeedTestApp):
     (s1, s2, s21), _ = create_test_stages(
-        stage_app=stage_app, manually_add=True, add_func=False,
+        stage_app=stage_app, show_in_gui=True, add_func=False,
         add_shapes=False)
     (s3, s4, s41), _ = create_test_stages(
-        stage_app=stage_app, manually_add=True, add_func=False,
+        stage_app=stage_app, show_in_gui=True, add_func=False,
         add_shapes=False)
     await stage_app.wait_clock_frames(2)
 

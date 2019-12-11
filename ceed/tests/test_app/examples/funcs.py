@@ -11,12 +11,12 @@ from ceed.function import FuncBase, FuncGroup, FunctionFactoryBase
 
 def create_funcs(
         func_app: CeedTestApp = None,
-        function_factory: FunctionFactoryBase = None, manually_add=True):
+        function_factory: FunctionFactoryBase = None, show_in_gui=True):
     funcs = []
     for func_cls in (ConstFunctionF1, LinearFunctionF1, ExponentialFunctionF1,
                      CosFunctionF1, GroupFunctionF1):
         func = func_cls(app=func_app, function_factory=function_factory,
-                        manually_add=manually_add)
+                        show_in_gui=show_in_gui)
         funcs.append(func)
     return funcs
 
@@ -57,7 +57,7 @@ class Function(object):
 
     def __init__(
             self, app: CeedTestApp = None,
-            function_factory: FunctionFactoryBase = None, manually_add=True):
+            function_factory: FunctionFactoryBase = None, show_in_gui=True):
         self.timebase_numerator = self.timebase[0]
         self.timebase_denominator = self.timebase[1]
         super().__init__()
@@ -68,13 +68,13 @@ class Function(object):
             self.function_factory = app.function_factory
             self.funcs_container = app.funcs_container
 
-        if manually_add:
-            self.manually_add()
+        if show_in_gui:
+            self.show_in_gui()
 
     def create_func(self):
         raise NotImplementedError
 
-    def manually_add(self, add_func=None, display_func=None):
+    def show_in_gui(self, add_func=None, display_func=None):
         self.create_func()
         (add_func or self.function_factory.add_func)(self.func)
         (display_func or self.funcs_container.show_func_in_listing)(self.func)
@@ -758,13 +758,13 @@ class GroupFunction(Function):
         self.func: FuncGroup = func_group
 
         for wrapper_cls in self.wrapper_classes:
-            wrapper_func = wrapper_cls(app=self.app, manually_add=False)
+            wrapper_func = wrapper_cls(app=self.app, show_in_gui=False)
             wrapper_func.create_func()
             funcs.append(wrapper_func)
             func_group.add_func(wrapper_func.func)
 
-    def manually_add(self, add_func=None, display_func=None):
-        super(GroupFunction, self).manually_add(
+    def show_in_gui(self, add_func=None, display_func=None):
+        super(GroupFunction, self).show_in_gui(
             add_func=add_func, display_func=display_func)
 
         for func in self.wrapper_funcs:

@@ -73,7 +73,7 @@ async def test_multiple_shapes_remove(
     shape2.check_shape_visible(True)
 
     # add the shape back
-    shape1.manually_add()
+    shape1.show_in_gui()
     assert painter.shapes == [shape2.shape, shape1.shape]
     await paint_app.wait_clock_frames(2)
 
@@ -357,7 +357,7 @@ async def test_multiple_shapes_draw(
         paint_app: CeedTestApp, shape_classes: List[Type[Shape]]):
     painter = paint_app.shape_factory
     shape1, shape2 = (
-        cls(paint_app, painter, manually_add=False) for cls in shape_classes)
+        cls(paint_app, painter, show_in_gui=False) for cls in shape_classes)
     await paint_app.wait_clock_frames(2)
 
     assert not painter.shapes
@@ -405,7 +405,7 @@ async def test_shape_add_enclosing_polygon(paint_app: CeedTestApp):
     points = [0, 0, w, 0, w, h, 0, h]
     shape = EnclosingPolygon(
         app=paint_app, painter=painter, shape=painter.shapes[0],
-        points=points, outside_point=[w / 2, h / 2], manually_add=False)
+        points=points, outside_point=[w / 2, h / 2], show_in_gui=False)
 
     assert shape.shape.name == 'enclosed'
     shape.check_shape_visible(True)

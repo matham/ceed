@@ -21,7 +21,7 @@ def make_stage(stage_factory: StageFactoryBase, **kwargs):
 def create_stage_funcs(func_app, function_factory):
     funcs = create_funcs(
         func_app=func_app, function_factory=function_factory,
-        manually_add=False)
+        show_in_gui=False)
 
     for func in funcs:
         func.create_func()
@@ -30,7 +30,7 @@ def create_stage_funcs(func_app, function_factory):
 
 def create_test_stages(
         stage_app: CeedTestApp = None, stage_factory: StageFactoryBase = None,
-        manually_add=True, add_func=True, add_shapes=True) -> \
+        show_in_gui=True, add_func=True, add_shapes=True) -> \
         Tuple[Tuple[StageWrapper], List[Union[Shape, CeedShapeGroup]]]:
     if stage_app is None:
         function_factory = stage_factory.function_factory
@@ -45,7 +45,7 @@ def create_test_stages(
         (group, group2, group3), (shape, shape2, shape3) = \
             assert_add_three_groups(
                 shape_factory=shape_factory, app=stage_app,
-                manually_add=manually_add)
+                show_in_gui=show_in_gui)
         shapes = [group3, shape, shape2, shape3]
     else:
         shapes = []
@@ -57,15 +57,15 @@ def create_test_stages(
         funcs = lambda: []
 
     s1 = ParaAnyStage(
-        stage_factory=stage_factory, manually_add=manually_add, shapes=shapes,
+        stage_factory=stage_factory, show_in_gui=show_in_gui, shapes=shapes,
         functions=funcs(), app=stage_app)
 
     s2 = ParaAllStage(
-        stage_factory=stage_factory, manually_add=manually_add, shapes=shapes,
+        stage_factory=stage_factory, show_in_gui=show_in_gui, shapes=shapes,
         functions=funcs(), app=stage_app)
 
     s3 = SerialAnyStage(
-        stage_factory=stage_factory, manually_add=manually_add, shapes=shapes,
+        stage_factory=stage_factory, show_in_gui=show_in_gui, shapes=shapes,
         functions=funcs(), app=stage_app, parent_wrapper_stage=s2)
     return (s1, s2, s3), shapes
 
@@ -121,7 +121,8 @@ class StageWrapper(object):
             self, app: CeedTestApp = None,
             stage_factory: StageFactoryBase = None,
             parent_wrapper_stage: 'StageWrapper' = None,
-            manually_add=True, shapes=[], functions=[]):
+            show_in_gui=True, create_add_to_parent=False, shapes=[],
+            functions=[]):
         self.stages = []
         super().__init__()
         self.app = app
@@ -134,8 +135,10 @@ class StageWrapper(object):
         self.shapes = shapes
         self.functions = functions
 
-        if manually_add:
-            self.manually_add()
+        if show_in_gui:
+            self.show_in_gui()
+        elif create_add_to_parent:
+            self.create_add_to_parent()
 
     def create_stage(self):
         stage = self.stage = CeedStage(
@@ -156,15 +159,20 @@ class StageWrapper(object):
         for func in self.functions:
             stage.add_func(func.func)
 
-    def manually_add(self):
+    def create_add_to_parent(self):
         self.create_stage()
         if self.parent_wrapper_stage is None:
             self.stage_factory.add_stage(
                 self.stage, allow_last_experiment=False)
-            self.stages_container.show_stage(self.stage)
         else:
             self.parent_wrapper_stage.stages.append(self)
             self.parent_wrapper_stage.stage.add_stage(self.stage)
+
+    def show_in_gui(self):
+        self.create_add_to_parent()
+        if self.parent_wrapper_stage is None:
+            self.stages_container.show_stage(self.stage)
+        else:
             self.stages_container.show_sub_stage(
                 self.stage, self.parent_wrapper_stage.stage)
 

@@ -7,18 +7,18 @@ from kivy_garden.painter import PaintShape
 
 def assert_add_three_shapes(
         shape_factory: CeedPaintCanvasBehavior = None,
-        app: CeedTestApp = None, manually_add=False):
+        app: CeedTestApp = None, show_in_gui=False):
     assert not shape_factory.shapes
     assert not shape_factory.shape_names
 
     shape = EllipseShapeP1(
-        app=app, painter=shape_factory, manually_add=manually_add)
+        app=app, painter=shape_factory, show_in_gui=show_in_gui)
     shape2 = PolygonShapeP1(
-        app=app, painter=shape_factory, manually_add=manually_add)
+        app=app, painter=shape_factory, show_in_gui=show_in_gui)
     shape3 = CircleShapeP1(
-        app=app, painter=shape_factory, manually_add=manually_add)
+        app=app, painter=shape_factory, show_in_gui=show_in_gui)
 
-    if not manually_add:
+    if not show_in_gui:
         shape.make_shape()
         shape2.make_shape()
         shape3.make_shape()
@@ -37,9 +37,9 @@ def assert_add_three_shapes(
 
 def assert_add_three_groups(
         shape_factory: CeedPaintCanvasBehavior = None,
-        app: CeedTestApp = None, manually_add=False):
+        app: CeedTestApp = None, show_in_gui=False):
     shape, shape2, shape3 = assert_add_three_shapes(
-        shape_factory, app, manually_add)
+        shape_factory, app, show_in_gui)
     assert not shape_factory.groups
     assert not shape_factory.shape_group_names
 
@@ -94,17 +94,17 @@ class Shape(object):
 
     inside_point = None
 
-    def __init__(self, app, painter, manually_add=True):
+    def __init__(self, app, painter, show_in_gui=True):
         super(Shape, self).__init__()
         self.painter = painter
         self.app = app
-        if manually_add:
-            self.manually_add()
+        if show_in_gui:
+            self.show_in_gui()
 
     def make_shape(self):
         raise NotImplementedError
 
-    def manually_add(self):
+    def show_in_gui(self):
         if self.shape is None:
             self.make_shape()
         self.painter.add_shape(self.shape)
