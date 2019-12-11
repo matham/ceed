@@ -447,7 +447,7 @@ class StageFactoryBase(EventDispatcher):
         return shape_views
 
     def fill_shape_gl_color_values(
-            self, shape_views, shape_values, projection=None):
+            self, shape_views, shape_values, grayscale=None):
         '''Takes the dict of the Colors instance that control the color of
         each shape as well as the list of the color values for a time point
         and sets the shape colors to those values.
@@ -462,11 +462,11 @@ class StageFactoryBase(EventDispatcher):
             `shape_values`: list
                 The list of color intensity values to use for each shape as
                 yielded by :meth:`tick_stage`.
-            `projection`: str
-                The colors to operate one. Can be any subset of the string
+            `grayscale`: str
+                The colors to operate on. Can be any subset of the string
                 'rgb'. Specifically, although we get intensity values for every
                 color, this takes the average intensity of the colors listed in
-                ``projection`` and assigns their mean to all those colors.
+                ``grayscale`` and assigns their mean to all those colors.
                 It's how we turn the color into a gray-scale value.
 
         :returns:
@@ -530,7 +530,7 @@ class StageFactoryBase(EventDispatcher):
                 if color is not None:
                     color.rgba = 0, 0, 0, 0
                 result.append((name, 0, 0, 0, 0))
-            elif projection:
+            elif grayscale:
                 if a is None:
                     a = 1
 
@@ -542,7 +542,7 @@ class StageFactoryBase(EventDispatcher):
 
                 if color is not None:
                     color.a = a
-                    setattr(color, projection, val)
+                    setattr(color, grayscale, val)
                 result.append((name, val, val, val, a))
             else:
                 r, g, b = r or 0, g or 0, b or 0

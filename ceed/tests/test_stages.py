@@ -673,14 +673,12 @@ def test_group_remove_stage(stage_factory: StageFactoryBase):
 def test_simple_stage_intensity(stage_factory: StageFactoryBase):
     from ceed.function.plugin import LinearFunc
     shape = EllipseShapeP1(
-        app=None, painter=stage_factory.shape_factory, show_in_gui=False)
-    shape.make_shape()
-    stage_factory.shape_factory.add_shape(shape.shape)
+        app=None, painter=stage_factory.shape_factory, show_in_gui=False,
+        create_add_shape=True)
 
     shape2 = EllipseShapeP2(
-        app=None, painter=stage_factory.shape_factory, show_in_gui=False)
-    shape2.make_shape()
-    stage_factory.shape_factory.add_shape(shape2.shape)
+        app=None, painter=stage_factory.shape_factory, show_in_gui=False,
+        create_add_shape=True)
 
     f: LinearFunc = LinearFunc(
         function_factory=stage_factory.function_factory, b=0, m=.1, duration=5)

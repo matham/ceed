@@ -94,20 +94,26 @@ class Shape(object):
 
     inside_point = None
 
-    def __init__(self, app, painter, show_in_gui=True):
+    def __init__(self, app, painter, show_in_gui=True, create_add_shape=False):
         super(Shape, self).__init__()
         self.painter = painter
         self.app = app
+
         if show_in_gui:
             self.show_in_gui()
+        elif create_add_shape:
+            self.create_add_shape()
 
     def make_shape(self):
         raise NotImplementedError
 
-    def show_in_gui(self):
+    def create_add_shape(self):
         if self.shape is None:
             self.make_shape()
         self.painter.add_shape(self.shape)
+
+    def show_in_gui(self):
+        self.create_add_shape()
         self.shape.add_shape_to_canvas(self.painter)
 
     def remove(self):
