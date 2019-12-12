@@ -7,13 +7,15 @@ from fractions import Fraction
 from ceed.function import FunctionFactoryBase
 from ceed.stage import StageFactoryBase, CeedStage, CeedStageRef, \
     StageDoneException
-from .test_app.examples.stages import ParaAllStage, ParaAnyStage, \
+from ceed.tests.test_app.examples.stages import ParaAllStage, ParaAnyStage, \
     SerialAllStage, SerialAnyStage, assert_stages_same, make_stage
-from .test_app.test_shape import make_4_shapes
-from .test_app.examples.shapes import Shape, EllipseShapeP1, \
+from ceed.tests.test_app.test_shape import make_4_shapes
+from ceed.tests.test_app.examples.shapes import Shape, EllipseShapeP1, \
     CircleShapeP1, PolygonShapeP1, FreeformPolygonShapeP1, EllipseShapeP2, \
-    CircleShapeP2, PolygonShapeP2, FreeformPolygonShapeP2
-from .test_app.examples.funcs import LinearFunctionF1, ConstFunctionF1
+    CircleShapeP2, PolygonShapeP2, FreeformPolygonShapeP2, \
+    CircleShapeP1Internal
+from ceed.tests.test_app.examples.funcs import LinearFunctionF1, \
+    ConstFunctionF1
 
 
 def create_recursive_stages(
@@ -27,7 +29,7 @@ def create_recursive_stages(
         parent_wrapper_stage=root,
         create_add_to_parent=not show_in_gui)
 
-    s1 = SerialAnyStage(
+    s1 = SerialAllStage(
         stage_factory=stage_factory, show_in_gui=show_in_gui,
         parent_wrapper_stage=g1,
         create_add_to_parent=not show_in_gui)
@@ -45,7 +47,7 @@ def create_recursive_stages(
         parent_wrapper_stage=root,
         create_add_to_parent=not show_in_gui)
 
-    g2 = ParaAllStage(
+    g2 = ParaAnyStage(
         stage_factory=stage_factory, show_in_gui=show_in_gui,
         parent_wrapper_stage=root,
         create_add_to_parent=not show_in_gui)
@@ -691,6 +693,7 @@ def test_simple_stage_intensity(stage_factory: StageFactoryBase):
     stage.add_shape(shape2.shape)
 
     values, n = get_stage_time_intensity(stage_factory, stage.name, 10)
+    assert n == 5 * 10
     assert len(values) == 2
     colors = values[shape.name]
     colors2 = values[shape2.name]
@@ -705,3 +708,110 @@ def test_simple_stage_intensity(stage_factory: StageFactoryBase):
         assert math.isclose(r, i / 10 * .1)
         assert math.isclose(b, i / 10 * .1)
         assert g == 0
+
+
+def test_recursive_stage_intensity(stage_factory: StageFactoryBase):
+    root, g1, g2, s1, s2, s3, s4, s5, s6 = create_recursive_stages(
+        stage_factory)
+
+    from ceed.function.plugin import LinearFunc
+    for i, stage in enumerate((s1, s2)):
+        stage.stage.add_func(LinearFunc(
+            function_factory=stage_factory.function_factory, b=0, m=.1,
+            duration=(i + 1) * 5))
+
+    shape = CircleShapeP1(
+        app=None, painter=stage_factory.shape_factory, show_in_gui=False,
+        create_add_shape=True)
+
+    shape2 = CircleShapeP1Internal(
+        app=None, painter=stage_factory.shape_factory, show_in_gui=False,
+        create_add_shape=True)
+    s1.stage.add_shape(shape.shape)
+    s2.stage.add_shape(shape2.shape)
+
+    values, n = get_stage_time_intensity(stage_factory, root.name, 10)
+    assert n == 10 * 10
+    assert len(values) == 2
+    colors = values[shape.name]
+    colors2 = values[shape2.name]
+    assert len(colors) == n
+
+    for i, (r, g, b, a) in enumerate(colors):
+        if i < 5 * 10:
+            assert math.isclose(r, i / 10 * .1) if s2.color_r else r == 0
+            assert math.isclose(g, i / 10 * .1) if s2.color_g else g == 0
+            assert math.isclose(b, i / 10 * .1) if s2.color_b else b == 0
+        else:
+            assert r == 0
+            assert g == 0
+            assert b == 0
+
+    for i, (r, g, b, a) in enumerate(colors2):
+        assert math.isclose(r, i / 10 * .1) if s2.color_r else r == 0
+        assert math.isclose(g, i / 10 * .1) if s2.color_g else g == 0
+        assert math.isclose(b, i / 10 * .1) if s2.color_b else b == 0
+
+
+def test_recursive_full_stage_intensity(stage_factory: StageFactoryBase):
+    root, g1, g2, s1, s2, s3, s4, s5, s6 = create_recursive_stages(
+        stage_factory)
+
+    from ceed.function.plugin import LinearFunc
+    for i, stage in enumerate((s1, s2, s3, s4, s5, s6)):
+        stage.stage.add_func(LinearFunc(
+            function_factory=stage_factory.function_factory, b=0, m=.1,
+            duration=(i % 2 + 1) * 5))
+
+    shape = CircleShapeP1(
+        app=None, painter=stage_factory.shape_factory, show_in_gui=False,
+        create_add_shape=True)
+
+    shape2 = CircleShapeP1Internal(
+        app=None, painter=stage_factory.shape_factory, show_in_gui=False,
+        create_add_shape=True)
+    s1.stage.add_shape(shape.shape)
+    s4.stage.add_shape(shape.shape)
+    s5.stage.add_shape(shape.shape)
+    s2.stage.add_shape(shape2.shape)
+    s3.stage.add_shape(shape2.shape)
+    s6.stage.add_shape(shape2.shape)
+
+    values, n = get_stage_time_intensity(stage_factory, root.name, 10)
+    assert n == 10 * (10 + 5 + 10 + 5)
+    assert len(values) == 2
+    colors = values[shape.name]
+    colors2 = values[shape2.name]
+    assert len(colors) == n
+
+    for s, start, e in [(s1, 0, 5), (s4, 15, 25), (s5, 25, 30)]:
+        for i in range(start * 10, e * 10):
+            r, g, b, a = colors[i]
+
+            i -= start * 10
+            assert math.isclose(r, i / 10 * .1) if s.color_r else r == 0
+            assert math.isclose(g, i / 10 * .1) if s.color_g else g == 0
+            assert math.isclose(b, i / 10 * .1) if s.color_b else b == 0
+
+    for start, e in [(5, 15), ]:
+        for i in range(start * 10, e * 10):
+            r, g, b, a = colors[i]
+            assert r == 0
+            assert g == 0
+            assert b == 0
+
+    for s, start, e in [(s2, 0, 10), (s3, 10, 15), (s6, 25, 30)]:
+        for i in range(start * 10, e * 10):
+            r, g, b, a = colors2[i]
+
+            i -= start * 10
+            assert math.isclose(r, i / 10 * .1) if s.color_r else r == 0
+            assert math.isclose(g, i / 10 * .1) if s.color_g else g == 0
+            assert math.isclose(b, i / 10 * .1) if s.color_b else b == 0
+
+    for start, e in [(15, 25), ]:
+        for i in range(start * 10, e * 10):
+            r, g, b, a = colors2[i]
+            assert r == 0
+            assert g == 0
+            assert b == 0

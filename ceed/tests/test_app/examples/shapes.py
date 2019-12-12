@@ -400,6 +400,19 @@ class CircleShapeP1(CircleShape):
     area = math.pi * CircleShape.radius ** 2
 
 
+class CircleShapeP1Internal(CircleShape):
+
+    center = [450 + CircleShape.radius / 2, 300]
+
+    outside_point = CircleShapeP1.outside_point
+
+    inside_point = center
+
+    name = 'happy circle internal'
+
+    radius = CircleShape.radius / 3
+
+
 class CircleShapeP2(CircleShape):
 
     center = [450, 600]

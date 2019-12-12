@@ -620,8 +620,13 @@ class CeedStage(EventDispatcher):
     '''
 
     complete_on = OptionProperty('all', options=['all', 'any'])
-    '''How to terminate a stage when there are sub-stages, :attr:`stages`
-    present. Can be one of ``'all'``, ``'parallel'``.
+    '''When to consider the stage's children stages to be complete we contain
+    sub-stages - :attr:`stages`. Can be one of ``'all'``, ``'any'``.
+
+    If ``'any'``, this stage is done when **any** of the children stages is
+    done, and when all of this stage's functions are done. If ``'all'``, this
+    stage is done when **any** children stages are done, and when all of this
+    stage's functions are done.
 
     See :class:`CeedStage` description for details.
     '''
@@ -989,8 +994,7 @@ class CeedStage(EventDispatcher):
                 names.add(shape.name)
         names = list(names)
 
-        stages = [s.stage.tick_stage(shapes) if isinstance(s, CeedStageRef)
-                  else s.tick_stage(shapes) for s in self.stages]
+        stages = [s.tick_stage(shapes) for s in self.stages]
         funcs = self.tick_funcs()
         serial = self.order == 'serial'
         end_on_first = self.complete_on == 'any' and not serial
@@ -1011,8 +1015,6 @@ class CeedStage(EventDispatcher):
                         shapes[name].append(values)
                 except FuncDoneException:
                     funcs = None
-                    if end_on_first:
-                        del stages[:]
 
             for tick_stage in stages[:]:
                 try:
@@ -1022,7 +1024,6 @@ class CeedStage(EventDispatcher):
                 except StageDoneException:
                     if end_on_first:
                         del stages[:]
-                        funcs = None
                         break
                     stages.remove(tick_stage)
 
