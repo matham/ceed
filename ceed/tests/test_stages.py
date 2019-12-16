@@ -19,44 +19,44 @@ from ceed.tests.test_app.examples.funcs import LinearFunctionF1, \
 
 
 def create_recursive_stages(
-        stage_factory: StageFactoryBase, show_in_gui=False):
+        stage_factory: StageFactoryBase, show_in_gui=False, app=None):
     root = SerialAllStage(
-        stage_factory=stage_factory, show_in_gui=show_in_gui,
+        stage_factory=stage_factory, show_in_gui=show_in_gui, app=app,
         create_add_to_parent=not show_in_gui)
 
     g1 = ParaAllStage(
-        stage_factory=stage_factory, show_in_gui=show_in_gui,
+        stage_factory=stage_factory, show_in_gui=show_in_gui, app=app,
         parent_wrapper_stage=root,
         create_add_to_parent=not show_in_gui)
 
     s1 = SerialAllStage(
-        stage_factory=stage_factory, show_in_gui=show_in_gui,
+        stage_factory=stage_factory, show_in_gui=show_in_gui, app=app,
         parent_wrapper_stage=g1,
         create_add_to_parent=not show_in_gui)
     s2 = SerialAllStage(
-        stage_factory=stage_factory, show_in_gui=show_in_gui,
+        stage_factory=stage_factory, show_in_gui=show_in_gui, app=app,
         parent_wrapper_stage=g1,
         create_add_to_parent=not show_in_gui)
 
     s3 = SerialAnyStage(
-        stage_factory=stage_factory, show_in_gui=show_in_gui,
+        stage_factory=stage_factory, show_in_gui=show_in_gui, app=app,
         parent_wrapper_stage=root,
         create_add_to_parent=not show_in_gui)
     s4 = SerialAllStage(
-        stage_factory=stage_factory, show_in_gui=show_in_gui,
+        stage_factory=stage_factory, show_in_gui=show_in_gui, app=app,
         parent_wrapper_stage=root,
         create_add_to_parent=not show_in_gui)
 
     g2 = ParaAnyStage(
-        stage_factory=stage_factory, show_in_gui=show_in_gui,
+        stage_factory=stage_factory, show_in_gui=show_in_gui, app=app,
         parent_wrapper_stage=root,
         create_add_to_parent=not show_in_gui)
     s5 = SerialAnyStage(
-        stage_factory=stage_factory, show_in_gui=show_in_gui,
+        stage_factory=stage_factory, show_in_gui=show_in_gui, app=app,
         parent_wrapper_stage=g2,
         create_add_to_parent=not show_in_gui)
     s6 = SerialAllStage(
-        stage_factory=stage_factory, show_in_gui=show_in_gui,
+        stage_factory=stage_factory, show_in_gui=show_in_gui, app=app,
         parent_wrapper_stage=g2,
         create_add_to_parent=not show_in_gui)
 

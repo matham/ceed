@@ -1,3 +1,6 @@
+import trio
+import math
+
 from .examples.stages import create_test_stages, make_stage, StageWrapper, \
     stage_classes, assert_stages_same
 from typing import Type, List, Union
@@ -509,3 +512,98 @@ async def test_gui_drag_stage_to_stage(stage_app: CeedTestApp):
                 assert oldest_stage not in stages
 
             await stage_app.wait_clock_frames(2)
+
+
+async def test_recursive_play_stage_intensity(stage_app: CeedTestApp):
+    from ..test_stages import create_recursive_stages
+    from .examples.shapes import CircleShapeP1, CircleShapeP2
+    from kivy.clock import Clock
+    root, g1, g2, s1, s2, s3, s4, s5, s6 = create_recursive_stages(
+        stage_app.stage_factory, app=stage_app)
+
+    from ceed.function.plugin import LinearFunc
+    for i, stage in enumerate((s1, s2, s3, s4, s5, s6)):
+        stage.stage.add_func(LinearFunc(
+            function_factory=stage_app.function_factory, b=0, m=.1,
+            duration=(i % 2 + 1) * 5))
+
+    shape = CircleShapeP1(
+        app=None, painter=stage_app.shape_factory, show_in_gui=True)
+
+    shape2 = CircleShapeP2(
+        app=None, painter=stage_app.shape_factory, show_in_gui=True)
+    s1.stage.add_shape(shape.shape)
+    s4.stage.add_shape(shape.shape)
+    s5.stage.add_shape(shape.shape)
+    s2.stage.add_shape(shape2.shape)
+    s3.stage.add_shape(shape2.shape)
+    s6.stage.add_shape(shape2.shape)
+
+    root.show_in_gui()
+    await stage_app.wait_clock_frames(2)
+
+    frame = 0
+    event = None
+    trio_event = trio.Event()
+    rate = stage_app.view_controller.frame_rate = 10
+    num_frames = rate * (10 + 5 + 10 + 5)
+    initial_frames = Clock.frames_displayed
+    stage_app.view_controller.use_software_frame_rate = False
+    stage_app.view_controller.flip_projector = False
+
+    def verify_intensity(*largs):
+        nonlocal frame
+        if Clock.frames_displayed <= initial_frames + 1:
+            return
+
+        if not stage_app.view_controller.stage_active:
+            event.cancel()
+            trio_event.set()
+            assert frame == num_frames
+            return
+
+        points = stage_app.get_widget_pos_pixel(
+            stage_app.shape_factory, [shape.center, shape2.center])
+        points = [[c / 255 for c in p] for p in points]
+        (r1, g1, b1, _), (r2, g2, b2, _) = points
+
+        for s, start, e in [(s1, 0, 5), (s4, 15, 25), (s5, 25, 30)]:
+            if start * rate <= frame < e * rate:
+                val = (frame - start * rate) / rate * .1
+                assert math.isclose(r1, val, abs_tol=2 / 255) \
+                    if s.color_r else r1 == 0
+                assert math.isclose(g1, val, abs_tol=2 / 255) \
+                    if s.color_g else g1 == 0
+                assert math.isclose(b1, val, abs_tol=2 / 255) \
+                    if s.color_b else b1 == 0
+                break
+        else:
+            assert r1 == 0
+            assert g1 == 0
+            assert b1 == 0
+
+        for s, start, e in [(s2, 0, 10), (s3, 10, 15), (s6, 25, 30)]:
+            if start * rate <= frame < e * rate:
+                val = (frame - start * rate) / rate * .1
+                assert math.isclose(r2, val, abs_tol=2 / 255) \
+                    if s.color_r else r2 == 0
+                assert math.isclose(g2, val, abs_tol=2 / 255) \
+                    if s.color_g else g2 == 0
+                assert math.isclose(b2, val, abs_tol=2 / 255) \
+                    if s.color_b else b2 == 0
+                break
+        else:
+            assert r2 == 0
+            assert g2 == 0
+            assert b2 == 0
+
+        frame += 1
+
+    event = Clock.create_trigger(verify_intensity, timeout=0, interval=True)
+    event()
+    stage_app.view_controller.request_stage_start(root.name)
+
+    await trio_event.wait()
+
+    stage_app.view_controller.request_stage_end()
+    event.cancel()
