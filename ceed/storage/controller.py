@@ -735,6 +735,8 @@ class CeedDataWriterBase(EventDispatcher):
                 frame_i += 1
 
                 for name, r, g, b, a in values:
+                    if name not in shapes:
+                        continue
                     frame_vals_buf[name][frame_vals_i[name], :] = r, g, b, a
                     frame_vals_i[name] += 1
             elif msg == 'frame_flip':
@@ -752,7 +754,7 @@ class CeedDataWriterBase(EventDispatcher):
                     names=('frame', 'r', 'g', 'b'))
                 led_state.append(rec)
 
-    def prepare_experiment(self, stage_name):
+    def prepare_experiment(self, stage_name, used_shapes=None):
         self.stop_experiment()
         self.add_app_log('Saved current image to h5 file')
 
@@ -781,6 +783,8 @@ class CeedDataWriterBase(EventDispatcher):
 
         shapes = {}
         for shape in App.get_running_app().shape_factory.shapes:
+            if used_shapes is not None and shape.name not in used_shapes:
+                continue
             shapes[shape.name] = block.create_data_array(
                 'shape_{}'.format(shape.name), 'shape_data', dtype=np.float16,
                 data=np.zeros((0, 4)))

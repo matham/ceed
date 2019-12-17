@@ -1068,6 +1068,20 @@ class CeedStage(EventDispatcher):
             for func in root_func.get_funcs():
                 func.resample_parameters()
 
+    def get_stage_shape_names(self):
+        """Gets all the names of the shapes controlled by the stage or
+        sub-stages.
+        """
+        shapes = set()
+        for stage in self.get_stages(step_into_ref=True):
+            for shape in stage.shapes:
+                if isinstance(shape.shape, CeedShapeGroup):
+                    for s in shape.shape.shapes:
+                        shapes.add(s.name)
+                else:
+                    shapes.add(shape.shape.name)
+        return shapes
+
 
 class CeedStageRef(object):
     """The function it refers to must be in the factory.
