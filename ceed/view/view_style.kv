@@ -279,3 +279,13 @@
                     if app.view_controller.propixx_lib: app.view_controller.set_led_mode(app.view_controller.LED_mode_idle)
                 size_hint_x: None
                 width: self.minimum_width
+            ThemedLabel:
+                size_hint: None, None
+                size: self.texture_size
+                text: 'File compression'
+            ThemedSpinner:
+                values: ['Auto', 'ZIP', 'None']
+                text: app.ceed_data.compression
+                on_text: app.ceed_data.compression = self.text
+                size_hint_x: None
+                width: self.minimum_width

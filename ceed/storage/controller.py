@@ -39,7 +39,7 @@ __all__ = ('CeedDataWriterBase', 'DataSerializerBase')
 
 class CeedDataWriterBase(EventDispatcher):
 
-    __config_props__ = ('root_path', 'backup_interval')
+    __config_props__ = ('root_path', 'backup_interval', 'compression')
 
     root_path = StringProperty('')
 
@@ -52,6 +52,8 @@ class CeedDataWriterBase(EventDispatcher):
     backup_filename = ''
 
     nix_file = None
+
+    compression = StringProperty('Auto')
 
     has_unsaved = BooleanProperty(False)
 
@@ -87,6 +89,14 @@ class CeedDataWriterBase(EventDispatcher):
             self.backup_event = Clock.schedule_interval(
                 partial(self.write_changes, scheduled=True),
                 self.backup_interval)
+
+    @property
+    def nix_compression(self):
+        if self.compression == 'ZIP':
+            return nix.Compression.DeflateNormal
+        elif self.compression == 'None':
+            return nix.Compression.No
+        return nix.Compression.Auto
 
     def gather_config_data_dict(self, stages_only=False):
         app = App.get_running_app()
@@ -237,7 +247,8 @@ class CeedDataWriterBase(EventDispatcher):
         temp.close()
 
         f = self.nix_file = nix.File.open(
-            self.backup_filename, nix.FileMode.Overwrite)
+            self.backup_filename, nix.FileMode.Overwrite,
+            compression=self.nix_compression)
         self.config_changed = self.has_unsaved = True
         Logger.debug(
             'Ceed Controller (storage): Created tempfile {}, with file "{}"'.
@@ -307,7 +318,8 @@ class CeedDataWriterBase(EventDispatcher):
         self.import_file(self.backup_filename)
 
         self.nix_file = nix.File.open(
-            self.backup_filename, nix.FileMode.ReadWrite)
+            self.backup_filename, nix.FileMode.ReadWrite,
+            compression=self.nix_compression)
         self.config_changed = self.has_unsaved = True
         Logger.debug(
             'Ceed Controller (storage): Created tempfile {}, from existing '

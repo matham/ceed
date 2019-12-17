@@ -1,5 +1,5 @@
 app: {inspect: true}
-data: {backup_interval: 5.0, root_path: E:\msys64\home\matte}
+data: {backup_interval: 5.0, compression: ZIP, root_path: E:\msys64\home\matte}
 function: {}
 player:
   ffmpeg:
