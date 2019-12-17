@@ -355,15 +355,14 @@ class CeedDataReader(object):
 
         self.led_state = block.data_arrays['led_state']
 
-        if ('experiment_{}'.format(experiment) in
+        if ('ceed_mcs_alignment' in self._nix_file.blocks and
+                'experiment_{}'.format(experiment) in
                 self._nix_file.blocks['ceed_mcs_alignment'].data_arrays):
             self.electrode_intensity_alignment = self._nix_file.blocks[
                 'ceed_mcs_alignment'].data_arrays[
                 'experiment_{}'.format(experiment)]
         else:
             self.electrode_intensity_alignment = None
-            logging.warning(
-                'Could not find alignment for experiment {}'.format(experiment))
 
     def load_mcs_data(self):
         if self.electrodes_data:  # already loaded
