@@ -112,6 +112,7 @@ view:
   - [403.19798484892, 81.46820259135251, 0.0, 1.0]
   mirror_mea: true
   output_count: true
+  pad_to_stage_handshake: true
   screen_height: 1080
   screen_offset_x: 0
   screen_width: 1920

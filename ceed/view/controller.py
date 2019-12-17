@@ -37,7 +37,8 @@ from base_kivy_app.app import app_error
 from base_kivy_app.utils import yaml_dumps, yaml_loads
 
 import ceed
-from ceed.stage import StageDoneException, last_experiment_stage_name
+from ceed.stage import StageDoneException, last_experiment_stage_name, \
+    StageFactoryBase
 
 ignore_vpixx_import_error = False
 try:
@@ -92,7 +93,7 @@ class ViewControllerBase(EventDispatcher):
         'fullscreen', 'video_mode', 'LED_mode', 'LED_mode_idle',
         'mirror_mea', 'mea_num_rows', 'mea_num_cols',
         'mea_pitch', 'mea_diameter', 'mea_transform', 'cam_transform',
-        'flip_projector', 'flip_camera')
+        'flip_projector', 'flip_camera', 'pad_to_stage_handshake')
 
     screen_width = NumericProperty(1920)
     '''The screen width on which the data is played. This is the full-screen
@@ -148,6 +149,8 @@ class ViewControllerBase(EventDispatcher):
     mea_pitch = NumericProperty(20)
 
     mea_diameter = NumericProperty(3)
+
+    pad_to_stage_handshake = BooleanProperty(True)
 
     output_count = BooleanProperty(True)
     '''Whether the corner pixel is used to output frame information on the
@@ -420,16 +423,24 @@ class ViewControllerBase(EventDispatcher):
         self.tick_delay_event = Clock.schedule_once(self.tick_event, .25)
         Window.fbind('on_flip', self.flip_callback)
 
+        stage_factory: StageFactoryBase = _get_app().stage_factory
+        stage = stage_factory.stage_names[last_experiment_stage_name]
+        stage.pad_stage_ticks = 0
+
+        if self.output_count:
+            msg = uuid.uuid4().bytes
+            n = len(msg)
+
+            data_serializer = App.get_running_app().data_serializer
+            if self.pad_to_stage_handshake:
+                stage.pad_stage_ticks = data_serializer.num_ticks_handshake(n)
+            self.serializer = data_serializer.get_bits(-1, msg)
+
         self.current_canvas = canvas
-        self.tick_func = _get_app().stage_factory.tick_stage(
-            last_experiment_stage_name)
+        self.tick_func = stage_factory.tick_stage(last_experiment_stage_name)
 
         self._flip_stats['last_call_t'] = self._cpu_stats['last_call_t'] = \
             self._cpu_stats['tstart'] = clock()
-
-        if self.output_count:
-            self.serializer = App.get_running_app().data_serializer.get_bits(
-                -1, uuid.uuid4().bytes)
 
         self.add_graphics(canvas)
 

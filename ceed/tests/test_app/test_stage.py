@@ -719,14 +719,62 @@ async def test_moat_stage_shapes(stage_app: CeedTestApp, tmp_path):
     assert f.experiments_in_file == ['0', '1']
     assert not f.num_images_in_file
 
+    f.load_experiment(0)
+    assert tuple(np.array(f.shapes_intensity[shape.name])[0, :3]) == (1, 0, 1)
+    assert tuple(
+        np.array(f.shapes_intensity[internal_shape.name])[0, :3]) == (0, 0, 1)
+
     f.load_experiment(1)
     assert tuple(np.array(f.shapes_intensity[shape.name])[0, :3]) == (1, 0, 1)
     assert tuple(
         np.array(f.shapes_intensity[internal_shape.name])[0, :3]) == (0, 0, 1)
 
+    f.close_h5()
+
+
+async def test_pad_stage_ticks(stage_app: CeedTestApp, tmp_path):
+    from ..test_stages import create_recursive_stages
+    from .examples.shapes import CircleShapeP1
+    from ceed.analysis import CeedDataReader
+
+    root, g1, g2, s1, s2, s3, s4, s5, s6 = create_recursive_stages(
+        stage_app.stage_factory, app=stage_app)
+
+    shape = CircleShapeP1(
+        app=None, painter=stage_app.shape_factory, show_in_gui=True)
+    root.stage.add_shape(shape.shape)
+
+    root.show_in_gui()
+    await stage_app.wait_clock_frames(2)
+
+    stage_app.view_controller.frame_rate = 10
+    stage_app.view_controller.use_software_frame_rate = False
+
+    stage_app.view_controller.pad_to_stage_handshake = False
+    stage_app.view_controller.request_stage_start(root.name)
+    while stage_app.view_controller.stage_active:
+        await stage_app.wait_clock_frames(5)
+    await stage_app.wait_clock_frames(2)
+
+    stage_app.view_controller.pad_to_stage_handshake = True
+    stage_app.view_controller.request_stage_start(root.name)
+    while stage_app.view_controller.stage_active:
+        await stage_app.wait_clock_frames(5)
+    await stage_app.wait_clock_frames(2)
+
+    filename = str(tmp_path / 'pad_stage_ticks.h5')
+    stage_app.ceed_data.save(filename=filename)
+
+    f = CeedDataReader(filename)
+    f.open_h5()
+    assert f.experiments_in_file == ['0', '1']
+    assert not f.num_images_in_file
+
     f.load_experiment(0)
-    assert tuple(np.array(f.shapes_intensity[shape.name])[0, :3]) == (1, 0, 1)
-    assert tuple(
-        np.array(f.shapes_intensity[internal_shape.name])[0, :3]) == (0, 0, 1)
+    assert np.array(f.shapes_intensity[shape.name]).shape == (0, 4)
+
+    f.load_experiment(1)
+    assert np.array(f.shapes_intensity[shape.name]).shape == (
+        stage_app.data_serializer.num_ticks_handshake(16), 4)
 
     f.close_h5()

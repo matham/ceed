@@ -687,6 +687,8 @@ class CeedStage(EventDispatcher):
 
     display = None
 
+    pad_stage_ticks = 0
+
     __events__ = ('on_changed', )
 
     def __init__(self, stage_factory, function_factory, shape_factory,
@@ -1000,10 +1002,13 @@ class CeedStage(EventDispatcher):
         end_on_first = self.complete_on == 'any' and not serial
         r, g, b = self.color_r, self.color_g, self.color_b
         a = self.color_a
+        pad_stage_ticks = self.pad_stage_ticks
+        count = 0
         for tick_stage in stages[:]:
             next(tick_stage)
 
         while funcs is not None or stages:
+            count += 1
             t = yield
             if funcs is not None:
                 try:
@@ -1026,6 +1031,10 @@ class CeedStage(EventDispatcher):
                         del stages[:]
                         break
                     stages.remove(tick_stage)
+
+        while count <= pad_stage_ticks:
+            count += 1
+            _ = yield
 
         raise StageDoneException
 

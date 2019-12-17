@@ -289,3 +289,11 @@
                 on_text: app.ceed_data.compression = self.text
                 size_hint_x: None
                 width: self.minimum_width
+            ThemedLabel:
+                size_hint: None, None
+                size: self.texture_size
+                text: 'Pad stage duration to handshake'
+            LightThemedToggleButton:
+                text: 'true' if app.view_controller.pad_to_stage_handshake else 'false'
+                state: 'down' if app.view_controller.pad_to_stage_handshake else 'normal'
+                on_state: app.view_controller.pad_to_stage_handshake = self.state == 'down'

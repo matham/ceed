@@ -871,6 +871,9 @@ class DataSerializerBase(EventDispatcher):
         {2: 0, 3: 1, 4: 2, 10: 3, 11: 4, 12: 5, 18: 6, 19: 7, 20: 8})
 
     def get_bits(self, last_count, config_bytes=b''):
+        if self.counter_bit_width % 8:
+            raise ValueError('counter_bit_width must be a multiple of 8')
+
         clock_base = 1 << self.clock_idx
         clock = 0
 
@@ -886,9 +889,15 @@ class DataSerializerBase(EventDispatcher):
             count_iters.append(list(enumerate(count_i, i * len(count_i))))
             count_iters.append(list(enumerate(count_i, i * len(count_i))))
 
+        num_bytes = self.counter_bit_width // 8
+        config_bytes += b'\0' * (num_bytes - (len(config_bytes) % num_bytes))
+        if 2 ** self.counter_bit_width - 1 < len(config_bytes):
+            raise ValueError(
+                'Cannot transmit config, its too long for counter_bit_width')
+
         config_bytes = [
             len(config_bytes)] + \
-            list(struct.unpack('<{}L'.format(len(config_bytes) // 4),
+            list(struct.unpack('<{}L'.format(len(config_bytes) // num_bytes),
                                config_bytes))
         sending_config = bool(config_bytes)
 
@@ -922,3 +931,20 @@ class DataSerializerBase(EventDispatcher):
                 yield value
             else:
                 pass
+
+    def num_ticks_handshake(self, config_len):
+        """Gets the number of ticks required to transmit the handshake
+        signature of the experiment as provided to :meth:`get_bits` with
+        ``config_bytes``.
+
+        :param config_len: The number of config **bytes** being sent.
+        """
+        num_bytes = self.counter_bit_width // 8
+        # the message + padding in bytes
+        config_len += num_bytes - (config_len % num_bytes)
+        config_len //= num_bytes  # in
+        config_len += 1  # the message length byte
+
+        ticks_per_int = int(
+            ceil(self.counter_bit_width / len(self.count_indices)))
+        return config_len * ticks_per_int * 2 + 2
