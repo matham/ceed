@@ -520,7 +520,6 @@ class CeedDataWriterBase(EventDispatcher):
 
         group.metadata['notes'] = notes
         group.metadata['save_time'] = '{}'.format(time.time())
-        self.add_app_log('Saved current image to h5 file')
 
         self.has_unsaved = True
         self.dispatch('on_experiment_change', 'image_add', n)
@@ -756,10 +755,8 @@ class CeedDataWriterBase(EventDispatcher):
 
     def prepare_experiment(self, stage_name, used_shapes=None):
         self.stop_experiment()
-        self.add_app_log('Saved current image to h5 file')
 
         i = len(self.get_experiment_numbers())
-        self.add_app_log('Starting experiment {}'.format(i))
         block = self.nix_file.create_block(
             self.get_experiment_block_name(i), 'experiment_data')
 
@@ -832,7 +829,6 @@ class CeedDataWriterBase(EventDispatcher):
 
         self.data_queue.put_nowait(('eof', wait_for_stop))
         self.data_queue = self.data_thread = self.data_lock = None
-        self.add_app_log('Ending experiment')
         self.dispatch(
             'on_experiment_change', 'experiment_stop',
             block.name[len('experiment'):])
@@ -859,8 +855,9 @@ class CeedDataWriterBase(EventDispatcher):
 
 class DataSerializerBase(EventDispatcher):
 
-    __config_props__ = ('counter_bit_width', 'clock_idx', 'count_indices',
-                          'short_count_indices', 'projector_to_aquisition_map')
+    __config_props__ = (
+        'counter_bit_width', 'clock_idx', 'count_indices',
+        'short_count_indices', 'projector_to_aquisition_map')
 
     counter_bit_width = NumericProperty(32)
 
