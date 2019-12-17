@@ -62,7 +62,7 @@ def read_nix_prop(prop):
     try:
         return prop.values[0].value
     except AttributeError:
-        return prop.values[0][0]
+        return prop.values[0]
 
 
 class EndOfDataException(Exception):
