@@ -170,8 +170,11 @@ class StageList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
         widget = StageWidget()
         widget.initialize_display(stage, self)
         self.add_widget(widget)
+
         if widget.expand_widget is not None:
-            widget.expand_widget.state = 'down' if expand_stage else 'normal'
+            widget.expand_widget.state = 'down'
+            if not expand_stage:
+                widget.expand_widget.state = 'normal'
 
     def show_sub_stage(self, stage: CeedStage, parent_stage: CeedStage):
         """Displays the widget of the stage in the GUI. This is for displaying
