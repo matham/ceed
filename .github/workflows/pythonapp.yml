@@ -45,7 +45,7 @@ jobs:
         python3 -m pip uninstall pytest-asyncio -y
     - name: Test with pytest
       run: |
-        python3 -m pytest --cov=ceed --cov-report term --cov-branch ceed/tests
+        COVERAGE_PROCESS_START=1 python3 -m pytest --cov=ceed --cov-report term --cov-branch ceed/tests
     - name: Coveralls upload
       run: python3 -m coveralls
       env:

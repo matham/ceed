@@ -1,5 +1,10 @@
 
 if __name__ == '__main__':
+    import os
+    if os.environ.get('COVERAGE_PROCESS_START', None) == '1':
+        import coverage
+        coverage.process_startup()
+
     import multiprocessing
     multiprocessing.freeze_support()
     from ceed.main import run_app
