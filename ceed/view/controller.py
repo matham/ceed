@@ -717,7 +717,9 @@ class ControllerSideViewControllerBase(ViewControllerBase):
             copy_and_resample_experiment_stage(stage_name)
         app.dump_app_settings_to_file()
         app.load_app_settings_from_file()
-        app.ceed_data.prepare_experiment(stage_name)
+        app.ceed_data.prepare_experiment(
+            stage_name,
+            app.stage_factory.stage_names[stage_name].get_stage_shape_names())
 
         if self.propixx_lib:
             m = self.LED_mode

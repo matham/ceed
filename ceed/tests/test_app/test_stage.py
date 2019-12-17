@@ -1,5 +1,6 @@
 import trio
 import math
+import numpy as np
 
 from .examples.stages import create_test_stages, make_stage, StageWrapper, \
     stage_classes, assert_stages_same
@@ -514,10 +515,12 @@ async def test_gui_drag_stage_to_stage(stage_app: CeedTestApp):
             await stage_app.wait_clock_frames(2)
 
 
-async def test_recursive_play_stage_intensity(stage_app: CeedTestApp):
+async def test_recursive_play_stage_intensity(
+        stage_app: CeedTestApp, tmp_path):
     from ..test_stages import create_recursive_stages
     from .examples.shapes import CircleShapeP1, CircleShapeP2
     from kivy.clock import Clock
+    from ceed.analysis import CeedDataReader
     root, g1, g2, s1, s2, s3, s4, s5, s6 = create_recursive_stages(
         stage_app.stage_factory, app=stage_app)
 
@@ -551,6 +554,23 @@ async def test_recursive_play_stage_intensity(stage_app: CeedTestApp):
     stage_app.view_controller.use_software_frame_rate = False
     stage_app.view_controller.flip_projector = False
 
+    shape_color = [(0., 0., 0.), ] * num_frames
+    shape2_color = [(0., 0., 0.), ] * num_frames
+
+    for s, start, e in [(s1, 0, 5), (s4, 15, 25), (s5, 25, 30)]:
+        for i in range(start * rate, e * rate):
+            val = (i - start * rate) / rate * .1
+            shape_color[i] = (
+                int(s.color_r) * val, int(s.color_g) * val,
+                int(s.color_b) * val)
+
+    for s, start, e in [(s2, 0, 10), (s3, 10, 15), (s6, 25, 30)]:
+        for i in range(start * rate, e * rate):
+            val = (i - start * rate) / rate * .1
+            shape2_color[i] = (
+                int(s.color_r) * val, int(s.color_g) * val,
+                int(s.color_b) * val)
+
     def verify_intensity(*largs):
         nonlocal frame
         if Clock.frames_displayed <= initial_frames + 1:
@@ -562,40 +582,20 @@ async def test_recursive_play_stage_intensity(stage_app: CeedTestApp):
             assert frame == num_frames
             return
 
+        assert frame < num_frames
         points = stage_app.get_widget_pos_pixel(
             stage_app.shape_factory, [shape.center, shape2.center])
         points = [[c / 255 for c in p] for p in points]
         (r1, g1, b1, _), (r2, g2, b2, _) = points
 
-        for s, start, e in [(s1, 0, 5), (s4, 15, 25), (s5, 25, 30)]:
-            if start * rate <= frame < e * rate:
-                val = (frame - start * rate) / rate * .1
-                assert math.isclose(r1, val, abs_tol=2 / 255) \
-                    if s.color_r else r1 == 0
-                assert math.isclose(g1, val, abs_tol=2 / 255) \
-                    if s.color_g else g1 == 0
-                assert math.isclose(b1, val, abs_tol=2 / 255) \
-                    if s.color_b else b1 == 0
-                break
-        else:
-            assert r1 == 0
-            assert g1 == 0
-            assert b1 == 0
-
-        for s, start, e in [(s2, 0, 10), (s3, 10, 15), (s6, 25, 30)]:
-            if start * rate <= frame < e * rate:
-                val = (frame - start * rate) / rate * .1
-                assert math.isclose(r2, val, abs_tol=2 / 255) \
-                    if s.color_r else r2 == 0
-                assert math.isclose(g2, val, abs_tol=2 / 255) \
-                    if s.color_g else g2 == 0
-                assert math.isclose(b2, val, abs_tol=2 / 255) \
-                    if s.color_b else b2 == 0
-                break
-        else:
-            assert r2 == 0
-            assert g2 == 0
-            assert b2 == 0
+        val = shape_color[frame]
+        assert math.isclose(r1, val[0], abs_tol=2 / 255) if val[0] else r1 == 0
+        assert math.isclose(g1, val[1], abs_tol=2 / 255) if val[1] else g1 == 0
+        assert math.isclose(b1, val[2], abs_tol=2 / 255) if val[2] else b1 == 0
+        val = shape2_color[frame]
+        assert math.isclose(r2, val[0], abs_tol=2 / 255) if val[0] else r2 == 0
+        assert math.isclose(g2, val[1], abs_tol=2 / 255) if val[1] else g2 == 0
+        assert math.isclose(b2, val[2], abs_tol=2 / 255) if val[2] else b2 == 0
 
         frame += 1
 
@@ -607,3 +607,126 @@ async def test_recursive_play_stage_intensity(stage_app: CeedTestApp):
 
     stage_app.view_controller.request_stage_end()
     event.cancel()
+
+    filename = str(tmp_path / 'recursive_play_stage_intensity.h5')
+    stage_app.ceed_data.save(filename=filename)
+
+    f = CeedDataReader(filename)
+    f.open_h5()
+    assert f.experiments_in_file == ['0']
+    assert not f.num_images_in_file
+    f.load_experiment(0)
+
+    shape_data = np.array(f.shapes_intensity[shape.name])
+    shape2_data = np.array(f.shapes_intensity[shape2.name])
+    assert len(shape_data) == num_frames
+    assert len(shape2_data) == num_frames
+    for (r, g, b), (r1, g1, b1, _) in zip(shape_color, shape_data):
+        assert math.isclose(r, r1, abs_tol=2 / 255) if r else r1 == 0
+        assert math.isclose(g, g1, abs_tol=2 / 255) if g else g1 == 0
+        assert math.isclose(b, b1, abs_tol=2 / 255) if b else b1 == 0
+    for (r, g, b), (r1, g1, b1, _) in zip(shape2_color, shape2_data):
+        assert math.isclose(r, r1, abs_tol=2 / 255) if r else r1 == 0
+        assert math.isclose(g, g1, abs_tol=2 / 255) if g else g1 == 0
+        assert math.isclose(b, b1, abs_tol=2 / 255) if b else b1 == 0
+
+    f.close_h5()
+
+
+async def test_moat_stage_shapes(stage_app: CeedTestApp, tmp_path):
+    from ..test_stages import create_recursive_stages
+    from .examples.shapes import CircleShapeP1, CircleShapeP1Internal
+    from ceed.function.plugin import ConstFunc
+    from ceed.analysis import CeedDataReader
+
+    root, g1, g2, s1, s2, s3, s4, s5, s6 = create_recursive_stages(
+        stage_app.stage_factory, app=stage_app)
+    # internal shape
+    s1.stage.color_r = False
+    s1.stage.color_g = False
+    s1.stage.color_b = True
+    # surrounding shape
+    s2.stage.color_r = True
+    s2.stage.color_g = False
+    s2.stage.color_b = True
+
+    shape = CircleShapeP1(
+        app=None, painter=stage_app.shape_factory, show_in_gui=True)
+    internal_shape = CircleShapeP1Internal(
+        app=None, painter=stage_app.shape_factory, show_in_gui=True)
+
+    s1.stage.add_func(ConstFunc(
+        function_factory=stage_app.function_factory, a=1, duration=5))
+    s1.stage.add_shape(internal_shape.shape)
+
+    s2.stage.add_func(ConstFunc(
+        function_factory=stage_app.function_factory, a=1, duration=5))
+    s2.stage.add_shape(shape.shape)
+
+    root.show_in_gui()
+    await stage_app.wait_clock_frames(2)
+
+    stage_app.view_controller.frame_rate = 10
+    stage_app.view_controller.use_software_frame_rate = False
+    stage_app.view_controller.flip_projector = False
+
+    stage_app.view_controller.request_stage_start(root.name)
+    await stage_app.wait_clock_frames(5)
+    assert stage_app.view_controller.stage_active
+
+    points = stage_app.get_widget_pos_pixel(
+        stage_app.shape_factory, [internal_shape.center, shape.center])
+    (r1, g1, b1, _), (r2, g2, b2, _) = points
+    assert r1 == 0
+    assert g1 == 0
+    assert b1 == 255
+
+    assert r2 == 255
+    assert g2 == 0
+    assert b2 == 255
+
+    stage_app.view_controller.request_stage_end()
+    await stage_app.wait_clock_frames(2)
+    assert not stage_app.view_controller.stage_active
+
+    # now hide internal shape behind larger circle
+    stage_app.shape_factory.move_shape_upwards(shape.shape)
+    await stage_app.wait_clock_frames(2)
+
+    stage_app.view_controller.request_stage_start(root.name)
+    await stage_app.wait_clock_frames(5)
+    assert stage_app.view_controller.stage_active
+
+    points = stage_app.get_widget_pos_pixel(
+        stage_app.shape_factory, [internal_shape.center, shape.center])
+    (r1, g1, b1, _), (r2, g2, b2, _) = points
+    assert r1 == 255
+    assert g1 == 0
+    assert b1 == 255
+
+    assert r2 == 255
+    assert g2 == 0
+    assert b2 == 255
+
+    stage_app.view_controller.request_stage_end()
+    await stage_app.wait_clock_frames(2)
+
+    filename = str(tmp_path / 'moat_stage_shapes.h5')
+    stage_app.ceed_data.save(filename=filename)
+
+    f = CeedDataReader(filename)
+    f.open_h5()
+    assert f.experiments_in_file == ['0', '1']
+    assert not f.num_images_in_file
+
+    f.load_experiment(1)
+    assert tuple(np.array(f.shapes_intensity[shape.name])[0, :3]) == (1, 0, 1)
+    assert tuple(
+        np.array(f.shapes_intensity[internal_shape.name])[0, :3]) == (0, 0, 1)
+
+    f.load_experiment(0)
+    assert tuple(np.array(f.shapes_intensity[shape.name])[0, :3]) == (1, 0, 1)
+    assert tuple(
+        np.array(f.shapes_intensity[internal_shape.name])[0, :3]) == (0, 0, 1)
+
+    f.close_h5()
