@@ -1,5 +1,5 @@
-app: {inspect: true}
-data: {backup_interval: 5.0, compression: ZIP, root_path: E:\msys64\home\matte}
+app: {inspect: false}
+data: {backup_interval: 5.0, compression: Auto, root_path: /home/cpl}
 function: {}
 player:
   ffmpeg:
@@ -10,14 +10,14 @@ player:
     file_fmt: ''
     icodec: ''
     metadata_play: ['', 0, 0, 0]
-    metadata_play_used: [yuv420p, 1920, 1080, 29.833333333333332]
+    metadata_play_used: ['', 0, 0, 0]
     play_filename: ''
-    use_dshow: false
+    use_dshow: true
   image_file_recorder:
     compression: raw
     extension: tiff
     metadata_record: ['', 0, 0, 0]
-    record_directory: '~'
+    record_directory: /home/cpl
     record_prefix: image_
   network_client:
     metadata_play: ['', 0, 0, 0]
@@ -79,9 +79,9 @@ player:
   video_recorder:
     estimate_record_rate: false
     metadata_record: ['', 0, 0, 0]
-    record_directory: '~'
+    record_directory: /home/cpl
     record_fname: video{}.mkv
-    record_fname_count: 3
+    record_fname_count: 0
 serializer:
   clock_idx: 2
   count_indices: [19, 20]
@@ -91,12 +91,12 @@ serializer:
   short_count_indices: [3, 4, 10, 11, 12, 18]
 view:
   LED_mode: RGB
-  LED_mode_idle: none
+  LED_mode_idle: RGB
   cam_transform:
-  - [0.017048090836336002, 1.1958588258514562, 0.0, 0.0]
-  - [-1.1958588258514562, 0.017048090836336002, 0.0, 0.0]
-  - [0.0, 0.0, 1.195980337952087, 0.0]
-  - [2127.792141360713, -907.6774355017585, 0.0, 1.0]
+  - [1.0, 0.0, 0.0, 0.0]
+  - [0.0, 1.0, 0.0, 0.0]
+  - [0.0, 0.0, 1.0, 0.0]
+  - [0.0, 0.0, 0.0, 1.0]
   flip_camera: false
   flip_projector: true
   frame_rate: 120.0
@@ -106,10 +106,10 @@ view:
   mea_num_rows: 12
   mea_pitch: 20
   mea_transform:
-  - [4.361798077948739, -0.04203374942311954, 0.0, 0.0]
-  - [0.04203374942311954, 4.361798077948739, 0.0, 0.0]
-  - [0.0, 0.0, 4.362000608538219, 0.0]
-  - [403.19798484892, 81.46820259135251, 0.0, 1.0]
+  - [1.0, 0.0, 0.0, 0.0]
+  - [0.0, 1.0, 0.0, 0.0]
+  - [0.0, 0.0, 1.0, 0.0]
+  - [0.0, 0.0, 0.0, 1.0]
   mirror_mea: true
   output_count: true
   screen_height: 1080

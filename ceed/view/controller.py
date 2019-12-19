@@ -156,7 +156,7 @@ class ViewControllerBase(EventDispatcher):
     bits of the corner pixel.
     '''
 
-    fullscreen = BooleanProperty(False)
+    fullscreen = BooleanProperty(True)
     '''Whether the second window should run in fullscreen mode. In fullscreen
     mode the window has no borders.
     '''
