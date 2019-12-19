@@ -3,7 +3,6 @@
 
 Defines the GUI components used with :mod:`ceed.function`.
 """
-from __future__ import annotations
 from collections import defaultdict
 from copy import deepcopy
 from typing import Optional, Union, Type
@@ -153,7 +152,7 @@ class GroupFuncList(DraggableLayoutBehavior, BoxLayout):
     """Whether the function list is currently expanded and visible to the user.
     """
 
-    group_widget: FuncWidgetGroup = None
+    group_widget: 'FuncWidgetGroup' = None
     """The group function's :class:`FuncWidgetGroup` to whom this widget is
     attached to.
     """
@@ -260,7 +259,7 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
     :attr:`base_kivy_app.utils.ColorTheme.primary`).
     """
 
-    settings_root: FuncSettingsDropDown = None
+    settings_root: 'FuncSettingsDropDown' = None
     """The :class:`FuncSettingsDropDown` used by this function to show
     settings.
     """
@@ -279,7 +278,8 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
         return self.func.name
 
     @staticmethod
-    def get_display_cls(func: Union[FuncBase, FuncGroup]) -> Type[FuncWidget]:
+    def get_display_cls(
+            func: Union[FuncBase, FuncGroup]) -> Type['FuncWidget']:
         """Gets the widget class to use to display the function.
 
         :param func: The :class:`ceed.function.FuncBase` instance.

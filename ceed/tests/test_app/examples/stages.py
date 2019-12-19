@@ -1,4 +1,3 @@
-from __future__ import annotations
 from typing import List, Tuple, Union
 
 from ceed.tests.ceed_app import CeedTestApp
@@ -31,7 +30,7 @@ def create_stage_funcs(func_app, function_factory):
 def create_test_stages(
         stage_app: CeedTestApp = None, stage_factory: StageFactoryBase = None,
         show_in_gui=True, add_func=True, add_shapes=True) -> \
-        Tuple[Tuple[StageWrapper], List[Union[Shape, CeedShapeGroup]]]:
+        Tuple[Tuple['StageWrapper'], List[Union[Shape, CeedShapeGroup]]]:
     if stage_app is None:
         function_factory = stage_factory.function_factory
         shape_factory = stage_factory.shape_factory
