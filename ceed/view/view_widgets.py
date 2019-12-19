@@ -78,10 +78,14 @@ class MEAArrayAlign(Scatter):
 
     label = None
 
+    label2 = None
+
     def __init__(self, **kwargs):
         super(MEAArrayAlign, self).__init__(**kwargs)
         label = self.label = Factory.XYSizedLabel(text='A1')
         self.add_widget(label)
+        label2 = self.label2 = Factory.XYSizedLabel(text='M1')
+        self.add_widget(label2)
         self.fbind('num_rows', self.update_graphics)
         self.fbind('num_cols', self.update_graphics)
         self.fbind('pitch', self.update_graphics)
@@ -90,6 +94,7 @@ class MEAArrayAlign(Scatter):
 
         def track_show(*largs):
             label.color = 1, 1, 1, (1 if self.show else 0)
+            label2.color = 1, 1, 1, (1 if self.show else 0)
         self.fbind('show', track_show)
         track_show()
 
@@ -110,7 +115,8 @@ class MEAArrayAlign(Scatter):
         h = max((self.num_rows - 1) * pitch, 0)
         w = max((self.num_cols - 1) * pitch, 0)
         self.label.y = h
-        self.label.right = w
+        self.label2.y = 0
+        self.label2.right = self.label.right = w
         self.size = w, h + 35
 
     def on_touch_down(self, touch):
