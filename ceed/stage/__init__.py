@@ -20,9 +20,9 @@ from kivy.event import EventDispatcher
 from kivy.graphics import Color
 
 from ceed.function import CeedFunc, FuncDoneException, CeedFuncRef, \
-    FunctionFactoryBase
+    FunctionFactoryBase, FuncBase
 from ceed.utils import fix_name, update_key_if_other_key
-from ceed.shape import CeedShapeGroup, CeedPaintCanvasBehavior
+from ceed.shape import CeedShapeGroup, CeedPaintCanvasBehavior, CeedShape
 
 __all__ = ('StageDoneException', 'StageFactoryBase', 'CeedStage', 'StageShape',
            'CeedStageRef', 'remove_shapes_upon_deletion',

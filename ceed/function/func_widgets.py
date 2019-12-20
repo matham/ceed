@@ -406,8 +406,6 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
         self.selection_controller = selection_controller
 
         self.apply_kv()
-        if self.ref_func is None:
-            self.display_properties()
 
     def remove_func(self):
         """Removes the function from its parent and removes it from the GUI.
@@ -474,12 +472,20 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
         app = _get_app()
         func.fbind('on_changed', app.changed_callback)
 
+        Builder.apply_rules(self, 'FuncWidgetStyle', dispatch_kv_post=True)
+
+    def create_settings_dropdown(self):
+        """Creates the dropdown widget that displays the function's
+        configuration options.
+        """
+        if self.settings_root is not None:
+            return
+
         if self.ref_func is None:
             self.settings_root = settings_root = FuncSettingsDropDown(
                 func_widget=self)
             self._settings = settings_root.settings
-
-        Builder.apply_rules(self, 'FuncWidgetStyle', dispatch_kv_post=True)
+            self.display_properties()
 
 
 class FuncWidgetGroup(FuncWidget):

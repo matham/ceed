@@ -580,13 +580,20 @@ class StageWidget(ShowMoreBehavior, BoxLayout):
         if self.ref_stage is not None:
             self.remove_widget(more)
         else:
-            self.settings_root = Factory.FlatDropDown()
-            self.settings_root.stage_widget = self
-            Builder.apply_rules(
-                self.settings_root, 'StageSettingsDropdownStyle',
-                dispatch_kv_post=True)
-
             self.add_stage_containers(more)
+
+    def create_settings_dropdown(self):
+        """Creates the dropdown widget that displays the stage's
+        configuration options.
+        """
+        if self.settings_root is not None or self.ref_stage is not None:
+            return
+
+        self.settings_root = Factory.FlatDropDown()
+        self.settings_root.stage_widget = self
+        Builder.apply_rules(
+            self.settings_root, 'StageSettingsDropdownStyle',
+            dispatch_kv_post=True)
 
     def add_stage_containers(self, more_widget):
         """Adds the widget containers for the sub-stage, functions, and shapes

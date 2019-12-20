@@ -144,6 +144,7 @@
             flat_color: app.theme.accent
             on_release:
                 if root.ref_func is not None: root.replace_ref_func_with_source()
+                if root.ref_func is None: root.create_settings_dropdown()
                 if root.ref_func is None: root.settings_root.open(selector)
                 if root.ref_func is None: root.settings_root.splitter.width = max(selector.width, root.settings_root.splitter.width)
 

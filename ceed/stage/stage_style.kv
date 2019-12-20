@@ -121,6 +121,7 @@
             flat_color: app.theme.accent
             on_release:
                 if root.ref_stage is not None: root.replace_ref_with_source()
+                if root.ref_stage is None: root.create_settings_dropdown()
                 if root.ref_stage is None: root.settings_root.open(selector)
                 if root.ref_stage is None: root.settings_root.splitter.width = max(selector.width, root.settings_root.splitter.width)
     BoxLayout:
