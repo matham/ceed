@@ -732,6 +732,70 @@ async def test_moat_stage_shapes(stage_app: CeedTestApp, tmp_path):
     f.close_h5()
 
 
+async def test_moat_single_stage_shapes(stage_app: CeedTestApp, tmp_path):
+    from ..test_stages import create_recursive_stages
+    from .examples.shapes import CircleShapeP1, CircleShapeP1Internal
+    from ceed.function.plugin import ConstFunc
+    from ceed.analysis import CeedDataReader
+
+    root, g1, g2, s1, s2, s3, s4, s5, s6 = create_recursive_stages(
+        stage_app.stage_factory, app=stage_app)
+    s1.stage.color_r = False
+    s1.stage.color_g = False
+    s1.stage.color_b = True
+
+    shape = CircleShapeP1(
+        app=None, painter=stage_app.shape_factory, show_in_gui=True)
+    internal_shape = CircleShapeP1Internal(
+        app=None, painter=stage_app.shape_factory, show_in_gui=True)
+
+    s1.stage.add_func(ConstFunc(
+        function_factory=stage_app.function_factory, a=1, duration=5))
+    stage_shape = s1.stage.add_shape(internal_shape.shape)
+    s1.stage.add_shape(shape.shape)
+    stage_shape.keep_dark = True
+
+    root.show_in_gui()
+    await stage_app.wait_clock_frames(2)
+
+    stage_app.view_controller.frame_rate = 10
+    stage_app.view_controller.use_software_frame_rate = False
+    stage_app.view_controller.flip_projector = False
+
+    stage_app.view_controller.request_stage_start(root.name)
+    await stage_app.wait_clock_frames(5)
+    assert stage_app.view_controller.stage_active
+
+    points = stage_app.get_widget_pos_pixel(
+        stage_app.shape_factory, [internal_shape.center, shape.center])
+    (r1, g1, b1, _), (r2, g2, b2, _) = points
+    assert r1 == 0
+    assert g1 == 0
+    assert b1 == 0
+
+    assert r2 == 0
+    assert g2 == 0
+    assert b2 == 255
+
+    stage_app.view_controller.request_stage_end()
+    await stage_app.wait_clock_frames(2)
+    assert not stage_app.view_controller.stage_active
+
+    filename = str(tmp_path / 'moat_single_stage_shapes.h5')
+    stage_app.ceed_data.save(filename=filename)
+
+    f = CeedDataReader(filename)
+    f.open_h5()
+    assert f.experiments_in_file == ['0', ]
+    assert not f.num_images_in_file
+
+    f.load_experiment(0)
+    assert tuple(np.array(f.shapes_intensity[shape.name])[0]) == (0, 0, 1, 1)
+    assert tuple(
+        np.array(f.shapes_intensity[internal_shape.name])[0]) == (0, 0, 0, 1)
+    f.close_h5()
+
+
 async def test_pad_stage_ticks(stage_app: CeedTestApp, tmp_path):
     from ..test_stages import create_recursive_stages
     from .examples.shapes import CircleShapeP1

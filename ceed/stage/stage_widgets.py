@@ -657,6 +657,10 @@ class StageShapeDisplay(BoxSelector):
     """Whether the shape is currently visible in the stage shape's list.
     """
 
+    settings_root = None
+    """The dropdown configuring the shape.
+    """
+
     @property
     def name(self):
         """The :attr:`ceed.stage.StageShape.name` of the shape or shape group.
@@ -682,6 +686,19 @@ class StageShapeDisplay(BoxSelector):
         if self.selected:
             self.selection_controller.deselect_node(self)
         self.parent.remove_widget(self)
+
+    def create_settings_dropdown(self):
+        """Creates the dropdown widget that displays the shape's
+        configuration options.
+        """
+        if self.settings_root is not None:
+            return
+
+        self.settings_root = Factory.FlatDropDown()
+        self.settings_root.stage_shape = self.stage_shape
+        Builder.apply_rules(
+            self.settings_root, 'StageShapeDropdownStyle',
+            dispatch_kv_post=True)
 
 
 class ShapePlot(object):

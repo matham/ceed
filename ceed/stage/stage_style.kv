@@ -172,102 +172,102 @@
         flat_color: app.theme.accent
         height: self.minimum_height
         min_size: self.minimum_width
-    BoxLayout:
-        id: settings
-        size_hint_y: None
-        orientation: 'vertical'
-        spacing: '5dp'
-        padding: '5dp'
-        height: self.minimum_height
-        size_hint_min_x: self.minimum_width
-        FlatSizedTextInput:
-            test_name: 'stage name'
-            background_color: app.theme.primary_text
-            text: root.stage_widget.stage.name
-            on_focus: if not self.focus: root.stage_widget.stage.name = self.text
-            on_kv_post: if root.stage_widget.stage.parent_stage is not None: settings.remove_widget(self)
         BoxLayout:
+            id: settings
             size_hint_y: None
-            height: '34dp'
+            orientation: 'vertical'
             spacing: '5dp'
-            LightThemedToggleButton:
-                test_name: 'stage color r'
-                text: 'R'
-                state: 'down' if root.stage_widget.stage.color_r else 'normal'
-                on_state: root.stage_widget.stage.color_r = self.state == 'down'
-            LightThemedToggleButton:
-                test_name: 'stage color g'
-                text: 'G'
-                state: 'down' if root.stage_widget.stage.color_g else 'normal'
-                on_state: root.stage_widget.stage.color_g = self.state == 'down'
-            LightThemedToggleButton:
-                test_name: 'stage color b'
-                text: 'B'
-                state: 'down' if root.stage_widget.stage.color_b else 'normal'
-                on_state: root.stage_widget.stage.color_b = self.state == 'down'
-        GridLayout:
-            size_hint_y: None
             padding: '5dp'
-            spacing: '5dp'
-            cols: 2
             height: self.minimum_height
             size_hint_min_x: self.minimum_width
-            FlatLabel:
-                size_hint: (None, None)
-                text: 'Stage order'
-                size: self.texture_size
-                flat_color: app.theme.text_primary
+            FlatSizedTextInput:
+                test_name: 'stage name'
+                background_color: app.theme.primary_text
+                text: root.stage_widget.stage.name
+                on_focus: if not self.focus: root.stage_widget.stage.name = self.text
+                on_kv_post: if root.stage_widget.stage.parent_stage is not None: settings.remove_widget(self)
             BoxLayout:
-                spacing: '5dp'
                 size_hint_y: None
+                height: '34dp'
+                spacing: '5dp'
+                LightThemedToggleButton:
+                    test_name: 'stage color r'
+                    text: 'R'
+                    state: 'down' if root.stage_widget.stage.color_r else 'normal'
+                    on_state: root.stage_widget.stage.color_r = self.state == 'down'
+                LightThemedToggleButton:
+                    test_name: 'stage color g'
+                    text: 'G'
+                    state: 'down' if root.stage_widget.stage.color_g else 'normal'
+                    on_state: root.stage_widget.stage.color_g = self.state == 'down'
+                LightThemedToggleButton:
+                    test_name: 'stage color b'
+                    text: 'B'
+                    state: 'down' if root.stage_widget.stage.color_b else 'normal'
+                    on_state: root.stage_widget.stage.color_b = self.state == 'down'
+            GridLayout:
+                size_hint_y: None
+                padding: '5dp'
+                spacing: '5dp'
+                cols: 2
                 height: self.minimum_height
                 size_hint_min_x: self.minimum_width
-                LightThemedToggleButton:
-                    test_name: 'stage serial'
+                FlatLabel:
+                    size_hint: (None, None)
+                    text: 'Stage order'
+                    size: self.texture_size
+                    flat_color: app.theme.text_primary
+                BoxLayout:
+                    spacing: '5dp'
                     size_hint_y: None
-                    padding: ('5dp', '5dp')
-                    text: 'Serial'
-                    height: self.texture_size[1]
-                    size_hint_min_x: self.texture_size[0]
-                    state: 'down' if root.stage_widget.stage.order == 'serial' else 'normal'
-                    on_state: root.stage_widget.stage.order = 'serial' if self.state == 'down' else 'parallel'
-                LightThemedToggleButton:
-                    test_name: 'stage parallel'
+                    height: self.minimum_height
+                    size_hint_min_x: self.minimum_width
+                    LightThemedToggleButton:
+                        test_name: 'stage serial'
+                        size_hint_y: None
+                        padding: ('5dp', '5dp')
+                        text: 'Serial'
+                        height: self.texture_size[1]
+                        size_hint_min_x: self.texture_size[0]
+                        state: 'down' if root.stage_widget.stage.order == 'serial' else 'normal'
+                        on_state: root.stage_widget.stage.order = 'serial' if self.state == 'down' else 'parallel'
+                    LightThemedToggleButton:
+                        test_name: 'stage parallel'
+                        size_hint_y: None
+                        padding: ('5dp', '5dp')
+                        text: 'Parallel'
+                        height: self.texture_size[1]
+                        size_hint_min_x: self.texture_size[0]
+                        state: 'down' if root.stage_widget.stage.order == 'parallel' else 'normal'
+                        on_state: root.stage_widget.stage.order = 'parallel' if self.state == 'down' else 'serial'
+                FlatLabel:
+                    size_hint: (None, None)
+                    text: 'End on'
+                    size: self.texture_size
+                    flat_color: app.theme.text_primary
+                BoxLayout:
+                    spacing: '5dp'
                     size_hint_y: None
-                    padding: ('5dp', '5dp')
-                    text: 'Parallel'
-                    height: self.texture_size[1]
-                    size_hint_min_x: self.texture_size[0]
-                    state: 'down' if root.stage_widget.stage.order == 'parallel' else 'normal'
-                    on_state: root.stage_widget.stage.order = 'parallel' if self.state == 'down' else 'serial'
-            FlatLabel:
-                size_hint: (None, None)
-                text: 'End on'
-                size: self.texture_size
-                flat_color: app.theme.text_primary
-            BoxLayout:
-                spacing: '5dp'
-                size_hint_y: None
-                height: self.minimum_height
-                size_hint_min_x: self.minimum_width
-                LightThemedToggleButton:
-                    test_name: 'stage finish all'
-                    size_hint_y: None
-                    padding: ('5dp', '5dp')
-                    text: 'All'
-                    height: self.texture_size[1]
-                    size_hint_min_x: self.texture_size[0]
-                    state: 'down' if root.stage_widget.stage.complete_on == 'all' else 'normal'
-                    on_state: root.stage_widget.stage.complete_on = 'all' if self.state == 'down' else 'any'
-                LightThemedToggleButton:
-                    test_name: 'stage finish any'
-                    size_hint_y: None
-                    padding: ('5dp', '5dp')
-                    text: 'Any'
-                    height: self.texture_size[1]
-                    size_hint_min_x: self.texture_size[0]
-                    state: 'down' if root.stage_widget.stage.complete_on == 'any' else 'normal'
-                    on_state: root.stage_widget.stage.complete_on = 'any' if self.state == 'down' else 'all'
+                    height: self.minimum_height
+                    size_hint_min_x: self.minimum_width
+                    LightThemedToggleButton:
+                        test_name: 'stage finish all'
+                        size_hint_y: None
+                        padding: ('5dp', '5dp')
+                        text: 'All'
+                        height: self.texture_size[1]
+                        size_hint_min_x: self.texture_size[0]
+                        state: 'down' if root.stage_widget.stage.complete_on == 'all' else 'normal'
+                        on_state: root.stage_widget.stage.complete_on = 'all' if self.state == 'down' else 'any'
+                    LightThemedToggleButton:
+                        test_name: 'stage finish any'
+                        size_hint_y: None
+                        padding: ('5dp', '5dp')
+                        text: 'Any'
+                        height: self.texture_size[1]
+                        size_hint_min_x: self.texture_size[0]
+                        state: 'down' if root.stage_widget.stage.complete_on == 'any' else 'normal'
+                        on_state: root.stage_widget.stage.complete_on = 'any' if self.state == 'down' else 'all'
 
 
 <StageShapeDisplayStyle@object>:
@@ -297,6 +297,65 @@
         source: 'flat_delete.png'
         flat_color: app.theme.accent
         on_release: root.remove_shape()
+    FlatImageButton:
+        test_name: 'stage shape settings open'
+        scale_down_color: True
+        source: 'flat_dots_vertical.png'
+        flat_color: app.theme.accent
+        on_release:
+            root.create_settings_dropdown()
+            root.settings_root.open(root)
+            root.settings_root.splitter.width = max(root.width, root.settings_root.splitter.width)
+
+
+<StageShapeDropdownStyle@object>:
+    test_name: 'stage shape settings'
+    do_scroll: (False, False)
+    flat_color: app.theme.primary_text
+    flat_border_color: app.theme.divider
+    splitter: splitter
+    settings: settings
+    FlatSplitter:
+        id: splitter
+        size_hint: (None, None)
+        sizable_from: 'left'
+        flat_color: app.theme.accent
+        height: self.minimum_height
+        min_size: self.minimum_width
+        BoxLayout:
+            id: settings
+            size_hint_y: None
+            orientation: 'vertical'
+            spacing: '5dp'
+            padding: '5dp'
+            height: self.minimum_height
+            size_hint_min_x: self.minimum_width
+            FlatLabel:
+                size_hint_y: None
+                text: root.stage_shape.name
+                height: self.texture_size[1]
+                size_hint_min_x: self.texture_size[0]
+                padding: '5dp', '5dp'
+                flat_color: app.theme.text_primary
+            GridLayout:
+                size_hint_y: None
+                padding: '5dp'
+                spacing: '5dp'
+                cols: 2
+                height: self.minimum_height
+                size_hint_min_x: self.minimum_width
+                FlatLabel:
+                    size_hint: (None, None)
+                    text: 'Keep dark'
+                    size: self.texture_size
+                    flat_color: app.theme.text_primary
+                LightThemedToggleButton:
+                    test_name: 'stage shape keep dark'
+                    padding: ('5dp', '5dp')
+                    text: 'true' if root.stage_shape.keep_dark else 'false'
+                    size_hint_min_x: self.texture_size[0]
+                    state: 'down' if root.stage_shape.keep_dark else 'normal'
+                    on_state: root.stage_shape.keep_dark = self.state == 'down'
 
 
 <ShapeGraphSelector@FlatToggleButton>:
@@ -308,6 +367,7 @@
     flat_color: app.theme.text_primary
     flat_background_color: app.theme.primary_light if self.state == 'normal' else app.theme.primary
     on_release: self.controller._shapes_displayed_update_trigger()
+
 
 <ShapeGraphSelectorAll@FlatButton>:
     controller: None

@@ -609,18 +609,18 @@ class CeedStage(EventDispatcher):
             if one of the functions or shapes of the stage is added/removed.
     '''
 
-    name = StringProperty('Stage')
+    name: str = StringProperty('Stage')
     '''The name of this stage.
     '''
 
-    order = OptionProperty('serial', options=['serial', 'parallel'])
+    order: str = OptionProperty('serial', options=['serial', 'parallel'])
     '''The order in which the sub-stages, :attr:`stages`, are evaluated.
     Can be one of ``'serial'``, ``'parallel'``.
 
     See :class:`CeedStage` description for details.
     '''
 
-    complete_on = OptionProperty('all', options=['all', 'any'])
+    complete_on: str = OptionProperty('all', options=['all', 'any'])
     '''When to consider the stage's children stages to be complete we contain
     sub-stages - :attr:`stages`. Can be one of ``'all'``, ``'any'``.
 
@@ -632,28 +632,29 @@ class CeedStage(EventDispatcher):
     See :class:`CeedStage` description for details.
     '''
 
-    stages = []
+    stages: List['CeedStage'] = []
     '''A list of :class:`CeedStage` instances that are sub-stages of this
     stage.
 
     See :class:`CeedStage` description for details.
     '''
 
-    parent_stage = ObjectProperty(None, rebind=True, allownone=True)
+    parent_stage: 'CeedStage' = ObjectProperty(
+        None, rebind=True, allownone=True)
     '''The parent stage when this stage is a sub-stage of another.
     '''
 
-    has_ref = BooleanProperty(False)
+    has_ref: bool = BooleanProperty(False)
     """Whether there's a CeedFuncRef pointing to this function.
     """
 
-    functions = []
+    functions: List[Union[CeedFuncRef, FuncBase]] = []
     '''A list of :class:`ceed.function.FuncBase` instances through which the
     stage iterates through sequentially and updates the intensity of the
     :attr:`shapes` to the function value at each time point.
     '''
 
-    shapes = []
+    shapes: List['StageShape'] = []
     '''The list of :class:`StageShape` instances that are associated
     with this stage. All the shapes are set to the same intensity value at
     every time point according to the :attr:`functions` value at that
@@ -680,11 +681,11 @@ class CeedStage(EventDispatcher):
     this is ignored.
     '''
 
-    stage_factory = None
+    stage_factory: StageFactoryBase = None
 
-    function_factory = None
+    function_factory: FunctionFactoryBase = None
 
-    shape_factory = None
+    shape_factory: CeedPaintCanvasBehavior = None
 
     display = None
 
@@ -734,7 +735,7 @@ class CeedStage(EventDispatcher):
         d['functions'] = [
             f.get_state(recurse=True, expand_ref=expand_ref)
             for f in self.functions]
-        d['shapes'] = [s.name for s in self.shapes]
+        d['shapes'] = [s.get_config_properties() for s in self.shapes]
 
         return d
 
@@ -777,20 +778,25 @@ class CeedStage(EventDispatcher):
 
         shapes = self.stage_factory.shape_factory.shape_names
         groups = self.stage_factory.shape_factory.shape_group_names
-        for name in shapes_state:
+        for item in shapes_state:
+            if not isinstance(item, dict):
+                item = {'name': item}
+
+            name = item['name']
             if old_name_to_shape_map is None:
                 if name in shapes:
-                    self.add_shape(shapes[name])
+                    shape = shapes[name]
                 elif name in groups:
-                    self.add_shape(groups[name])
+                    shape = groups[name]
                 else:
                     raise ValueError('Could not find shape {}'.format(name))
             else:
                 shape = old_name_to_shape_map.get(name, None)
-                if shape is not None:
-                    self.add_shape(shape)
-                else:
+                if shape is None:
                     raise ValueError('Could not find shape {}'.format(name))
+
+            stage_shape = self.add_shape(shape)
+            stage_shape.apply_config_properties(item)
 
     def __deepcopy__(self, memo):
         obj = self.__class__(
@@ -896,7 +902,8 @@ class CeedStage(EventDispatcher):
         self.dispatch('on_changed')
         return True
 
-    def add_shape(self, shape):
+    def add_shape(
+            self, shape: Union[CeedShapeGroup, CeedShape]) -> 'StageShape':
         '''Adds a :class:`StageShape` instance wrapping the
         :class:`ceed.shape.CeedShape` ``shape`` to the :attr:`shapes`. If
         the ``shape`` was already added it doesn't add it again.
@@ -988,7 +995,11 @@ class CeedStage(EventDispatcher):
         is described at :meth:`StageFactoryBase.tick_stage`.
         '''
         names = set()
+        keep_dark = set()
         for shape in self.shapes:
+            if shape.keep_dark:
+                keep_dark.add(shape.shape.name)
+
             shape = shape.shape
             if isinstance(shape, CeedShapeGroup):
                 for shape in shape.shapes:
@@ -1018,7 +1029,10 @@ class CeedStage(EventDispatcher):
                     values = (val if r else None, val if g else None,
                               val if b else None, a)
                     for name in names:
-                        shapes[name].append(values)
+                        if name in keep_dark:
+                            shapes[name].append((0, 0, 0, 1))
+                        else:
+                            shapes[name].append(values)
                 except FuncDoneException:
                     funcs = None
 
@@ -1036,6 +1050,9 @@ class CeedStage(EventDispatcher):
         while count <= pad_stage_ticks:
             count += 1
             _ = yield
+            for name in names:
+                if name in keep_dark:
+                    shapes[name].append((0, 0, 0, 1))
 
         raise StageDoneException
 
@@ -1145,12 +1162,12 @@ class StageShape(EventDispatcher):
     the stage.
     '''
 
-    shape = None
+    shape: Union[CeedShape, CeedShapeGroup] = None
     '''The :class:`ceed.shape.CeedShape` or :class:`ceed.shape.CeedShapeGroup`
     instance being wrapped.
     '''
 
-    stage = None
+    stage: CeedStage = None
     '''The :class:`CeedStage` this is associated with.
     '''
 
@@ -1158,6 +1175,14 @@ class StageShape(EventDispatcher):
     '''The :attr:`ceed.shape.CeedShapeGroup.name` or
     :attr:`kivy_garden.painter.PaintShape.name` of the instance wrapped.
     '''
+
+    keep_dark = BooleanProperty(False)
+    """Whether this shape will be black during the whole stage. Instead of it
+    taking the color of the stage, it'll be kept black.
+
+    This is useful when the inside of some shape must be black, e.g. a donut.
+    By setting :attr:`keep_dark` of the inner shape to True, it'll be black.
+    """
 
     display = None
 
@@ -1171,9 +1196,27 @@ class StageShape(EventDispatcher):
     def _update_name(self, *largs):
         self.name = self.shape.name
 
+    def get_config_properties(self) -> Dict:
+        """(internal) used by the config system to get the config data of the
+        shape.
+        """
+        return {'keep_dark': self.keep_dark, 'name': self.name}
+
+    def apply_config_properties(self, settings: Dict) -> set:
+        """(internal) used by the config system to set the config data
+        of the shape.
+        """
+        used = set()
+        for k in ('keep_dark', ):
+            if k in settings:
+                setattr(self, k, settings[k])
+                used.add(k)
+        return used
+
 
 def remove_shapes_upon_deletion(
-        stage_factory, shape_factory, process_shape_callback):
+        stage_factory: StageFactoryBase,
+        shape_factory: CeedPaintCanvasBehavior, process_shape_callback):
     """Once called, whenever a shape or group of shapes is deleted in the
     ``shape_factory``, it'll also remove the shape or group from all stages
     that reference it.
