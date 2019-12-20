@@ -467,7 +467,6 @@ values returned by :meth:`FuncBase.get_gui_props`,
 These methods control what properties are editable by the user and the values
 they may potentially take.
 """
-from __future__ import annotations
 from typing import Type, List, Tuple, Dict, Optional
 from copy import deepcopy
 from collections import defaultdict
@@ -511,7 +510,7 @@ class FunctionFactoryBase(EventDispatcher):
 
     __events__ = ('on_changed', )
 
-    funcs_cls: Dict[str, Type[FuncBase]] = {}
+    funcs_cls: Dict[str, Type['FuncBase']] = {}
     '''Dict whose keys is the name of the function classes registered
     with :meth:`register` and whose values is the corresponding classes.::
 
@@ -523,14 +522,14 @@ class FunctionFactoryBase(EventDispatcher):
          'CosFunc': ceed.function.plugin.CosFunc}
     '''
 
-    funcs_user: List[FuncBase] = []
+    funcs_user: List['FuncBase'] = []
     '''List of the function instances registered with :meth:`add_func`.
 
     It does not include the instances automatically created and stored in
     :attr:`funcs_inst_default` when a function class is :meth:`register`.
     '''
 
-    funcs_inst: Dict[str, FuncBase] = DictProperty({})
+    funcs_inst: Dict[str, 'FuncBase'] = DictProperty({})
     '''Dict whose keys is the function :attr:`name` and whose values is the
     corresponding function instances.
 
@@ -590,7 +589,7 @@ class FunctionFactoryBase(EventDispatcher):
         pass
 
     def get_func_ref(
-            self, name: str = None, func: FuncBase = None) -> CeedFuncRef:
+            self, name: str = None, func: 'FuncBase' = None) -> 'CeedFuncRef':
         """Returns a :class:`CeedFuncRef` instance that refers to the
         original function. See :mod:`ceed.function` for details.
 
@@ -614,7 +613,7 @@ class FunctionFactoryBase(EventDispatcher):
         func.has_ref = True
         return ref
 
-    def return_func_ref(self, func_ref: CeedFuncRef):
+    def return_func_ref(self, func_ref: 'CeedFuncRef'):
         """Releases the function ref created by :meth:`get_func_ref`.
 
         :param func_ref: Instance returned by :meth:`get_func_ref`.
@@ -627,7 +626,7 @@ class FunctionFactoryBase(EventDispatcher):
             del self._ref_funcs[func_ref.func]
             func_ref.func.has_ref = False
 
-    def register(self, cls: Type[FuncBase], instance: FuncBase = None):
+    def register(self, cls: Type['FuncBase'], instance: 'FuncBase' = None):
         """Registers the class and adds it to :attr:`funcs_cls`. It also
         creates an instance (unless ``instance`` is provided, in which case
         that is used) of the class that is added to :attr:`funcs_inst` and
@@ -660,7 +659,7 @@ class FunctionFactoryBase(EventDispatcher):
         self.funcs_inst_default[f.name] = f
         self.dispatch('on_changed')
 
-    def get(self, name: str) -> Optional[Type[FuncBase]]:
+    def get(self, name: str) -> Optional[Type['FuncBase']]:
         """Returns the class with name ``name`` that was registered with
         :meth:`register`.
 
@@ -684,12 +683,12 @@ class FunctionFactoryBase(EventDispatcher):
         """
         return list(self.funcs_cls.keys())
 
-    def get_classes(self) -> List[Type[FuncBase]]:
+    def get_classes(self) -> List[Type['FuncBase']]:
         """Returns the classes registered with :meth:`register`.
         """
         return list(self.funcs_cls.values())
 
-    def add_func(self, func: FuncBase):
+    def add_func(self, func: 'FuncBase'):
         """Adds the function to :attr:`funcs_user` and :attr:`funcs_inst`,
         which makes it available in the GUI.
 
@@ -716,7 +715,7 @@ class FunctionFactoryBase(EventDispatcher):
             raise ValueError('function factory is incorrect')
         self.dispatch('on_changed')
 
-    def remove_func(self, func: CeedFunc, force: bool = False) -> bool:
+    def remove_func(self, func: 'CeedFunc', force: bool = False) -> bool:
         """Removes a function previously added with :meth:`add_func`.
 
         :Params:
@@ -748,7 +747,7 @@ class FunctionFactoryBase(EventDispatcher):
         self.dispatch('on_changed')
         return True
 
-    def _track_func_name(self, func: FuncBase, *largs):
+    def _track_func_name(self, func: 'FuncBase', *largs):
         """Fixes the name of the function instances stored here to ensure it's
         unique.
         """
@@ -782,8 +781,8 @@ class FunctionFactoryBase(EventDispatcher):
         for f in self.funcs_user[:]:
             self.remove_func(f, force=force)
 
-    def make_func(self, state: dict, instance: FuncBase = None,
-                  clone: bool = False) -> FuncBase:
+    def make_func(self, state: dict, instance: 'FuncBase' = None,
+                  clone: bool = False) -> 'FuncBase':
         """Instantiates the function from the state and returns it.
 
         This method must be used to instantiate a function from state.
@@ -830,7 +829,7 @@ class FunctionFactoryBase(EventDispatcher):
                 for f in self.funcs_user]
 
     def recover_funcs(self, function_states: List[dict]) -> \
-            Tuple[List[FuncBase], Dict[str, str]]:
+            Tuple[List['FuncBase'], Dict[str, str]]:
         """Takes a list of function states such as returned by
         :meth:`save_functions` and instantiates the functions represented by
         the states and adds (:meth:`add_func`) the functions to the factory.

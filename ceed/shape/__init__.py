@@ -13,7 +13,6 @@ widget.
 Specifically, in addition to being able to draw shapes, it adds the ability
 to organize shapes into :attr:`CeedPaintCanvasBehavior.groups`.
 """
-from __future__ import annotations
 import math
 from typing import Type, List, Tuple, Dict, Optional, Union
 
@@ -68,23 +67,23 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
             is changed.
     """
 
-    groups: List[CeedShapeGroup] = ListProperty([])
+    groups: List['CeedShapeGroup'] = ListProperty([])
     '''List of :class:`CeedShapeGroup` instances.
     '''
 
-    shape_names: Dict[str, CeedShape] = DictProperty({})
+    shape_names: Dict[str, 'CeedShape'] = DictProperty({})
     '''The name -> :class:`CeedShape` dict. The key is the shape's name
     and the corresponding value is the :class:`CeedShape` instance.
     '''
 
-    shape_group_names: Dict[str, CeedShapeGroup] = DictProperty({})
+    shape_group_names: Dict[str, 'CeedShapeGroup'] = DictProperty({})
     '''The name -> :class:`CeedShapeGroup` dict. The key is the group's name
     and the corresponding value is the :class:`CeedShapeGroup` instance.
     '''
 
     __events__ = ('on_remove_shape', 'on_remove_group', 'on_changed')
 
-    def add_shape(self, shape: CeedShape):
+    def add_shape(self, shape: 'CeedShape'):
         if not super(CeedPaintCanvasBehavior, self).add_shape(shape):
             return False
 
@@ -97,7 +96,7 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
         self.dispatch('on_changed')
         return True
 
-    def remove_shape(self, shape: CeedShape):
+    def remove_shape(self, shape: 'CeedShape'):
         if not super(CeedPaintCanvasBehavior, self).remove_shape(shape):
             return False
 
@@ -108,12 +107,13 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
         self.dispatch('on_changed')
         return True
 
-    def reorder_shape(self, shape: CeedShape, before_shape: CeedShape = None):
+    def reorder_shape(self,
+                      shape: 'CeedShape', before_shape: 'CeedShape' = None):
         self.dispatch('on_changed')
         return super(CeedPaintCanvasBehavior, self).reorder_shape(
             shape, before_shape=before_shape)
 
-    def move_shape_lower(self, shape: CeedShape):
+    def move_shape_lower(self, shape: 'CeedShape'):
         """Moves the shape one shape down. I.e. if there are two shapes and
         this shape is at index 1, it gets moved to index 0.
 
@@ -129,7 +129,7 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
         before_shape = self.shapes[i - 1]
         self.reorder_shape(shape, before_shape)
 
-    def move_shape_upwards(self, shape: CeedShape):
+    def move_shape_upwards(self, shape: 'CeedShape'):
         """Moves the shape one shape up. I.e. if there are two shapes and
         this shape is at index 0, it gets moved to index 1.
 
@@ -148,7 +148,7 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
             before_shape = self.shapes[i + 2]
         self.reorder_shape(shape, before_shape)
 
-    def add_group(self, group: Optional[CeedShapeGroup] = None):
+    def add_group(self, group: Optional['CeedShapeGroup'] = None):
         """Similar to :meth:`add_shape` but for a :class:`CeedShapeGroup`.
 
         :Params:
@@ -173,7 +173,7 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
         self.dispatch('on_changed')
         return group
 
-    def remove_group(self, group: CeedShapeGroup):
+    def remove_group(self, group: 'CeedShapeGroup'):
         """Similar to :meth:`remove_shape` but for a :class:`CeedShapeGroup`.
 
         :Params:
@@ -198,7 +198,7 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
         for group in self.groups[:]:
             self.remove_group(group)
 
-    def add_selected_shapes_to_group(self, group: CeedShapeGroup = None):
+    def add_selected_shapes_to_group(self, group: 'CeedShapeGroup' = None):
         """Adds all the
         :attr:`kivy_garden.painter.PaintCanvasBehavior.selected_shapes` to the
         ``group``.
@@ -221,7 +221,7 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
                 group.add_shape(shape)
         return group
 
-    def remove_shape_from_groups(self, shape: CeedShape):
+    def remove_shape_from_groups(self, shape: 'CeedShape'):
         """Removes the :class:`CeedShape` from all the groups.
 
         :Params:
@@ -246,7 +246,7 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
         return d
 
     def create_shape_from_state(
-            self, state: dict, old_name_map: Dict[str, CeedShape]):
+            self, state: dict, old_name_map: Dict[str, 'CeedShape']):
         """Overrides
         :meth:`kivy_garden.painter.PaintCanvasBehavior.create_shape_from_state`
         and changes its signature.
@@ -266,7 +266,7 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
 
     def set_state(
             self, state: dict,
-            old_name_map: Dict[str, Union[CeedShape, CeedShapeGroup]]):
+            old_name_map: Dict[str, Union['CeedShape', 'CeedShapeGroup']]):
         """Takes the dict returned by :meth:`get_state` and adds the shapes
         and groups created form them.
 
@@ -298,7 +298,7 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
     def on_changed(self, *largs):
         pass
 
-    def _change_shape_name(self, shape: CeedShape, new_name):
+    def _change_shape_name(self, shape: 'CeedShape', new_name):
         """Makes sure that the shape or group name is unique.
         """
         if isinstance(shape, CeedShape):

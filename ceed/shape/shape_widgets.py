@@ -3,7 +3,6 @@
 
 Defines the GUI components used with :mod:`ceed.shape`.
 """
-from __future__ import annotations
 import math
 from typing import Type, List, Tuple, Dict, Optional, Union
 
@@ -40,7 +39,7 @@ class CeedPainter(CeedPaintCanvasBehavior, Widget):
     '''The label instance that shows the mouse position.
     '''
 
-    shape_widgets_list: ShapeList = None
+    shape_widgets_list: 'ShapeList' = None
     """The :class:`ShapeList` that contains the shape widgets.
     """
 
@@ -160,7 +159,7 @@ class ShapeGroupDraggableLayoutBehavior(DraggableLayoutBehavior):
     """The container widget of a group that displays the shapes of the group.
     """
 
-    group_widget: WidgetShapeGroup = ObjectProperty(None)
+    group_widget: 'WidgetShapeGroup' = ObjectProperty(None)
 
     def handle_drag_release(self, index, drag_widget):
         group = self.group_widget.group
@@ -237,7 +236,7 @@ class WidgetShapeGroup(ShowMoreBehavior, BoxLayout):
         App.get_running_app().shape_groups_container.remove_widget(self)
 
     @property
-    def shape_widgets(self) -> List[ShapeGroupItem]:
+    def shape_widgets(self) -> List['ShapeGroupItem']:
         """Returns the :class:`ShapeGroupItem` instances representing the
         shapes in this group.
         """

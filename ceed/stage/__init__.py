@@ -10,7 +10,6 @@ See :class:`StageFactoryBase` and :class:`CeedStage` for details.
 
 remove_shapes_upon_deletion must be bound
 """
-from __future__ import annotations
 from copy import deepcopy
 from collections import defaultdict
 from typing import Dict, List, Union, Tuple
@@ -51,13 +50,13 @@ class StageFactoryBase(EventDispatcher):
             Triggered whenever a stage is added or removed from the factory.
     """
 
-    stages: List[CeedStage] = []
+    stages: List['CeedStage'] = []
     '''The list of the currently available :class:`CeedStage` instances.
     These stages are listed in the GUI and can be used by name to start a stage
     to run.
     '''
 
-    stage_names: Dict[str, CeedStage] = DictProperty({})
+    stage_names: Dict[str, 'CeedStage'] = DictProperty({})
     '''A dict of all the stages whose keys are the stage :attr:`CeedStage.name`
     and whose values are the corresponding :class:`CeedStage` instances.
 
@@ -94,7 +93,8 @@ class StageFactoryBase(EventDispatcher):
         pass
 
     def get_stage_ref(
-            self, name: str = None, stage: CeedStage = None) -> CeedStageRef:
+            self, name: str = None,
+            stage: 'CeedStage' = None) -> 'CeedStageRef':
         """Returns a :class:`CeedStageRef` instance that refers to the
         original stage. See :mod:`ceed.stage` for details.
 
@@ -120,7 +120,7 @@ class StageFactoryBase(EventDispatcher):
         stage.has_ref = True
         return ref
 
-    def return_stage_ref(self, stage_ref: CeedStageRef):
+    def return_stage_ref(self, stage_ref: 'CeedStageRef'):
         """Releases the stage ref created by :meth:`get_stage_ref`.
 
         :param stage_ref: Instance returned by :meth:`get_stage_ref`.
@@ -134,10 +134,11 @@ class StageFactoryBase(EventDispatcher):
             stage_ref.stage.has_ref = False
 
     def make_stage(
-            self, state: dict, instance: Union[CeedStage, CeedStageRef] = None,
+            self, state: dict,
+            instance: Union['CeedStage', 'CeedStageRef'] = None,
             clone=False, func_name_map: dict = {},
             old_name_to_shape_map: dict = None) -> \
-            Union[CeedStage, CeedStageRef]:
+            Union['CeedStage', 'CeedStageRef']:
         """Instantiates the stage from the state and returns it.
 
         This method must be used to instantiate a stage from state.
@@ -310,7 +311,7 @@ class StageFactoryBase(EventDispatcher):
     def recover_stages(
             self, stage_states: List[dict], func_name_map: dict,
             old_name_to_shape_map: dict) -> \
-            Tuple[List[CeedStage], Dict[str, str]]:
+            Tuple[List['CeedStage'], Dict[str, str]]:
         """Takes a list of stages states such as returned by
         :meth:`save_stages` and instantiates the stages represented by
         the states and adds (:meth:`add_stage`) the stages to the factory.

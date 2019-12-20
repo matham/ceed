@@ -99,6 +99,8 @@ class CeedApp(BaseKivyApp):
 
     central_display = ObjectProperty(None, rebind=True)  # type: BufferImage
 
+    _processing_error = False
+
     @classmethod
     def get_config_classes(cls):
         d = super(CeedApp, cls).get_config_classes()
@@ -227,8 +229,12 @@ class CeedApp(BaseKivyApp):
         return True
 
     def handle_exception(self, *largs, **kwargs):
+        processing = self._processing_error
+        self._processing_error = True
         val = super(CeedApp, self).handle_exception(*largs, **kwargs)
-        self.view_controller.request_stage_end()
+        if not processing:
+            self.view_controller.request_stage_end()
+            self._processing_error = False
         return val
 
     def clean_up(self):

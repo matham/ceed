@@ -3,7 +3,6 @@
 
 Defines the GUI components used with :mod:`ceed.stage`.
 """
-from __future__ import annotations
 from copy import deepcopy
 import os
 from scipy.signal import decimate
@@ -242,7 +241,7 @@ class StageChildrenViewList(DraggableLayoutBehavior, BoxLayout):
     """Whether the list is currently expanded and visible to the user.
     """
 
-    stage_widget: StageWidget = None
+    stage_widget: 'StageWidget' = None
     """The :class:`StageWidget` to whom this widget belongs.
     """
 
