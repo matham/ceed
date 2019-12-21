@@ -24,13 +24,17 @@ class ParameterNoiseFactory(EventDispatcher):
         return instance
 
 
-class NoiseBase(object):
+class NoiseBase(EventDispatcher):
 
     def sample(self):
         raise NotImplementedError
 
+    @property
+    def name(self):
+        return self.__class__.__name__
+
     def get_config(self):
-        return {'cls': self.__class__.__name__}
+        return {'cls': self.name}
 
     def get_prop_pretty_name(self):
         return {}

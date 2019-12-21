@@ -23,6 +23,7 @@ from kivy_garden.drag_n_drop import DraggableLayoutBehavior
 from ceed.utils import fix_name
 from ceed.graphics import WidgetList, ShowMoreSelection, ShowMoreBehavior
 from ceed.function import CeedFuncRef, FuncBase, FuncGroup, FunctionFactoryBase
+from ceed.function.param_noise import NoiseBase, ParameterNoiseFactory
 
 __all__ = ('FuncList', 'FuncWidget', 'FuncWidgetGroup', 'FuncPropTextWidget',
            'FuncNamePropTextWidget', 'FuncSettingsDropDown',
@@ -289,6 +290,18 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
             return FuncWidgetGroup
         return FuncWidget
 
+    def add_func_noise_param(self, func: FuncBase, key: str, entry_widget):
+        def track_noise_param(*largs):
+            entry_widget.disabled = func.noisy_parameters.get(key) is not None
+
+        func.fbind('noisy_parameters', track_noise_param)
+        track_noise_param()
+
+        noise = Factory.NoiseSelection()
+        noise.func = func
+        noise.prop_name = key
+        return noise
+
     def display_properties(self):
         """Constructs the function's configuration option widgets that is used
         by the user to customize the function in the GUI.
@@ -358,13 +371,10 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
                     grid.add_widget(widget)
 
                     if key in noise_supported_parameters:
-                        noise = Factory.NoiseSelection()
-                        noise.func = func
-                        noise.prop_name = key
-                        grid.add_widget(noise)
+                        noise = self.add_func_noise_param(func, key, widget)
                     else:
-                        grid.add_widget(
-                            Widget(size_hint=(None, None), size=(0, 0)))
+                        noise = Widget(size_hint=(None, None), size=(0, 0))
+                    grid.add_widget(noise)
 
             for key, cls in sorted(cls_widgets, key=lambda x: x[0]):
                 cls, kw = cls
@@ -374,16 +384,14 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
                 grid.add_widget(
                     label(text=pretty_names.get(key, key),
                           padding_x='10dp', flat_color=color))
-                grid.add_widget(cls(
-                    func=func, prop_name=key, **kw))
+                widget = cls(func=func, prop_name=key, **kw)
+                grid.add_widget(widget)
 
                 if key in noise_supported_parameters:
-                    noise = Factory.NoiseSelection()
-                    noise.more_widget = FuncNoiseDropDown()
-                    grid.add_widget(noise)
+                    noise = self.add_func_noise_param(func, key, widget)
                 else:
-                    grid.add_widget(
-                        Widget(size_hint=(None, None), size=(0, 0)))
+                    noise = Widget(size_hint=(None, None), size=(0, 0))
+                grid.add_widget(noise)
 
             add(grid)
 
@@ -716,44 +724,56 @@ class FuncNoiseDropDown(Factory.FlatDropDown):
 
     """
 
-    noise_param = ObjectProperty(None, allownone=True, rebind=True)
+    noise_param: NoiseBase = ObjectProperty(None, allownone=True, rebind=True)
 
-    noise_factory = ObjectProperty(None, rebind=True)
+    noise_factory: ParameterNoiseFactory = ObjectProperty(None, rebind=True)
 
-    func = None
+    func: FuncBase = None
 
     prop_name = ''
 
     param_container = None
 
-    def initialize_param(self, func, prop_name):
-        self.clear_noise_param()
+    def __init__(self, func, prop_name, **kwargs):
         self.func = func
         self.prop_name = prop_name
         self.noise_factory = func.function_factory.param_noise_factory
-        self.noise_param = func.noisy_parameters.get(prop_name, None)
+
+        if self.prop_name in self.func.noisy_parameters:
+            self.noise_param = self.func.noisy_parameters[self.prop_name]
+
+        super(FuncNoiseDropDown, self).__init__(**kwargs)
+
+        if self.prop_name in self.func.noisy_parameters and \
+                self.noise_param is not None:
+            self.show_noise_params(self.noise_param)
 
     def clear_noise_param(self):
         for widget in self.param_container.children[::2]:
             widget.unbind_tracking()
         self.param_container.clear_widgets()
 
-        self.noise_param = None
-
     def set_noise_instance(self, cls_name):
+        # during initial setup, the following would be the case - so return
+        if self.noise_param is not None and \
+                self.prop_name in self.func.noisy_parameters and \
+                self.noise_param.name == cls_name and \
+                self.func.noisy_parameters[self.prop_name] is self.noise_param:
+            return
+
+        self.clear_noise_param()
+        self.noise_param = None
         if self.prop_name in self.func.noisy_parameters:
             del self.func.noisy_parameters[self.prop_name]
 
-        if cls_name == 'none':
+        if cls_name == 'NoNoise':
             return
 
-        self.noise_param = self.noise_factory.get_cls(cls_name)()
+        noise_param = self.noise_param = self.noise_factory.get_cls(cls_name)()
+        self.func.noisy_parameters[self.prop_name] = noise_param
+        self.show_noise_params(noise_param)
 
-    def show_noise_params(self):
-        noise_param = self.noise_param
-        if noise_param is None:
-            return
-
+    def show_noise_params(self, noise_param):
         label = Factory.FlatXSizedLabel
         color = App.get_running_app().theme.text_primary
         grid = self.param_container

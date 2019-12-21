@@ -36,7 +36,7 @@ from ceed.view.controller import ControllerSideViewControllerBase
 from ceed.storage.controller import CeedDataWriterBase, DataSerializerBase
 from ceed.graphics import CeedDragNDrop
 from ceed.player import CeedPlayer
-from ceed.function.func_widgets import FuncNoiseDropDown, FuncList
+from ceed.function.func_widgets import FuncList
 from ceed.shape.shape_widgets import CeedPainter, ShapeList, ShapeGroupList
 from ceed.view.view_widgets import MEAArrayAlign
 
@@ -77,10 +77,6 @@ class CeedApp(BaseKivyApp):
     agreed_discard = False
 
     drag_controller = ObjectProperty(None, rebind=True)  # type: CeedDragNDrop
-
-    noise_dropdown_widget = None
-    '''
-    '''
 
     stages_container = ObjectProperty(None, rebind=True)  # type: StageList
 
@@ -152,7 +148,6 @@ class CeedApp(BaseKivyApp):
     def build(self):
         self.load_app_kv()
         self.yesno_prompt = Factory.FlatYesNoPrompt()
-        self.noise_dropdown_widget = FuncNoiseDropDown()
         self.player.create_widgets()
 
         root = Factory.get('MainView')()

@@ -479,7 +479,7 @@ from kivy.logger import Logger
 
 from ceed.utils import fix_name, update_key_if_other_key
 from ceed.function.param_noise import ParameterNoiseFactory, \
-    register_noise_classes
+    register_noise_classes, NoiseBase
 
 __all__ = ('FuncDoneException', 'FunctionFactoryBase',
            'FuncBase', 'CeedFunc', 'FuncGroup', 'CeedFuncRef',
@@ -563,7 +563,7 @@ class FunctionFactoryBase(EventDispatcher):
          'Cos': <ceed.function.plugin.CosFunc at 0x1da866f0ac8>}
     '''
 
-    param_noise_factory = None
+    param_noise_factory: ParameterNoiseFactory = None
     """An automatically created instance of
     :class:`ceed.function.param_noise.ParameterNoiseFactory` that is used to
     register and get noise classes for use with functions.
@@ -1059,7 +1059,7 @@ class FuncBase(EventDispatcher):
     See :attr:`loop` and :mod:`ceed.function`.
     '''
 
-    noisy_parameters = DictProperty({})
+    noisy_parameters: Dict[str, NoiseBase] = DictProperty({})
     """A dict mapping parameter names of the function to
     :class:`ceed.function.param_noise.NoiseBase` instances that indicate
     how the parameter should be sampled, when the parameter needs to be
@@ -1187,7 +1187,7 @@ class FuncBase(EventDispatcher):
         items = []
         return items
 
-    def get_noise_supported_parameters(self):
+    def get_noise_supported_parameters(self) -> set:
         """Returns the set of property names of this function that supports
         randomness and may have an
         :class:`ceed.function.param_noise.NoiseBase` instance associated with

@@ -216,20 +216,37 @@
     flat_color: app.theme.primary_text
     flat_border_color: app.theme.divider
     param_container: param_container
+    splitter: splitter
     FlatSplitter:
+        id: splitter
         size_hint: None, None
         sizable_from: 'left'
         flat_color: app.theme.accent
         height: self.minimum_height
         min_size: self.minimum_width
-        XYSizedGridLayout:
-            id: param_container
-            cols: 2
+        BoxLayout:
             size_hint_y: None
+            orientation: 'vertical'
             spacing: '5dp'
             padding: '5dp'
             height: self.minimum_height
             size_hint_min_x: self.minimum_width
+            ThemedSpinner:
+                size_hint_y: None
+                height: '36dp'
+                values: ['NoNoise'] + list(sorted(root.noise_factory.noise_classes.keys()))
+                text: 'NoNoise' if root.func.noisy_parameters.get(root.prop_name) is None else root.func.noisy_parameters[root.prop_name].name
+                text_autoupdate: True
+                size_hint_min_x: self.minimum_width
+                on_text: root.set_noise_instance(self.text)
+            XYSizedGridLayout:
+                id: param_container
+                cols: 2
+                size_hint_y: None
+                spacing: '5dp'
+                padding: '5dp'
+                height: self.minimum_height
+                size_hint_min_x: self.minimum_width
 
 
 <NoiseSelection@FlatImageButton>:
@@ -238,6 +255,8 @@
     scale_down_color: True
     source: 'flat_dots_vertical.png'
     flat_color: app.theme.accent
+    settings_root: None
     on_release:
-        app.noise_dropdown_widget.initialize_param(self.func, self.prop_name)
-        app.noise_dropdown_widget.open(root)
+        if self.settings_root is None: self.settings_root = Factory.FuncNoiseDropDown(func=self.func, prop_name=self.prop_name)
+        self.settings_root.open(root)
+        root.settings_root.splitter.width = max(root.parent.width, root.settings_root.splitter.width)
