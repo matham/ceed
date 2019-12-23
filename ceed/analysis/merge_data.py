@@ -18,6 +18,7 @@ import McsPy.McsData
 import numpy as np
 import nixio as nix
 from base_kivy_app.utils import yaml_dumps, yaml_loads
+from ceed.storage.controller import num_ticks_handshake
 
 __all__ = ('CeedMCSDataMerger', 'DigitalDataStore', 'MCSDigitalData',
            'CeedDigitalData', 'AlignmentException')
@@ -30,6 +31,8 @@ class AlignmentException(Exception):
 
 
 class DigitalDataStore(object):
+
+    counter_bit_width = 32
 
     short_count_indices = None
 
@@ -54,12 +57,14 @@ class DigitalDataStore(object):
     came from.
     '''
 
-    def __init__(self, short_count_indices, count_indices, clock_index):
+    def __init__(self, short_count_indices, count_indices, clock_index,
+                 counter_bit_width):
         '''indices are first mapped with projector_to_aquisition_map. '''
         super(DigitalDataStore, self).__init__()
         self.short_count_indices = short_count_indices
         self.count_indices = count_indices
         self.clock_index = clock_index
+        self.counter_bit_width = counter_bit_width
         self.populate_indices()
 
     def populate_indices(self):
@@ -332,12 +337,14 @@ class CeedMCSDataMerger(object):
         short_count_indices = config['short_count_indices']
         count_indices = config['count_indices']
         clock_index = config['clock_idx']
+        counter_bit_width = config['counter_bit_width']
 
         if self.ceed_data_container is None or not self.ceed_data_container.\
             compare_indices(
                 short_count_indices, count_indices, clock_index):
             self.ceed_data_container = CeedDigitalData(
-                short_count_indices, count_indices, clock_index)
+                short_count_indices, count_indices, clock_index,
+                counter_bit_width)
         return self.ceed_data_container
 
     def create_or_reuse_mcs_data_container(self):
@@ -348,12 +355,14 @@ class CeedMCSDataMerger(object):
         short_count_indices = map_f(config['short_count_indices'])
         count_indices = map_f(config['count_indices'])
         clock_index = map_f(config['clock_idx'])
+        counter_bit_width = config['counter_bit_width']
 
         if self.mcs_data_container is None or not self.mcs_data_container.\
             compare_indices(
                 short_count_indices, count_indices, clock_index):
             self.mcs_data_container = MCSDigitalData(
-                short_count_indices, count_indices, clock_index)
+                short_count_indices, count_indices, clock_index,
+                counter_bit_width)
         return self.mcs_data_container
 
     def parse_ceed_digital_data(self):
@@ -372,9 +381,10 @@ class CeedMCSDataMerger(object):
         mcs = self.mcs_data_container
 
         s = 0
-        # counter_bit_width = 32
+        counter_bit_width = ceed_.counter_bit_width
         if find_by is None:  # find by uuid
             # n is number of frames we need to send uuid
+            n = num_ticks_handshake(counter_bit_width, ceed_.count_indices, 16)
             n = int(ceil(32 / float(len(ceed_.count_indices)))) * 5
 
             # following searches for the uuid in the mcs data

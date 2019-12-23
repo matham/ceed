@@ -34,7 +34,7 @@ from kivy.logger import Logger
 from base_kivy_app.app import app_error
 from base_kivy_app.utils import yaml_dumps, yaml_loads
 
-__all__ = ('CeedDataWriterBase', 'DataSerializerBase')
+__all__ = ('CeedDataWriterBase', 'DataSerializerBase', 'num_ticks_handshake')
 
 
 class CeedDataWriterBase(EventDispatcher):
@@ -939,12 +939,22 @@ class DataSerializerBase(EventDispatcher):
 
         :param config_len: The number of config **bytes** being sent.
         """
-        num_bytes = self.counter_bit_width // 8
-        # the message + padding in bytes
-        config_len += num_bytes - (config_len % num_bytes)
-        config_len //= num_bytes  # in
-        config_len += 1  # the message length byte
+        return num_ticks_handshake(
+            self.counter_bit_width, self.count_indices, config_len)
 
-        ticks_per_int = int(
-            ceil(self.counter_bit_width / len(self.count_indices)))
-        return config_len * ticks_per_int * 2 + 2
+
+def num_ticks_handshake(counter_bit_width, count_indices, config_len):
+    """Gets the number of ticks required to transmit the handshake
+    signature of the experiment as provided to :meth:`get_bits` with
+    ``config_bytes``.
+
+    :param config_len: The number of config **bytes** being sent.
+    """
+    num_bytes = counter_bit_width // 8
+    # the message + padding in bytes
+    config_len += num_bytes - (config_len % num_bytes)
+    config_len //= num_bytes  # in
+    config_len += 1  # the message length byte
+
+    ticks_per_int = int(ceil(counter_bit_width / len(count_indices)))
+    return config_len * ticks_per_int * 2 + 2
