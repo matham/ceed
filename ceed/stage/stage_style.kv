@@ -380,62 +380,55 @@
     on_release: self.controller.apply_selection_all(self.text.lower())
 
 
-<GraphSelectionBox@FlatSplitter>:
-    max_size: root_selection_box.minimum_width + dp(40)
-    size_hint_x: None
-    min_size: '20dp'
-    sizable_from: 'right'
-    flat_color: app.theme.accent
-    controller: None
+<GraphSelectionBox@BoxLayout>:
     shape_selection_widget: shape_selection_widget
-    size_hint_max_y: root_selection_box.minimum_height + shape_selection_widget.height
+    controller: None
+    orientation: 'vertical'
+    size_hint_min_y: self.minimum_height
+    size_hint_x: None
+    width: self.minimum_width
+    spacing: '5dp'
     ScrollView:
+        width: shape_selection_widget.width
+        size_hint_x: None
+        size_hint_min_y: '200dp'
+        do_scroll_x: False
         bar_width: '10dp'
         scroll_type: ['bars']
-        BoxLayout:
-            id: root_selection_box
-            orientation: 'vertical'
-            size_hint_min_y: self.minimum_height
-            size_hint_x: None
-            width: self.minimum_width
+        GridLayout:
+            id: shape_selection_widget
+            cols: 4
+            size_hint: None, None
+            size: self.minimum_size
             spacing: '5dp'
-            Widget
-            ScrollView:
-                size_hint_min_x: shape_selection_widget.minimum_width
-                do_scroll_x: False
-                bar_width: '10dp'
-                scroll_type: ['bars']
-                size_hint_y: None
-                height: shape_selection_widget.minimum_height
-                GridLayout:
-                    id: shape_selection_widget
-                    cols: 4
-                    size_hint_y: None
-                    height: self.minimum_height
-                    spacing: '5dp'
-            GridLayout:
-                cols: 4
-                spacing: '5dp'
-                size_hint_y: None
-                height: self.minimum_height
-                size_hint_min_x: self.minimum_width
-                Widget
-                ShapeGraphSelectorAll:
-                    controller: root.controller
-                    text: 'R'
-                ShapeGraphSelectorAll:
-                    controller: root.controller
-                    text: 'G'
-                ShapeGraphSelectorAll:
-                    controller: root.controller
-                    text: 'B'
+            padding: 0, 0, '10dp', 0
+    GridLayout:
+        cols: 4
+        spacing: '5dp'
+        size_hint_y: None
+        height: self.minimum_height
+        size_hint_min_x: self.minimum_width
+        padding: 0, 0, '10dp', 0
+        FlatLabel:
+            text: 'All'
+            size_hint_min_x: self.texture_size[0]
+            flat_color: app.theme.text_primary
+        ShapeGraphSelectorAll:
+            controller: root.controller
+            text: 'R'
+        ShapeGraphSelectorAll:
+            controller: root.controller
+            text: 'G'
+        ShapeGraphSelectorAll:
+            controller: root.controller
+            text: 'B'
 
 <StageGraph>:
     size_hint_min_x: self.minimum_width
     size_hint_y: None
+    height: '300dp'
     min_size: self.minimum_height
     on_min_size: self.height = max(self.height, self.min_size)
-    max_size: max(graph_root.size_hint_max_y or 0, shape_selection_box.size_hint_max_y) + dp(40)
     sizable_from: 'bottom'
     flat_color: app.theme.accent
     shape_selection_widget: shape_selection_box.shape_selection_widget
@@ -456,7 +449,6 @@
             size_hint_min: self.minimum_size
             orientation: 'vertical'
             spacing: '10dp'
-            size_hint_max_y: self.minimum_height + graph_box.height
             BoxLayout:
                 orientation: 'horizontal'
                 size_hint_min_x: self.minimum_width
@@ -495,6 +487,11 @@
                     input_filter: 'float'
                     on_text_validate: root.view_xmin = float(self.text)
                     text: '{:.1f}'.format(root.view_xmin)
+                FlatLabel:
+                    text: ' - '
+                    width: self.texture_size[0]
+                    size_hint_x: None
+                    flat_color: app.theme.text_primary
                 FlatSizedTextInput:
                     size_hint_x: None
                     width: '50dp'
@@ -513,7 +510,7 @@
                     id: graph_box
                     size_hint_min_x: self.minimum_width
                     size_hint_y: None
-                    height: max(max(self.minimum_height, root.n_plots_displayed * root.shape_height + (root.n_plots_displayed - 1) * root.shape_spacing), dp(20))
+                    height: max(self.minimum_height, root.n_plots_displayed * root.shape_height + (root.n_plots_displayed - 1) * root.shape_spacing)
                     spacing: graph_ticks.view_pos[0]
                     padding: [0, 0, graph_ticks.width - graph_ticks.view_pos[0] - graph_ticks.view_size[0], 0]
                     BoxLayout:
@@ -550,17 +547,22 @@
                 size: self.minimum_width, '34dp'
                 padding: '5dp'
                 spacing: '5dp'
-                FlatSpinner:
+                FlatLabel:
+                    text: 'Stages: '
+                    width: self.texture_size[0]
+                    size_hint_x: None
+                    flat_color: app.theme.text_primary
+                ThemedSpinner:
                     id: stage_spinner
                     values: sorted(app.stage_factory.stage_names.keys()) if app.stage_factory.stage_names else []
                     text_autoupdate: True
                     size_hint_x: None
                     width: self.minimum_width
+                FlatLabel:
+                    text: 'Frame rate: '
+                    width: self.texture_size[0]
+                    size_hint_x: None
                     flat_color: app.theme.text_primary
-                    flat_menu_color: app.theme.accent
-                    flat_drop_background_color: app.theme.primary_text
-                    flat_drop_text_color: app.theme.text_primary
-                    flat_border_color: app.theme.divider
                 FlatSizedTextInput:
                     id: rate
                     size_hint_x: None
@@ -592,6 +594,8 @@
         min_size: self.minimum_width
         sizable_from: 'right'
         flat_color: app.theme.accent
+        width: '500dp'
+        max_size: '1000dp'
         StageGraph:
             unpinned_parent: splitter
             unpinned_root: root

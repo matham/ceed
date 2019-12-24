@@ -364,7 +364,8 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
                     label_w.test_name = 'func prop label'
                     grid.add_widget(label_w)
 
-                    widget = FuncPropTextWidget(input_filter=input_filter[fmt])
+                    widget = FuncPropTextWidget(
+                        input_filter=input_filter[fmt], size_hint_min_x='40dp')
                     widget.func = func
                     widget.prop_name = key
                     widget.apply_binding()
@@ -788,7 +789,8 @@ class FuncNoiseDropDown(Factory.FlatDropDown):
                 label(text=pretty_names.get(prop, prop),
                       padding_x='10dp', flat_color=color))
 
-            widget = FuncPropTextWidget(input_filter='float')
+            widget = FuncPropTextWidget(
+                input_filter='float', size_hint_min_x='40dp')
             widget.func = noise_param
             widget.prop_name = prop
             widget.apply_binding()
