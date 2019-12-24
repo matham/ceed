@@ -1063,7 +1063,7 @@ class StageGraph(Factory.FlatSplitter):
 
         self.time_points = np.arange(N, dtype=np.float64) / float(frame_rate)
         self.view_xmin = self.xmin = 0
-        self.view_xmax = self.xmax = N / frame_rate
+        self.view_xmax = self.xmax = max(N, 1) / frame_rate
 
         self._shapes_displayed_update_trigger()
 
