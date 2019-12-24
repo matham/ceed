@@ -1426,7 +1426,7 @@ class FuncBase(EventDispatcher):
         :return: True if it ticked the loop, otherwise False if we cannot tick
             because we hit the max.
         """
-        if t <= self.t_start:
+        if t < self.t_start:
             raise ValueError
         self.loop_count += 1
         if self.loop_count >= self.loop:
