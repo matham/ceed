@@ -51,9 +51,11 @@ Install manual python dependencies
 **********************************
 
 * Install current **kivy** master
+
   * Install apt dependencies: ``sudo apt install libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev zlib1g-dev``.
   * Install kivy: ``pip install https://github.com/kivy/kivy/archive/master.zip`` - it'll take a couple of minutes.
 * If using a **PointGray camera**, on linux we must manually install its libraries
+
   * Get it from `here <https://www.flir.com/products/flycapture-sdk>`_, extract it and install by running ``install_flycapture.sh``.
   * Figure out your python version, find the appropriate linux wheel of the last release
     `here <https://github.com/matham/pyflycap2/releases>`_ and install e.g. with
@@ -62,11 +64,13 @@ Install manual python dependencies
     ``python3 -c 'from pyflycap2.interface import CameraContext; cc = CameraContext(); cc.rescan_bus(); print(cc.get_gige_cams())'``
     and it'll print a list of the serial numbers of all the connected cameras.
 * Install **VPixx** control software as well as ``pypixxlib``
+
   * Go to their `site <https://vpixx.com/>`_ and download the vpixx debian package for ubuntu named e.g. ``vpixx-software-tools.deb``.
   * Install it with ``sudo apt install ./vpixx-software-tools.deb`` from the download directory.
   * To install ``pypixxlib`` you'll need to locate ``pypixxlib-xxx.tar.gz``, likely under ``/usr/share/VPixx Software Tools/Software Tools/pypixxlib``
     and install it with e.g. ``pip install "/usr/share/VPixx Software Tools/Software Tools/pypixxlib/pypixxlib-3.5.5601.tar.gz"``.
   * To test if it is installed successfully, run ``python3 -c "from pypixxlib import _libdpx as libdpx"``.
+
     * If you get an error about print, the library doesn't support python3 yet and you'll need to fix it as follows:
     * Locate where the library was installed by running ``python3 -c "import pypixxlib; print(pypixxlib.__path__)"``.
       This should print something like ``['/home/cpl/ceed_venv/lib/python3.6/site-packages/pypixxlib']``.
@@ -84,12 +88,15 @@ and install them in place, rather than installing them like a normal pip depende
 Consequently, we'll be able to pull the changes easily.
 
 * Install ``base_kivy_app``
+
   * Clone with ``git clone https://github.com/matham/base_kivy_app.git``.
   * Install in place with ``pip install -e base_kivy_app``.
 * Install ``cpl_media``
+
   * Clone with ``git clone https://github.com/matham/cpl_media.git``.
   * Install in place with ``pip install -e cpl_media``.
 * Install ``ceed`` finally
+
   * Clone with ``git clone https://github.com/matham/ceed.git``.
   * Install in place with ``pip install -e ceed``.
 
@@ -118,17 +125,20 @@ Install manual python dependencies
 
 * Install current **kivy** master with ``pip install kivy[base] kivy_examples --pre --extra-index-url https://kivy.org/downloads/simple/``.
 * If using a **PointGray camera** install with ``pip install pyflycap2``.
+
   * If successful, you should be able to run
     ``python -c "from pyflycap2.interface import CameraContext; cc = CameraContext(); cc.rescan_bus(); print(cc.get_gige_cams())"``
     and it'll print a list of the serial numbers of all the connected cameras.
 * If using a **Thor camera** install with ``pip install thorcam``.
 * Install **VPixx** control software as well as ``pypixxlib``. Although we're not typically running ceed on this computer,
   it can be tested here.
+
   * Go to their `site <https://vpixx.com/>`_ and download the vpixx Windows executable for Windows named e.g.
     ``setup.exe`` and install it.
   * To install ``pypixxlib`` you'll need to locate ``pypixxlib-xxx.tar.gz``, likely under ``C:\Program Files\VPixx Technologies\Software Tools\pypixxlib``
     and install it with e.g. ``pip install "C:\Program Files\VPixx Technologies\Software Tools\pypixxlib\pypixxlib-3.5.5428.tar.gz"``.
   * To test if it is installed successfully, run ``python -c "from pypixxlib import _libdpx as libdpx"``.
+
     * If you get an error about print, the library doesn't support python3 yet and you'll need to fix it as follows
     * Locate where the library was installed by running ``python -c "import pypixxlib; print(pypixxlib.__path__)"``.
       This should print something like ``['C:\\Users\\MEArig\\ceed_venv\\lib\\site-packages\\pypixxlib']``.
@@ -147,12 +157,15 @@ and install them in place, rather than installing them like a normal pip depende
 Consequently, we'll be able to pull the changes easily.
 
 * Install ``base_kivy_app``
+
   * Clone with ``git clone https://github.com/matham/base_kivy_app.git``.
   * Install in place with ``pip install -e base_kivy_app``.
 * Install ``cpl_media``
+
   * Clone with ``git clone https://github.com/matham/cpl_media.git``.
   * Install in place with ``pip install -e cpl_media``.
 * Install ``ceed`` finally
+
   * Clone with ``git clone https://github.com/matham/ceed.git``.
   * Install in place with ``pip install -e ceed``.
 
