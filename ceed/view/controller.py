@@ -766,7 +766,10 @@ class ControllerSideViewControllerBase(ViewControllerBase):
             self.queue_view_read.put_nowait(('end_stage', None))
 
     def stage_end_cleanup(self, state=None):
-        App.get_running_app().ceed_data.stop_experiment()
+        ceed_data = App.get_running_app().ceed_data
+        if ceed_data is not None:
+            ceed_data.stop_experiment()
+
         self.stage_active = False
         if state:
             if self.last_cam_image is None:
