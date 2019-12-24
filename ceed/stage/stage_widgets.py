@@ -1021,21 +1021,26 @@ class StageGraph(Factory.FlatSplitter):
         '''
         return sorted(self.plots.items(), key=lambda x: x[0])
 
-    def refresh_graph(self, stage, frame_rate):
+    def refresh_graph(self, stage_name: str, frame_rate):
         '''Re-samples the intensity values for the shapes from the stage.
 
         :Params:
 
-            `stage`: :class:`ceed.stage.CeedStage`
+            `stage_name`: str
                 The stage from which to sample the shape intensity values.
             `frame_rate`: float
                 The sampling rate used to sample the shape intensity values
                 from the functions in time.
 
         '''
+        stage = App.get_running_app().\
+            stage_factory.stage_names[stage_name].copy_expand_ref()
+        # TODO: disable randomness of generated funcs after sampling
+        stage.resample_func_parameters()
+
         frame_rate = self.frame_rate = float(frame_rate)
         vals = self.plot_values = App.get_running_app().\
-            view_controller.get_all_shape_values(stage, frame_rate)
+            view_controller.get_all_shape_values(frame_rate, stage=stage)
         N = len(list(vals.values())[0]) if vals else 0
 
         plots = self.plots

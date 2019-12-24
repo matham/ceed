@@ -380,15 +380,15 @@ class ViewControllerBase(EventDispatcher):
                 Rectangle(texture=tex, pos=(0, h - 1), size=(1, 1),
                           group=self.canvas_name)
 
-    def get_all_shape_values(self, stage_name, frame_rate):
+    def get_all_shape_values(self, frame_rate, stage_name='', stage=None):
         '''For every shape in the stage ``stage_name`` it samples the shape
         at the frame rate and returns a list of intensity values for the shape
         for each frame.
-        '''
-        '''frame_rate is not :attr:`frame_rate` bur rather the rate at which we
+        frame_rate is not :attr:`frame_rate` bur rather the rate at which we
         sample the functions.
         '''
-        tick = _get_app().stage_factory.tick_stage(stage_name)
+        tick = _get_app().stage_factory.tick_stage(
+            stage_name=stage_name, stage=stage)
         # the sampling rate at which we sample the functions
         frame_rate = int(frame_rate)
 

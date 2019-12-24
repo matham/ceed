@@ -351,7 +351,7 @@ class StageFactoryBase(EventDispatcher):
 
         return stages, name_map
 
-    def tick_stage(self, stage_name):
+    def tick_stage(self, stage_name='', stage=None):
         '''An iterator which starts a :class:`CeedStage` and ticks the time for
         every call.
 
@@ -382,6 +382,8 @@ class StageFactoryBase(EventDispatcher):
 
             `stage_name`: str
                 The :attr:`CeedStage.name` of the stage to start.
+            `stage`: str
+                The :attr:`CeedStage` to start.
 
         :yields:
 
@@ -401,7 +403,8 @@ class StageFactoryBase(EventDispatcher):
             `StageDoneException`:
                 When done with the stage (time is out of bounds).
         '''
-        stage = self.stage_names[stage_name]
+        if stage is None:
+            stage = self.stage_names[stage_name]
         shapes = {s.name: [] for s in self.shape_factory.shapes}
         tick_stage = stage.tick_stage(shapes)
         next(tick_stage)
