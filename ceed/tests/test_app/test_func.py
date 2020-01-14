@@ -306,10 +306,12 @@ async def test_gui_add_funcs(func_app: CeedTestApp):
 
                 await assert_add_func_to_group(
                     func_app, func, sub_func_cls, add, spinner)
+                await func_app.wait_clock_frames(2)
 
                 # deselect the group so the next group will not be added to it
                 if func.func.display.selected:
                     await touch_widget(func_app, name_label)
+                await func_app.wait_clock_frames(2)
 
 
 async def group_recursive_add(func_app: CeedTestApp, add_func):
@@ -350,6 +352,7 @@ async def group_recursive_add(func_app: CeedTestApp, add_func):
     assert name_label.text == 'Group'
     await touch_widget(func_app, name_label)
     await select_spinner_func(func_app, 'Linear', spinner)
+    await func_app.wait_clock_frames(1)
     await add_func(g2)
     f2: FuncBase = await replace_last_ref_with_original_func(
         func_app, g2.funcs, 'Linear')

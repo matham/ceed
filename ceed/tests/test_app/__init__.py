@@ -34,8 +34,10 @@ async def select_spinner_value(func_app, func_name, spinner):
             pos=spinner.to_window(spinner.x + dp(30), spinner.center_y)):
         pass
     await func_app.wait_clock_frames(2)
+
     label = func_app.resolve_widget().down(text=func_name)()
     await touch_widget(func_app, label)
+    await func_app.wait_clock_frames(2)
 
 
 async def escape(app):
