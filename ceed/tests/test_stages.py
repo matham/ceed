@@ -4,7 +4,7 @@ import math
 from collections import defaultdict
 from fractions import Fraction
 
-from ceed.function import FunctionFactoryBase
+from ceed.function import FunctionFactoryBase, FuncGroup
 from ceed.stage import StageFactoryBase, CeedStage, CeedStageRef, \
     StageDoneException
 from ceed.tests.test_app.examples.stages import ParaAllStage, ParaAnyStage, \
@@ -815,3 +815,39 @@ def test_recursive_full_stage_intensity(stage_factory: StageFactoryBase):
             assert r == 0
             assert g == 0
             assert b == 0
+
+
+def test_single_frame_stage_intensity(stage_factory: StageFactoryBase):
+    from ceed.function.plugin import ConstFunc
+
+    shape = EllipseShapeP1(
+        app=None, painter=stage_factory.shape_factory, show_in_gui=False,
+        create_add_shape=True)
+
+    f: FuncGroup = FuncGroup(
+        function_factory=stage_factory.function_factory, timebase_numerator=1,
+        timebase_denominator=120, loop=3)
+    # give it a float duration to see if it can handle a integer float
+    f1 = ConstFunc(
+        function_factory=stage_factory.function_factory, a=0, duration=1.)
+    f2 = ConstFunc(
+        function_factory=stage_factory.function_factory, a=1, duration=1)
+    f.add_func(f1)
+    f.add_func(f2)
+
+    stage = make_stage(
+        stage_factory, color_r=True, color_g=False, color_b=True)
+    stage_factory.add_stage(stage)
+    stage.add_func(f)
+    stage.add_shape(shape.shape)
+
+    values, n = get_stage_time_intensity(stage_factory, stage.name, 120)
+    assert n == 3 * 2
+    assert len(values) == 1
+    colors = values[shape.name]
+    assert len(colors) == 3 * 2
+
+    for i, (r, g, b, a) in enumerate(colors):
+        assert math.isclose(r, i % 2)
+        assert math.isclose(b, i % 2)
+        assert g == 0

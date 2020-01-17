@@ -1400,16 +1400,21 @@ class FuncBase(EventDispatcher):
 
         See :mod:`ceed.function` for details.
         """
-        if self.duration < 0:
+        duration = self.duration
+        # we need to be able to carry through fractions, so ints should stay
+        if isinstance(duration, float) and duration.is_integer():
+            duration = int(duration)
+
+        if duration < 0:
             return self.t_start, -1
 
         if self.loop_count >= self.loop:
-            t = self.t_start + self.duration * self.get_timebase()
+            t = self.t_start + duration * self.get_timebase()
             return t, t
 
         return self.t_start, \
             self.t_start + (self.loop - self.loop_count) * \
-            self.duration * self.get_timebase()
+            duration * self.get_timebase()
 
     def tick_loop(self, t):
         """Increments :attr:`loop_count` and returns whether the function is
@@ -1538,8 +1543,8 @@ class CeedFunc(FuncBase):
     def __call__(self, t):
         if t < self.t_start:
             raise ValueError(
-                'Cannot call function {} with time less than the '
-                'function start {}'.format(self, self.t_start))
+                'Cannot call function {} with time {} less than the '
+                'function start {}'.format(self, t, self.t_start))
         if self.loop_count >= self.loop:
             raise FuncDoneException
 
