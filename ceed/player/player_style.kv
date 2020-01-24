@@ -201,21 +201,13 @@
         flat_color: app.theme.accent
         last_image: None
         on_press: self.last_image = app.player.last_image
-        on_release:
-            app.filebrowser.dirselect = False
-            app.filebrowser.multiselect = False
-            app.filebrowser.callback = partial(app.player.save_screenshot, self.last_image)
-            if self.last_image: app.filebrowser.open()
+        on_release: if self.last_image: app.open_filechooser(callback=partial(app.player.save_screenshot, self.last_image, app), target=app.last_directory, mode='save', title='Select target filename', filters=['*.bmp'])
     FlatImageButton:
         scale_down_color: True
         source: 'flat_screenshot_load.png'
         hover_text: 'Load cam image'
         flat_color: app.theme.accent
-        on_release:
-            app.filebrowser.dirselect = False
-            app.filebrowser.multiselect = False
-            app.filebrowser.callback = app.player.load_screenshot
-            app.filebrowser.open()
+        on_release: app.open_filechooser(callback=partial(app.player.load_screenshot, app), target=app.last_directory, title='Select file', filters=['*.bmp', '*.h5', '*.*'])
     FlatImageButton:
         scale_down_color: True
         source: 'flat_refresh.png'

@@ -173,16 +173,16 @@ class CeedPlayer(EventDispatcher):
             p = '/home'
         self.disk_used_percent = round(psutil.disk_usage(p).percent) / 100.
 
-    def load_screenshot(self, path, selection, filename):
+    def load_screenshot(self, app, paths):
         """Loads a previously saved screenshot of the camera as a background
         image.
         """
-        if not isdir(path) or not filename:
-            raise Exception('Invalid path or filename')
+        if not paths:
+            return
+        fname = paths[0]
+        app.last_directory = dirname(fname)
 
-        fname = join(path, filename)
-
-        if filename.endswith('.h5'):
+        if fname.endswith('.h5'):
             img = App.get_running_app().ceed_data.load_last_fluorescent_image(
                 fname)
         else:
@@ -194,26 +194,13 @@ class CeedPlayer(EventDispatcher):
 
         self.display_frame(img, None)
 
-    def save_screenshot(self, img, path, selection, filename):
+    def save_screenshot(self, img, app, paths):
         """Saves the image acquired to a file.
         """
-        if not isdir(path) or not filename:
-            raise Exception('Invalid path or filename')
-        fname = join(path, filename)
-
-        if exists(fname):
-            def yesno_callback(overwrite):
-                if not overwrite:
-                    return
-                BaseRecorder.save_image(fname, img)
-
-            yesno = App.get_running_app().yesno_prompt
-            yesno.msg = ('"{}" already exists, would you like to '
-                         'overwrite it?'.format(fname))
-            yesno.callback = yesno_callback
-            yesno.open()
-        else:
-            BaseRecorder.save_image(fname, img)
+        if not paths:
+            return
+        app.last_directory = dirname(paths[0])
+        BaseRecorder.save_image(paths[0], img)
 
     def stop(self):
         for player in (

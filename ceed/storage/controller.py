@@ -6,17 +6,14 @@ data to the acquisition and creation of experimental data.
 
 '''
 import nixio as nix
-from os.path import exists, basename, splitext, split, join, isdir
+from os.path import exists, basename, splitext, split, join, isdir, dirname
 from os import remove
 import os
 from tempfile import NamedTemporaryFile
 from shutil import copy2
 from math import ceil
 from threading import Thread, RLock
-try:
-    from Queue import Queue, Empty
-except ImportError:
-    from queue import Queue, Empty
+from queue import Queue, Empty
 import numpy as np
 from functools import partial
 import struct
@@ -148,38 +145,22 @@ class CeedDataWriterBase(EventDispatcher):
     def on_experiment_change(self, name, value):
         pass
 
-    def get_filebrowser_callback(
-            self, func, check_exists=False, clear_data=False, **kwargs):
+    def get_filebrowser_callback(self, func, clear_data=False, **kwargs):
 
-        def callback(path, selection, filename):
-            if not isdir(path) or not filename:
+        def callback(paths):
+            if not paths:
                 return
-            self.root_path = path
-            fname = join(path, filename)
+            fname = paths[0]
+            self.root_path = dirname(fname)
 
             def discard_callback(discard):
                 if clear_data and not discard:
                     return
 
-                if check_exists and exists(fname):
-                    def yesno_callback(overwrite):
-                        if not overwrite:
-                            return
-                        if clear_data:
-                            self.close_file(force_remove_autosave=True)
-                            self.clear_existing_config_data()
-                        func(fname, overwrite, **kwargs)
-
-                    yesno = App.get_running_app().yesno_prompt
-                    yesno.msg = ('"{}" already exists, would you like to '
-                                 'overwrite it?'.format(fname))
-                    yesno.callback = yesno_callback
-                    yesno.open()
-                else:
-                    if clear_data:
-                        self.close_file(force_remove_autosave=True)
-                        self.clear_existing_config_data()
-                    func(fname, **kwargs)
+                if clear_data:
+                    self.close_file(force_remove_autosave=True)
+                    self.clear_existing_config_data()
+                func(fname, **kwargs)
 
             if clear_data and (self.has_unsaved or self.config_changed):
                 yesno = App.get_running_app().yesno_prompt

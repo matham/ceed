@@ -6,7 +6,7 @@ The main module that runs the GUI.
 import ceed
 
 from functools import partial
-from os.path import join, dirname
+from os.path import join, dirname, expanduser
 import time
 
 from base_kivy_app.app import BaseKivyApp, run_app as run_cpl_app
@@ -16,7 +16,7 @@ import cpl_media
 
 from kivy.lang import Builder
 from kivy.factory import Factory
-from kivy.properties import ObjectProperty, BooleanProperty
+from kivy.properties import ObjectProperty, StringProperty
 
 import ceed.graphics
 Builder.load_file(join(dirname(__file__), 'graphics', 'graphics.kv'))
@@ -48,6 +48,10 @@ __all__ = ('CeedApp', 'run_app')
 class CeedApp(BaseKivyApp):
     '''The app which runs the GUI.
     '''
+
+    __config_props__ = ('last_directory', )
+
+    last_directory = StringProperty('~')
 
     kv_loaded = False
     """For tests, we don't want to load kv multiple times.

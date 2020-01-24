@@ -21,10 +21,7 @@
             hover_text: "Save current file"
             on_release:
                 if app.ceed_data.filename: app.ceed_data.save()
-                if not app.ceed_data.filename: app.filebrowser.target = app.ceed_data.root_path
-                if not app.ceed_data.filename: app.filebrowser.dirselect =  app.filebrowser.multiselect = False
-                if not app.ceed_data.filename: app.filebrowser.callback = app.ceed_data.get_filebrowser_callback(app.ceed_data.save_as, True)
-                if not app.ceed_data.filename: app.filebrowser.open()
+                if not app.ceed_data.filename: app.open_filechooser(callback=app.ceed_data.get_filebrowser_callback(app.ceed_data.save_as, overwrite=True), mode='save', target=app.ceed_data.root_path, title='Save h5 file', filters=['*.h5', '*.*'])
         FlatImageButton:
             scale_down_color: True
             source: 'flat_menu_down.png'
@@ -35,90 +32,21 @@
             flat_color: app.theme.primary_text
             flat_border_color: app.theme.divider
             FlatButton:
-                text: 'Save current file'
+                text: 'Save h5 file'
                 size_hint: None, None
                 size: self.texture_size
                 scale_down_color: True
                 flat_color: app.theme.text_primary
                 on_release:
                     if app.ceed_data.filename: app.ceed_data.save()
-                    if not app.ceed_data.filename: app.filebrowser.target = app.ceed_data.root_path
-                    if not app.ceed_data.filename: app.filebrowser.dirselect =  app.filebrowser.multiselect = False
-                    if not app.ceed_data.filename: app.filebrowser.callback = app.ceed_data.get_filebrowser_callback(app.ceed_data.save_as, True)
-                    if not app.ceed_data.filename: app.filebrowser.open()
+                    if not app.ceed_data.filename: app.open_filechooser(callback=app.ceed_data.get_filebrowser_callback(app.ceed_data.save_as, overwrite=True), mode='save', target=app.ceed_data.root_path, title='Save h5 file', filters=['*.h5', '*.*'])
             FlatButton:
-                text: 'Save current as file'
+                text: 'Save as h5 file'
                 size_hint: None, None
                 size: self.texture_size
                 scale_down_color: True
                 flat_color: app.theme.text_primary
-                on_release:
-                    app.filebrowser.target = app.ceed_data.root_path
-                    app.filebrowser.dirselect =  app.filebrowser.multiselect = False
-                    app.filebrowser.callback = app.ceed_data.get_filebrowser_callback(app.ceed_data.save_as, True)
-                    app.filebrowser.open()
-            FlatButton:
-                text: 'Clear & create empty file'
-                size_hint: None, None
-                size: self.texture_size
-                scale_down_color: True
-                flat_color: app.theme.text_primary
-                on_release:
-                    app.filebrowser.target = app.ceed_data.root_path
-                    app.filebrowser.dirselect =  app.filebrowser.multiselect = False
-                    app.filebrowser.callback = app.ceed_data.get_filebrowser_callback(app.ceed_data.create_file, True, True)
-                    app.filebrowser.open()
-            FlatButton:
-                text: 'Clear & open existing file RO'
-                size_hint: None, None
-                size: self.texture_size
-                scale_down_color: True
-                flat_color: app.theme.text_primary
-                on_release:
-                    app.filebrowser.target = app.ceed_data.root_path
-                    app.filebrowser.dirselect =  app.filebrowser.multiselect = False
-                    app.filebrowser.callback = app.ceed_data.get_filebrowser_callback(app.ceed_data.open_file, clear_data=True, read_only=True)
-                    app.filebrowser.open()
-            FlatButton:
-                text: 'Clear & open existing file'
-                size_hint: None, None
-                size: self.texture_size
-                scale_down_color: True
-                flat_color: app.theme.text_primary
-                on_release:
-                    app.filebrowser.target = app.ceed_data.root_path
-                    app.filebrowser.dirselect =  app.filebrowser.multiselect = False
-                    app.filebrowser.callback = app.ceed_data.get_filebrowser_callback(app.ceed_data.open_file, clear_data=True)
-                    app.filebrowser.open()
-            FlatButton:
-                text: 'Import all settings from file'
-                size_hint: None, None
-                size: self.texture_size
-                scale_down_color: True
-                flat_color: app.theme.text_primary
-                on_release:
-                    app.filebrowser.target = app.ceed_data.root_path
-                    app.filebrowser.dirselect =  app.filebrowser.multiselect = False
-                    app.filebrowser.callback = app.ceed_data.get_filebrowser_callback(app.ceed_data.import_file)
-                    app.filebrowser.open()
-            FlatButton:
-                text: 'Import stages from file'
-                size_hint: None, None
-                size: self.texture_size
-                scale_down_color: True
-                flat_color: app.theme.text_primary
-                on_release:
-                    app.filebrowser.target = app.ceed_data.root_path
-                    app.filebrowser.dirselect =  app.filebrowser.multiselect = False
-                    app.filebrowser.callback = app.ceed_data.get_filebrowser_callback(app.ceed_data.import_file, stages_only=True)
-                    app.filebrowser.open()
-            FlatButton:
-                text: 'Close current file & clear'
-                size_hint: None, None
-                size: self.texture_size
-                scale_down_color: True
-                flat_color: app.theme.text_primary
-                on_release: app.ceed_data.ui_close()
+                on_release: app.open_filechooser(callback=app.ceed_data.get_filebrowser_callback(app.ceed_data.save_as, overwrite=True), mode='save', target=app.ceed_data.root_path, title='Save h5 file', filters=['*.h5', '*.*'])
             FlatButton:
                 text: 'Discard unsaved changes'
                 size_hint: None, None
@@ -127,49 +55,75 @@
                 flat_color: app.theme.text_primary
                 on_release: app.ceed_data.discard_file()
             FlatButton:
-                text: 'Import & append all settings from YAML'
+                text: 'Close h5 file & clear'
                 size_hint: None, None
                 size: self.texture_size
                 scale_down_color: True
                 flat_color: app.theme.text_primary
-                on_release:
-                    app.filebrowser.target = app.ceed_data.root_path
-                    app.filebrowser.dirselect =  app.filebrowser.multiselect = False
-                    app.filebrowser.callback = app.ceed_data.get_filebrowser_callback(app.ceed_data.read_yaml_config, requires_app_settings=False)
-                    app.filebrowser.open()
+                on_release: app.ceed_data.ui_close()
             FlatButton:
-                text: 'Export all settings to YAML'
+                text: 'Clear & create h5 file'
                 size_hint: None, None
                 size: self.texture_size
                 scale_down_color: True
                 flat_color: app.theme.text_primary
-                on_release:
-                    app.filebrowser.target = app.ceed_data.root_path
-                    app.filebrowser.dirselect =  app.filebrowser.multiselect = False
-                    app.filebrowser.callback = app.ceed_data.get_filebrowser_callback(app.ceed_data.write_yaml_config, True)
-                    app.filebrowser.open()
+                on_release: app.open_filechooser(callback=app.ceed_data.get_filebrowser_callback(app.ceed_data.create_file, overwrite=True, clear_data=True), mode='save', target=app.ceed_data.root_path, title='Create h5 file', filters=['*.h5', '*.*'])
             FlatButton:
-                text: 'Import & append stages from YAML'
+                text: 'Clear & open h5 file RO'
                 size_hint: None, None
                 size: self.texture_size
                 scale_down_color: True
                 flat_color: app.theme.text_primary
-                on_release:
-                    app.filebrowser.target = app.ceed_data.root_path
-                    app.filebrowser.dirselect =  app.filebrowser.multiselect = False
-                    app.filebrowser.callback = app.ceed_data.get_filebrowser_callback(app.ceed_data.read_yaml_config, stages_only=True)
-                    app.filebrowser.open()
+                on_release: app.open_filechooser(callback=app.ceed_data.get_filebrowser_callback(app.ceed_data.open_file, clear_data=True, read_only=True), target=app.ceed_data.root_path, title='Open h5 file RO', filters=['*.h5', '*.*'])
             FlatButton:
-                text: 'Export stages to YAML'
+                text: 'Clear & open h5 file'
                 size_hint: None, None
                 size: self.texture_size
                 scale_down_color: True
                 flat_color: app.theme.text_primary
-                on_release:
-                    app.filebrowser.target = app.ceed_data.root_path
-                    app.filebrowser.dirselect =  app.filebrowser.multiselect = False
-                    app.filebrowser.callback = app.ceed_data.get_filebrowser_callback(app.ceed_data.write_yaml_config, True, stages_only=True)
-                    app.filebrowser.open()
+                on_release: app.open_filechooser(callback=app.ceed_data.get_filebrowser_callback(app.ceed_data.open_file, clear_data=True), target=app.ceed_data.root_path, title='Open h5 file', filters=['*.h5', '*.*'])
+            FlatButton:
+                text: 'Import stages & app settings from h5 file'
+                size_hint: None, None
+                size: self.texture_size
+                scale_down_color: True
+                flat_color: app.theme.text_primary
+                on_release: app.open_filechooser(callback=app.ceed_data.get_filebrowser_callback(app.ceed_data.import_file), target=app.ceed_data.root_path, title='Import h5 file', filters=['*.h5', '*.*'])
+            FlatButton:
+                text: 'Import stages from h5 file'
+                size_hint: None, None
+                size: self.texture_size
+                scale_down_color: True
+                flat_color: app.theme.text_primary
+                on_release: app.open_filechooser(callback=app.ceed_data.get_filebrowser_callback(app.ceed_data.import_file, stages_only=True), target=app.ceed_data.root_path, title='Import h5 file', filters=['*.h5', '*.*'])
+            FlatButton:
+                text: 'Import stages & app settings from YAML file'
+                size_hint: None, None
+                size: self.texture_size
+                scale_down_color: True
+                flat_color: app.theme.text_primary
+                on_release: app.open_filechooser(callback=app.ceed_data.get_filebrowser_callback(app.ceed_data.read_yaml_config, requires_app_settings=False), target=app.ceed_data.root_path, title='Import yaml file', filters=['*.yml', '*.yaml', '*.*'])
+            FlatButton:
+                text: 'Import stages from YAML file'
+                size_hint: None, None
+                size: self.texture_size
+                scale_down_color: True
+                flat_color: app.theme.text_primary
+                on_release: app.open_filechooser(callback=app.ceed_data.get_filebrowser_callback(app.ceed_data.read_yaml_config, stages_only=True), target=app.ceed_data.root_path, title='Import yaml file', filters=['*.yml', '*.yaml', '*.*'])
+            FlatButton:
+                text: 'Export stages & app settings to YAML file'
+                size_hint: None, None
+                size: self.texture_size
+                scale_down_color: True
+                flat_color: app.theme.text_primary
+                on_release: app.open_filechooser(callback=app.ceed_data.get_filebrowser_callback(app.ceed_data.write_yaml_config, overwrite=True), mode='save', target=app.ceed_data.root_path, title='Export yaml file', filters=['*.yml', '*.yaml', '*.*'])
+            FlatButton:
+                text: 'Export stages to YAML file'
+                size_hint: None, None
+                size: self.texture_size
+                scale_down_color: True
+                flat_color: app.theme.text_primary
+                on_release: app.open_filechooser(callback=app.ceed_data.get_filebrowser_callback(app.ceed_data.write_yaml_config, overwrite=True, stages_only=True), mode='save', target=app.ceed_data.root_path, title='Export yaml file', filters=['*.yml', '*.yaml', '*.*'])
         FlatImageButton:
             scale_down_color: True
             source: 'calendar-text-outline.png'
