@@ -788,7 +788,7 @@ class CeedDataReader(object):
             canvas_size=(0, 0),
             canvas_size_hint=(1, 1), projector_pos=(0, 0),
             projector_pos_hint=(None, None), paint_funcs=(),
-            stimulation_transparency=1., lum=1., speed=1.):
+            stimulation_transparency=1., lum=1., speed=1., hidden_shapes=None):
         from kivy.graphics import (
             Canvas, Translate, Fbo, ClearColor, ClearBuffers, Scale)
         from kivy.core.window import Window
@@ -863,11 +863,21 @@ class CeedDataReader(object):
         pbar = tqdm(
             total=(end - 1 - start) / rate, file=sys.stdout, unit='second',
             unit_scale=1)
+
+        # all shapes listed in intensities must be in shape_views. However,
+        # we don't want to show shapes not given values in intensities or if
+        # they are to be hidden
+        unused_shapes = set(shape_views) - set(intensities)
+        unused_shapes.update(set(hidden_shapes or []))
+        for name in unused_shapes:
+            if name in shape_views:
+                shape_views[name].rgba = 0, 0, 0, 0
+
         for i in range(start, end):
             pbar.update(1 / rate)
             for name, intensity in intensities.items():
                 r, g, b, a = intensity[i]
-                if not r and not g and not b:
+                if name in unused_shapes:
                     a = 0
                 shape_views[name].rgba = \
                     r * lum, g * lum, b * lum, a * stimulation_transparency
