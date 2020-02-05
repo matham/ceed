@@ -1,3 +1,5 @@
+# Icon made by https://www.flaticon.com/authors/freepik from
+# https://www.flaticon.com/
 
 if __name__ == '__main__':
     import os

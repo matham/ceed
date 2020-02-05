@@ -200,12 +200,6 @@ class CeedDataWriterBase(EventDispatcher):
                 self.create_file('')
             return True
 
-    def create_open_file(self, filename):
-        if exists(filename):
-            self.open_file(filename)
-        else:
-            self.create_file(filename)
-
     def create_file(self, filename, overwrite=False):
         if exists(filename) and not overwrite:
             raise ValueError('{} already exists'.format(filename))
