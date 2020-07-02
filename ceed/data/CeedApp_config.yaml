@@ -1,6 +1,10 @@
-app: {inspect: false}
-data: {backup_interval: 5.0, compression: Auto, root_path: /home/cpl}
+data:
+  backup_interval: 5.0
+  compression: Auto
+  root_path: ''
 function: {}
+inspect: false
+last_directory: '~'
 player:
   ffmpeg:
     dshow_filename: ''
@@ -9,26 +13,47 @@ player:
     dshow_true_filename: ''
     file_fmt: ''
     icodec: ''
-    metadata_play: ['', 0, 0, 0]
-    metadata_play_used: ['', 0, 0, 0]
+    metadata_play:
+    - ''
+    - 0
+    - 0
+    - 0
+    metadata_play_used:
+    - ''
+    - 0
+    - 0
+    - 0
     play_filename: ''
     use_dshow: true
   image_file_recorder:
     compression: raw
     extension: tiff
-    metadata_record: ['', 0, 0, 0]
-    record_directory: /home/cpl
+    metadata_record:
+    - ''
+    - 0
+    - 0
+    - 0
+    record_directory: ''
     record_prefix: image_
   network_client:
-    metadata_play: ['', 0, 0, 0]
-    metadata_play_used: ['', 0, 0, 0]
+    metadata_play:
+    - ''
+    - 0
+    - 0
+    - 0
+    metadata_play_used:
+    - ''
+    - 0
+    - 0
+    - 0
     port: 0
     server: ''
     timeout: 0.01
   player_name: ffmpeg
   ptgray:
     brightness: {}
-    cam_config_opts: {}
+    cam_config_opts:
+      fmt: yuv422
     exposure: {}
     frame_rate: {}
     gain: {}
@@ -36,8 +61,16 @@ player:
     hue: {}
     ip: ''
     iris: {}
-    metadata_play: ['', 0, 0, 0]
-    metadata_play_used: ['', 0, 0, 0]
+    metadata_play:
+    - ''
+    - 0
+    - 0
+    - 0
+    metadata_play_used:
+    - ''
+    - 0
+    - 0
+    - 0
     mirror: false
     pan: {}
     saturation: {}
@@ -47,56 +80,115 @@ player:
     tilt: {}
   thor:
     binning_x: 0
-    binning_x_range: [0, 0]
+    binning_x_range:
+    - 0
+    - 0
     binning_y: 0
-    binning_y_range: [0, 0]
+    binning_y_range:
+    - 0
+    - 0
     black_level: 0
-    black_level_range: [0, 100]
-    color_gain: [1, 1, 1]
+    black_level_range:
+    - 0
+    - 100
+    color_gain:
+    - 1
+    - 1
+    - 1
     exposure_ms: 0
-    exposure_range: [0, 100]
+    exposure_range:
+    - 0
+    - 100
     frame_queue_size: 1
     freq: 20 MHz
     gain: 0
-    gain_range: [0, 100]
-    metadata_play: ['', 0, 0, 0]
-    metadata_play_used: ['', 0, 0, 0]
+    gain_range:
+    - 0
+    - 100
+    metadata_play:
+    - ''
+    - 0
+    - 0
+    - 0
+    metadata_play_used:
+    - ''
+    - 0
+    - 0
+    - 0
     num_queued_frames: 0
     roi_height: 0
     roi_width: 0
     roi_x: 0
     roi_y: 0
-    sensor_size: [0, 0]
+    sensor_size:
+    - 0
+    - 0
     serial: ''
     serials: []
-    supported_freqs: [20 MHz]
-    supported_taps: ['1']
-    supported_triggers: [SW Trigger, HW Trigger]
+    supported_freqs:
+    - 20 MHz
+    supported_taps:
+    - '1'
+    supported_triggers:
+    - SW Trigger
+    - HW Trigger
     supports_color: false
     taps: '1'
-    trigger_count: 1
+    trigger_count: 0
     trigger_type: SW Trigger
   video_recorder:
     estimate_record_rate: false
-    metadata_record: ['', 0, 0, 0]
-    record_directory: /home/cpl
+    metadata_record:
+    - ''
+    - 0
+    - 0
+    - 0
+    record_directory: E:\msys64\home\matte
     record_fname: video{}.mkv
     record_fname_count: 0
 serializer:
   clock_idx: 2
-  count_indices: [19, 20]
+  count_indices:
+  - 19
+  - 20
   counter_bit_width: 32
-  projector_to_aquisition_map: {2: 0, 3: 1, 4: 2, 10: 3, 11: 4, 12: 5, 18: 6, 19: 7,
-    20: 8}
-  short_count_indices: [3, 4, 10, 11, 12, 18]
+  projector_to_aquisition_map:
+    2: 0
+    3: 1
+    4: 2
+    10: 3
+    11: 4
+    12: 5
+    18: 6
+    19: 7
+    20: 8
+  short_count_indices:
+  - 3
+  - 4
+  - 10
+  - 11
+  - 12
+  - 18
 view:
   LED_mode: RGB
   LED_mode_idle: RGB
   cam_transform:
-  - [1.0, 0.0, 0.0, 0.0]
-  - [0.0, 1.0, 0.0, 0.0]
-  - [0.0, 0.0, 1.0, 0.0]
-  - [0.0, 0.0, 0.0, 1.0]
+  - - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  - - 0.0
+    - 1.0
+    - 0.0
+    - 0.0
+  - - 0.0
+    - 0.0
+    - 1.0
+    - 0.0
+  - - 0.0
+    - 0.0
+    - 0.0
+    - 1.0
   flip_camera: false
   flip_projector: true
   frame_rate: 120.0
@@ -106,10 +198,22 @@ view:
   mea_num_rows: 12
   mea_pitch: 20
   mea_transform:
-  - [1.0, 0.0, 0.0, 0.0]
-  - [0.0, 1.0, 0.0, 0.0]
-  - [0.0, 0.0, 1.0, 0.0]
-  - [0.0, 0.0, 0.0, 1.0]
+  - - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  - - 0.0
+    - 1.0
+    - 0.0
+    - 0.0
+  - - 0.0
+    - 0.0
+    - 1.0
+    - 0.0
+  - - 0.0
+    - 0.0
+    - 0.0
+    - 1.0
   mirror_mea: true
   output_count: true
   pad_to_stage_handshake: true

@@ -30,7 +30,14 @@ __all__ = ('CeedPlayer', )
 
 class CeedPlayer(EventDispatcher):
 
-    __config_props__ = ('player_name', )
+    _config_props_ = ('player_name', )
+
+    _config_children_ = {
+        'ffmpeg': 'ffmpeg_player', 'ptgray': 'ptgray_player',
+        'thor': 'thor_player', 'network_client': 'client_player',
+        'image_file_recorder': 'image_file_recorder',
+        'video_recorder': 'video_recorder',
+    }
 
     ffmpeg_player: FFmpegPlayer = None
 
@@ -85,29 +92,6 @@ class CeedPlayer(EventDispatcher):
     disk_used_percent = NumericProperty(0)
     '''Percent of disk usage space.
     '''
-
-    @classmethod
-    def get_config_classes(cls):
-        d = {}
-        d['ffmpeg'] = FFmpegPlayer
-        d['ptgray'] = PTGrayPlayer
-        d['thor'] = ThorCamPlayer
-        d['network_client'] = RemoteVideoPlayer
-
-        d['image_file_recorder'] = ImageFileRecorder
-        d['video_recorder'] = VideoRecorder
-        return d
-
-    def get_config_instances(self):
-        d = {}
-        d['ffmpeg'] = self.ffmpeg_player
-        d['ptgray'] = self.ptgray_player
-        d['thor'] = self.thor_player
-        d['network_client'] = self.client_player
-
-        d['image_file_recorder'] = self.image_file_recorder
-        d['video_recorder'] = self.video_recorder
-        return d
 
     def __init__(self, open_player_thread=True, **kwargs):
         super(CeedPlayer, self).__init__(**kwargs)

@@ -738,7 +738,7 @@ class CeedStage(EventDispatcher):
         d['functions'] = [
             f.get_state(recurse=True, expand_ref=expand_ref)
             for f in self.functions]
-        d['shapes'] = [s.get_config_properties() for s in self.shapes]
+        d['shapes'] = [s.get_config() for s in self.shapes]
 
         return d
 
@@ -799,7 +799,7 @@ class CeedStage(EventDispatcher):
                     raise ValueError('Could not find shape {}'.format(name))
 
             stage_shape = self.add_shape(shape)
-            stage_shape.apply_config_properties(item)
+            stage_shape.apply_config(**item)
 
     def __deepcopy__(self, memo):
         obj = self.__class__(
@@ -1199,22 +1199,18 @@ class StageShape(EventDispatcher):
     def _update_name(self, *largs):
         self.name = self.shape.name
 
-    def get_config_properties(self) -> Dict:
+    def get_config(self) -> Dict:
         """(internal) used by the config system to get the config data of the
         shape.
         """
         return {'keep_dark': self.keep_dark, 'name': self.name}
 
-    def apply_config_properties(self, settings: Dict) -> set:
+    def apply_config(self, **kwargs):
         """(internal) used by the config system to set the config data
         of the shape.
         """
-        used = set()
-        for k in ('keep_dark', ):
-            if k in settings:
-                setattr(self, k, settings[k])
-                used.add(k)
-        return used
+        if 'keep_dark' in kwargs:
+            self.keep_dark = kwargs['keep_dark']
 
 
 def remove_shapes_upon_deletion(

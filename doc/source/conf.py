@@ -16,7 +16,7 @@ import os
 import kivy  # this sets the doc include env variable
 import ceed
 from ceed.main import CeedApp
-from base_kivy_app.config import create_doc_listener, write_config_attrs_rst
+from base_kivy_app.config import create_doc_listener, write_config_props_rst
 
 # -- Project information -----------------------------------------------------
 
@@ -71,14 +71,13 @@ html_static_path = ['_static']
 
 
 def setup(app):
-    fname = os.environ.get('BASEKIVYAPP_CONFIG_DOC_PATH', 'config_attrs.json')
-    create_doc_listener(app, ceed, fname)
-    if CeedApp.get_running_app() is not None:
-        obj = CeedApp.get_running_app()
-    else:
-        obj = CeedApp
+    yaml_filename = os.environ.get(
+        'TREE_CONFIG_DOC_YAML_PATH', 'config_prop_docs.yaml')
+    rst_filename = os.environ.get('TREE_CONFIG_DOC_RST_PATH', 'config.rst')
+    create_doc_listener(app, 'ceed', yaml_filename)
 
     app.connect(
         'build-finished', partial(
-            write_config_attrs_rst, obj, ceed, filename=fname)
+            write_config_props_rst, CeedApp, 'Ceed',
+            filename=yaml_filename, rst_filename=rst_filename)
     )

@@ -57,34 +57,22 @@ class CeedViewApp(BaseKivyApp):
     '''The app which runs the GUI.
     '''
 
-    view_controller = None
+    _config_children_ = {
+        'view': 'view_controller', 'data': 'ceed_data',
+        'serializer': 'data_serializer', 'function': 'function_factory',
+    }
 
-    data_serializer = None
+    view_controller: ViewSideViewControllerBase = None
 
-    function_factory = None
+    data_serializer: DataSerializerBase = None
 
-    stage_factory = None
+    function_factory: FunctionFactoryBase = None
 
-    shape_factory = None
+    stage_factory: StageFactoryBase = None
 
-    ceed_data = None
+    shape_factory: CeedPaintCanvasBehavior = None
 
-    @classmethod
-    def get_config_classes(cls):
-        d = super(CeedViewApp, cls).get_config_classes()
-        d['view'] = ViewSideViewControllerBase
-        d['data'] = CeedDataWriterBase
-        d['serializer'] = DataSerializerBase
-        d['function'] = FunctionFactoryBase
-        return d
-
-    def get_config_instances(self):
-        d = super(CeedViewApp, self).get_config_instances()
-        d['view'] = self.view_controller
-        d['data'] = self.ceed_data
-        d['serializer'] = self.data_serializer
-        d['function'] = self.function_factory
-        return d
+    ceed_data: CeedDataWriterBase = None
 
     def __init__(self, **kwargs):
         self.view_controller = ViewSideViewControllerBase()

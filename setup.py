@@ -24,10 +24,13 @@ setup(
     install_requires=[
         'ffpyplayer', 'base_kivy_app', 'kivy', 'numpy', 'scikit-image',
         'psutil', 'nixio', 'tqdm', 'scipy', 'kivy_garden.graph~=0.4.0',
-        'kivy_garden.collider~=0.1.0', 'pytest',
-        'pytest-trio', 'McsPyDataTools', 'kivy_garden.drag_n_drop~=0.1.0',
-        'pytest-cov', 'kivy_garden.painter~=0.2.0', 'trio', 'sphinx-rtd-theme',
-        'cpl_media'],
+        'kivy_garden.collider~=0.1.0',
+        'McsPyDataTools', 'kivy_garden.drag_n_drop~=0.1.0',
+        'kivy_garden.painter~=0.2.0', 'trio', 'cpl_media', 'tree-config'],
+    extras_require={
+        'dev': ['pytest>=3.6', 'pytest-cov', 'flake8', 'sphinx-rtd-theme',
+                'coveralls', 'trio', 'pytest-trio', 'pyinstaller'],
+    },
     package_data={'ceed': ['data/*', '*.kv']},
     entry_points={'console_scripts': ['ceed=ceed.main:run_app']},
 )

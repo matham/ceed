@@ -20,6 +20,7 @@ import struct
 import re
 from ffpyplayer.pic import Image
 import time
+from tree_config import get_config_children_names
 
 from kivy.event import EventDispatcher
 from kivy.properties import StringProperty, NumericProperty, ListProperty, \
@@ -36,7 +37,7 @@ __all__ = ('CeedDataWriterBase', 'DataSerializerBase', 'num_ticks_handshake')
 
 class CeedDataWriterBase(EventDispatcher):
 
-    __config_props__ = ('root_path', 'backup_interval', 'compression')
+    _config_props_ = ('root_path', 'backup_interval', 'compression')
 
     root_path = StringProperty('')
 
@@ -73,7 +74,7 @@ class CeedDataWriterBase(EventDispatcher):
     _experiment_pat = re.compile('^experiment([0-9]+)$')
 
     _mea_trans_pat = re.compile(
-        '.+(mea_transform:[ \n\\-\\[\\],0-9.]+\\]).+', flags=re.DOTALL)
+        '.+(mea_transform:[ \n\\-\\[\\],0-9.]+\\]?\\n).+', flags=re.DOTALL)
 
     backup_event = None
 
@@ -127,7 +128,7 @@ class CeedDataWriterBase(EventDispatcher):
                 requires_app_settings or 'app_settings' in data):
             app_settings = data['app_settings']
             # filter classes that are not of this app
-            classes = app.get_config_instances()
+            classes = get_config_children_names(app)
             app.app_settings = {cls: app_settings[cls] for cls in classes}
             app.apply_app_settings()
 
@@ -830,7 +831,7 @@ class CeedDataWriterBase(EventDispatcher):
 
 class DataSerializerBase(EventDispatcher):
 
-    __config_props__ = (
+    _config_props_ = (
         'counter_bit_width', 'clock_idx', 'count_indices',
         'short_count_indices', 'projector_to_aquisition_map')
 

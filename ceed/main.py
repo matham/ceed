@@ -49,7 +49,13 @@ class CeedApp(BaseKivyApp):
     '''The app which runs the GUI.
     '''
 
-    __config_props__ = ('last_directory', )
+    _config_props_ = ('last_directory', )
+
+    _config_children_ = {
+        'function': 'function_factory', 'view': 'view_controller',
+        'data': 'ceed_data', 'serializer': 'data_serializer',
+        'player': 'player',
+    }
 
     last_directory = StringProperty('~')
 
@@ -100,25 +106,6 @@ class CeedApp(BaseKivyApp):
     central_display = ObjectProperty(None, rebind=True)  # type: BufferImage
 
     _processing_error = False
-
-    @classmethod
-    def get_config_classes(cls):
-        d = super(CeedApp, cls).get_config_classes()
-        d['function'] = FunctionFactoryBase
-        d['view'] = ControllerSideViewControllerBase
-        d['data'] = CeedDataWriterBase
-        d['serializer'] = DataSerializerBase
-        d['player'] = CeedPlayer
-        return d
-
-    def get_config_instances(self):
-        d = super(CeedApp, self).get_config_instances()
-        d['function'] = self.function_factory
-        d['view'] = self.view_controller
-        d['data'] = self.ceed_data
-        d['serializer'] = self.data_serializer
-        d['player'] = self.player
-        return d
 
     def __init__(self, open_player_thread=True, **kwargs):
         self.drag_controller = CeedDragNDrop()

@@ -21,6 +21,7 @@ except ImportError:
     from queue import Empty
 import uuid
 from ffpyplayer.pic import Image, SWScale
+from tree_config import get_config_children_names
 
 from kivy.event import EventDispatcher
 from kivy.properties import NumericProperty, StringProperty, BooleanProperty, \
@@ -87,7 +88,7 @@ class ViewControllerBase(EventDispatcher):
             Triggered whenever a configuration option of the class is changed.
     '''
 
-    __config_props__ = (
+    _config_props_ = (
         'screen_width', 'screen_height', 'frame_rate',
         'use_software_frame_rate', 'output_count', 'screen_offset_x',
         'fullscreen', 'video_mode', 'LED_mode', 'LED_mode_idle',
@@ -298,7 +299,7 @@ class ViewControllerBase(EventDispatcher):
 
     def __init__(self, **kwargs):
         super(ViewControllerBase, self).__init__(**kwargs)
-        for name in ViewControllerBase.__config_props__:
+        for name in ViewControllerBase._config_props_:
             self.fbind(name, self.dispatch, 'on_changed')
         self.propixx_lib = libdpx is not None
         self.shape_views = []
@@ -653,7 +654,7 @@ def view_process_enter(read, write, settings, app_settings):
     try:
         app = CeedViewApp()
 
-        classes = app.get_config_instances()
+        classes = get_config_children_names(app)
         app.app_settings = {cls: app_settings[cls] for cls in classes}
         app.apply_app_settings()
 
@@ -818,7 +819,7 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         App.get_running_app().dump_app_settings_to_file()
         App.get_running_app().load_app_settings_from_file()
         settings = {name: getattr(self, name)
-                    for name in ViewControllerBase.__config_props__}
+                    for name in ViewControllerBase._config_props_}
 
         ctx = mp.get_context('spawn') if not PY2 else mp
         r = self.queue_view_read = ctx.Queue()

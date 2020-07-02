@@ -506,8 +506,6 @@ class FunctionFactoryBase(EventDispatcher):
             from the factory or if a class is registered.
     """
 
-    __config_props__ = ()
-
     __events__ = ('on_changed', )
 
     funcs_cls: Dict[str, Type['FuncBase']] = {}
