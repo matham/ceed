@@ -68,31 +68,31 @@ class CeedApp(BaseKivyApp):
     by this app class. That class is described in ``base_kivy_app/graphics.kv``.
     '''
 
-    function_factory = None  # type: FunctionFactoryBase
+    function_factory: FunctionFactoryBase = None
 
-    player = None  # type: CeedPlayer
+    player: CeedPlayer = None
 
-    view_controller = None  # type: ControllerSideViewControllerBase
+    view_controller: ControllerSideViewControllerBase = None
 
-    ceed_data = None  # type: CeedDataWriterBase
+    ceed_data: CeedDataWriterBase = None
 
-    data_serializer = None  # type: DataSerializerBase
+    data_serializer: DataSerializerBase = None
 
-    stage_factory = None  # type: StageFactoryBase
+    stage_factory: StageFactoryBase = None
 
-    shape_factory = ObjectProperty(None, rebind=True)  # type: CeedPainter
+    shape_factory: CeedPainter = ObjectProperty(None, rebind=True)
 
-    # remote_player = None  # type: CeedRemotePlayer
+    # remote_player: CeedRemotePlayer = None
 
     agreed_discard = False
 
-    drag_controller = ObjectProperty(None, rebind=True)  # type: CeedDragNDrop
+    drag_controller: CeedDragNDrop = ObjectProperty(None, rebind=True)
 
-    stages_container = ObjectProperty(None, rebind=True)  # type: StageList
+    stages_container: StageList = ObjectProperty(None, rebind=True)
 
-    funcs_container = ObjectProperty(None, rebind=True)  # type: FuncList
+    funcs_container: FuncList = ObjectProperty(None, rebind=True)
 
-    shapes_container = ObjectProperty(None, rebind=True)  # type: ShapeList
+    shapes_container: ShapeList = ObjectProperty(None, rebind=True)
 
     shape_groups_container = ObjectProperty(
         None, rebind=True)  # type: ShapeGroupList
@@ -101,9 +101,9 @@ class CeedApp(BaseKivyApp):
     """PinnedGraph into which the stage graph may be pinned.
     """
 
-    mea_align_widget = ObjectProperty(None, rebind=True)  # type: MEAArrayAlign
+    mea_align_widget: MEAArrayAlign = ObjectProperty(None, rebind=True)
 
-    central_display = ObjectProperty(None, rebind=True)  # type: BufferImage
+    central_display: BufferImage = ObjectProperty(None, rebind=True)
 
     _processing_error = False
 

@@ -21,7 +21,7 @@ __all__ = (
 
 class ExperimentLogWidget(BoxLayout):
 
-    data_storage = None  # type: CeedDataWriterBase
+    data_storage: CeedDataWriterBase = None
 
     num_experiments = NumericProperty(0)
 
