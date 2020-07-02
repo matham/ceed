@@ -10,6 +10,7 @@ async def test_change_config_write(ceed_app: CeedTestApp):
     ceed_app.view_controller.mirror_mea = False
     assert not ceed_app.view_controller.mirror_mea
 
+
 @pytest.mark.parametrize(
     "ceed_app", [{'persist_config': 'base1_'}, ], indirect=True)
 async def test_change_config_read(ceed_app: CeedTestApp):

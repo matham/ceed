@@ -19,6 +19,6 @@ To install https://matham.github.io/ceed/installation.html
     :target: https://coveralls.io/github/matham/ceed?branch=master
     :alt: Coverage status
 
-.. image:: https://github.com/matham/ceed/workflows/.github/workflows/pythonapp.yml/badge.svg
+.. image:: https://github.com/matham/ceed/workflows/Python%20application/badge.svg
     :target: https://github.com/matham/ceed/actions
     :alt: Github action status

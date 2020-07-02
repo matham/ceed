@@ -5,7 +5,7 @@ with open('README.rst') as fh:
     long_description = fh.read()
 
 setup(
-    name='Ceed',
+    name='ceed',
     version=ceed.__version__,
     author='Matthew Einhorn',
     author_email='moiein2000@gmail.com',
