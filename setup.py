@@ -23,7 +23,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         'ffpyplayer', 'base_kivy_app', 'kivy', 'numpy', 'scikit-image',
-        'psutil', 'nixio', 'tqdm', 'scipy', 'kivy_garden.graph~=0.4.0',
+        'psutil', 'nixio==1.4.9', 'tqdm', 'scipy', 'kivy_garden.graph~=0.4.0',
         'kivy_garden.collider~=0.1.0',
         'McsPyDataTools', 'kivy_garden.drag_n_drop~=0.1.0',
         'kivy_garden.painter~=0.2.0', 'trio', 'cpl_media', 'tree-config'],
