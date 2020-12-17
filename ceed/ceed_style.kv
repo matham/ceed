@@ -93,11 +93,13 @@
     spacing: '10dp'
     size_hint_y: None
     logger: None
-    height: 2 * text.line_height
-    TextInput:
+    height: 3 * text.line_height
+    FlatTextInput:
         id: text
         hint_text: "Notes"
-    Button:
+    FlatButton:
+        flat_color: app.theme.text_primary
+        flat_background_color: app.theme.accent
         size_hint_x: None
         width: self.texture_size[0]
         padding: '5dp', '5dp'
