@@ -3,7 +3,7 @@ Ceed
 
 Ceed is an in vitro experiment that stimulates brain slices and records their activity.
 
-For more information: http://matham.github.io/ceed/index.html
+For more information: https://matham.github.io/ceed/index.html
 
 To install https://matham.github.io/ceed/installation.html
 

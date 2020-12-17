@@ -9,7 +9,7 @@ setup(
     version=ceed.__version__,
     author='Matthew Einhorn',
     author_email='moiein2000@gmail.com',
-    url='http://matham.github.io/ceed/',
+    url='https://matham.github.io/ceed/',
     license='MIT',
     description='Slice stimulation and recordings.',
     long_description=long_description,
