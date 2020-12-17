@@ -129,7 +129,7 @@ class CeedViewApp(BaseKivyApp):
         self.root.focus = True
         Window.show_cursor = False
 
-    def _ask_close(self, *largs, **kwargs):
+    def ask_cannot_close(self, *largs, **kwargs):
         return False
 
     def handle_exception(self, exception, exc_info=None, event=None, obj=None,
