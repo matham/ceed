@@ -10,7 +10,7 @@ from kivy.app import App
 from kivy.properties import NumericProperty, BooleanProperty, ObjectProperty, \
     StringProperty, ListProperty
 
-from base_kivy_app.utils import yaml_dumps
+from more_kivy_app.utils import yaml_dumps
 
 from ceed.graphics import ShowMoreBehavior
 from ceed.storage.controller import CeedDataWriterBase

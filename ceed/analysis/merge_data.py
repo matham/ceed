@@ -17,7 +17,7 @@ from McsPy import ureg
 import McsPy.McsData
 import numpy as np
 import nixio as nix
-from base_kivy_app.utils import yaml_dumps, yaml_loads
+from more_kivy_app.utils import yaml_dumps, yaml_loads
 from ceed.storage.controller import num_ticks_handshake
 
 __all__ = ('CeedMCSDataMerger', 'DigitalDataStore', 'MCSDigitalData',

@@ -16,7 +16,7 @@ import os
 import kivy  # this sets the doc include env variable
 import ceed
 from ceed.main import CeedApp
-from base_kivy_app.config import create_doc_listener, write_config_props_rst
+from more_kivy_app.config import create_doc_listener, write_config_props_rst
 
 # -- Project information -----------------------------------------------------
 

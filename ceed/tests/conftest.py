@@ -119,11 +119,11 @@ async def ceed_app(
     if params.get('persist_config'):
         base = str(tmp_path_factory.getbasetemp() / params['persist_config'])
         app = CeedTestApp(
-            json_config_path=base + 'config.yaml',
+            yaml_config_path=base + 'config.yaml',
             ini_file=base + 'config.ini', open_player_thread=False)
     else:
         app = CeedTestApp(
-            json_config_path=temp_file('config.yaml'),
+            yaml_config_path=temp_file('config.yaml'),
             ini_file=temp_file('config.ini'), open_player_thread=False)
     app.ceed_data.root_path = str(tmp_path)
 

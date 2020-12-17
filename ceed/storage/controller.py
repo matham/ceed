@@ -29,8 +29,8 @@ from kivy.app import App
 from kivy.clock import Clock
 from kivy.logger import Logger
 
-from base_kivy_app.app import app_error
-from base_kivy_app.utils import yaml_dumps, yaml_loads
+from more_kivy_app.app import app_error
+from more_kivy_app.utils import yaml_dumps, yaml_loads
 
 __all__ = ('CeedDataWriterBase', 'DataSerializerBase', 'num_ticks_handshake')
 

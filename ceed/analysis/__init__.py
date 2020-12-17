@@ -14,8 +14,8 @@ import itertools
 import nixio as nix
 from numpy.lib.format import open_memmap
 
-from base_kivy_app.utils import yaml_loads
-from base_kivy_app.config import apply_config
+from more_kivy_app.utils import yaml_loads
+from more_kivy_app.config import apply_config
 from cpl_media.recorder import BaseRecorder
 from ffpyplayer.pic import Image, SWScale
 from ffpyplayer.tools import get_best_pix_fmt

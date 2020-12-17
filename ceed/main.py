@@ -11,7 +11,7 @@ import time
 
 from base_kivy_app.app import BaseKivyApp, run_app as run_cpl_app
 from base_kivy_app.graphics import HighightButtonBehavior, BufferImage
-from base_kivy_app.app import report_exception_in_app
+from more_kivy_app.app import report_exception_in_app
 import cpl_media
 
 from kivy.lang import Builder
