@@ -469,7 +469,7 @@ class EllipseShapeP2(EllipseShape):
 
 class PolygonShapeP1(PolygonShape):
 
-    points = [0, 0, 300, 0, 300, 300, 0, 300]
+    points = [10, 10, 300, 10, 300, 300, 10, 300]
 
     center = [150, 150]
 
@@ -481,14 +481,14 @@ class PolygonShapeP1(PolygonShape):
 
     name = 'happy shape'
 
-    area = 300 * 300
+    area = 290 * 290
 
     drag_point = test_points[:2]
 
 
 class PolygonShapeP2(PolygonShape):
 
-    points = [0, 400, 300, 400, 300, 700, 0, 700]
+    points = [10, 400, 300, 400, 300, 700, 10, 700]
 
     center = [150, 550]
 
@@ -500,14 +500,14 @@ class PolygonShapeP2(PolygonShape):
 
     name = 'sad shape'
 
-    area = 300 * 300
+    area = 290 * 300
 
     drag_point = test_points[:2]
 
 
 class FreeformPolygonShapeP1(FreeofrmPolygonShape):
 
-    points = [900, 0, 1200, 0, 1200, 300, 900, 300]
+    points = [900, 10, 1200, 10, 1200, 300, 900, 300]
 
     center = [1050, 150]
 
@@ -519,7 +519,7 @@ class FreeformPolygonShapeP1(FreeofrmPolygonShape):
 
     name = 'eating shape'
 
-    area = 300 * 300
+    area = 290 * 300
 
     drag_point = test_points[:2]
 
