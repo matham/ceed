@@ -523,8 +523,6 @@ async def test_shape_single_select_widget(
     assert painter.shapes == [shape1.shape, shape2.shape]
     shape1.check_shape_visible(True)
     shape2.check_shape_visible(True)
-    noselect1 = shape1.get_mean_visible_pixel_intensity()
-    noselect2 = shape2.get_mean_visible_pixel_intensity()
     assert not shape1.shape.selected
     assert not shape1.shape.widget.selected
     assert not shape2.shape.selected
@@ -549,9 +547,8 @@ async def test_shape_single_select_widget(
     assert shape1.shape.widget.selected
     assert not shape2.shape.selected
     assert not shape2.shape.widget.selected
-    assert noselect1 * 1.35 < shape1.get_mean_visible_pixel_intensity()
-    assert noselect2 * .99 < shape2.get_mean_visible_pixel_intensity() \
-       < noselect2 * 1.01
+    shape1.assert_shape_visible_selected()
+    shape2.assert_shape_visible_not_selected()
 
     # select second shape
     async for _ in paint_app.do_touch_down_up(widget=shape2_widget):
@@ -561,9 +558,8 @@ async def test_shape_single_select_widget(
 
     shape1.check_shape_visible(True)
     shape2.check_shape_visible(True)
-    assert noselect1 * .99 < shape1.get_mean_visible_pixel_intensity() < \
-           noselect1 * 1.01
-    assert noselect2 * 1.35 < shape2.get_mean_visible_pixel_intensity()
+    shape1.assert_shape_visible_not_selected()
+    shape2.assert_shape_visible_selected()
     assert not shape1.shape.selected
     assert not shape1.shape.widget.selected
     assert shape2.shape.selected
@@ -576,9 +572,8 @@ async def test_shape_single_select_widget(
 
     shape1.check_shape_visible(True)
     shape2.check_shape_visible(True)
-    assert noselect1 * 1.35 < shape1.get_mean_visible_pixel_intensity()
-    assert noselect2 * .99 < shape2.get_mean_visible_pixel_intensity() < \
-           noselect2 * 1.01
+    shape1.assert_shape_visible_selected()
+    shape2.assert_shape_visible_not_selected()
     assert shape1.shape.selected
     assert shape1.shape.widget.selected
     assert not shape2.shape.selected
@@ -591,10 +586,8 @@ async def test_shape_single_select_widget(
 
     shape1.check_shape_visible(True)
     shape2.check_shape_visible(True)
-    assert noselect1 * .99 < shape1.get_mean_visible_pixel_intensity() < \
-           noselect1 * 1.01
-    assert noselect2 * .99 < shape2.get_mean_visible_pixel_intensity() < \
-           noselect2 * 1.01
+    shape1.assert_shape_visible_not_selected()
+    shape2.assert_shape_visible_not_selected()
     assert not shape1.shape.selected
     assert not shape1.shape.widget.selected
     assert not shape2.shape.selected
@@ -611,8 +604,6 @@ async def test_shape_single_select_shape(
     assert painter.shapes == [shape1.shape, shape2.shape]
     shape1.check_shape_visible(True)
     shape2.check_shape_visible(True)
-    noselect1 = shape1.get_mean_visible_pixel_intensity()
-    noselect2 = shape2.get_mean_visible_pixel_intensity()
     assert not shape1.shape.selected
     assert not shape1.shape.widget.selected
     assert not shape2.shape.selected
@@ -631,9 +622,8 @@ async def test_shape_single_select_shape(
 
     shape1.check_shape_visible(True)
     shape2.check_shape_visible(True)
-    assert noselect1 * 1.35 < shape1.get_mean_visible_pixel_intensity()
-    assert noselect2 * .99 < shape2.get_mean_visible_pixel_intensity() < \
-           noselect2 * 1.01
+    shape1.assert_shape_visible_selected()
+    shape2.assert_shape_visible_not_selected()
     assert shape1.shape.selected
     assert shape1.shape.widget.selected
     assert not shape2.shape.selected
@@ -647,9 +637,8 @@ async def test_shape_single_select_shape(
 
     shape1.check_shape_visible(True)
     shape2.check_shape_visible(True)
-    assert noselect1 * .99 < shape1.get_mean_visible_pixel_intensity() < \
-           noselect1 * 1.01
-    assert noselect2 * 1.35 < shape2.get_mean_visible_pixel_intensity()
+    shape1.assert_shape_visible_not_selected()
+    shape2.assert_shape_visible_selected()
     assert not shape1.shape.selected
     assert not shape1.shape.widget.selected
     assert shape2.shape.selected
@@ -663,9 +652,8 @@ async def test_shape_single_select_shape(
 
     shape1.check_shape_visible(True)
     shape2.check_shape_visible(True)
-    assert noselect1 * 1.35 < shape1.get_mean_visible_pixel_intensity()
-    assert noselect2 * .99 < shape2.get_mean_visible_pixel_intensity() < \
-           noselect2 * 1.01
+    shape1.assert_shape_visible_selected()
+    shape2.assert_shape_visible_not_selected()
     assert shape1.shape.selected
     assert shape1.shape.widget.selected
     assert not shape2.shape.selected
@@ -679,9 +667,8 @@ async def test_shape_single_select_shape(
 
     shape1.check_shape_visible(True)
     shape2.check_shape_visible(True)
-    assert noselect1 * 1.35 < shape1.get_mean_visible_pixel_intensity()
-    assert noselect2 * .99 < shape2.get_mean_visible_pixel_intensity() < \
-           noselect2 * 1.01
+    shape1.assert_shape_visible_selected()
+    shape2.assert_shape_visible_not_selected()
     assert shape1.shape.selected
     assert shape1.shape.widget.selected
     assert not shape2.shape.selected
@@ -698,8 +685,6 @@ async def test_shape_multiselect_widget(
     assert painter.shapes == [shape1.shape, shape2.shape]
     shape1.check_shape_visible(True)
     shape2.check_shape_visible(True)
-    noselect1 = shape1.get_mean_visible_pixel_intensity()
-    noselect2 = shape2.get_mean_visible_pixel_intensity()
     assert not shape1.shape.selected
     assert not shape1.shape.widget.selected
     assert not shape2.shape.selected
@@ -725,9 +710,8 @@ async def test_shape_multiselect_widget(
 
     shape1.check_shape_visible(True)
     shape2.check_shape_visible(True)
-    assert noselect1 * 1.35 < shape1.get_mean_visible_pixel_intensity()
-    assert noselect2 * .99 < shape2.get_mean_visible_pixel_intensity() < \
-           noselect2 * 1.01
+    shape1.assert_shape_visible_selected()
+    shape2.assert_shape_visible_not_selected()
     assert shape1.shape.selected
     assert shape1.shape.widget.selected
     assert not shape2.shape.selected
@@ -740,8 +724,8 @@ async def test_shape_multiselect_widget(
 
     shape1.check_shape_visible(True)
     shape2.check_shape_visible(True)
-    assert noselect1 * 1.35 < shape1.get_mean_visible_pixel_intensity()
-    assert noselect2 * 1.35 < shape2.get_mean_visible_pixel_intensity()
+    shape1.assert_shape_visible_selected()
+    shape2.assert_shape_visible_selected()
     assert shape1.shape.selected
     assert shape1.shape.widget.selected
     assert shape2.shape.selected
@@ -754,9 +738,8 @@ async def test_shape_multiselect_widget(
 
     shape1.check_shape_visible(True)
     shape2.check_shape_visible(True)
-    assert noselect1 * .99 < shape1.get_mean_visible_pixel_intensity() < \
-           noselect1 * 1.01
-    assert noselect2 * 1.35 < shape2.get_mean_visible_pixel_intensity()
+    shape1.assert_shape_visible_not_selected()
+    shape2.assert_shape_visible_selected()
     assert not shape1.shape.selected
     assert not shape1.shape.widget.selected
     assert shape2.shape.selected
@@ -769,10 +752,8 @@ async def test_shape_multiselect_widget(
 
     shape1.check_shape_visible(True)
     shape2.check_shape_visible(True)
-    assert noselect1 * .99 < shape1.get_mean_visible_pixel_intensity() < \
-           noselect1 * 1.01
-    assert noselect2 * .99 < shape2.get_mean_visible_pixel_intensity() < \
-           noselect2 * 1.01
+    shape1.assert_shape_visible_not_selected()
+    shape2.assert_shape_visible_not_selected()
     assert not shape1.shape.selected
     assert not shape1.shape.widget.selected
     assert not shape2.shape.selected
@@ -785,9 +766,8 @@ async def test_shape_multiselect_widget(
 
     shape1.check_shape_visible(True)
     shape2.check_shape_visible(True)
-    assert noselect1 * 1.35 < shape1.get_mean_visible_pixel_intensity()
-    assert noselect2 * .99 < shape2.get_mean_visible_pixel_intensity() < \
-           noselect2 * 1.01
+    shape1.assert_shape_visible_selected()
+    shape2.assert_shape_visible_not_selected()
     assert shape1.shape.selected
     assert shape1.shape.widget.selected
     assert not shape2.shape.selected
@@ -804,8 +784,6 @@ async def test_shape_multiselect_shape(
     assert painter.shapes == [shape1.shape, shape2.shape]
     shape1.check_shape_visible(True)
     shape2.check_shape_visible(True)
-    noselect1 = shape1.get_mean_visible_pixel_intensity()
-    noselect2 = shape2.get_mean_visible_pixel_intensity()
     assert not shape1.shape.selected
     assert not shape1.shape.widget.selected
     assert not shape2.shape.selected
@@ -829,9 +807,8 @@ async def test_shape_multiselect_shape(
 
     shape1.check_shape_visible(True)
     shape2.check_shape_visible(True)
-    assert noselect1 * 1.35 < shape1.get_mean_visible_pixel_intensity()
-    assert noselect2 * .99 < shape2.get_mean_visible_pixel_intensity() < \
-           noselect2 * 1.01
+    shape1.assert_shape_visible_selected()
+    shape2.assert_shape_visible_not_selected()
     assert shape1.shape.selected
     assert shape1.shape.widget.selected
     assert not shape2.shape.selected
@@ -845,8 +822,8 @@ async def test_shape_multiselect_shape(
 
     shape1.check_shape_visible(True)
     shape2.check_shape_visible(True)
-    assert noselect1 * 1.35 < shape1.get_mean_visible_pixel_intensity()
-    assert noselect2 * 1.35 < shape2.get_mean_visible_pixel_intensity()
+    shape1.assert_shape_visible_selected()
+    shape2.assert_shape_visible_selected()
     assert shape1.shape.selected
     assert shape1.shape.widget.selected
     assert shape2.shape.selected
@@ -860,9 +837,8 @@ async def test_shape_multiselect_shape(
 
     shape1.check_shape_visible(True)
     shape2.check_shape_visible(True)
-    assert noselect1 * .99 < shape1.get_mean_visible_pixel_intensity() < \
-           noselect1 * 1.01
-    assert noselect2 * 1.35 < shape2.get_mean_visible_pixel_intensity()
+    shape1.assert_shape_visible_not_selected()
+    shape2.assert_shape_visible_selected()
     assert not shape1.shape.selected
     assert not shape1.shape.widget.selected
     assert shape2.shape.selected
@@ -876,10 +852,8 @@ async def test_shape_multiselect_shape(
 
     shape1.check_shape_visible(True)
     shape2.check_shape_visible(True)
-    assert noselect1 * .99 < shape1.get_mean_visible_pixel_intensity() < \
-           noselect1 * 1.01
-    assert noselect2 * .99 < shape2.get_mean_visible_pixel_intensity() < \
-           noselect2 * 1.01
+    shape1.assert_shape_visible_not_selected()
+    shape2.assert_shape_visible_not_selected()
     assert not shape1.shape.selected
     assert not shape1.shape.widget.selected
     assert not shape2.shape.selected
@@ -893,9 +867,8 @@ async def test_shape_multiselect_shape(
 
     shape1.check_shape_visible(True)
     shape2.check_shape_visible(True)
-    assert noselect1 * 1.35 < shape1.get_mean_visible_pixel_intensity()
-    assert noselect2 * .99 < shape2.get_mean_visible_pixel_intensity() < \
-           noselect2 * 1.01
+    shape1.assert_shape_visible_selected()
+    shape2.assert_shape_visible_not_selected()
     assert shape1.shape.selected
     assert shape1.shape.widget.selected
     assert not shape2.shape.selected

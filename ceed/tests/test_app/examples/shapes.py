@@ -172,8 +172,17 @@ class Shape(object):
                     test_points.append((x_, y_))
 
         points = self.app.get_widget_pos_pixel(self.painter, test_points)
-        pixels_vals = [max(p[:3]) for p in points]
-        return sum(pixels_vals) / len(pixels_vals)
+        r = [p[0] / 255 for p in points]
+        g = [p[1] / 255 for p in points]
+        b = [p[2] / 255 for p in points]
+        n = len(r)
+        return sum(r) / n, sum(g) / n, sum(b) / n
+
+    def assert_shape_visible_selected(self):
+        r, g, b = self.get_mean_visible_pixel_intensity()
+
+    def assert_shape_visible_not_selected(self):
+        r, g, b = self.get_mean_visible_pixel_intensity()
 
     def assert_shape_prop_same(self, compare_name=False):
         raise NotImplementedError
