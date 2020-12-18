@@ -467,7 +467,7 @@ values returned by :meth:`FuncBase.get_gui_props`,
 These methods control what properties are editable by the user and the values
 they may potentially take.
 """
-from typing import Type, List, Tuple, Dict, Optional, List
+from typing import Type, List, Tuple, Dict, Optional
 from copy import deepcopy
 from collections import defaultdict
 from os.path import dirname
