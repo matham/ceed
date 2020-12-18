@@ -40,8 +40,8 @@ jobs:
 
         python3 -m pip install --upgrade pip virtualenv wheel setuptools
         python3 -m pip install coveralls
-        python3 -m pip install kivy --pre --no-deps --index-url  https://kivy.org/downloads/simple/
-        python3 -m pip install kivy[base,dev] --pre --extra-index-url https://kivy.org/downloads/simple/
+        python3 -m pip install kivy[base,dev]
+        python3 -m pip install https://github.com/matham/more-kivy-app/archive/master.zip
         python3 -m pip install https://github.com/matham/base_kivy_app/archive/master.zip
         python3 -m pip install https://github.com/matham/cpl_media/archive/master.zip
         python3 -m pip install -e .[dev] --extra-index-url https://kivy-garden.github.io/simple/
@@ -91,8 +91,8 @@ jobs:
         python -m pip install --upgrade pip virtualenv wheel setuptools
         python -m pip install https://github.com/pyinstaller/pyinstaller/archive/develop.zip
         python -c "import os, PyInstaller; os.remove(os.path.join(os.path.dirname(PyInstaller.__file__), 'hooks', 'hook-kivy.py'))"
-        python -m pip install kivy --pre --no-deps --index-url  https://kivy.org/downloads/simple/
-        python -m pip install kivy[base,dev] --pre --extra-index-url  https://kivy.org/downloads/simple/
+        python -m pip install kivy[base,dev]
+        python -m pip install https://github.com/matham/more-kivy-app/archive/master.zip
         python -m pip install https://github.com/matham/base_kivy_app/archive/master.zip
         python -m pip install https://github.com/matham/cpl_media/archive/master.zip
         python -m pip install -e .[dev] --extra-index-url https://kivy-garden.github.io/simple/
@@ -132,8 +132,8 @@ jobs:
           KIVY_DOC: 1
       run: |
         python3 -m pip install --upgrade pip virtualenv wheel setuptools sphinx
-        python3 -m pip install kivy --pre --no-deps --index-url  https://kivy.org/downloads/simple/
-        python3 -m pip install kivy[base,dev] --pre --extra-index-url https://kivy.org/downloads/simple/
+        python3 -m pip install kivy[base,dev]
+        python3 -m pip install https://github.com/matham/more-kivy-app/archive/master.zip
         python3 -m pip install https://github.com/matham/base_kivy_app/archive/master.zip
         python3 -m pip install https://github.com/matham/cpl_media/archive/master.zip
 
