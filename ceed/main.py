@@ -49,7 +49,7 @@ class CeedApp(BaseKivyApp):
     '''The app which runs the GUI.
     '''
 
-    _config_props_ = ('last_directory', )
+    _config_props_ = ('last_directory', 'external_function_plugin_package')
 
     _config_children_ = {
         'function': 'function_factory', 'view': 'view_controller',
@@ -58,6 +58,11 @@ class CeedApp(BaseKivyApp):
     }
 
     last_directory = StringProperty('~')
+
+    external_function_plugin_package: str = ''
+    """A external function plugin package containing any additional functions
+    to be displayed in the UI.
+    """
 
     kv_loaded = False
     """For tests, we don't want to load kv multiple times.
@@ -110,7 +115,8 @@ class CeedApp(BaseKivyApp):
     def __init__(self, open_player_thread=True, **kwargs):
         self.drag_controller = CeedDragNDrop()
         self.function_factory = FunctionFactoryBase()
-        register_all_functions(self.function_factory)
+        register_all_functions(
+            self.function_factory, self.external_function_plugin_package)
         self.stage_factory = StageFactoryBase(
             function_factory=self.function_factory, shape_factory=None)
         self.player = CeedPlayer(open_player_thread=open_player_thread)

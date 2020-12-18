@@ -467,15 +467,15 @@ values returned by :meth:`FuncBase.get_gui_props`,
 These methods control what properties are editable by the user and the values
 they may potentially take.
 """
-from typing import Type, List, Tuple, Dict, Optional
+from typing import Type, List, Tuple, Dict, Optional, List
 from copy import deepcopy
 from collections import defaultdict
+from os.path import dirname
 from fractions import Fraction
 
 from kivy.event import EventDispatcher
 from kivy.properties import StringProperty, NumericProperty, BooleanProperty, \
     ObjectProperty, DictProperty, AliasProperty
-from kivy.logger import Logger
 
 from ceed.utils import fix_name, update_key_if_other_key
 from ceed.function.param_noise import ParameterNoiseFactory, \
@@ -574,11 +574,22 @@ class FunctionFactoryBase(EventDispatcher):
     :meth:`get_func_ref` and released with :meth:`return_func_ref`.
     """
 
+    plugin_sources: Dict[str, List[Tuple[Tuple[str], bytes]]] = {}
+    """A dictionary of the names of all the plugin packages imported, mapped to
+    the python file contents of the directories in the package. Each value is a
+    list of tuples.
+
+    The first item of each tuple is also a tuple containing the names of the
+    directories leading to and including the python filename relative to the
+    package. The second item in the tuple is the bytes content of the file.
+    """
+
     def __init__(self, **kwargs):
         super(FunctionFactoryBase, self).__init__(**kwargs)
         self.funcs_cls = {}
         self.funcs_user = []
         self.funcs_inst_default = {}
+        self.plugin_sources = {}
         self._ref_funcs = defaultdict(int)
         self.param_noise_factory = ParameterNoiseFactory()
         register_noise_classes(self.param_noise_factory)
@@ -656,6 +667,15 @@ class FunctionFactoryBase(EventDispatcher):
         self.funcs_inst[f.name] = f
         self.funcs_inst_default[f.name] = f
         self.dispatch('on_changed')
+
+    def add_plugin_source(
+            self, package: str, contents: List[Tuple[Tuple[str], bytes]]):
+        """Adds the package contents to :attr:`plugin_sources` if it hasn't
+        already been added. Otherwise raises an error.
+        """
+        if package in self.plugin_sources:
+            raise ValueError(f'{package} has already been added')
+        self.plugin_sources[package] = contents
 
     def get(self, name: str) -> Optional[Type['FuncBase']]:
         """Returns the class with name ``name`` that was registered with
@@ -1819,7 +1839,9 @@ line 934, in __call__
                 yield f
 
 
-def register_all_functions(function_factory):
+def register_all_functions(
+        function_factory: FunctionFactoryBase,
+        external_plugin_package: str = ''):
     """Call this with a :class:`FunctionFactoryBase` instance and it will
     register all the plugin and built-in functions with the provided
     :class:`FunctionFactoryBase` instance.
@@ -1831,6 +1853,12 @@ def register_all_functions(function_factory):
     :param function_factory: a :class:`FunctionFactoryBase` instance.
     """
     function_factory.register(FuncGroup)
+    import ceed.function.plugin
     from ceed.function.plugin import get_plugin_functions
-    for f in get_plugin_functions():
+
+    functions, contents = get_plugin_functions(
+        base_package='ceed.function.plugin',
+        root=dirname(ceed.function.plugin.__file__))
+    for f in functions:
         function_factory.register(f)
+    function_factory.add_plugin_source('ceed.function.plugin', contents)

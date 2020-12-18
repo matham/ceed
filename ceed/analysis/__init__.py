@@ -9,9 +9,10 @@ import math
 import scipy.io
 import numpy as np
 import sys
-import logging
 import itertools
 import nixio as nix
+import pathlib
+from typing import List, Union
 from numpy.lib.format import open_memmap
 
 from more_kivy_app.utils import yaml_loads
@@ -193,6 +194,12 @@ class CeedDataReader(object):
     the file.
     """
 
+    external_function_plugin_package: str = ''
+    """Once set by :meth:`open_h5`, it contains the external function plugin
+    package containing any additional functions, if it was specified during the
+    experiment.
+    """
+
     app_logs = ''
     """Once set in :meth:`open_h5`, it contains the experimental logs
     of ceed for the experiments stored in the file.
@@ -258,6 +265,27 @@ class CeedDataReader(object):
             CeedDataWriterBase.get_file_num_fluorescent_images(self._nix_file)
         self.load_application_data()
 
+    @staticmethod
+    def dump_function_plugin_sources(
+            filename: Union[str, pathlib.Path], root: Union[str, pathlib.Path]
+    ):
+        root = pathlib.Path(root)
+        nix_file = nix.File.open(str(filename), nix.FileMode.ReadOnly)
+        if 'function_plugin_sources' not in nix_file.sections:
+            raise ValueError(f'{filename} does not contain any plugin data')
+
+        contents_s = nix_file.sections['function_plugin_sources']['contents']
+
+        for package, contents in yaml_loads(contents_s).items():
+            for file_parts, content in contents:
+                src_filename = root.joinpath(package, *file_parts)
+                if src_filename.exists():
+                    raise ValueError(f'{src_filename} already exists')
+
+                if not src_filename.parent.exists():
+                    src_filename.parent.mkdir(parents=True)
+                src_filename.write_bytes(content)
+
     def get_electrode_names(self):
         names = []
         disabled = {
@@ -290,11 +318,13 @@ class CeedDataReader(object):
             config_data[prop.name] = yaml_loads(read_nix_prop(prop))
 
         self.ceed_version = config_data.get('ceed_version', '')
+        self.external_function_plugin_package = config_data.get(
+            'external_function_plugin_package', '')
 
         view = ViewControllerBase()
         ser = DataSerializerBase()
         func = FunctionFactoryBase()
-        register_all_functions(func)
+        register_all_functions(func, self.external_function_plugin_package)
         shape = CeedPaintCanvasBehavior()
         stage = StageFactoryBase(
             function_factory=func, shape_factory=shape)
@@ -333,7 +363,8 @@ class CeedDataReader(object):
         view = self.view_controller = ViewControllerBase()
         ser = self.data_serializer = DataSerializerBase()
         func = self.function_factory = FunctionFactoryBase()
-        register_all_functions(func)
+        register_all_functions(
+            func, config_data.get('external_function_plugin_package', ''))
         shape = self.shape_factory = CeedPaintCanvasBehavior()
         stage = self.stage_factory = StageFactoryBase(
             function_factory=func, shape_factory=shape)

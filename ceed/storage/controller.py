@@ -96,6 +96,10 @@ class CeedDataWriterBase(EventDispatcher):
             return nix.Compression.No
         return nix.Compression.Auto
 
+    def get_function_plugin_contents(self):
+        app = App.get_running_app()
+        return app.function_factory.plugin_sources
+
     def gather_config_data_dict(self, stages_only=False):
         app = App.get_running_app()
         data = {}
@@ -235,6 +239,10 @@ class CeedDataWriterBase(EventDispatcher):
         f.sections['app_logs']['log_data'] = ''
         f.sections['app_logs']['notes'] = ''
 
+        f.create_section('function_plugin_sources', 'files')
+        f.sections['function_plugin_sources']['contents'] = yaml_dumps(
+            self.get_function_plugin_contents())
+
         block = f.create_block('fluorescent_images', 'image')
         sec = f.create_section('fluorescent_images_metadata', 'metadata')
         block.metadata = sec
@@ -251,6 +259,11 @@ class CeedDataWriterBase(EventDispatcher):
             nix_file.create_section('app_logs', 'log')
             nix_file.sections['app_logs']['log_data'] = ''
             nix_file.sections['app_logs']['notes'] = ''
+
+        if 'function_plugin_sources' not in nix_file.sections:
+            nix_file.create_section('function_plugin_sources', 'files')
+            nix_file.sections['function_plugin_sources']['contents'] = \
+                yaml_dumps({})
 
         if 'fluorescent_images' not in nix_file.blocks:
             block = nix_file.create_block('fluorescent_images', 'image')

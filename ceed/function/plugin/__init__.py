@@ -20,11 +20,11 @@ factory :attr:`ceed.function.FunctionFactoryBase` using
 an example.
 """
 
+from collections import deque
 import importlib
-from os import listdir
-from os.path import dirname
+import pathlib
 from math import exp, cos, pi
-from typing import Iterable
+from typing import Iterable, Union, Tuple, List, Type
 
 from kivy.properties import NumericProperty
 
@@ -35,26 +35,70 @@ __all__ = (
     'CosFunc', 'get_ceed_functions')
 
 
-def get_plugin_functions() -> Iterable[FuncBase]:
-    """Imports all the ``.py`` files that don't start with an underscore in
-    the ``ceed/function/plugin`` directory. For each imported module, it calls
-    its ``get_ceed_functions`` function which should return all the function
-    classes exported by the module.
+def get_plugin_functions(
+        base_package: str, root: Union[str, pathlib.Path]
+) -> Tuple[List[Type[FuncBase]], List[Tuple[Tuple[str], bytes]]]:
+    """Imports all the ``.py`` files in the given directory and sub-directories
+    for the named package that don't start with a underscore (except for
+    ``__init__.py`` of course, which is imported). For each imported module,
+    it calls its ``get_ceed_functions`` function which should return all the
+    function classes exported by the module.
 
-    It then returns all these exported functions.
+    It then returns all these exported functions and all the file contents
+    in the folder.
 
-    ``get_ceed_functions`` takes no parameters and returns a iterable of
-    function classes exported by the module. See :func:`get_ceed_functions`
-    for an example.
+    Ceed will automatically import all the plugins under
+    ``ceed/function/plugin``.
+
+    :parameter base_package: The package name from which the plugins will be
+        imported. E.g. to import the plugins in ``ceed/function/plugin``,
+        ``base_package`` is ``ceed.function.plugin`` because that's the package
+        containing name for the ``plugin`` directory. Then, they are imported
+        as ``ceed.function.plugin`` and ``ceed.function.plugin.xyz``, if
+        the plugin directory also contains a ``xyz.py`` plugin file.
+    :parameter root: The directory that contains the plugins. E.g. for
+        ``ceed.function.plugin`` it is ``ceed/function/plugin``.
+    :returns:
+        A tuple containing a list of function classes exported by all the
+        modules and a list containing all the python files encountered.
+
+        The python files contents are returned so that Ceed can store it in the
+        data files in case the plugins are changed between experimental runs.
+
+        See :func:`get_ceed_functions` and
+        :func:`~ceed.function.register_all_functions` for an example how it's
+        used.
     """
-    funcs = list(get_ceed_functions())  # get functions from this file
-    for name in listdir(dirname(__file__)):
-        if name.startswith('_') or not name.endswith('.py'):
-            continue
-        name = name[:-3]
-        m = importlib.import_module('ceed.function.plugin.{}'.format(name))
-        funcs.extend(m.get_ceed_functions())
-    return funcs
+    funcs = []
+    files = []
+
+    fifo = deque([pathlib.Path(root)])
+    while fifo:
+        directory = fifo.popleft()
+        relative_dir = directory.relative_to(root)
+        directory_mod = '.'.join((base_package,) + relative_dir.parts)
+        for item in directory.iterdir():
+            if item.is_dir():
+                fifo.append(item)
+                continue
+
+            if not item.is_file() or not item.name.endswith('.py'):
+                continue
+
+            files.append(
+                (relative_dir.parts + (item.name, ), item.read_bytes()))
+            if item.name.startswith('_') and item.name != '__init__.py':
+                continue
+
+            name = item.name[:-3]
+            if name == '__init__':
+                package = directory_mod
+            else:
+                package = f'{directory_mod}.{name}'
+
+            m = importlib.import_module(package)
+            funcs.extend(m.get_ceed_functions())
+    return funcs, files
 
 
 class ConstFunc(CeedFunc):

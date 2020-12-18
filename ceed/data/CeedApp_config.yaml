@@ -2,6 +2,7 @@ data:
   backup_interval: 5.0
   compression: Auto
   root_path: ''
+external_function_plugin_package: ''
 function: {}
 inspect: false
 last_directory: '~'

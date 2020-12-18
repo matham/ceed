@@ -57,6 +57,8 @@ class CeedViewApp(BaseKivyApp):
     '''The app which runs the GUI.
     '''
 
+    _config_props_ = ('external_function_plugin_package', )
+
     _config_children_ = {
         'view': 'view_controller', 'data': 'ceed_data',
         'serializer': 'data_serializer', 'function': 'function_factory',
@@ -74,12 +76,18 @@ class CeedViewApp(BaseKivyApp):
 
     ceed_data: CeedDataWriterBase = None
 
+    external_function_plugin_package: str = ''
+    """A external function plugin package containing any additional functions
+    to be displayed in the UI.
+    """
+
     def __init__(self, **kwargs):
         self.view_controller = ViewSideViewControllerBase()
         self.ceed_data = CeedDataWriterBase()
         self.data_serializer = DataSerializerBase()
         self.function_factory = FunctionFactoryBase()
-        register_all_functions(self.function_factory)
+        register_all_functions(
+            self.function_factory, self.external_function_plugin_package)
         self.shape_factory = CeedPaintCanvasBehavior()
         self.stage_factory = StageFactoryBase(
             function_factory=self.function_factory,
