@@ -8,6 +8,9 @@ from collections import defaultdict
 import logging
 import warnings
 from typing import Type, List
+
+pytest.register_assert_rewrite('ceed.tests.test_app.examples')
+
 from ceed.function import FunctionFactoryBase
 from ceed.shape import CeedPaintCanvasBehavior
 from ceed.stage import StageFactoryBase

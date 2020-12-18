@@ -340,13 +340,13 @@ class PolygonShape(Shape):
                 new_x = ox + (1 - factor) * (cx - ox)
             else:
                 new_x = ox - (1 - factor) * (ox - cx)
-            assert new_x * 0.99 < x < new_x * 1.01
+            assert new_x * 0.95 < x < new_x * 1.05
 
             if oy < cy:
                 new_y = oy + (1 - factor) * (cy - oy)
             else:
                 new_y = oy - (1 - factor) * (oy - cy)
-            assert new_y * 0.99 < y < new_y * 1.01
+            assert new_y * 0.95 < y < new_y * 1.05
 
     def assert_shape_prop_same(self, compare_name=False):
         from ceed.shape import CeedPaintPolygon
