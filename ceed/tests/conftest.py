@@ -9,6 +9,10 @@ import logging
 import warnings
 from typing import Type, List
 
+from kivy.config import Config
+Config.set('graphics', 'width', '1280')
+Config.set('graphics', 'height', '720')
+
 pytest.register_assert_rewrite('ceed.tests.test_app.examples')
 
 from ceed.function import FunctionFactoryBase
