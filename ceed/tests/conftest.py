@@ -2,7 +2,8 @@ import os
 import pytest
 from collections import defaultdict
 from typing import Type, List
-from pytest_trio.enable_trio_mode import *
+from pytest_trio.enable_trio_mode import pytest_collection_modifyitems, \
+    pytest_fixture_setup
 
 pytest.register_assert_rewrite('ceed.tests.test_app.examples')
 

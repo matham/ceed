@@ -30,7 +30,7 @@ setup(
     extras_require={
         'dev': ['pytest>=3.6', 'pytest-cov', 'flake8', 'sphinx-rtd-theme',
                 'coveralls', 'trio', 'pytest-trio', 'pyinstaller',
-                'kivy-pytest'],
+                'pytest-kivy'],
     },
     package_data={'ceed': ['data/*', '*.kv']},
     entry_points={'console_scripts': ['ceed=ceed.main:run_app']},
