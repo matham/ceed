@@ -839,6 +839,6 @@ async def test_pad_stage_ticks(stage_app: CeedTestApp, tmp_path):
 
     f.load_experiment(1)
     assert np.array(f.shapes_intensity[shape.name]).shape == (
-        stage_app.data_serializer.num_ticks_handshake(16), 4)
+        stage_app.app.data_serializer.num_ticks_handshake(16), 4)
 
     f.close_h5()

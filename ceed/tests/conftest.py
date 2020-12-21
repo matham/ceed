@@ -3,7 +3,7 @@ import pytest
 from collections import defaultdict
 from typing import Type, List
 from pytest_trio.enable_trio_mode import pytest_collection_modifyitems, \
-    pytest_fixture_setup
+    pytest_fixture_setup as trio_pytest_fixture_setup
 
 pytest.register_assert_rewrite('ceed.tests.test_app.examples')
 
@@ -25,6 +25,8 @@ def pytest_fixture_setup(fixturedef, request):
     if fixturedef.argname == 'trio_kivy_app':
         request.param = {
             'kwargs': {'width': 1600, 'height': 900}, 'cls': CeedTestApp}
+
+    trio_pytest_fixture_setup(fixturedef, request)
 
 
 @pytest.fixture()
