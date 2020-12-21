@@ -267,7 +267,7 @@ async def test_gui_add_funcs(func_app: CeedTestApp):
 
         # add the function
         await touch_widget(func_app, add)
-        func.func = func_app.function_factory.funcs_user[-1]
+        func.func = func_app.app.function_factory.funcs_user[-1]
 
         # show the settings for the function
         widget = func.func.display
@@ -279,13 +279,13 @@ async def test_gui_add_funcs(func_app: CeedTestApp):
             test_name='func label')()
         original_name = name.text
         assert original_name == name_label.text
-        assert original_name in func_app.function_factory.funcs_inst
-        assert func.name not in func_app.function_factory.funcs_inst
+        assert original_name in func_app.app.function_factory.funcs_inst
+        assert func.name not in func_app.app.function_factory.funcs_inst
         await replace_text(func_app, name, func.name)
         assert name.text == func.name
         assert name_label.text == func.name
-        assert original_name not in func_app.function_factory.funcs_inst
-        assert func.name in func_app.function_factory.funcs_inst
+        assert original_name not in func_app.app.function_factory.funcs_inst
+        assert func.name in func_app.app.function_factory.funcs_inst
 
         await assert_set_params_in_gui(func_app, func, settings)
 
@@ -324,10 +324,10 @@ async def group_recursive_add(func_app: CeedTestApp, add_func):
     await select_spinner_func(func_app, 'Group', spinner)
 
     # first add a new function group
-    assert not func_app.function_factory.funcs_user
+    assert not func_app.app.function_factory.funcs_user
     await add_func(None)
-    assert len(func_app.function_factory.funcs_user) == 1
-    g1: FuncGroup = func_app.function_factory.funcs_user[-1]
+    assert len(func_app.app.function_factory.funcs_user) == 1
+    g1: FuncGroup = func_app.app.function_factory.funcs_user[-1]
     g1_widget = g1.display
     assert isinstance(g1, FuncGroup)
     assert isinstance(g1_widget, FuncWidgetGroup)
@@ -393,7 +393,7 @@ async def test_group_recursive_drag(func_app: CeedTestApp):
     # add group to the function factory
     async def add_g1():
         async for _ in func_app.do_touch_drag(
-                widget=start, target_widget=func_app.funcs_container):
+                widget=start, target_widget=func_app.app.funcs_container):
             pass
 
     # add functions to an existing function
@@ -423,18 +423,18 @@ async def test_duplicate_func_globally(func_app: CeedTestApp):
 
     # update its params
     wrapper_func = CosFunctionF4(app=func_app, show_in_gui=False)
-    wrapper_func.func = func_app.function_factory.funcs_user[-1]
+    wrapper_func.func = func_app.app.function_factory.funcs_user[-1]
     assert isinstance(wrapper_func.func, CosFunc)
     await assert_set_params_in_gui(func_app, wrapper_func)
 
     drag_btn = func_app.resolve_widget(wrapper_func.func.display).down(
         test_name='func drag btn')()
     async for _ in func_app.do_touch_drag(
-            widget=drag_btn, target_widget=func_app.funcs_container):
+            widget=drag_btn, target_widget=func_app.app.funcs_container):
         pass
 
     wrapper_func2 = CosFunctionF4(app=func_app, show_in_gui=False)
-    wrapper_func2.func = func_app.function_factory.funcs_user[-1]
+    wrapper_func2.func = func_app.app.function_factory.funcs_user[-1]
     assert wrapper_func.func is not wrapper_func2.func
     assert isinstance(wrapper_func2.func, CosFunc)
     await assert_func_params_in_gui(func_app, wrapper_func2)
@@ -451,7 +451,7 @@ async def global_ref_func_and_replace(func_app: CeedTestApp, add_func):
     await touch_widget(func_app, add)
 
     exp_wrapper = ExponentialFunctionF3(app=func_app, show_in_gui=False)
-    exp_wrapper.func = func_app.function_factory.funcs_user[-1]
+    exp_wrapper.func = func_app.app.function_factory.funcs_user[-1]
     assert isinstance(exp_wrapper.func, ExponentialFunc)
     await assert_set_params_in_gui(func_app, exp_wrapper)
     assert exp_wrapper.func.name in spinner.values
@@ -459,7 +459,7 @@ async def global_ref_func_and_replace(func_app: CeedTestApp, add_func):
     # add group function to factory
     await select_spinner_func(func_app, 'Group', spinner)
     await touch_widget(func_app, add)
-    g: FuncGroup = func_app.function_factory.funcs_user[-1]
+    g: FuncGroup = func_app.app.function_factory.funcs_user[-1]
     assert isinstance(g, FuncGroup)
     assert not g.funcs
     assert g.name in spinner.values

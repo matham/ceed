@@ -6,6 +6,6 @@ async def test_open_app(ceed_app: CeedTestApp):
 
 
 async def test_app_settings(ceed_app: CeedTestApp):
-    assert not ceed_app.ceed_data.filename
-    assert ceed_app.ceed_data.backup_filename
-    assert ceed_app.ceed_data.nix_file is not None
+    assert not ceed_app.app.ceed_data.filename
+    assert ceed_app.app.ceed_data.backup_filename
+    assert ceed_app.app.ceed_data.nix_file is not None

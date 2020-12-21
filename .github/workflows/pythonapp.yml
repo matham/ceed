@@ -41,6 +41,7 @@ jobs:
         python3 -m pip install --upgrade pip virtualenv wheel setuptools
         python3 -m pip install coveralls
         python3 -m pip install kivy[base,dev]
+        python3 -m pip install https://github.com/matham/pytest-kivy/archive/master.zip
         python3 -m pip install https://github.com/matham/more-kivy-app/archive/master.zip
         python3 -m pip install https://github.com/matham/base_kivy_app/archive/master.zip
         python3 -m pip install https://github.com/matham/cpl_media/archive/master.zip
@@ -92,6 +93,7 @@ jobs:
         python -m pip install https://github.com/pyinstaller/pyinstaller/archive/develop.zip
         python -c "import os, PyInstaller; os.remove(os.path.join(os.path.dirname(PyInstaller.__file__), 'hooks', 'hook-kivy.py'))"
         python -m pip install kivy[base,dev]
+        python -m pip install https://github.com/matham/pytest-kivy/archive/master.zip
         python -m pip install https://github.com/matham/more-kivy-app/archive/master.zip
         python -m pip install https://github.com/matham/base_kivy_app/archive/master.zip
         python -m pip install https://github.com/matham/cpl_media/archive/master.zip
@@ -133,6 +135,7 @@ jobs:
       run: |
         python3 -m pip install --upgrade pip virtualenv wheel setuptools sphinx
         python3 -m pip install kivy[base,dev]
+        python3 -m pip install https://github.com/matham/pytest-kivy/archive/master.zip
         python3 -m pip install https://github.com/matham/tree-config/archive/master.zip
         python3 -m pip install https://github.com/matham/more-kivy-app/archive/master.zip
         python3 -m pip install https://github.com/matham/base_kivy_app/archive/master.zip

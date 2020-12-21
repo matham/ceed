@@ -12,26 +12,26 @@ from ceed.tests.test_app.examples.shapes import paired_tests, PolygonShapeP1, \
     "shape_cls",
     [PolygonShapeP1, CircleShapeP1, EllipseShapeP1, FreeformPolygonShapeP1])
 async def test_simple_shape(ceed_app: CeedTestApp, shape_cls):
-    painter = ceed_app.shape_factory
-    assert ceed_app.shape_factory == painter
-    assert not ceed_app.shape_factory.shapes
+    painter = ceed_app.app.shape_factory
+    assert ceed_app.app.shape_factory == painter
+    assert not ceed_app.app.shape_factory.shapes
 
     shape = shape_cls(ceed_app, painter)
     await ceed_app.wait_clock_frames(2)
 
-    assert shape.shape in ceed_app.shape_factory.shapes
+    assert shape.shape in ceed_app.app.shape_factory.shapes
     assert shape.shape.name == shape.name
     shape.check_shape_visible(True)
 
     shape.remove()
     await ceed_app.wait_clock_frames(2)
 
-    assert shape.shape not in ceed_app.shape_factory.shapes
-    assert not ceed_app.shape_factory.shapes
+    assert shape.shape not in ceed_app.app.shape_factory.shapes
+    assert not ceed_app.app.shape_factory.shapes
     shape.check_shape_visible(False)
 
     painter.add_shape(shape.shape)
-    assert shape.shape in ceed_app.shape_factory.shapes
+    assert shape.shape in ceed_app.app.shape_factory.shapes
     assert shape.shape.name == shape.name
 
     assert not shape.shape.locked
@@ -44,7 +44,7 @@ async def test_simple_shape(ceed_app: CeedTestApp, shape_cls):
 @pytest.mark.parametrize("shape_classes", paired_tests)
 async def test_multiple_shapes_add(
         paint_app: CeedTestApp, shape_classes: List[Type[Shape]]):
-    painter = paint_app.shape_factory
+    painter = paint_app.app.shape_factory
     shape1, shape2 = (cls(paint_app, painter) for cls in shape_classes)
     await paint_app.wait_clock_frames(2)
 
@@ -56,7 +56,7 @@ async def test_multiple_shapes_add(
 @pytest.mark.parametrize("shape_classes", paired_tests)
 async def test_multiple_shapes_remove(
         paint_app: CeedTestApp, shape_classes: List[Type[Shape]]):
-    painter = paint_app.shape_factory
+    painter = paint_app.app.shape_factory
     shape1, shape2 = (cls(paint_app, painter) for cls in shape_classes)
     await paint_app.wait_clock_frames(2)
     assert painter.shapes == [shape1.shape, shape2.shape]
@@ -85,7 +85,7 @@ async def test_multiple_shapes_remove(
 async def test_multiple_shapes_move_depth(
         paint_app: CeedTestApp, shape_classes: List[Type[Shape]]):
     # tests move_shape_lower, move_shape_upwards, and reorder_shape
-    painter = paint_app.shape_factory
+    painter = paint_app.app.shape_factory
     shape1, shape2 = (cls(paint_app, painter) for cls in shape_classes)
     await paint_app.wait_clock_frames(2)
     assert painter.shapes == [shape1.shape, shape2.shape]
@@ -115,7 +115,7 @@ async def test_multiple_shapes_move_depth(
 @pytest.mark.parametrize("shape_classes", paired_tests)
 async def test_multiple_shapes_duplicate(
         paint_app: CeedTestApp, shape_classes: List[Type[Shape]]):
-    painter = paint_app.shape_factory
+    painter = paint_app.app.shape_factory
     shape1, shape2 = (cls(paint_app, painter) for cls in shape_classes)
     await paint_app.wait_clock_frames(2)
     assert painter.shapes == [shape1.shape, shape2.shape]
@@ -157,7 +157,7 @@ async def test_multiple_shapes_duplicate(
 @pytest.mark.parametrize("shape_classes", paired_tests)
 async def test_shape_lock(
         paint_app: CeedTestApp, shape_classes: List[Type[Shape]]):
-    painter = paint_app.shape_factory
+    painter = paint_app.app.shape_factory
     shape1, shape2 = (cls(paint_app, painter) for cls in shape_classes)
     await paint_app.wait_clock_frames(2)
     assert painter.shapes == [shape1.shape, shape2.shape]
@@ -205,7 +205,7 @@ async def test_shape_lock(
 @pytest.mark.parametrize("shape_classes", paired_tests)
 async def test_shape_hide(
         paint_app: CeedTestApp, shape_classes: List[Type[Shape]]):
-    painter = paint_app.shape_factory
+    painter = paint_app.app.shape_factory
     shape1, shape2 = (cls(paint_app, painter) for cls in shape_classes)
     await paint_app.wait_clock_frames(2)
     assert painter.shapes == [shape1.shape, shape2.shape]
@@ -242,7 +242,7 @@ async def test_shape_hide(
 async def test_shape_name(
         paint_app: CeedTestApp, shape_classes: List[Type[Shape]]):
     # tests _change_shape_name
-    painter = paint_app.shape_factory
+    painter = paint_app.app.shape_factory
     shape1, shape2 = (cls(paint_app, painter) for cls in shape_classes)
     await paint_app.wait_clock_frames(2)
 
@@ -286,7 +286,7 @@ async def test_shape_name(
 @pytest.mark.parametrize("shape_classes", paired_tests)
 async def test_shape_pos(
         paint_app: CeedTestApp, shape_classes: List[Type[Shape]]):
-    painter = paint_app.shape_factory
+    painter = paint_app.app.shape_factory
     shape1, shape2 = (cls(paint_app, painter) for cls in shape_classes)
     await paint_app.wait_clock_frames(2)
 
@@ -318,7 +318,7 @@ async def test_shape_pos(
 @pytest.mark.parametrize("shape_classes", paired_tests)
 async def test_shape_area(
         paint_app: CeedTestApp, shape_classes: List[Type[Shape]]):
-    painter = paint_app.shape_factory
+    painter = paint_app.app.shape_factory
     shape1, shape2 = (cls(paint_app, painter) for cls in shape_classes)
     await paint_app.wait_clock_frames(2)
 
@@ -355,7 +355,7 @@ async def test_shape_area(
 @pytest.mark.parametrize("shape_classes", paired_tests)
 async def test_multiple_shapes_draw(
         paint_app: CeedTestApp, shape_classes: List[Type[Shape]]):
-    painter = paint_app.shape_factory
+    painter = paint_app.app.shape_factory
     shape1, shape2 = (
         cls(paint_app, painter, show_in_gui=False) for cls in shape_classes)
     await paint_app.wait_clock_frames(2)
@@ -389,7 +389,7 @@ async def test_multiple_shapes_draw(
 
 
 async def test_shape_add_enclosing_polygon(paint_app: CeedTestApp):
-    painter = paint_app.shape_factory
+    painter = paint_app.app.shape_factory
     assert not painter.shapes
 
     # set the correct draw mode
@@ -400,8 +400,8 @@ async def test_shape_add_enclosing_polygon(paint_app: CeedTestApp):
     await paint_app.wait_clock_frames(2)
 
     assert len(painter.shapes) == 1
-    w = paint_app.view_controller.screen_width
-    h = paint_app.view_controller.screen_height
+    w = paint_app.app.view_controller.screen_width
+    h = paint_app.app.view_controller.screen_height
     points = [0, 0, w, 0, w, h, 0, h]
     shape = EnclosingPolygon(
         app=paint_app, painter=painter, shape=painter.shapes[0],
@@ -414,7 +414,7 @@ async def test_shape_add_enclosing_polygon(paint_app: CeedTestApp):
 @pytest.mark.parametrize("shape_classes", paired_tests)
 async def test_shape_duplicate_selection(
         paint_app: CeedTestApp, shape_classes: List[Type[Shape]]):
-    painter = paint_app.shape_factory
+    painter = paint_app.app.shape_factory
     shape1, shape2 = (cls(paint_app, painter) for cls in shape_classes)
     await paint_app.wait_clock_frames(2)
 
@@ -469,7 +469,7 @@ async def test_shape_duplicate_selection(
 @pytest.mark.parametrize("shape_classes", paired_tests)
 async def test_shape_delete_selection(
         paint_app: CeedTestApp, shape_classes: List[Type[Shape]]):
-    painter = paint_app.shape_factory
+    painter = paint_app.app.shape_factory
     shape1, shape2 = (cls(paint_app, painter) for cls in shape_classes)
     await paint_app.wait_clock_frames(2)
 
@@ -516,7 +516,7 @@ async def test_shape_delete_selection(
 @pytest.mark.parametrize("shape_classes", paired_tests)
 async def test_shape_single_select_widget(
         paint_app: CeedTestApp, shape_classes: List[Type[Shape]]):
-    painter = paint_app.shape_factory
+    painter = paint_app.app.shape_factory
     shape1, shape2 = (cls(paint_app, painter) for cls in shape_classes)
     await paint_app.wait_clock_frames(2)
 
@@ -597,7 +597,7 @@ async def test_shape_single_select_widget(
 @pytest.mark.parametrize("shape_classes", paired_tests)
 async def test_shape_single_select_shape(
         paint_app: CeedTestApp, shape_classes: List[Type[Shape]]):
-    painter = paint_app.shape_factory
+    painter = paint_app.app.shape_factory
     shape1, shape2 = (cls(paint_app, painter) for cls in shape_classes)
     await paint_app.wait_clock_frames(2)
 
@@ -678,7 +678,7 @@ async def test_shape_single_select_shape(
 @pytest.mark.parametrize("shape_classes", paired_tests)
 async def test_shape_multiselect_widget(
         paint_app: CeedTestApp, shape_classes: List[Type[Shape]]):
-    painter = paint_app.shape_factory
+    painter = paint_app.app.shape_factory
     shape1, shape2 = (cls(paint_app, painter) for cls in shape_classes)
     await paint_app.wait_clock_frames(2)
 
@@ -777,7 +777,7 @@ async def test_shape_multiselect_widget(
 @pytest.mark.parametrize("shape_classes", paired_tests)
 async def test_shape_multiselect_shape(
         paint_app: CeedTestApp, shape_classes: List[Type[Shape]]):
-    painter = paint_app.shape_factory
+    painter = paint_app.app.shape_factory
     shape1, shape2 = (cls(paint_app, painter) for cls in shape_classes)
     await paint_app.wait_clock_frames(2)
 
@@ -876,7 +876,7 @@ async def test_shape_multiselect_shape(
 
 
 async def make_4_shapes(paint_app: CeedTestApp) -> List[Shape]:
-    painter = paint_app.shape_factory
+    painter = paint_app.app.shape_factory
     assert len(painter.shapes) == len(painter.shape_names)
 
     shapes = []
@@ -895,18 +895,18 @@ async def make_4_shapes(paint_app: CeedTestApp) -> List[Shape]:
 
 
 async def test_group_add_remove(paint_app: CeedTestApp):
-    painter = paint_app.shape_factory
+    painter = paint_app.app.shape_factory
     from ceed.shape import CeedShapeGroup
     # add the 4 shapes
     shapes: List[Shape] = await make_4_shapes(paint_app)
     s1, s2, s3, s4 = shapes
-    assert not paint_app.shape_factory.groups
+    assert not paint_app.app.shape_factory.groups
 
     # add the group
     add = paint_app.resolve_widget().down(test_name='add group')()
     await touch_widget(paint_app, add)
-    assert len(paint_app.shape_factory.groups) == 1
-    group = paint_app.shape_factory.groups[0]
+    assert len(paint_app.app.shape_factory.groups) == 1
+    group = paint_app.app.shape_factory.groups[0]
     assert isinstance(group, CeedShapeGroup)
     container = paint_app.resolve_widget(group.widget).down(
         test_name='shape group obj container')()
@@ -951,7 +951,7 @@ async def test_group_add_remove(paint_app: CeedTestApp):
 
 
 async def test_group_drag_in(paint_app: CeedTestApp):
-    painter = paint_app.shape_factory
+    painter = paint_app.app.shape_factory
     shapes: List[Shape] = await make_4_shapes(paint_app)
     s1, *_ = shapes
     assert not painter.groups
@@ -963,7 +963,7 @@ async def test_group_drag_in(paint_app: CeedTestApp):
     for i in range(3):
         # initial groups and group's widget container count
         groups = painter.groups[:]
-        container = paint_app.shape_groups_container.children[:]
+        container = paint_app.app.shape_groups_container.children[:]
 
         # drag it in
         drag_widget = paint_app.resolve_widget(s1.shape.widget).down(
@@ -973,9 +973,9 @@ async def test_group_drag_in(paint_app: CeedTestApp):
             target_widget_loc=('center_x', 'y')))
 
         assert len(painter.groups) == i + 1
-        assert len(paint_app.shape_groups_container.children) == i + 1
+        assert len(paint_app.app.shape_groups_container.children) == i + 1
         assert painter.groups[:-1] == groups
-        assert paint_app.shape_groups_container.children[1:] == container
+        assert paint_app.app.shape_groups_container.children[1:] == container
 
         group = painter.groups[-1]
         assert len(group.shapes) == 1
@@ -989,7 +989,7 @@ async def test_group_drag_in(paint_app: CeedTestApp):
 
 
 async def test_group_drag_duplicate(paint_app: CeedTestApp):
-    painter = paint_app.shape_factory
+    painter = paint_app.app.shape_factory
     shapes: List[Shape] = await make_4_shapes(paint_app)
     s1, s2, *_ = shapes
     assert not painter.groups
@@ -1029,7 +1029,7 @@ async def test_group_drag_duplicate(paint_app: CeedTestApp):
 
 
 async def test_group_drag_multiple(paint_app: CeedTestApp):
-    painter = paint_app.shape_factory
+    painter = paint_app.app.shape_factory
     shapes: List[Shape] = await make_4_shapes(paint_app)
     s1, s2, s3, s4 = shapes
 
@@ -1063,7 +1063,7 @@ async def test_group_drag_multiple(paint_app: CeedTestApp):
 
 
 async def test_group_shape_name(paint_app: CeedTestApp):
-    painter = paint_app.shape_factory
+    painter = paint_app.app.shape_factory
     shapes: List[Shape] = await make_4_shapes(paint_app)
     s1, s2, s3, s4 = shapes
 
@@ -1085,7 +1085,7 @@ async def test_group_shape_name(paint_app: CeedTestApp):
 
 
 async def test_group_name(paint_app: CeedTestApp):
-    painter = paint_app.shape_factory
+    painter = paint_app.app.shape_factory
 
     # add a group
     add = paint_app.resolve_widget().down(test_name='add group')()
@@ -1129,7 +1129,7 @@ async def test_group_name(paint_app: CeedTestApp):
 
 async def test_group_duplicate(paint_app: CeedTestApp):
     from ceed.shape import CeedShapeGroup
-    painter = paint_app.shape_factory
+    painter = paint_app.app.shape_factory
     shapes: List[Shape] = await make_4_shapes(paint_app)
     s1, s2, s3, s4 = shapes
 
@@ -1166,7 +1166,7 @@ async def test_group_duplicate(paint_app: CeedTestApp):
 
 
 async def test_group_delete(paint_app: CeedTestApp):
-    painter = paint_app.shape_factory
+    painter = paint_app.app.shape_factory
     shapes: List[Shape] = await make_4_shapes(paint_app)
     s1, s2, s3, s4 = shapes
 
@@ -1197,6 +1197,6 @@ async def test_group_delete(paint_app: CeedTestApp):
 
 
 async def test_group_shape_rename(paint_app: CeedTestApp):
-    painter = paint_app.shape_factory
+    painter = paint_app.app.shape_factory
     shapes: List[Shape] = await make_4_shapes(paint_app)
     s1, s2, s3, s4 = shapes

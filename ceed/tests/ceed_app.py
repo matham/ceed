@@ -1,30 +1,20 @@
 import os
-import trio
-
-from kivy.config import Config
-Config.set('graphics', 'width', '1600')
-Config.set('graphics', 'height', '900')
-Config.set('modules', 'touchring', '')
-for items in Config.items('input'):
-    Config.remove_option('input', items[0])
-
+from pytest_kivy.app import AsyncUnitApp
 
 from ceed.main import CeedApp
-from kivy.tests.async_common import UnitKivyApp
+
+__all__ = ('CeedTestGUIApp', 'CeedTestApp')
 
 
-class CeedTestApp(CeedApp, UnitKivyApp):
+class CeedTestGUIApp(CeedApp):
 
     def __init__(self, ini_file, **kwargs):
         self._ini_config_filename = ini_file
         self._data_path = os.path.dirname(ini_file)
-        super(CeedTestApp, self).__init__(**kwargs)
-
-    async def async_sleep(self, dt):
-        await trio.sleep(dt)
+        super().__init__(**kwargs)
 
     def check_close(self):
-        super(CeedTestApp, self).check_close()
+        super().check_close()
         return True
 
     def handle_exception(self, msg, exc_info=None,
@@ -48,3 +38,8 @@ class CeedTestApp(CeedApp, UnitKivyApp):
                 tb = None
         elif level in ('error', 'exception'):
             raise Exception(msg)
+
+
+class CeedTestApp(AsyncUnitApp):
+
+    app: CeedTestGUIApp

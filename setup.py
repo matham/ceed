@@ -29,7 +29,8 @@ setup(
         'kivy_garden.painter~=0.2.0', 'trio', 'cpl_media', 'tree-config'],
     extras_require={
         'dev': ['pytest>=3.6', 'pytest-cov', 'flake8', 'sphinx-rtd-theme',
-                'coveralls', 'trio', 'pytest-trio', 'pyinstaller'],
+                'coveralls', 'trio', 'pytest-trio', 'pyinstaller',
+                'kivy-pytest'],
     },
     package_data={'ceed': ['data/*', '*.kv']},
     entry_points={'console_scripts': ['ceed=ceed.main:run_app']},

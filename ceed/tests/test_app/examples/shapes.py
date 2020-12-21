@@ -68,7 +68,7 @@ def assert_add_three_groups(
     return (group, group2, group3), (shape, shape2, shape3)
 
 
-class Shape(object):
+class Shape:
 
     painter: CeedPaintCanvasBehavior = None
 

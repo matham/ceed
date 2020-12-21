@@ -65,8 +65,8 @@ class Function(object):
         if app is None:
             self.function_factory = function_factory
         else:
-            self.function_factory = app.function_factory
-            self.funcs_container = app.funcs_container
+            self.function_factory = app.app.function_factory
+            self.funcs_container = app.app.funcs_container
 
         if show_in_gui:
             self.show_in_gui()

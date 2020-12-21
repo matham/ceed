@@ -1,35 +1,29 @@
 import os
 import pytest
-import trio
-import time
-import gc
-import weakref
 from collections import defaultdict
-import logging
-import warnings
 from typing import Type, List
-
-from kivy.config import Config
-Config.set('graphics', 'width', '1280')
-Config.set('graphics', 'height', '720')
+from pytest_trio.enable_trio_mode import *
 
 pytest.register_assert_rewrite('ceed.tests.test_app.examples')
+
+from kivy.config import Config
+Config.set('modules', 'touchring', '')
 
 from ceed.function import FunctionFactoryBase
 from ceed.shape import CeedPaintCanvasBehavior
 from ceed.stage import StageFactoryBase
-from ceed.tests.ceed_app import CeedTestApp
+from ceed.tests.ceed_app import CeedTestGUIApp, CeedTestApp
 from .common import add_prop_watch
 
-warnings.filterwarnings(
-    "ignore",
-    message="numpy.ufunc size changed, may indicate binary incompatibility. "
-            "Expected 192 from C header, got 216 from PyObject"
-)
-
-os.environ['KIVY_USE_DEFAULTCONFIG'] = '1'
-
 file_count = defaultdict(int)
+
+
+def pytest_fixture_setup(fixturedef, request):
+    # unfortunately we can't parameterize fixtures from fixtures, so we have to
+    # use a hammer
+    if fixturedef.argname == 'trio_kivy_app':
+        request.param = {
+            'kwargs': {'width': 1600, 'height': 900}, 'cls': CeedTestApp}
 
 
 @pytest.fixture()
@@ -56,124 +50,37 @@ def temp_file_sess(tmp_path_factory):
     return temp_file_gen
 
 
-@pytest.fixture(scope='session')
-def app_list():
-    apps = []
-
-    yield apps
-
-    gc.collect()
-    alive_apps = []
-    for i, (app, request) in enumerate(apps[1:-1]):
-        app = app()
-        request = request()
-        if request is None:
-            request = '<dead request>'
-
-        if app is not None:
-            alive_apps.append((app, request))
-            logging.error(
-                'Memory leak: failed to release app for test ' + repr(request))
-
-            import objgraph
-            objgraph.show_backrefs(
-                [app], filename=r'E:\backrefs{}.png'.format(i), max_depth=50,
-                too_many=1)
-            # objgraph.show_chain(
-            #     objgraph.find_backref_chain(
-            #         last_app(), objgraph.is_proper_module),
-            #     filename=r'E:\chain.png')
-
-    assert not len(alive_apps), 'Memory leak: failed to release all apps'
-
-
-@pytest.fixture()
+@pytest.fixture
 async def ceed_app(
-        request, nursery, temp_file, tmp_path, tmp_path_factory, app_list):
-
+        request, trio_kivy_app, temp_file, tmp_path, tmp_path_factory
+) -> CeedTestApp:
+    kivy_app = trio_kivy_app
     params = request.param if hasattr(
         request, 'param') and request.param else {}
-    ts0 = time.perf_counter()
-    from kivy.core.window import Window
-    from kivy.context import Context
-    from kivy.clock import ClockBase
-    from kivy.animation import Animation
-    from kivy.base import stopTouchApp
-    from kivy.factory import FactoryBase, Factory
-    from kivy.lang.builder import BuilderBase, Builder
-    from kivy.logger import LoggerHistory
 
-    context = Context(init=False)
-    context['Clock'] = ClockBase(async_lib='trio')
-    # context['Factory'] = FactoryBase.create_from(Factory)
-    # have to make sure all ceed files are imported before this because
-    # globally read kv files will not be loaded again in the new builder,
-    # except if manually loaded, which we don't do
-    # context['Builder'] = BuilderBase.create_from(Builder)
-    context.push()
+    def create_app():
+        import ceed.view.controller
+        ceed.view.controller.ignore_vpixx_import_error = True
 
-    Window.create_window()
-    Window.register()
-    Window.initialized = True
-    Window.canvas.clear()
-
-    from kivy.clock import Clock
-    Clock._max_fps = 0
-
-    import ceed.view.controller
-    ceed.view.controller.ignore_vpixx_import_error = True
-
-    if params.get('persist_config'):
-        base = str(tmp_path_factory.getbasetemp() / params['persist_config'])
-        app = CeedTestApp(
-            yaml_config_path=base + 'config.yaml',
-            ini_file=base + 'config.ini', open_player_thread=False)
-    else:
-        app = CeedTestApp(
-            yaml_config_path=temp_file('config.yaml'),
-            ini_file=temp_file('config.ini'), open_player_thread=False)
-    app.ceed_data.root_path = str(tmp_path)
+        if params.get('persist_config'):
+            base = str(
+                tmp_path_factory.getbasetemp() / params['persist_config'])
+            app = CeedTestGUIApp(
+                yaml_config_path=base + 'config.yaml',
+                ini_file=base + 'config.ini', open_player_thread=False)
+        else:
+            app = CeedTestGUIApp(
+                yaml_config_path=temp_file('config.yaml'),
+                ini_file=temp_file('config.ini'), open_player_thread=False)
+        app.ceed_data.root_path = str(tmp_path)
+        return app
 
     try:
-        app.set_async_lib('trio')
-        nursery.start_soon(app.async_run)
-
-        ts = time.perf_counter()
-        while not app.app_has_started:
-            await trio.sleep(.1)
-            if time.perf_counter() - ts >= 120:
-                raise TimeoutError()
-
-        await app.wait_clock_frames(5)
-
-        ts1 = time.perf_counter()
-        yield weakref.proxy(app)
-        ts2 = time.perf_counter()
-
-        stopTouchApp()
-
-        ts = time.perf_counter()
-        while not app.app_has_stopped:
-            await trio.sleep(.1)
-            if time.perf_counter() - ts >= 40:
-                raise TimeoutError()
-
+        await kivy_app(create_app)
+        yield kivy_app
     finally:
-        stopTouchApp()
-        for anim in list(Animation._instances):
-            anim._unregister()
-        app.clean_up()
-        for child in Window.children[:]:
-            Window.remove_widget(child)
-
-        context.pop()
-        del context
-        LoggerHistory.clear_history()
-
-    app_list.append((weakref.ref(app), weakref.ref(request)))
-
-    ts3 = time.perf_counter()
-    print(ts1 - ts0, ts2 - ts1, ts3 - ts2)
+        if kivy_app.app is not None:
+            kivy_app.app.clean_up()
 
 
 @pytest.fixture
@@ -181,14 +88,14 @@ async def func_app(ceed_app: CeedTestApp):
     from kivy.metrics import dp
     await ceed_app.wait_clock_frames(2)
 
-    assert ceed_app.function_factory is not None
-    assert not ceed_app.function_factory.funcs_user
-    assert len(ceed_app.function_factory.funcs_cls) == \
-        len(ceed_app.function_factory.funcs_inst)
-    assert ceed_app.function_factory.funcs_inst == \
-        ceed_app.function_factory.funcs_inst_default
+    assert ceed_app.app.function_factory is not None
+    assert not ceed_app.app.function_factory.funcs_user
+    assert len(ceed_app.app.function_factory.funcs_cls) == \
+        len(ceed_app.app.function_factory.funcs_inst)
+    assert ceed_app.app.function_factory.funcs_inst == \
+        ceed_app.app.function_factory.funcs_inst_default
 
-    assert not ceed_app.funcs_container.children
+    assert not ceed_app.app.funcs_container.children
 
     # expand shape splitter so shape widgets are fully visible
     splitter = ceed_app.resolve_widget().down(
@@ -212,14 +119,14 @@ async def paint_app(ceed_app: CeedTestApp):
     from kivy.metrics import dp
     await ceed_app.wait_clock_frames(2)
 
-    assert ceed_app.shape_factory is not None
-    assert not ceed_app.shape_factory.shapes
+    assert ceed_app.app.shape_factory is not None
+    assert not ceed_app.app.shape_factory.shapes
 
     painter_widget = ceed_app.resolve_widget().down(
         test_name='painter')()
     assert tuple(painter_widget.size) == (
-        ceed_app.view_controller.screen_width,
-        ceed_app.view_controller.screen_height)
+        ceed_app.app.view_controller.screen_width,
+        ceed_app.app.view_controller.screen_height)
 
     # expand shape splitter so shape widgets are fully visible
     splitter = ceed_app.resolve_widget().down(
@@ -245,11 +152,11 @@ async def stage_app(paint_app: CeedTestApp):
     from kivy.metrics import dp
     await paint_app.wait_clock_frames(2)
 
-    assert paint_app.stage_factory is not None
-    assert not paint_app.stage_factory.stages
-    assert not paint_app.stage_factory.stage_names
+    assert paint_app.app.stage_factory is not None
+    assert not paint_app.app.stage_factory.stages
+    assert not paint_app.app.stage_factory.stage_names
 
-    assert not paint_app.stages_container.children
+    assert not paint_app.app.stages_container.children
 
     # expand stage splitter so stage widgets are fully visible
     splitter = paint_app.resolve_widget().down(

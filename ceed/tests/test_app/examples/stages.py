@@ -35,9 +35,9 @@ def create_test_stages(
         function_factory = stage_factory.function_factory
         shape_factory = stage_factory.shape_factory
     else:
-        function_factory = stage_app.function_factory
-        shape_factory = stage_app.shape_factory
-        stage_factory = stage_app.stage_factory
+        function_factory = stage_app.app.function_factory
+        shape_factory = stage_app.app.shape_factory
+        stage_factory = stage_app.app.stage_factory
 
     # create shapes
     if add_shapes:
@@ -128,8 +128,8 @@ class StageWrapper(object):
         if app is None:
             self.stage_factory = stage_factory
         else:
-            self.stage_factory = app.stage_factory
-            self.stages_container = app.stages_container
+            self.stage_factory = app.app.stage_factory
+            self.stages_container = app.app.stages_container
         self.parent_wrapper_stage = parent_wrapper_stage
         self.shapes = shapes
         self.functions = functions

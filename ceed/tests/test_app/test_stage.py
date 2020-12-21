@@ -187,7 +187,7 @@ async def test_stage_find_shape_in_all_stages(stage_app: CeedTestApp):
             assert shape.shape in [s.shape for s in stage.stage.shapes]
         assert shape.shape in group.shapes
 
-    stage_app.shape_factory.remove_shape(shape2.shape)
+    stage_app.app.shape_factory.remove_shape(shape2.shape)
     await stage_app.wait_clock_frames(2)
 
     for shape in (shape1, shape3):
@@ -199,7 +199,7 @@ async def test_stage_find_shape_in_all_stages(stage_app: CeedTestApp):
             assert shape.shape not in [s.shape for s in stage.stage.shapes]
         assert shape.shape not in group.shapes
 
-    stage_app.shape_factory.remove_shape(shape1.shape)
+    stage_app.app.shape_factory.remove_shape(shape1.shape)
     await stage_app.wait_clock_frames(2)
 
     for shape in (shape3, ):
@@ -211,7 +211,7 @@ async def test_stage_find_shape_in_all_stages(stage_app: CeedTestApp):
             assert shape.shape not in [s.shape for s in stage.stage.shapes]
         assert shape.shape not in group.shapes
 
-    stage_app.shape_factory.remove_shape(shape3.shape)
+    stage_app.app.shape_factory.remove_shape(shape3.shape)
     await stage_app.wait_clock_frames(2)
 
     for shape in (shape2, shape1, shape3):
@@ -221,7 +221,7 @@ async def test_stage_find_shape_in_all_stages(stage_app: CeedTestApp):
 
 
 async def test_add_empty_stage(stage_app: CeedTestApp):
-    stage_factory = stage_app.stage_factory
+    stage_factory = stage_app.app.stage_factory
     assert not stage_factory.stages
     assert not stage_factory.stage_names
 
@@ -263,16 +263,16 @@ async def test_gui_add_stages(stage_app: CeedTestApp):
         # don't keep more than two stages so the list is not too long
         if i >= 2:
             oldest_stage = stages.pop(0)
-            assert oldest_stage.stage in stage_app.stage_factory.stages
+            assert oldest_stage.stage in stage_app.app.stage_factory.stages
             remove_btn = stage_app.resolve_widget(
                 oldest_stage.stage.display).down(test_name='del btn stage')()
             await touch_widget(stage_app, remove_btn)
-            assert oldest_stage.stage not in stage_app.stage_factory.stages
+            assert oldest_stage.stage not in stage_app.app.stage_factory.stages
 
         # add the stage
         await touch_widget(stage_app, add_stage)
-        assert len(stage_app.stage_factory.stages) == min(2, i + 1)
-        stage.stage = stage_app.stage_factory.stages[-1]
+        assert len(stage_app.app.stage_factory.stages) == min(2, i + 1)
+        stage.stage = stage_app.app.stage_factory.stages[-1]
 
         # show the settings for the stage
         widget = stage.stage.display
@@ -287,15 +287,15 @@ async def test_gui_add_stages(stage_app: CeedTestApp):
         original_name = name.text
         assert stage.name != original_name
         assert original_name == name_label.text
-        assert original_name in stage_app.stage_factory.stage_names
-        assert stage.name not in stage_app.stage_factory.stage_names
+        assert original_name in stage_app.app.stage_factory.stage_names
+        assert stage.name not in stage_app.app.stage_factory.stage_names
 
         # change the stage name
         await replace_text(stage_app, name, stage.name)
         assert name.text == stage.name
         assert name_label.text == stage.name
-        assert original_name not in stage_app.stage_factory.stage_names
-        assert stage.name in stage_app.stage_factory.stage_names
+        assert original_name not in stage_app.app.stage_factory.stage_names
+        assert stage.name in stage_app.app.stage_factory.stage_names
 
         await assert_set_params_in_gui(stage_app, stage, settings)
 
@@ -307,7 +307,7 @@ async def test_gui_add_sub_stages(stage_app: CeedTestApp):
     add_stage = stage_app.resolve_widget().down(test_name='add empty stage')()
     await touch_widget(stage_app, add_stage)
 
-    base_stage: CeedStage = stage_app.stage_factory.stages[0]
+    base_stage: CeedStage = stage_app.app.stage_factory.stages[0]
     name_label = stage_app.resolve_widget(base_stage.display).down(
         test_name='stage label')()
     await touch_widget(stage_app, name_label)
@@ -343,7 +343,7 @@ async def test_gui_add_sub_stages(stage_app: CeedTestApp):
 async def test_gui_drag_shape_to_stage(stage_app: CeedTestApp):
     (group, group2, group3), (shape1, shape2, shape3) = \
         assert_add_three_groups(
-            shape_factory=stage_app.shape_factory, app=stage_app,
+            shape_factory=stage_app.app.shape_factory, app=stage_app,
             show_in_gui=True)
     await stage_app.wait_clock_frames(2)
 
@@ -522,19 +522,19 @@ async def test_recursive_play_stage_intensity(
     from kivy.clock import Clock
     from ceed.analysis import CeedDataReader
     root, g1, g2, s1, s2, s3, s4, s5, s6 = create_recursive_stages(
-        stage_app.stage_factory, app=stage_app)
+        stage_app.app.stage_factory, app=stage_app)
 
     from ceed.function.plugin import LinearFunc
     for i, stage in enumerate((s1, s2, s3, s4, s5, s6)):
         stage.stage.add_func(LinearFunc(
-            function_factory=stage_app.function_factory, b=0, m=.1,
+            function_factory=stage_app.app.function_factory, b=0, m=.1,
             duration=(i % 2 + 1) * 5))
 
     shape = CircleShapeP1(
-        app=None, painter=stage_app.shape_factory, show_in_gui=True)
+        app=None, painter=stage_app.app.shape_factory, show_in_gui=True)
 
     shape2 = CircleShapeP2(
-        app=None, painter=stage_app.shape_factory, show_in_gui=True)
+        app=None, painter=stage_app.app.shape_factory, show_in_gui=True)
     s1.stage.add_shape(shape.shape)
     s4.stage.add_shape(shape.shape)
     s5.stage.add_shape(shape.shape)
@@ -548,11 +548,11 @@ async def test_recursive_play_stage_intensity(
     frame = 0
     event = None
     trio_event = trio.Event()
-    rate = stage_app.view_controller.frame_rate = 10
+    rate = stage_app.app.view_controller.frame_rate = 10
     num_frames = rate * (10 + 5 + 10 + 5)
     initial_frames = Clock.frames_displayed
-    stage_app.view_controller.use_software_frame_rate = False
-    stage_app.view_controller.flip_projector = False
+    stage_app.app.view_controller.use_software_frame_rate = False
+    stage_app.app.view_controller.flip_projector = False
 
     shape_color = [(0., 0., 0.), ] * num_frames
     shape2_color = [(0., 0., 0.), ] * num_frames
@@ -576,7 +576,7 @@ async def test_recursive_play_stage_intensity(
         if Clock.frames_displayed <= initial_frames + 1:
             return
 
-        if not stage_app.view_controller.stage_active:
+        if not stage_app.app.view_controller.stage_active:
             event.cancel()
             trio_event.set()
             assert frame == num_frames
@@ -584,7 +584,7 @@ async def test_recursive_play_stage_intensity(
 
         assert frame < num_frames
         points = stage_app.get_widget_pos_pixel(
-            stage_app.shape_factory, [shape.center, shape2.center])
+            stage_app.app.shape_factory, [shape.center, shape2.center])
         points = [[c / 255 for c in p] for p in points]
         (r1, g1, b1, _), (r2, g2, b2, _) = points
 
@@ -601,15 +601,15 @@ async def test_recursive_play_stage_intensity(
 
     event = Clock.create_trigger(verify_intensity, timeout=0, interval=True)
     event()
-    stage_app.view_controller.request_stage_start(root.name)
+    stage_app.app.view_controller.request_stage_start(root.name)
 
     await trio_event.wait()
 
-    stage_app.view_controller.request_stage_end()
+    stage_app.app.view_controller.request_stage_end()
     event.cancel()
 
     filename = str(tmp_path / 'recursive_play_stage_intensity.h5')
-    stage_app.ceed_data.save(filename=filename)
+    stage_app.app.ceed_data.save(filename=filename)
 
     f = CeedDataReader(filename)
     f.open_h5()
@@ -640,7 +640,7 @@ async def test_moat_stage_shapes(stage_app: CeedTestApp, tmp_path):
     from ceed.analysis import CeedDataReader
 
     root, g1, g2, s1, s2, s3, s4, s5, s6 = create_recursive_stages(
-        stage_app.stage_factory, app=stage_app)
+        stage_app.app.stage_factory, app=stage_app)
     # internal shape
     s1.stage.color_r = False
     s1.stage.color_g = False
@@ -651,31 +651,31 @@ async def test_moat_stage_shapes(stage_app: CeedTestApp, tmp_path):
     s2.stage.color_b = True
 
     shape = CircleShapeP1(
-        app=None, painter=stage_app.shape_factory, show_in_gui=True)
+        app=None, painter=stage_app.app.shape_factory, show_in_gui=True)
     internal_shape = CircleShapeP1Internal(
-        app=None, painter=stage_app.shape_factory, show_in_gui=True)
+        app=None, painter=stage_app.app.shape_factory, show_in_gui=True)
 
     s1.stage.add_func(ConstFunc(
-        function_factory=stage_app.function_factory, a=1, duration=5))
+        function_factory=stage_app.app.function_factory, a=1, duration=5))
     s1.stage.add_shape(internal_shape.shape)
 
     s2.stage.add_func(ConstFunc(
-        function_factory=stage_app.function_factory, a=1, duration=5))
+        function_factory=stage_app.app.function_factory, a=1, duration=5))
     s2.stage.add_shape(shape.shape)
 
     root.show_in_gui()
     await stage_app.wait_clock_frames(2)
 
-    stage_app.view_controller.frame_rate = 10
-    stage_app.view_controller.use_software_frame_rate = False
-    stage_app.view_controller.flip_projector = False
+    stage_app.app.view_controller.frame_rate = 10
+    stage_app.app.view_controller.use_software_frame_rate = False
+    stage_app.app.view_controller.flip_projector = False
 
-    stage_app.view_controller.request_stage_start(root.name)
+    stage_app.app.view_controller.request_stage_start(root.name)
     await stage_app.wait_clock_frames(5)
-    assert stage_app.view_controller.stage_active
+    assert stage_app.app.view_controller.stage_active
 
     points = stage_app.get_widget_pos_pixel(
-        stage_app.shape_factory, [internal_shape.center, shape.center])
+        stage_app.app.shape_factory, [internal_shape.center, shape.center])
     (r1, g1, b1, _), (r2, g2, b2, _) = points
     assert r1 == 0
     assert g1 == 0
@@ -685,20 +685,20 @@ async def test_moat_stage_shapes(stage_app: CeedTestApp, tmp_path):
     assert g2 == 0
     assert b2 == 255
 
-    stage_app.view_controller.request_stage_end()
+    stage_app.app.view_controller.request_stage_end()
     await stage_app.wait_clock_frames(2)
-    assert not stage_app.view_controller.stage_active
+    assert not stage_app.app.view_controller.stage_active
 
     # now hide internal shape behind larger circle
-    stage_app.shape_factory.move_shape_upwards(shape.shape)
+    stage_app.app.shape_factory.move_shape_upwards(shape.shape)
     await stage_app.wait_clock_frames(2)
 
-    stage_app.view_controller.request_stage_start(root.name)
+    stage_app.app.view_controller.request_stage_start(root.name)
     await stage_app.wait_clock_frames(5)
-    assert stage_app.view_controller.stage_active
+    assert stage_app.app.view_controller.stage_active
 
     points = stage_app.get_widget_pos_pixel(
-        stage_app.shape_factory, [internal_shape.center, shape.center])
+        stage_app.app.shape_factory, [internal_shape.center, shape.center])
     (r1, g1, b1, _), (r2, g2, b2, _) = points
     assert r1 == 255
     assert g1 == 0
@@ -708,11 +708,11 @@ async def test_moat_stage_shapes(stage_app: CeedTestApp, tmp_path):
     assert g2 == 0
     assert b2 == 255
 
-    stage_app.view_controller.request_stage_end()
+    stage_app.app.view_controller.request_stage_end()
     await stage_app.wait_clock_frames(2)
 
     filename = str(tmp_path / 'moat_stage_shapes.h5')
-    stage_app.ceed_data.save(filename=filename)
+    stage_app.app.ceed_data.save(filename=filename)
 
     f = CeedDataReader(filename)
     f.open_h5()
@@ -739,18 +739,18 @@ async def test_moat_single_stage_shapes(stage_app: CeedTestApp, tmp_path):
     from ceed.analysis import CeedDataReader
 
     root, g1, g2, s1, s2, s3, s4, s5, s6 = create_recursive_stages(
-        stage_app.stage_factory, app=stage_app)
+        stage_app.app.stage_factory, app=stage_app)
     s1.stage.color_r = False
     s1.stage.color_g = False
     s1.stage.color_b = True
 
     shape = CircleShapeP1(
-        app=None, painter=stage_app.shape_factory, show_in_gui=True)
+        app=None, painter=stage_app.app.shape_factory, show_in_gui=True)
     internal_shape = CircleShapeP1Internal(
-        app=None, painter=stage_app.shape_factory, show_in_gui=True)
+        app=None, painter=stage_app.app.shape_factory, show_in_gui=True)
 
     s1.stage.add_func(ConstFunc(
-        function_factory=stage_app.function_factory, a=1, duration=5))
+        function_factory=stage_app.app.function_factory, a=1, duration=5))
     stage_shape = s1.stage.add_shape(internal_shape.shape)
     s1.stage.add_shape(shape.shape)
     stage_shape.keep_dark = True
@@ -758,16 +758,16 @@ async def test_moat_single_stage_shapes(stage_app: CeedTestApp, tmp_path):
     root.show_in_gui()
     await stage_app.wait_clock_frames(2)
 
-    stage_app.view_controller.frame_rate = 10
-    stage_app.view_controller.use_software_frame_rate = False
-    stage_app.view_controller.flip_projector = False
+    stage_app.app.view_controller.frame_rate = 10
+    stage_app.app.view_controller.use_software_frame_rate = False
+    stage_app.app.view_controller.flip_projector = False
 
-    stage_app.view_controller.request_stage_start(root.name)
+    stage_app.app.view_controller.request_stage_start(root.name)
     await stage_app.wait_clock_frames(5)
-    assert stage_app.view_controller.stage_active
+    assert stage_app.app.view_controller.stage_active
 
     points = stage_app.get_widget_pos_pixel(
-        stage_app.shape_factory, [internal_shape.center, shape.center])
+        stage_app.app.shape_factory, [internal_shape.center, shape.center])
     (r1, g1, b1, _), (r2, g2, b2, _) = points
     assert r1 == 0
     assert g1 == 0
@@ -777,12 +777,12 @@ async def test_moat_single_stage_shapes(stage_app: CeedTestApp, tmp_path):
     assert g2 == 0
     assert b2 == 255
 
-    stage_app.view_controller.request_stage_end()
+    stage_app.app.view_controller.request_stage_end()
     await stage_app.wait_clock_frames(2)
-    assert not stage_app.view_controller.stage_active
+    assert not stage_app.app.view_controller.stage_active
 
     filename = str(tmp_path / 'moat_single_stage_shapes.h5')
-    stage_app.ceed_data.save(filename=filename)
+    stage_app.app.ceed_data.save(filename=filename)
 
     f = CeedDataReader(filename)
     f.open_h5()
@@ -802,32 +802,32 @@ async def test_pad_stage_ticks(stage_app: CeedTestApp, tmp_path):
     from ceed.analysis import CeedDataReader
 
     root, g1, g2, s1, s2, s3, s4, s5, s6 = create_recursive_stages(
-        stage_app.stage_factory, app=stage_app)
+        stage_app.app.stage_factory, app=stage_app)
 
     shape = CircleShapeP1(
-        app=None, painter=stage_app.shape_factory, show_in_gui=True)
+        app=None, painter=stage_app.app.shape_factory, show_in_gui=True)
     root.stage.add_shape(shape.shape)
 
     root.show_in_gui()
     await stage_app.wait_clock_frames(2)
 
-    stage_app.view_controller.frame_rate = 10
-    stage_app.view_controller.use_software_frame_rate = False
+    stage_app.app.view_controller.frame_rate = 10
+    stage_app.app.view_controller.use_software_frame_rate = False
 
-    stage_app.view_controller.pad_to_stage_handshake = False
-    stage_app.view_controller.request_stage_start(root.name)
-    while stage_app.view_controller.stage_active:
+    stage_app.app.view_controller.pad_to_stage_handshake = False
+    stage_app.app.view_controller.request_stage_start(root.name)
+    while stage_app.app.view_controller.stage_active:
         await stage_app.wait_clock_frames(5)
     await stage_app.wait_clock_frames(2)
 
-    stage_app.view_controller.pad_to_stage_handshake = True
-    stage_app.view_controller.request_stage_start(root.name)
-    while stage_app.view_controller.stage_active:
+    stage_app.app.view_controller.pad_to_stage_handshake = True
+    stage_app.app.view_controller.request_stage_start(root.name)
+    while stage_app.app.view_controller.stage_active:
         await stage_app.wait_clock_frames(5)
     await stage_app.wait_clock_frames(2)
 
     filename = str(tmp_path / 'pad_stage_ticks.h5')
-    stage_app.ceed_data.save(filename=filename)
+    stage_app.app.ceed_data.save(filename=filename)
 
     f = CeedDataReader(filename)
     f.open_h5()
