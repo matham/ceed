@@ -1,11 +1,14 @@
 import pytest
 from typing import Type, List
+
 from ceed.tests.ceed_app import CeedTestApp
 from ceed.tests.common import exhaust
 from ceed.tests.test_app import replace_text, touch_widget
 from ceed.tests.test_app.examples.shapes import paired_tests, PolygonShapeP1, \
     CircleShapeP1, EllipseShapeP1, FreeformPolygonShapeP1, Shape, \
     EnclosingPolygon
+
+pytestmark = pytest.mark.ceed_app
 
 
 @pytest.mark.parametrize(

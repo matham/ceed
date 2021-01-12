@@ -86,6 +86,15 @@
     on_focus: if not self.focus: self._update_attr(self.text)
 
 
+<FuncPropBoolWidget>:
+    size_hint_y: None
+    height: self.texture_size[1]
+    size_hint_min_x: self.texture_size[0]
+    padding: '5dp', '5dp'
+    flat_color: app.theme.text_primary
+    flat_background_color: app.theme.primary_light
+
+
 <FuncWidgetStyle@object>:
     size_hint_y: None
     orientation: 'vertical'

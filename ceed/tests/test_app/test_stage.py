@@ -1,6 +1,7 @@
 import trio
 import math
 import numpy as np
+import pytest
 
 from .examples.stages import create_test_stages, make_stage, StageWrapper, \
     stage_classes, assert_stages_same
@@ -14,6 +15,8 @@ from .examples.shapes import assert_add_three_groups
 from .examples.funcs import create_funcs, GroupFunction
 from .test_func import assert_func_params_in_gui, \
     replace_last_ref_with_original_func, assert_funcs_same
+
+pytestmark = pytest.mark.ceed_app
 
 
 async def assert_set_params_in_gui(

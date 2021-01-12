@@ -1,10 +1,94 @@
 import pytest
+import sys
 import copy
 import math
-from typing import Type, List
+import pathlib
+import os
+from typing import Type, List, Tuple
 from ceed.function import FuncBase, FuncGroup, FunctionFactoryBase, \
-    register_all_functions, FuncDoneException
+    register_all_functions, FuncDoneException, \
+    register_external_functions
 from .common import add_prop_watch
+
+
+fake_plugin_function = """
+from kivy.properties import NumericProperty
+from ceed.function import CeedFunc, FuncBase
+
+class FakeFunc(CeedFunc):
+
+    val = NumericProperty(0.)
+
+    def __init__(self, name='Fake', description='y(t) = val', **kwargs):
+        super().__init__(name=name, description=description, **kwargs)
+
+    def __call__(self, t):
+        super().__call__(t)
+        return self.val
+
+    def get_gui_props(self):
+        d = super().get_gui_props()
+        d['val'] = None
+        return d
+
+    def get_state(self, *largs, **kwargs):
+        d = super().get_state(*largs, **kwargs)
+        d['val'] = self.val
+        return d
+
+def get_ceed_functions():
+    return FakeFunc,
+"""
+
+fake_plugin_distribution = """
+from kivy.properties import NumericProperty
+from ceed.function.param_noise import NoiseType, NoiseBase
+
+class FakeNoise(NoiseBase):
+
+    val = NumericProperty(0)
+
+    def sample(self) -> float:
+        return 43
+
+    def get_config(self) -> dict:
+        config = super().get_config()
+        config['val'] = self.val
+        return config
+
+    def get_prop_pretty_name(self):
+        names = super().get_prop_pretty_name()
+        names['val'] = 'Value'
+        return names
+
+def get_ceed_distributions():
+    return FakeNoise,
+"""
+
+fake_plugin = fake_plugin_function + fake_plugin_distribution
+
+noise_test_parameters = [
+    ('GaussianNoise',
+     {'min_val': -1.5, 'max_val': 1.5, 'mean_val': 0.1, 'stdev': .15}),
+    ('UniformNoise',
+     {'min_val': -1.4, 'max_val': 1.3})
+]
+
+
+def register_callback_distribution(
+        function_factory: FunctionFactoryBase, counter: list, class_count: int
+) -> Type:
+    UniformNoise = function_factory.param_noise_factory.get_cls('UniformNoise')
+
+    def sample(self) -> float:
+        counter[0] += 1
+        return super(cls, self).sample()
+
+    cls = type(
+        f'CallbackNoise{class_count}', (UniformNoise, ), {'sample': sample})
+
+    function_factory.param_noise_factory.register_class(cls)
+    return cls
 
 
 def test_register_funcs():
@@ -1071,3 +1155,207 @@ def test_group_remove_func(function_factory: FunctionFactoryBase):
     assert g1.duration == 0
     assert g1.duration_min == 0
     assert g1.duration_min_total == 0
+
+
+def test_internal_plugin_source_in_factory(
+        function_factory: FunctionFactoryBase):
+    import ceed.function.plugin
+    root = pathlib.Path(ceed.function.plugin.__file__)
+
+    assert 'ConstFunc' in function_factory.funcs_cls
+
+    plugin_contents = function_factory.plugin_sources['ceed.function.plugin']
+    contents = root.read_bytes()
+    assert plugin_contents == [(('__init__.py', ), contents)]
+
+
+@pytest.mark.parametrize('contents,config', [
+    (fake_plugin, 'both'), (fake_plugin_function, 'func'),
+    (fake_plugin_distribution, 'dist')
+])
+def test_external_plugin_source_in_factory(
+        function_factory: FunctionFactoryBase, tmp_path, contents, config):
+    sys.path.append(str(tmp_path))
+    mod = tmp_path / 'my_plugin' / '__init__.py'
+    try:
+        mod.parent.mkdir()
+        mod.write_text(contents)
+        register_external_functions(function_factory, 'my_plugin')
+
+        noise_classes = function_factory.param_noise_factory.noise_classes
+
+        assert 'ConstFunc' in function_factory.funcs_cls
+        if config in ('both', 'func'):
+            assert 'FakeFunc' in function_factory.funcs_cls
+        else:
+            assert 'FakeFunc' not in function_factory.funcs_cls
+
+        assert 'UniformNoise' in noise_classes
+        assert 'GaussianNoise' in noise_classes
+        if config in ('both', 'dist'):
+            assert 'FakeNoise' in noise_classes
+        else:
+            assert 'FakeNoise' not in noise_classes
+
+        assert 'ceed.function.plugin' in function_factory.plugin_sources
+        plugin_contents = function_factory.plugin_sources['my_plugin']
+        assert plugin_contents == [
+            (('__init__.py', ),
+             contents.replace('\n', os.linesep).encode())
+        ]
+    finally:
+        sys.path.remove(str(tmp_path))
+        del sys.modules['my_plugin']
+
+
+def test_external_plugin_single_file(
+        function_factory: FunctionFactoryBase, tmp_path):
+    sys.path.append(str(tmp_path))
+    mod = tmp_path / 'my_plugin.py'
+    try:
+        mod.write_text(fake_plugin)
+        with pytest.raises(ModuleNotFoundError):
+            register_external_functions(function_factory, 'my_plugin')
+    finally:
+        sys.path.remove(str(tmp_path))
+
+
+def test_noise_factory(function_factory: FunctionFactoryBase):
+    UniformNoise = function_factory.param_noise_factory.get_cls('UniformNoise')
+    assert function_factory.param_noise_factory.noise_classes['UniformNoise'] \
+        is UniformNoise
+    uniform = UniformNoise()
+    assert hasattr(uniform, 'min_val')
+    assert hasattr(uniform, 'max_val')
+    assert UniformNoise.__name__ == 'UniformNoise'
+
+
+@pytest.mark.parametrize('cls_name,props', noise_test_parameters)
+def test_noise_sampling(function_factory: FunctionFactoryBase, cls_name, props):
+    cls = function_factory.param_noise_factory.get_cls(cls_name)
+    assert cls.__name__ == cls_name
+    assert function_factory.param_noise_factory.noise_classes[cls_name] is cls
+
+    obj = cls(**props)
+    min_val = props['min_val']
+    max_val = props['max_val']
+
+    samples = [obj.sample() for _ in range(100)]
+    assert min_val <= min(samples) <= max(samples) <= max_val
+    # at least two are different (if random is not broken)
+    assert len(set(samples)) > 1
+
+
+@pytest.mark.parametrize('cls_name,props', noise_test_parameters)
+def test_noise_create_from_config(
+        function_factory: FunctionFactoryBase, cls_name, props):
+    cls = function_factory.param_noise_factory.get_cls(cls_name)
+
+    obj = cls(**props)
+    obj2 = function_factory.param_noise_factory.make_instance(obj.get_config())
+
+    for key, value in props.items():
+        assert getattr(obj, key) == value
+        assert getattr(obj2, key) == value
+
+
+@pytest.mark.parametrize('cls_name,props', noise_test_parameters)
+def test_func_sampling(function_factory: FunctionFactoryBase, cls_name, props):
+    cls = function_factory.param_noise_factory.get_cls(cls_name)
+
+    f: FuncBase = function_factory.get('LinearFunc')(
+        function_factory=function_factory)
+    b = f.b
+    f.noisy_parameters['m'] = cls(**props)
+
+    b_vals = []
+    m_vals = []
+    for _ in range(100):
+        f.resample_parameters()
+        b_vals.append(f.b)
+        m_vals.append(f.m)
+
+    assert set(b_vals) == {b}
+    # at least two are different (if random is not broken)
+    assert len(set(m_vals)) > 1
+
+
+@pytest.mark.parametrize('cls_name,props', noise_test_parameters)
+@pytest.mark.parametrize('lock_param', [True, False])
+@pytest.mark.parametrize('is_forked', [True, False])
+def test_noise_lock(
+        function_factory: FunctionFactoryBase, cls_name, props, lock_param,
+        is_forked):
+    cls = function_factory.param_noise_factory.get_cls(cls_name)
+
+    f: FuncBase = function_factory.get('LinearFunc')(
+        function_factory=function_factory)
+    f.noisy_parameters['m'] = cls(**props)
+    f.noisy_parameters['b'] = cls(**props, lock_after_forked=lock_param)
+    b = f.b
+
+    b_vals = []
+    m_vals = []
+    for _ in range(100):
+        f.resample_parameters(is_forked=is_forked)
+        b_vals.append(f.b)
+        m_vals.append(f.m)
+
+    if lock_param:
+        if is_forked:
+            # should not have changed
+            assert set(b_vals) == {b}
+        else:
+            assert len(set(b_vals)) > 1
+    else:
+        assert len(set(b_vals)) > 1
+
+    # at least two are different (if random is not broken)
+    assert len(set(m_vals)) > 1
+
+
+def test_noise_ref_lock(function_factory: FunctionFactoryBase):
+    cls = function_factory.param_noise_factory.get_cls('UniformNoise')
+
+    f: FuncBase = function_factory.get('LinearFunc')(
+        function_factory=function_factory)
+    function_factory.add_func(f)
+
+    f.noisy_parameters['m'] = cls()
+    f.noisy_parameters['b'] = cls(lock_after_forked=True)
+
+    ref2 = function_factory.get_func_ref(func=f)
+    f.resample_parameters()
+
+    m_vals = set()
+    f2: FuncBase = ref2.copy_expand_ref()
+    for _ in range(100):
+        f2.resample_parameters(is_forked=True)
+        m_vals.add(f2.m)
+        assert f2.b == f.b
+
+    assert len(set(m_vals)) > 1
+
+
+@pytest.mark.parametrize('cls_name,props', noise_test_parameters)
+def test_copy_func_noise(
+        function_factory: FunctionFactoryBase, cls_name, props):
+    cls = function_factory.param_noise_factory.get_cls(cls_name)
+
+    f: FuncBase = function_factory.get('LinearFunc')(
+        function_factory=function_factory)
+    f.noisy_parameters['m'] = cls(**props)
+    f.noisy_parameters['b'] = cls(**props, lock_after_forked=True)
+
+    f2 = copy.deepcopy(f)
+
+    for key, value in props.items():
+        assert getattr(f.noisy_parameters['m'], key) == value
+        assert getattr(f.noisy_parameters['b'], key) == value
+        assert getattr(f2.noisy_parameters['m'], key) == value
+        assert getattr(f2.noisy_parameters['b'], key) == value
+
+    assert not f.noisy_parameters['m'].lock_after_forked
+    assert f2.noisy_parameters['b'].lock_after_forked
+    assert not f.noisy_parameters['m'].lock_after_forked
+    assert f2.noisy_parameters['b'].lock_after_forked

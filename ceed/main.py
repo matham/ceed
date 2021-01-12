@@ -29,7 +29,8 @@ import ceed.shape.shape_widgets
 import ceed.view.view_widgets
 import ceed.storage.storage_widgets
 
-from ceed.function import FunctionFactoryBase, register_all_functions
+from ceed.function import FunctionFactoryBase, register_all_functions, \
+    register_external_functions
 from ceed.stage import StageFactoryBase, remove_shapes_upon_deletion
 from ceed.stage.stage_widgets import StageList
 from ceed.view.controller import ControllerSideViewControllerBase
@@ -115,8 +116,12 @@ class CeedApp(BaseKivyApp):
     def __init__(self, open_player_thread=True, **kwargs):
         self.drag_controller = CeedDragNDrop()
         self.function_factory = FunctionFactoryBase()
-        register_all_functions(
-            self.function_factory, self.external_function_plugin_package)
+        register_all_functions(self.function_factory)
+        if self.external_function_plugin_package:
+            register_external_functions(
+                self.function_factory,
+                self.external_function_plugin_package)
+
         self.stage_factory = StageFactoryBase(
             function_factory=self.function_factory, shape_factory=None)
         self.player = CeedPlayer(open_player_thread=open_player_thread)

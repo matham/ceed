@@ -12,7 +12,7 @@ import sys
 import itertools
 import nixio as nix
 import pathlib
-from typing import List, Union
+from typing import List, Union, Optional
 from numpy.lib.format import open_memmap
 
 from more_kivy_app.utils import yaml_loads
@@ -23,7 +23,8 @@ from ffpyplayer.tools import get_best_pix_fmt
 from tqdm import tqdm
 from ffpyplayer.writer import MediaWriter
 
-from ceed.function import FunctionFactoryBase, register_all_functions
+from ceed.function import FunctionFactoryBase, register_all_functions, \
+    register_external_functions
 from ceed.stage import StageFactoryBase
 from ceed.shape import CeedPaintCanvasBehavior
 from ceed.storage.controller import DataSerializerBase, CeedDataWriterBase
@@ -73,20 +74,20 @@ class EndOfDataException(Exception):
     pass
 
 
-class CeedDataReader(object):
+class CeedDataReader:
 
-    filename = ''
+    filename: str = ''
     """The full filename path associated with this :class:`CeedDataReader`
     instance.
     """
 
-    experiments_in_file = []
+    experiments_in_file: List[str] = []
     """Once set in :meth:`open_h5`, it is a list of the experiment names
     found in the file. The experiments listed can be opened with
     :meth:`load_experiment`.
     """
 
-    num_images_in_file = 0
+    num_images_in_file: int = 0
     """Once set in :meth:`open_h5`, it is the number of camera images
     found in the file. Images can be opened by number with
     :meth:`get_image_from_file`.
@@ -183,7 +184,7 @@ class CeedDataReader(object):
     """The camera image stored for the currently :attr:`loaded_experiment`.
     """
 
-    loaded_experiment = None
+    loaded_experiment: Optional[str] = None
     """The ceed h5 file contains multiple experiments and their data.
     :meth:`load_experiment` must be called to load a particular experiment.
     This stores the experiment number currently loaded.
@@ -219,7 +220,7 @@ class CeedDataReader(object):
     when the file was last closed/saved.
     """
 
-    _nix_file = None
+    _nix_file: Optional[nix.File] = None
     """Nix file handle opened with :meth:`open_h5`.
     """
 
@@ -246,12 +247,41 @@ class CeedDataReader(object):
         super(CeedDataReader, self).__init__(**kwargs)
         self.filename = filename
 
+    def __enter__(self):
+        self.open_h5()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close_h5()
+
     def close_h5(self):
+        """Closes the data file if it has been opened.
+        """
         if self._nix_file is not None:
             self._nix_file.close()
             self._nix_file = None
 
     def open_h5(self):
+        """Opens the data file in read only mode and loads the application
+        config.
+
+        To load a specific experiment data after the file is open, use
+        :meth:`load_experiment`.
+
+        E.g.::
+
+            >>> reader = CeedDataReader(filename='data.h5')
+            >>> reader.open_h5()
+            >>> print(reader.experiments_in_file)
+            >>> reader.load_experiment(0)
+            >>> reader.close_h5()
+
+        Or in a safer way::
+
+            >>> with CeedDataReader(filename='data.h5') as reader:
+            ...     print(reader.experiments_in_file)
+            ...     reader.load_experiment(0)
+        """
         from ceed.storage.controller import CeedDataWriterBase
         if self._nix_file is not None:
             raise Exception('File already open')
@@ -265,14 +295,16 @@ class CeedDataReader(object):
             CeedDataWriterBase.get_file_num_fluorescent_images(self._nix_file)
         self.load_application_data()
 
-    @staticmethod
     def dump_function_plugin_sources(
-            filename: Union[str, pathlib.Path], root: Union[str, pathlib.Path]
-    ):
-        root = pathlib.Path(root)
-        nix_file = nix.File.open(str(filename), nix.FileMode.ReadOnly)
-        if 'function_plugin_sources' not in nix_file.sections:
-            raise ValueError(f'{filename} does not contain any plugin data')
+            self, target_root: Union[str, pathlib.Path]):
+        """Dumps the source code of all the registered function plugins that
+        was saved to the data file.
+
+        See :func:`ceed.function.register_external_functions` and
+        :func:`ceed.function.register_all_functions`.
+        """
+        root = pathlib.Path(target_root)
+        nix_file = self._nix_file
 
         contents_s = nix_file.sections['function_plugin_sources']['contents']
 
@@ -286,7 +318,7 @@ class CeedDataReader(object):
                     src_filename.parent.mkdir(parents=True)
                 src_filename.write_bytes(content)
 
-    def get_electrode_names(self):
+    def get_electrode_names(self) -> List[List[str]]:
         names = []
         disabled = {
             'A1', 'A2', 'A3', 'A10', 'A11', 'A12',
@@ -306,6 +338,11 @@ class CeedDataReader(object):
         return names
 
     def load_application_data(self):
+        """Loads all the application configuration from the data file and
+        stores it in the instance properties.
+
+        This is automatically called by :meth:`open_h5`.
+        """
         self.app_logs = self.app_notes = ''
         if 'app_logs' in self._nix_file.sections:
             self.app_logs = self._nix_file.sections['app_logs']['log_data']
@@ -323,8 +360,13 @@ class CeedDataReader(object):
 
         view = ViewControllerBase()
         ser = DataSerializerBase()
+
         func = FunctionFactoryBase()
-        register_all_functions(func, self.external_function_plugin_package)
+        register_all_functions(func)
+        if self.external_function_plugin_package:
+            register_external_functions(
+                func, self.external_function_plugin_package)
+
         shape = CeedPaintCanvasBehavior()
         stage = StageFactoryBase(
             function_factory=func, shape_factory=shape)
@@ -343,7 +385,20 @@ class CeedDataReader(object):
             'stage_factory': stage,
         }
 
-    def load_experiment(self, experiment):
+    def load_experiment(self, experiment: Union[int, str]):
+        """Loads the data from a specific experiment and populates the instance
+        properties with the data.
+
+        If a previous experiment was loaded, it replaces the properties with
+        the new data. E.g.::
+
+            >>> with CeedDataReader(filename='data.h5') as reader:
+            ...     print(reader.experiments_in_file)
+            ...     reader.load_experiment(0)
+            ...     print(reader.experiment_notes)
+            ...     reader.load_experiment(2)
+        """
+        experiment = str(experiment)
         self._block = block = self._nix_file.blocks[
             CeedDataWriterBase.get_experiment_block_name(experiment)]
         section = self._nix_file.sections[
@@ -362,9 +417,13 @@ class CeedDataReader(object):
 
         view = self.view_controller = ViewControllerBase()
         ser = self.data_serializer = DataSerializerBase()
+
         func = self.function_factory = FunctionFactoryBase()
-        register_all_functions(
-            func, config_data.get('external_function_plugin_package', ''))
+        register_all_functions(func)
+        package = config_data.get('external_function_plugin_package', '')
+        if package:
+            register_external_functions(func, package)
+
         shape = self.shape_factory = CeedPaintCanvasBehavior()
         stage = self.stage_factory = StageFactoryBase(
             function_factory=func, shape_factory=shape)

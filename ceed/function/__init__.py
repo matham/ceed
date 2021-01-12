@@ -467,23 +467,28 @@ values returned by :meth:`FuncBase.get_gui_props`,
 These methods control what properties are editable by the user and the values
 they may potentially take.
 """
-from typing import Type, List, Tuple, Dict, Optional
+from typing import Type, List, Tuple, Dict, Optional, Set, TypeVar
 from copy import deepcopy
 from collections import defaultdict
 from os.path import dirname
 from fractions import Fraction
+import importlib
 
 from kivy.event import EventDispatcher
 from kivy.properties import StringProperty, NumericProperty, BooleanProperty, \
     ObjectProperty, DictProperty, AliasProperty
 
 from ceed.utils import fix_name, update_key_if_other_key
-from ceed.function.param_noise import ParameterNoiseFactory, \
-    register_noise_classes, NoiseBase
+from ceed.function.param_noise import ParameterNoiseFactory, NoiseBase
 
-__all__ = ('FuncDoneException', 'FunctionFactoryBase',
-           'FuncBase', 'CeedFunc', 'FuncGroup', 'CeedFuncRef',
-           'register_all_functions')
+__all__ = (
+    'FuncDoneException', 'FunctionFactoryBase', 'FuncBase', 'FuncType',
+    'CeedFunc', 'FuncGroup', 'CeedFuncRef', 'register_all_functions',
+    'register_external_functions')
+
+FuncType = TypeVar('FuncType', bound='FuncBase')
+"""The type-hint type for :class:`FuncBase`.
+"""
 
 
 class FuncDoneException(Exception):
@@ -508,7 +513,7 @@ class FunctionFactoryBase(EventDispatcher):
 
     __events__ = ('on_changed', )
 
-    funcs_cls: Dict[str, Type['FuncBase']] = {}
+    funcs_cls: Dict[str, Type[FuncType]] = {}
     '''Dict whose keys is the name of the function classes registered
     with :meth:`register` and whose values is the corresponding classes.::
 
@@ -592,7 +597,6 @@ class FunctionFactoryBase(EventDispatcher):
         self.plugin_sources = {}
         self._ref_funcs = defaultdict(int)
         self.param_noise_factory = ParameterNoiseFactory()
-        register_noise_classes(self.param_noise_factory)
 
     def on_changed(self, *largs, **kwargs):
         pass
@@ -635,7 +639,7 @@ class FunctionFactoryBase(EventDispatcher):
             del self._ref_funcs[func_ref.func]
             func_ref.func.has_ref = False
 
-    def register(self, cls: Type['FuncBase'], instance: 'FuncBase' = None):
+    def register(self, cls: Type[FuncType], instance: 'FuncBase' = None):
         """Registers the class and adds it to :attr:`funcs_cls`. It also
         creates an instance (unless ``instance`` is provided, in which case
         that is used) of the class that is added to :attr:`funcs_inst` and
@@ -677,7 +681,7 @@ class FunctionFactoryBase(EventDispatcher):
             raise ValueError(f'{package} has already been added')
         self.plugin_sources[package] = contents
 
-    def get(self, name: str) -> Optional[Type['FuncBase']]:
+    def get(self, name: str) -> Optional[Type[FuncType]]:
         """Returns the class with name ``name`` that was registered with
         :meth:`register`.
 
@@ -701,7 +705,7 @@ class FunctionFactoryBase(EventDispatcher):
         """
         return list(self.funcs_cls.keys())
 
-    def get_classes(self) -> List[Type['FuncBase']]:
+    def get_classes(self) -> List[Type[FuncType]]:
         """Returns the classes registered with :meth:`register`.
         """
         return list(self.funcs_cls.values())
@@ -1082,6 +1086,28 @@ class FuncBase(EventDispatcher):
     :class:`ceed.function.param_noise.NoiseBase` instances that indicate
     how the parameter should be sampled, when the parameter needs to be
     stochastic.
+
+    Only parameters returned in :meth:`get_noise_supported_parameters` may
+    have randomness associated with them.
+
+    E.g.::
+
+        >>> f = LinearFunc(function_factory=function_factory, duration=2, m=2)
+        >>> UniformNoise = \
+function_factory.param_noise_factory.get_cls('UniformNoise')
+        >>> f.noisy_parameters['m'] = UniformNoise(min_val=10, max_val=20)
+        >>> f.m
+        2
+        >>> f.b
+        0.0
+        >>> f.resample_parameters()
+        >>> f.m
+        12.902067284602595
+        >>> f.resample_parameters()
+        >>> f.m
+        11.555420807597352
+        >>> f.b
+        0.0
     """
 
     __events__ = ('on_changed', )
@@ -1205,13 +1231,13 @@ class FuncBase(EventDispatcher):
         items = []
         return items
 
-    def get_noise_supported_parameters(self) -> set:
+    def get_noise_supported_parameters(self) -> Set[str]:
         """Returns the set of property names of this function that supports
         randomness and may have an
         :class:`ceed.function.param_noise.NoiseBase` instance associated with
         it.
         """
-        return set()
+        return {'duration'}
 
     def get_state(self, recurse=True, expand_ref=False) -> Dict:
         """Returns a dict representation of the function so that it can be
@@ -1469,14 +1495,52 @@ class FuncBase(EventDispatcher):
         """
         self.duration_min_total = self.loop * self.duration_min
 
-    def resample_parameters(self):
+    def resample_parameters(self, is_forked=False):
         """Resamples all the function parameters that have randomness
-        attached to it in :attr:`noisy_parameters`.
+        attached to it in :attr:`noisy_parameters` and updates their values.
 
-        These function properties will be set to newly sampled values.
+        If ``is_forked``, then if
+        :attr:`~ceed.function.param_noise.NoiseBase.lock_after_forked`, then
+        it won't be re-sampled.
+        This allows sampling a :class:`CeedFuncRef` function before forking it,
+        and then, when copying and forking the source functions into individual
+        functions we don't resample them. Then all these individual functions
+        share the same random parameters as the original referenced function.
+
+        E.g.::
+
+            >>> # get the classes
+            >>> function_factory = FunctionFactoryBase()
+            >>> register_all_functions(function_factory)
+            >>> LinearFunc = function_factory.get('LinearFunc')
+            >>> UniformNoise = function_factory.param_noise_factory.get_cls(
+            ...     'UniformNoise')
+            >>> # create function and add noise to parameters
+            >>> f = LinearFunc(function_factory=function_factory)
+            >>> f.noisy_parameters['m'] = UniformNoise()
+            >>> f.noisy_parameters['b'] = UniformNoise(lock_after_forked=True)
+            >>> # now add it to factory and create references to it
+            >>> function_factory.add_func(f)
+            >>> ref1 = function_factory.get_func_ref(func=f)
+            >>> ref2 = function_factory.get_func_ref(func=f)
+            >>> # resample the original function and fork refs into copies
+            >>> f.resample_parameters()
+            >>> f1 = ref1.copy_expand_ref()
+            >>> f2 = ref2.copy_expand_ref()
+            >>> # now resample only those that are not locked
+            >>> f1.resample_parameters(is_forked=True)
+            >>> f2.resample_parameters(is_forked=True)
+            >>> # b is locked to pre-forked value and is not sampled after fork
+            >>> f.m, f.b
+            (0.22856343565686332, 0.3092686616300213)
+            >>> f1.m, f1.b
+            (0.05228392113705038, 0.3092686616300213)
+            >>> f2.m, f2.b
+            (0.9117196772532972, 0.3092686616300213)
         """
         for key, value in self.noisy_parameters.items():
-            setattr(self, key, value.sample())
+            if not value.lock_after_forked or not is_forked:
+                setattr(self, key, value.sample())
 
 
 class CeedFuncRef(object):
@@ -1839,26 +1903,59 @@ line 934, in __call__
                 yield f
 
 
-def register_all_functions(
-        function_factory: FunctionFactoryBase,
-        external_plugin_package: str = ''):
-    """Call this with a :class:`FunctionFactoryBase` instance and it will
-    register all the plugin and built-in functions with the provided
-    :class:`FunctionFactoryBase` instance.
+def register_all_functions(function_factory: FunctionFactoryBase):
+    """Registers all the internal plugins and built-in functions and function
+    distributions with the :class:`FunctionFactoryBase` and
+    :attr:`FunctionFactoryBase.param_noise_factory` instance, respectively.
 
-    It gets and registers all the plugin declared functions using
+    It gets and registers all the plugins functions and function distributions
+    under ``ceed/function/plugin`` using
     :func:`~ceed.function.plugin.get_plugin_functions`. See that function
-    for how to make your plugin functions discoverable.
+    for how to make your plugin functions and distributions discoverable.
 
     :param function_factory: a :class:`FunctionFactoryBase` instance.
     """
     function_factory.register(FuncGroup)
     import ceed.function.plugin
     from ceed.function.plugin import get_plugin_functions
+    package = 'ceed.function.plugin'
 
-    functions, contents = get_plugin_functions(
-        base_package='ceed.function.plugin',
-        root=dirname(ceed.function.plugin.__file__))
+    functions, distributions, contents = get_plugin_functions(
+        base_package=package, root=dirname(ceed.function.plugin.__file__))
     for f in functions:
         function_factory.register(f)
-    function_factory.add_plugin_source('ceed.function.plugin', contents)
+    for d in distributions:
+        function_factory.param_noise_factory.register_class(d)
+
+    function_factory.add_plugin_source(package, contents)
+
+
+def register_external_functions(
+        function_factory: FunctionFactoryBase, package: str):
+    """Registers all the plugin functions and function distributions in the
+    package with the :class:`FunctionFactoryBase` and
+    :attr:`FunctionFactoryBase.param_noise_factory` instance, respectively.
+
+    See :func:`~ceed.function.plugin.get_plugin_functions`
+    for how to make your plugin functions and distributions discoverable.
+
+    Plugin source code files are copied to the data file when a a data file is
+    created. However, it only copies the files containing the discoverable
+    plugin functions and distributions (i.e. ignoring e.g. files starting with
+    a underscore, unless it's ``init__.py``) so it should be independently
+    tracked for each experiment.
+
+    :param function_factory: A :class:`FunctionFactoryBase` instance.
+    :param package: The name of the package containing the plugins.
+    """
+    from ceed.function.plugin import get_plugin_functions
+    m = importlib.import_module(package)
+
+    functions, distributions, contents = get_plugin_functions(
+        base_package=package, root=dirname(m.__file__))
+    for f in functions:
+        function_factory.register(f)
+    for d in distributions:
+        function_factory.param_noise_factory.register_class(d)
+
+    function_factory.add_plugin_source(package, contents)

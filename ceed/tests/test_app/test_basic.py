@@ -1,4 +1,7 @@
 from ceed.tests.ceed_app import CeedTestApp
+import pytest
+
+pytestmark = pytest.mark.ceed_app
 
 
 async def test_open_app(ceed_app: CeedTestApp):

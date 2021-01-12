@@ -2,7 +2,8 @@ import os
 import pytest
 from collections import defaultdict
 from typing import Type, List
-from pytest_trio.enable_trio_mode import pytest_collection_modifyitems, \
+from pytest_trio.enable_trio_mode import \
+    pytest_collection_modifyitems as trio_pytest_collection_modifyitems, \
     pytest_fixture_setup as trio_pytest_fixture_setup
 
 pytest.register_assert_rewrite('ceed.tests.test_app.examples')
@@ -17,6 +18,32 @@ from ceed.tests.ceed_app import CeedTestGUIApp, CeedTestApp
 from .common import add_prop_watch
 
 file_count = defaultdict(int)
+
+
+def pytest_addoption(parser):
+    parser.addoption(
+        "--ceed-skip-app",
+        action="store_true",
+        default=False,
+        help='Whether to skip tests that test the GUI app.',
+    )
+
+
+def pytest_configure(config):
+    config.addinivalue_line("markers", "ceed_app: mark test requires gui app")
+
+
+def pytest_collection_modifyitems(config, items):
+    trio_pytest_collection_modifyitems(items)
+
+    if not config.getoption("--ceed-skip-app"):
+        # --ceed-skip-app not given in cli: don't skip gui app tests
+        return
+
+    skip_ceed_app = pytest.mark.skip(reason="provided --ceed-skip-app")
+    for item in items:
+        if "ceed_app" in item.keywords:
+            item.add_marker(skip_ceed_app)
 
 
 def pytest_fixture_setup(fixturedef, request):

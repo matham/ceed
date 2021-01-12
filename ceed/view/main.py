@@ -20,7 +20,8 @@ from kivy.logger import Logger
 from kivy.compat import string_types
 
 import ceed
-from ceed.function import FunctionFactoryBase, register_all_functions
+from ceed.function import FunctionFactoryBase, register_all_functions, \
+    register_external_functions
 from ceed.view.controller import ViewSideViewControllerBase
 from ceed.view.view_widgets import ViewRootFocusBehavior
 from ceed.storage.controller import DataSerializerBase, CeedDataWriterBase
@@ -85,9 +86,14 @@ class CeedViewApp(BaseKivyApp):
         self.view_controller = ViewSideViewControllerBase()
         self.ceed_data = CeedDataWriterBase()
         self.data_serializer = DataSerializerBase()
+
         self.function_factory = FunctionFactoryBase()
-        register_all_functions(
-            self.function_factory, self.external_function_plugin_package)
+        register_all_functions(self.function_factory)
+        if self.external_function_plugin_package:
+            register_external_functions(
+                self.function_factory,
+                self.external_function_plugin_package)
+
         self.shape_factory = CeedPaintCanvasBehavior()
         self.stage_factory = StageFactoryBase(
             function_factory=self.function_factory,

@@ -1,6 +1,7 @@
 import pytest
 import math
 from typing import Type, List, Union
+
 from ceed.tests.ceed_app import CeedTestApp
 from ceed.tests.test_app import replace_text, touch_widget, \
     select_spinner_value as select_spinner_func, escape
@@ -9,6 +10,8 @@ from .examples.funcs import func_classes, func_classes_dedup, GroupFunction, \
     GroupFunctionF5, Function, LinearFunctionF1, LinearFunctionF2, \
     GroupFunctionF4, CosFunctionF4, ExponentialFunctionF3, ConstFunctionF1, \
     ExponentialFunctionF1, CosFunctionF1, GroupFunctionF1
+
+pytestmark = pytest.mark.ceed_app
 
 
 async def assert_set_params_in_gui(

@@ -214,10 +214,7 @@ class StageList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
 
         :param stage_name: The name of the registered stage to copy.
         """
-        stage = self.stage_factory.stage_names[stage_name]
-        stage = stage.copy_expand_ref()
-        # TODO: disable randomness of generated funcs after sampling
-        stage.resample_func_parameters()
+        stage = self.stage_factory.stage_names[stage_name].copy_and_resample()
         stage.name = last_experiment_stage_name
 
         if last_experiment_stage_name in self.stage_factory.stage_names:
@@ -1033,10 +1030,9 @@ class StageGraph(Factory.FlatSplitter):
                 from the functions in time.
 
         '''
-        stage = App.get_running_app().\
-            stage_factory.stage_names[stage_name].copy_expand_ref()
-        # TODO: disable randomness of generated funcs after sampling
-        stage.resample_func_parameters()
+        stage: CeedStage = App.get_running_app().stage_factory.\
+            stage_names[stage_name]
+        stage = stage.copy_and_resample()
 
         frame_rate = self.frame_rate = float(frame_rate)
         vals = self.plot_values = App.get_running_app().\

@@ -1093,10 +1093,42 @@ class CeedStage(EventDispatcher):
                 raised = True
         raise FuncDoneException
 
-    def resample_func_parameters(self):
-        for root_func in self.functions:
-            for func in root_func.get_funcs():
-                func.resample_parameters()
+    def resample_func_parameters(self, is_forked=False):
+        """Resamples all parameters of all functions of the stage that have
+        randomness associated with it.
+
+        See :meth:`FuncBase.resample_parameters` and :meth:`copy_and_resample`
+        for the meaning of ``is_forked``.
+        """
+        for stage in self.get_stages(step_into_ref=True):
+            for root_func in stage.functions:
+                if isinstance(root_func, CeedFuncRef):
+                    root_func = root_func.func
+                for func in root_func.get_funcs(step_into_ref=True):
+                    func.resample_parameters(is_forked=is_forked)
+
+    def copy_and_resample(self) -> 'CeedStage':
+        """Resamples all the functions of the stage, copies the stage and
+        returns the duplicated stage.
+
+        It copies a stage so that the stage is ready to run in a experiment.
+        First it resamples all the parameters of all the functions that have
+        randomness associated with it. Then it copies and expends the stage and
+        any sub-stages and functions that refer to other functions. Then, it
+        resamples again those randomized function parameters that are not
+        marked as
+        :attr:`~ceed.function.param_noise.NoiseBase.lock_after_forked`. Those
+        will maintain their original re-sampled values so that all the expanded
+        copies have the same random values.
+
+        See :resample_func_parameters: and :meth:`FuncBase.resample_parameters`
+        as well.
+        """
+        self.resample_func_parameters(is_forked=False)
+        stage = self.copy_expand_ref()
+        # resample only those that can be resampled after expanding and forking
+        stage.resample_func_parameters(is_forked=True)
+        return stage
 
     def get_stage_shape_names(self):
         """Gets all the names of the shapes controlled by the stage or

@@ -10,7 +10,7 @@ from .funcs import ConstFunctionF1, LinearFunctionF1, ExponentialFunctionF1, \
 from .shapes import assert_add_three_groups
 
 
-def make_stage(stage_factory: StageFactoryBase, **kwargs):
+def make_stage(stage_factory: StageFactoryBase, **kwargs) -> CeedStage:
     return CeedStage(
         stage_factory=stage_factory,
         function_factory=stage_factory.function_factory,
@@ -84,7 +84,7 @@ def assert_stages_same(
         assert getattr(stage1, key) == getattr(stage2, key)
 
 
-class StageWrapper(object):
+class StageWrapper:
 
     stage: CeedStage = None
 

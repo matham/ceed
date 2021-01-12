@@ -5,7 +5,7 @@ Defines the GUI components used with :mod:`ceed.function`.
 """
 from collections import defaultdict
 from copy import deepcopy
-from typing import Optional, Union, Type
+from typing import Optional, Union, Type, TypeVar
 
 from kivy.uix.boxlayout import BoxLayout
 from kivy.properties import BooleanProperty, NumericProperty, StringProperty, \
@@ -31,6 +31,7 @@ __all__ = ('FuncList', 'FuncWidget', 'FuncWidgetGroup', 'FuncPropTextWidget',
 
 _get_app = App.get_running_app
 
+FuncWidgetType = TypeVar('FuncWidgetType', bound='FuncWidget')
 FuncOrRef = Union[FuncBase, CeedFuncRef, FuncGroup]
 
 
@@ -280,7 +281,7 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
 
     @staticmethod
     def get_display_cls(
-            func: Union[FuncBase, FuncGroup]) -> Type['FuncWidget']:
+            func: Union[FuncBase, FuncGroup]) -> Type[FuncWidgetType]:
         """Gets the widget class to use to display the function.
 
         :param func: The :class:`ceed.function.FuncBase` instance.
@@ -364,8 +365,13 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
                     label_w.test_name = 'func prop label'
                     grid.add_widget(label_w)
 
-                    widget = FuncPropTextWidget(
-                        input_filter=input_filter[fmt], size_hint_min_x='40dp')
+                    value = getattr(func, key)
+                    if value is True or value is False:
+                        widget = FuncPropBoolWidget()
+                    else:
+                        widget = FuncPropTextWidget(
+                            input_filter=input_filter[fmt],
+                            size_hint_min_x='40dp')
                     widget.func = func
                     widget.prop_name = key
                     widget.apply_binding()
@@ -707,6 +713,60 @@ class TrackOptionsSpinner(Factory.SizedCeedFlatSpinner):
             self.text = vals[0] if vals else ''
 
 
+class FuncPropBoolWidget(Factory.FlatToggleButton):
+    """The widget used to control a bool configuration option of a
+    :class:`ceed.function.FuncBase`.
+    """
+
+    func = None
+    '''The :class:`ceed.function.FuncBase` instance it's associated with.
+    '''
+
+    prop_name = ''
+    '''The name of the property of :attr:`func` that this widget edits.
+    '''
+
+    _bindings = []
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        def update_text(*args):
+            self.text = 'true' if self.state == 'down' else 'false'
+        self.fbind('state', update_text)
+        update_text()
+
+    def apply_binding(self):
+        """Starts tracking the :attr:`prop_name` of the associated
+        :attr:`func` and updates the GUI with changes.
+        """
+        uid = self.func.fbind(self.prop_name, self._update_opt)
+        self._bindings = [
+            (self.func, self.prop_name, uid),
+            (self, 'state', self.fbind('state', self._update_from_state)),
+        ]
+        self._update_opt()
+
+    def unbind_tracking(self):
+        """Stops the tracking initialized with :meth:`apply_binding`.
+        """
+        for obj, prop, uid in self._bindings:
+            obj.unbind_uid(prop, uid)
+        self._bindings = []
+
+    def _update_opt(self, *largs):
+        """Updates the GUI whenever the :attr:`func` changes the property
+        being tracked.
+        """
+        self.state = 'down' if getattr(self.func, self.prop_name) else 'normal'
+
+    def _update_from_state(self, *args):
+        """Updates the :attr:`func` property property being tracked whenever
+        the GUI changes.
+        """
+        setattr(self.func, self.prop_name, self.state == 'down')
+
+
 class FuncSettingsDropDown(Factory.FlatDropDown):
     """A dropdown widget used to show settings when customizing functions.
     """
@@ -789,8 +849,12 @@ class FuncNoiseDropDown(Factory.FlatDropDown):
                 label(text=pretty_names.get(prop, prop),
                       padding_x='10dp', flat_color=color))
 
-            widget = FuncPropTextWidget(
-                input_filter='float', size_hint_min_x='40dp')
+            value = getattr(noise_param, prop)
+            if value is True or value is False:
+                widget = FuncPropBoolWidget()
+            else:
+                widget = FuncPropTextWidget(
+                    input_filter='float', size_hint_min_x='40dp')
             widget.func = noise_param
             widget.prop_name = prop
             widget.apply_binding()

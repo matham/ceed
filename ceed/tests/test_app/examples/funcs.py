@@ -21,7 +21,7 @@ def create_funcs(
     return funcs
 
 
-class Function(object):
+class Function:
 
     app: CeedTestApp = None
 

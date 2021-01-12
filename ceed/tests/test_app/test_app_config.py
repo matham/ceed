@@ -1,6 +1,8 @@
 from ceed.tests.ceed_app import CeedTestApp
 import pytest
 
+pytestmark = pytest.mark.ceed_app
+
 
 @pytest.mark.parametrize(
     "ceed_app", [{'persist_config': 'base1_'}, ], indirect=True)

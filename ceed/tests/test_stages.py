@@ -1,10 +1,11 @@
 import pytest
 from copy import deepcopy, copy
 import math
+from typing import Tuple, List, Dict
 from collections import defaultdict
 from fractions import Fraction
 
-from ceed.function import FunctionFactoryBase, FuncGroup
+from ceed.function import FunctionFactoryBase, FuncGroup, FuncBase
 from ceed.stage import StageFactoryBase, CeedStage, CeedStageRef, \
     StageDoneException
 from ceed.tests.test_app.examples.stages import ParaAllStage, ParaAnyStage, \
@@ -14,6 +15,7 @@ from ceed.tests.test_app.examples.shapes import Shape, EllipseShapeP1, \
     CircleShapeP1, PolygonShapeP1, FreeformPolygonShapeP1, EllipseShapeP2, \
     CircleShapeP2, PolygonShapeP2, FreeformPolygonShapeP2, \
     CircleShapeP1Internal
+from .test_functions import register_callback_distribution
 from ceed.tests.test_app.examples.funcs import LinearFunctionF1, \
     ConstFunctionF1
 
@@ -64,7 +66,11 @@ def create_recursive_stages(
 
 
 def get_stage_time_intensity(
-        stage_factory: StageFactoryBase, stage_name: str, frame_rate):
+        stage_factory: StageFactoryBase, stage_name: str, frame_rate
+) -> Tuple[Dict[str, List[Tuple[float, float, float, float]]], int]:
+    """Samples the stage with the given frame rate and returns the intensity
+    value for each shape for each timestamp.
+    """
     tick = stage_factory.tick_stage(stage_name)
     # the sampling rate at which we sample the functions
     frame_rate = int(frame_rate)
@@ -851,3 +857,37 @@ def test_single_frame_stage_intensity(stage_factory: StageFactoryBase):
         assert math.isclose(r, i % 2)
         assert math.isclose(b, i % 2)
         assert g == 0
+
+
+def test_sample_ref_function_stage(stage_factory: StageFactoryBase):
+    function_factory = stage_factory.function_factory
+    f: FuncBase = function_factory.get('LinearFunc')(
+        function_factory=function_factory)
+    function_factory.add_func(f)
+
+    counter_m = [0]
+    counter_b = [0]
+    cls = register_callback_distribution(function_factory, counter_m, 0)
+    f.noisy_parameters['m'] = cls()
+    cls = register_callback_distribution(function_factory, counter_b, 1)
+    f.noisy_parameters['b'] = cls(lock_after_forked=True)
+
+    ref = function_factory.get_func_ref(func=f)
+
+    shape = EllipseShapeP1(
+        app=None, painter=stage_factory.shape_factory, show_in_gui=False,
+        create_add_shape=True)
+
+    root = make_stage(
+        stage_factory, color_r=True, color_g=False, color_b=True)
+    stage = make_stage(
+        stage_factory, color_r=True, color_g=False, color_b=True)
+    stage.add_func(ref)
+    stage.add_shape(shape.shape)
+    root.add_stage(stage)
+
+    copied = root.copy_and_resample()
+    assert counter_m[0] == 2
+    assert counter_b[0] == 1
+
+    assert f.b == copied.stages[0].functions[0].b

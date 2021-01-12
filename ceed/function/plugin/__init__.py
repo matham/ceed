@@ -5,47 +5,63 @@ Defines a plugin architecture so that new functions can be defined at runtime
 and made available to the :class:`ceed.function.FunctionFactoryBase`
 used in the GUI to list available functions, and for :mod:`analysis`.
 
-When :func:`ceed.function.register_all_functions` is called with a
-:class:`ceed.function.FunctionFactoryBase`, it calls
-:func:`get_plugin_functions` to get all the functions exported by all plugins
-in the ``ceed/function/plugin`` directory and registers them with the
-:class:`ceed.function.FunctionFactoryBase`.
+:func:`ceed.function.register_all_functions` is called by the GUI and it
+provides it the :class:`ceed.function.FunctionFactoryBase` used by the GUI for
+managing functions. :func:`ceed.function.register_all_functions` then calls
+:func:`get_plugin_functions` to get all the functions exported by all the
+Python plugin modules in the ``ceed/function/plugin`` directory and registers
+them with the :class:`ceed.function.FunctionFactoryBase`.
 
-Files in ``ceed/function/plugin`` that want to define new function classes
-should define a function in the file called ``get_ceed_functions`` that returns
-a list of functions that will be automatically registered with the function
-factory :attr:`ceed.function.FunctionFactoryBase` using
-:meth:`~ceed.function.FunctionFactoryBase.register`. See the
-``ceed/function/plugin/__init__.py`` file and :func:`get_ceed_functions` for
-an example.
+Additionally, if the user provides a package name in the
+``external_function_plugin_package`` configuration variable, the GUI will
+similarly import and register the plugins in
+that package with :func:`ceed.function.register_external_functions`.
+
+Files in ``ceed/function/plugin`` that want to define new function or function
+distribution classes should define a function in the file called
+``get_ceed_functions`` or ``get_ceed_distributions``, respectively, that
+returns a list of functions or function distributions that will be
+automatically registered with the function factory
+:class:`~ceed.function.FunctionFactoryBase` or
+:attr:`~ceed.function.FunctionFactoryBase.param_noise_factory`, respectively,
+using :meth:`~ceed.function.FunctionFactoryBase.register` or
+:meth:`~ceed.function.param_noise.ParameterNoiseFactory.register_class`. See
+the ``ceed/function/plugin/__init__.py`` file and :func:`get_ceed_functions`
+and :func:`get_ceed_distributions` for an example.
 """
 
+import random
 from collections import deque
 import importlib
 import pathlib
 from math import exp, cos, pi
-from typing import Iterable, Union, Tuple, List, Type
+from typing import Iterable, Union, Tuple, List, Type, Dict
 
 from kivy.properties import NumericProperty
 
-from ceed.function import CeedFunc, FuncBase
+from ceed.function import CeedFunc, FuncType
+from ceed.function.param_noise import NoiseType, NoiseBase
 
 __all__ = (
     'get_plugin_functions', 'ConstFunc', 'LinearFunc', 'ExponentialFunc',
-    'CosFunc', 'get_ceed_functions')
+    'CosFunc', 'GaussianNoise', 'UniformNoise', 'get_ceed_functions',
+    'get_ceed_distributions')
 
 
 def get_plugin_functions(
         base_package: str, root: Union[str, pathlib.Path]
-) -> Tuple[List[Type[FuncBase]], List[Tuple[Tuple[str], bytes]]]:
+) -> Tuple[List[Type[FuncType]], List[Type[NoiseType]],
+           List[Tuple[Tuple[str], bytes]]]:
     """Imports all the ``.py`` files in the given directory and sub-directories
     for the named package that don't start with a underscore (except for
     ``__init__.py`` of course, which is imported). For each imported module,
-    it calls its ``get_ceed_functions`` function which should return all the
-    function classes exported by the module.
+    it calls its ``get_ceed_functions`` and ``get_ceed_distributions``
+    function (if they are defined in the module) which should return a list
+    (that can be empty) of all the function and function distribution classes,
+    respectively, exported by the module.
 
-    It then returns all these exported functions and all the file contents
-    in the folder.
+    It then returns all these exported functions, distributions, and all the
+    file contents in the folder.
 
     Ceed will automatically import all the plugins under
     ``ceed/function/plugin``.
@@ -56,20 +72,23 @@ def get_plugin_functions(
         containing name for the ``plugin`` directory. Then, they are imported
         as ``ceed.function.plugin`` and ``ceed.function.plugin.xyz``, if
         the plugin directory also contains a ``xyz.py`` plugin file.
-    :parameter root: The directory that contains the plugins. E.g. for
-        ``ceed.function.plugin`` it is ``ceed/function/plugin``.
+    :parameter root: The full directory path that contains the plugins. E.g.
+        for ``ceed.function.plugin`` it is ``ceed/function/plugin``.
     :returns:
-        A tuple containing a list of function classes exported by all the
-        modules and a list containing all the python files encountered.
+        A tuple with three values containing: a list of function classes
+        exported by all the modules, a list of distribution classes exported by
+        all the modules, and a list containing all the python files contents
+        encountered in the directory.
 
         The python files contents are returned so that Ceed can store it in the
         data files in case the plugins are changed between experimental runs.
 
-        See :func:`get_ceed_functions` and
+        See :func:`get_ceed_functions`, :func:`get_ceed_distributions`, and
         :func:`~ceed.function.register_all_functions` for an example how it's
         used.
     """
     funcs = []
+    distributions = []
     files = []
 
     fifo = deque([pathlib.Path(root)])
@@ -97,8 +116,11 @@ def get_plugin_functions(
                 package = f'{directory_mod}.{name}'
 
             m = importlib.import_module(package)
-            funcs.extend(m.get_ceed_functions())
-    return funcs, files
+            if hasattr(m, 'get_ceed_functions'):
+                funcs.extend(m.get_ceed_functions())
+            if hasattr(m, 'get_ceed_distributions'):
+                distributions.extend(m.get_ceed_distributions())
+    return funcs, distributions, files
 
 
 class ConstFunc(CeedFunc):
@@ -265,7 +287,8 @@ class CosFunc(CeedFunc):
     def __init__(self, **kwargs):
         kwargs.setdefault('name', 'Cos')
         kwargs.setdefault(
-            'description', 'y(t) = Acos(2pi*f*t + th0*pi/180) + b')
+            'description',
+            'y(t) = Acos(2pi*f*(t + t_offset) + th0*pi/180) + b')
         super(CosFunc, self).__init__(**kwargs)
 
     def __call__(self, t):
@@ -299,8 +322,82 @@ class CosFunc(CeedFunc):
         return val
 
 
-def get_ceed_functions() -> Iterable[FuncBase]:
+class GaussianNoise(NoiseBase):
+    """Represents a Gaussian distribution.
+    """
+
+    min_val = NumericProperty(0)
+    """The minimum value to clip the sampled value before returning it.
+    """
+
+    max_val = NumericProperty(1)
+    """The maximum value to clip the sampled value before returning it.
+    """
+
+    mean_val = NumericProperty(0.5)
+    """The mean of the distribution,
+    """
+
+    stdev = NumericProperty(.1)
+    """The standard deviation of the distribution,
+    """
+
+    def sample(self) -> float:
+        val = random.gauss(self.mean_val, self.stdev)
+        return max(min(val, self.max_val), self.min_val)
+
+    def get_config(self) -> dict:
+        config = super(GaussianNoise, self).get_config()
+        for attr in ('min_val', 'max_val', 'mean_val', 'stdev'):
+            config[attr] = getattr(self, attr)
+        return config
+
+    def get_prop_pretty_name(self) -> Dict[str, str]:
+        names = super(GaussianNoise, self).get_prop_pretty_name()
+        names['min_val'] = 'Min'
+        names['max_val'] = 'Max'
+        names['mean_val'] = 'Mean'
+        names['stdev'] = 'STDEV'
+        return names
+
+
+class UniformNoise(NoiseBase):
+    """Represents a uniform distribution.
+    """
+
+    min_val = NumericProperty(0)
+    """The minimum value of the range (inclusive).
+    """
+
+    max_val = NumericProperty(1)
+    """The maximum value of the range (inclusive depending on the system).
+    """
+
+    def sample(self) -> float:
+        return random.uniform(self.min_val, self.max_val)
+
+    def get_config(self) -> dict:
+        config = super(UniformNoise, self).get_config()
+        for attr in ('min_val', 'max_val'):
+            config[attr] = getattr(self, attr)
+        return config
+
+    def get_prop_pretty_name(self) -> Dict[str, str]:
+        names = super(UniformNoise, self).get_prop_pretty_name()
+        names['min_val'] = 'Min'
+        names['max_val'] = 'Max'
+        return names
+
+
+def get_ceed_functions() -> Iterable[Type[FuncType]]:
     """Returns all the function classes defined and exported in this file
     (:class:`ConstFunc`, :class:`LinearFunc`, etc.).
     """
     return ConstFunc, LinearFunc, ExponentialFunc, CosFunc
+
+
+def get_ceed_distributions() -> Iterable[Type[NoiseType]]:
+    """Returns all the distribution classes defined and exported in this file
+    (:class:`GaussianNoise`, :class:`UniformNoise`, etc.).
+    """
+    return GaussianNoise, UniformNoise
