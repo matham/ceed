@@ -88,29 +88,49 @@ async def ceed_app(
     params = request.param if hasattr(
         request, 'param') and request.param else {}
 
+    # context around app
+    app_context = params.get('app_context')
+
     def create_app():
         import ceed.view.controller
+        from more_kivy_app.config import dump_config
         ceed.view.controller.ignore_vpixx_import_error = True
 
         if params.get('persist_config'):
             base = str(
                 tmp_path_factory.getbasetemp() / params['persist_config'])
-            app = CeedTestGUIApp(
-                yaml_config_path=base + 'config.yaml',
-                ini_file=base + 'config.ini', open_player_thread=False)
+            yaml_config_path = base + 'config.yaml'
+            ini_file = base + 'config.ini'
         else:
-            app = CeedTestGUIApp(
-                yaml_config_path=temp_file('config.yaml'),
-                ini_file=temp_file('config.ini'), open_player_thread=False)
+            yaml_config_path = temp_file('config.yaml')
+            ini_file = temp_file('config.ini')
+
+        # creates config file from dict
+        yaml_config = params.get('yaml_config')
+        if yaml_config:
+            dump_config(yaml_config_path, yaml_config)
+
+        app = CeedTestGUIApp(
+            yaml_config_path=yaml_config_path,
+            ini_file=ini_file, open_player_thread=False)
         app.ceed_data.root_path = str(tmp_path)
         return app
 
-    try:
-        await kivy_app(create_app)
-        yield kivy_app
-    finally:
-        if kivy_app.app is not None:
-            kivy_app.app.clean_up()
+    if app_context:
+        with app_context(tmp_path):
+            try:
+                await kivy_app(create_app)
+                yield kivy_app
+            finally:
+                if kivy_app.app is not None:
+                    kivy_app.app.clean_up()
+    else:
+        try:
+            await kivy_app(create_app)
+            yield kivy_app
+        finally:
+            if kivy_app.app is not None:
+                kivy_app.app.clean_up()
 
 
 @pytest.fixture

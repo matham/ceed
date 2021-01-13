@@ -1,15 +1,21 @@
 import pytest
+from contextlib import contextmanager
+import os
+import sys
 import math
 from typing import Type, List, Union
 
 from ceed.tests.ceed_app import CeedTestApp
 from ceed.tests.test_app import replace_text, touch_widget, \
     select_spinner_value as select_spinner_func, escape
-from ceed.function import FuncBase, FuncGroup, FunctionFactoryBase, CeedFuncRef
+from ceed.function import FuncBase, FuncGroup, FunctionFactoryBase, \
+    CeedFuncRef, register_external_functions
 from .examples.funcs import func_classes, func_classes_dedup, GroupFunction, \
     GroupFunctionF5, Function, LinearFunctionF1, LinearFunctionF2, \
     GroupFunctionF4, CosFunctionF4, ExponentialFunctionF3, ConstFunctionF1, \
     ExponentialFunctionF1, CosFunctionF1, GroupFunctionF1
+from .examples.funcs import fake_plugin_function, \
+    fake_plugin_distribution, fake_plugin, noise_test_parameters
 
 pytestmark = pytest.mark.ceed_app
 
@@ -524,3 +530,30 @@ async def test_add_global_ref_func_and_replace(func_app: CeedTestApp):
         await touch_widget(func_app, add)
 
     await global_ref_func_and_replace(func_app, add_func)
+
+
+@contextmanager
+def add_to_path(tmp_path, *args):
+    sys.path.append(str(tmp_path))
+    mod = tmp_path / 'my_plugin' / '__init__.py'
+    try:
+        mod.parent.mkdir()
+        mod.write_text(fake_plugin)
+        yield None
+    finally:
+        del sys.modules['my_plugin']
+        sys.path.remove(str(tmp_path))
+
+
+@pytest.mark.parametrize(
+    "ceed_app",
+    [{'yaml_config': {'external_function_plugin_package': 'my_plugin'},
+      'app_context': add_to_path}, ],
+    indirect=True
+)
+async def test_external_plugin_named_package(func_app: CeedTestApp, tmp_path):
+    function_factory = func_app.app.function_factory
+    noise_classes = function_factory.param_noise_factory.noise_classes
+
+    assert 'FakeFunc' in function_factory.funcs_cls
+    assert 'FakeNoise' in noise_classes

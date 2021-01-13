@@ -9,70 +9,8 @@ from ceed.function import FuncBase, FuncGroup, FunctionFactoryBase, \
     register_all_functions, FuncDoneException, \
     register_external_functions
 from .common import add_prop_watch
-
-
-fake_plugin_function = """
-from kivy.properties import NumericProperty
-from ceed.function import CeedFunc, FuncBase
-
-class FakeFunc(CeedFunc):
-
-    val = NumericProperty(0.)
-
-    def __init__(self, name='Fake', description='y(t) = val', **kwargs):
-        super().__init__(name=name, description=description, **kwargs)
-
-    def __call__(self, t):
-        super().__call__(t)
-        return self.val
-
-    def get_gui_props(self):
-        d = super().get_gui_props()
-        d['val'] = None
-        return d
-
-    def get_state(self, *largs, **kwargs):
-        d = super().get_state(*largs, **kwargs)
-        d['val'] = self.val
-        return d
-
-def get_ceed_functions():
-    return FakeFunc,
-"""
-
-fake_plugin_distribution = """
-from kivy.properties import NumericProperty
-from ceed.function.param_noise import NoiseType, NoiseBase
-
-class FakeNoise(NoiseBase):
-
-    val = NumericProperty(0)
-
-    def sample(self) -> float:
-        return 43
-
-    def get_config(self) -> dict:
-        config = super().get_config()
-        config['val'] = self.val
-        return config
-
-    def get_prop_pretty_name(self):
-        names = super().get_prop_pretty_name()
-        names['val'] = 'Value'
-        return names
-
-def get_ceed_distributions():
-    return FakeNoise,
-"""
-
-fake_plugin = fake_plugin_function + fake_plugin_distribution
-
-noise_test_parameters = [
-    ('GaussianNoise',
-     {'min_val': -1.5, 'max_val': 1.5, 'mean_val': 0.1, 'stdev': .15}),
-    ('UniformNoise',
-     {'min_val': -1.4, 'max_val': 1.3})
-]
+from .test_app.examples.funcs import fake_plugin_function, \
+    fake_plugin_distribution, fake_plugin, noise_test_parameters
 
 
 def register_callback_distribution(

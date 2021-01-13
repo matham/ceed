@@ -117,10 +117,6 @@ class CeedApp(BaseKivyApp):
         self.drag_controller = CeedDragNDrop()
         self.function_factory = FunctionFactoryBase()
         register_all_functions(self.function_factory)
-        if self.external_function_plugin_package:
-            register_external_functions(
-                self.function_factory,
-                self.external_function_plugin_package)
 
         self.stage_factory = StageFactoryBase(
             function_factory=self.function_factory, shape_factory=None)
@@ -160,6 +156,11 @@ class CeedApp(BaseKivyApp):
         self.stages_container.clear_all()
 
     def on_start(self):
+        if self.external_function_plugin_package:
+            register_external_functions(
+                self.function_factory,
+                self.external_function_plugin_package)
+
         self.stage_factory.shape_factory = self.shape_factory
         remove_shapes_upon_deletion(
             self.stage_factory, self.shape_factory,
