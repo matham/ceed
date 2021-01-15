@@ -541,8 +541,9 @@ def add_to_path(tmp_path, *args):
         mod.write_text(fake_plugin)
         yield None
     finally:
-        del sys.modules['my_plugin']
         sys.path.remove(str(tmp_path))
+        if 'my_plugin' in sys.modules:
+            del sys.modules['my_plugin']
 
 
 @pytest.mark.parametrize(
