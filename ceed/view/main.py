@@ -89,10 +89,6 @@ class CeedViewApp(BaseKivyApp):
 
         self.function_factory = FunctionFactoryBase()
         register_all_functions(self.function_factory)
-        if self.external_function_plugin_package:
-            register_external_functions(
-                self.function_factory,
-                self.external_function_plugin_package)
 
         self.shape_factory = CeedPaintCanvasBehavior()
         self.stage_factory = StageFactoryBase(
@@ -142,6 +138,11 @@ class CeedViewApp(BaseKivyApp):
         # Window.minimize()
         self.root.focus = True
         Window.show_cursor = False
+
+        if self.external_function_plugin_package:
+            register_external_functions(
+                self.function_factory,
+                self.external_function_plugin_package)
 
     def ask_cannot_close(self, *largs, **kwargs):
         return False
