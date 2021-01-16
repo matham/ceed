@@ -34,6 +34,7 @@ import random
 from collections import deque
 import importlib
 import pathlib
+from fractions import Fraction
 from math import exp, cos, pi
 from typing import Iterable, Union, Tuple, List, Type, Dict
 
@@ -137,7 +138,7 @@ class ConstFunc(CeedFunc):
         super(ConstFunc, self).__init__(
             name=name, description=description, **kwargs)
 
-    def __call__(self, t):
+    def __call__(self, t: Union[int, float, Fraction]) -> float:
         super().__call__(t)
         return self.a
 
@@ -177,9 +178,9 @@ class LinearFunc(CeedFunc):
         kwargs.setdefault('description', 'y(t) = m(t + t_offset) + b')
         super(LinearFunc, self).__init__(**kwargs)
 
-    def __call__(self, t):
+    def __call__(self, t: Union[int, float, Fraction]) -> float:
         super().__call__(t)
-        t = t - self.t_start + self.t_offset
+        t = self.get_relative_time(t)
         return self.m * t + self.b
 
     def get_gui_props(self):
@@ -231,9 +232,9 @@ class ExponentialFunc(CeedFunc):
             'y(t) = Ae^-(t + t_offset)/tau1 + Be^-(t + t_offset)/tau2')
         super(ExponentialFunc, self).__init__(**kwargs)
 
-    def __call__(self, t):
+    def __call__(self, t: Union[int, float, Fraction]) -> float:
         super().__call__(t)
-        t = t - self.t_start + self.t_offset
+        t = self.get_relative_time(t)
         return self.A * exp(-t / self.tau1) + self.B * exp(-t / self.tau2)
 
     def get_gui_props(self):
@@ -291,9 +292,9 @@ class CosFunc(CeedFunc):
             'y(t) = Acos(2pi*f*(t + t_offset) + th0*pi/180) + b')
         super(CosFunc, self).__init__(**kwargs)
 
-    def __call__(self, t):
+    def __call__(self, t: Union[int, float, Fraction]) -> float:
         super().__call__(t)
-        t = t - self.t_start + self.t_offset
+        t = self.get_relative_time(t)
         return self.A * cos(
             2 * pi * self.f * t + self.th0 * pi / 180.) + self.b
 

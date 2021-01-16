@@ -4,8 +4,9 @@
 Utilities used in :mod:`ceed`.
 '''
 import re
+from typing import List, Tuple, Any
 
-__all__ = ('fix_name', 'update_key_if_other_key')
+__all__ = ('fix_name', 'update_key_if_other_key', 'collapse_list_to_counts')
 
 _name_pat = re.compile('^(.+)-([0-9]+)$')
 
@@ -63,3 +64,33 @@ def update_key_if_other_key(items, key, value, other_key, key_map):
                 item.values(), key, value, other_key, key_map)
         elif isinstance(item, (list, tuple)):
             update_key_if_other_key(item, key, value, other_key, key_map)
+
+
+def collapse_list_to_counts(values: list) -> List[Tuple[Any, int]]:
+    """Converts a sequence of items to tuples of the item and count of
+    sequential items.
+
+    E.g.::
+
+        >>> collapse_list_to_counts([1, 1, 2, 3, 1, 1, 1, 3,])
+        [(1, 2), (2, 1), (3, 1), (1, 3), (3, 1)]
+    """
+    counter = None
+    last_item = object()
+    res = []
+
+    for value in values:
+        if value != last_item:
+            if counter is not None:
+                res.append((last_item, counter))
+
+            last_item = value
+            counter = 1
+        else:
+            counter += 1
+
+    if counter is not None:
+        # we saw some items at least, the last was not added
+        res.append((last_item, counter))
+
+    return res

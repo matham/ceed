@@ -175,7 +175,7 @@ at 0x000001B66B022DD8> with time less than the function start 2
     2
     >>> f.loop_count  # it's in the first loop iteration
     0
-    >>> f.get_domain()
+    >>> f.get_domain(current_iteration=False)
     (2, Fraction(22, 1))
     >>> f(10)  # value of time at 10 - 2 = 8 seconds
     16.0
@@ -188,7 +188,7 @@ at 0x000001B66B022DD8> with time less than the function start 2
     Fraction(12, 1)
     >>> f.loop_count
     1
-    >>> f.get_domain()  # the valid domain has updated
+    >>> f.get_domain(current_iteration=False)  # the valid domain has updated
     (Fraction(12, 1), Fraction(22, 1))
     >>> f(20)
     16.0
@@ -201,7 +201,7 @@ at 0x000001B66B022DD8> with time less than the function start 2
     2
     >>> # there's no more valid domain left
     >>> f.get_domain()
-    (Fraction(22, 1), Fraction(22, 1))
+    (-1, -1)
     >>> f(20)  # function may only be called monotonically, it won't always
     >>> # raise an error if called non-monotonically, but generally it will
     Traceback (most recent call last):
@@ -232,7 +232,7 @@ loop. E.g.::
     >>> f.add_func(f1)
     >>> f.add_func(f2)
     >>> f.init_func(1)
-    >>> f.get_domain()
+    >>> f.get_domain(current_iteration=False)
     (1, Fraction(9, 1))
     >>> f(1)  # this is internally calling f1
     2
@@ -241,7 +241,7 @@ loop. E.g.::
     >>> # even though the domain is still the same, we cannot call it now with
     >>> # a value less than 3 (because it'd have to jump back to f1 and
     >>> # we don't need or support that)
-    >>> f.get_domain()
+    >>> f.get_domain(current_iteration=False)
     (1, Fraction(9, 1))
     >>> f.loop_count
     0
@@ -288,7 +288,7 @@ precise duration math. E.g.::
     >>> f = LinearFunc(function_factory=function_factory, duration=2, \
 timebase_numerator=1, timebase_denominator=120, m=2)
     >>> f.init_func(1)  # start at 1 sec
-    >>> f.get_domain()
+    >>> f.get_domain(current_iteration=False)
     (1, Fraction(61, 60))
     >>> f.get_timebase()  # this is what we need to use to get the timebase
     Fraction(1, 120)
@@ -332,7 +332,7 @@ timebase_numerator=1, timebase_denominator=120, loop=2)
     >>> f1.get_timebase()  # our parents timebase
     Fraction(1, 120)
     >>> f.init_func(1)
-    >>> f.get_domain()
+    >>> f.get_domain(current_iteration=False)
     (1, Fraction(31, 30))
     >>> f(Fraction(120, 120))  # loop 0, f1
     2
@@ -483,12 +483,19 @@ from ceed.function.param_noise import ParameterNoiseFactory, NoiseBase
 
 __all__ = (
     'FuncDoneException', 'FunctionFactoryBase', 'FuncBase', 'FuncType',
-    'CeedFunc', 'FuncGroup', 'CeedFuncRef', 'register_all_functions',
-    'register_external_functions')
+    'CeedFuncOrRefInstance', 'CeedFunc', 'FuncGroup', 'CeedFuncRef',
+    'register_all_functions', 'register_external_functions')
 
 FuncType = TypeVar('FuncType', bound='FuncBase')
 """The type-hint type for :class:`FuncBase`.
 """
+
+CeedFuncOrRefInstance = Union['CeedFunc', 'CeedFuncRef']
+"""Instance of either :class:`CeedFunc` or :class:`CeedFuncRef`."""
+
+FloatOrInt = Union[float, int]
+
+NumFraction = Union[float, int, Fraction]
 
 
 class FuncDoneException(Exception):
@@ -930,7 +937,7 @@ class FuncBase(EventDispatcher):
     '''The function icon. Not used currently.
     '''
 
-    duration = NumericProperty(0.)
+    duration: FloatOrInt = NumericProperty(0.)
     '''How long after the start of the function until the function is complete
     and continues to the next :attr:`loop` or is done.
 
@@ -947,7 +954,7 @@ class FuncBase(EventDispatcher):
     The value is in :meth:`get_timebase` units.
     '''
 
-    duration_min = NumericProperty(0.)
+    duration_min: FloatOrInt = NumericProperty(0.)
     '''Same as :attr:`duration`, except it excludes any infinite portions of
     the function duration.
 
@@ -960,7 +967,7 @@ class FuncBase(EventDispatcher):
     The value is in :meth:`get_timebase` units and is read only.
     '''
 
-    duration_min_total = NumericProperty(0)
+    duration_min_total: FloatOrInt = NumericProperty(0)
     '''The total duration of the function including all the loops, excluding
     any infinite portions of the function duration.
 
@@ -973,7 +980,7 @@ class FuncBase(EventDispatcher):
     The value is in :meth:`get_timebase` units and is read only.
     '''
 
-    loop = NumericProperty(1)
+    loop: int = NumericProperty(1)
     '''The number of times the function loops through before it is considered
      done.
 
@@ -983,13 +990,13 @@ class FuncBase(EventDispatcher):
     See :mod:`ceed.function` for more details.
     '''
 
-    parent_func = None
+    parent_func: Optional['FuncBase'] = None
     '''If this function is the child of another function, e.g. it's a
     sub-function of a :class:`FuncGroup` instance, then :attr:`parent_func`
     points to the parent function.
     '''
 
-    has_ref = BooleanProperty(False)
+    has_ref: bool = BooleanProperty(False)
     """Whether there's a CeedFuncRef pointing to this function. If True,
     the function should not be deleted from the function factory that holds it.
 
@@ -1001,29 +1008,29 @@ class FuncBase(EventDispatcher):
     """The widget that visualize this function, if any.
     """
 
-    _clone_props = {'cls', 'name'}
+    _clone_props: Set[str] = {'cls', 'name'}
     '''Set of non user-customizable property names that are specific to the
     function instance and should not be copied when duplicating the function.
     They are only copied when a function is cloned, i.e. when it is created
     from state to be identical to the original.
     '''
 
-    function_factory = None
+    function_factory: FunctionFactoryBase = None
     """
     The :class:`FunctionFactoryBase` instance with which this function is
     associated. This should be set by whoever creates the function by passing
     it to the constructor.
     """
 
-    timebase_numerator = NumericProperty(0)
+    timebase_numerator: FloatOrInt = NumericProperty(0)
     '''The numerator of the timebase. See :attr:`timebase`.
     '''
 
-    timebase_denominator = NumericProperty(1)
+    timebase_denominator: FloatOrInt = NumericProperty(1)
     '''The denominator of the timebase. See :attr:`timebase`.
     '''
 
-    def _get_timebase(self):
+    def _get_timebase(self) -> Union[float, Fraction]:
         num = self.timebase_numerator
         if isinstance(num, float) and num.is_integer():
             num = int(num)
@@ -1036,7 +1043,7 @@ class FuncBase(EventDispatcher):
         else:
             return self.timebase_numerator / float(self.timebase_denominator)
 
-    timebase = AliasProperty(
+    timebase: Union[float, Fraction] = AliasProperty(
         _get_timebase, None, cache=True,
         bind=('timebase_numerator', 'timebase_denominator'))
     '''The (read-only) timebase scale factor as computed by
@@ -1066,16 +1073,26 @@ class FuncBase(EventDispatcher):
         change. E.g. when a parent's timebase changes.
     '''
 
-    t_start = 0
-    '''The time offset subtracted from the time passed to the function.
+    t_start: NumFraction = 0
+    '''The global time offset subtracted from the time passed to the function.
 
+    This is the global time with which the function or loop was initialized,
+    :meth:`get_relative_time` removes it to get to local time.
     The value is in seconds. See :mod:`ceed.function` for more details.
 
     Don't set directly, it is set with :meth:`init_func` and
     :meth:`init_loop_iteration`.
     '''
 
-    loop_count = 0
+    t_end: NumFraction = 0
+    """The time at which the loop or function ended (e.g.
+    :meth:`CeedFunc.is_loop_done` returned true) in global timebase.
+
+    Set by the function when the loop is done and is typically the second value
+    from :meth:`get_domain`, or some current value if that is negative.
+    """
+
+    loop_count: int = 0
     '''The current loop iteration.
 
     See :attr:`loop` and :mod:`ceed.function`.
@@ -1083,7 +1100,7 @@ class FuncBase(EventDispatcher):
 
     noisy_parameters: Dict[str, NoiseBase] = DictProperty({})
     """A dict mapping parameter names of the function to
-    :class:`ceed.function.param_noise.NoiseBase` instances that indicate
+    :class:`~ceed.function.param_noise.NoiseBase` instances that indicate
     how the parameter should be sampled, when the parameter needs to be
     stochastic.
 
@@ -1127,7 +1144,7 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
     def __call__(self, t):
         raise NotImplementedError
 
-    def get_timebase(self):
+    def get_timebase(self) -> Union[float, Fraction]:
         """Returns the function's timebase.
 
         If :attr:`timebase_numerator` and :attr:`timebase` is 0, it returns the
@@ -1138,7 +1155,7 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
         if not self.timebase_numerator:
             if self.parent_func:
                 return self.parent_func.get_timebase()
-            return 1
+            return 1.
         return self.timebase
 
     def on_changed(self, *largs, **kwargs):
@@ -1339,7 +1356,9 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
             elif clone or k not in p:
                 setattr(self, k, v)
 
-    def get_funcs(self, step_into_ref=True):
+    def get_funcs(
+            self, step_into_ref=True
+    ) -> Generator[CeedFuncOrRefInstance, None, None]:
         """Generator that yields the function and all its children functions
         if it has any, e.g. for :class:`FuncGroup`. It's in DFS order.
 
@@ -1391,7 +1410,7 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
         obj.apply_state(self.get_state())
         return obj
 
-    def copy_expand_ref(self):
+    def copy_expand_ref(self) -> 'FuncBase':
         """Copies this function and all its sub-functions.
 
         If any of them are :class:`CeedFuncRef` instances, they are replaced
@@ -1404,7 +1423,7 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
         obj.apply_state(self.get_state(expand_ref=True))
         return obj
 
-    def init_func(self, t_start):
+    def init_func(self, t_start: NumFraction) -> None:
         """Initializes the function so it is ready to be called to get
         the function values.
 
@@ -1418,11 +1437,11 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
         self.t_start = t_start
         self.loop_count = 0
 
-    def init_loop_iteration(self, t_start):
-        """Initializes the function at the begining of each loop.
+    def init_loop_iteration(self, t_start: NumFraction) -> None:
+        """Initializes the function at the beginning of each loop.
 
         It's called internally at the start of every :attr:`loop` iteration,
-        except the first.
+        **except the first**.
 
         :attr:`t_start` will be set to the given value, except if
         :attr:`duration` is not negative. Then :attr:`t_start` will simply be
@@ -1434,13 +1453,16 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
                 The time in seconds in global time. All subsequent calls to the
                 function with a time value will be relative to this given time.
         """
-        if self.duration < 0:
-            self.t_start = t_start
-        else:
-            self.t_start += self.duration * self.get_timebase()
+        self.t_start = t_start
 
-    def get_domain(self):
+    def get_domain(
+            self, current_iteration: bool = True
+    ) -> Tuple[NumFraction, NumFraction]:
         """Returns the current domain of the function.
+
+        :param current_iteration: If True, returns the domain for the current
+            loop iteration. Otherwise, returns the domain ending at the end of
+            the final loop iteration.
 
         See :mod:`ceed.function` for details.
         """
@@ -1449,18 +1471,33 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
         if isinstance(duration, float) and duration.is_integer():
             duration = int(duration)
 
+        if self.loop_count >= self.loop:
+            return -1, -1
+
         if duration < 0:
             return self.t_start, -1
 
-        if self.loop_count >= self.loop:
-            t = self.t_start + duration * self.get_timebase()
-            return t, t
+        if current_iteration:
+            return self.t_start, self.t_start + duration * self.get_timebase()
 
         return self.t_start, \
             self.t_start + (self.loop - self.loop_count) * \
             duration * self.get_timebase()
 
-    def tick_loop(self, t):
+    def get_relative_time(self, t: NumFraction) -> NumFraction:
+        """Converts the global time to the local function time.
+
+        At each time-step, the function is called with the global time. This
+        function converts the time into local time, relative to the
+        :attr:`t_start`. Also adds any function specific offset (e.g.
+        :attr:`CeedFunc.t_offset`.
+        """
+        t = t - self.t_start
+        if t < 0 and isclose(t, 0):
+            t = 0
+        return t
+
+    def tick_loop(self, t: NumFraction) -> bool:
         """Increments :attr:`loop_count` and returns whether the function is
         done, which is when all the :attr:`loop` iterations are done and
         :attr:`loop_count` reached :attr:`loop`.
@@ -1475,11 +1512,14 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
         :return: True if it ticked the loop, otherwise False if we cannot tick
             because we hit the max.
         """
-        if t < self.t_start:
+        if t < self.t_start and not isclose(t, self.t_start):
             raise ValueError
+
         self.loop_count += 1
+
         if self.loop_count >= self.loop:
             return False
+
         self.init_loop_iteration(t)
         return True
 
@@ -1543,7 +1583,7 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
                 setattr(self, key, value.sample())
 
 
-class CeedFuncRef(object):
+class CeedFuncRef:
     """A function that refers to another function.
 
     See :meth:`FunctionFactoryBase.get_func_ref` and :mod:`ceed.function` for
@@ -1596,7 +1636,7 @@ class CeedFuncRef(object):
 
     def init_func(self, t_start):
         raise TypeError(
-            'A CeedFuncRef fucntion instance cannot be called like a normal '
+            'A CeedFuncRef function instance cannot be called like a normal '
             'function. To use, copy it into a normal function with '
             'copy_expand_ref')
 
@@ -1622,8 +1662,8 @@ class CeedFunc(FuncBase):
     add it to the given time before computing the function's output.
     '''
 
-    def __call__(self, t):
-        if t < self.t_start:
+    def __call__(self, t: NumFraction) -> float:
+        if t < self.t_start and not isclose(t, self.t_start):
             raise ValueError(
                 'Cannot call function {} with time {} less than the '
                 'function start {}'.format(self, t, self.t_start))
@@ -1633,12 +1673,24 @@ class CeedFunc(FuncBase):
         while True:
             if not self.is_loop_done(t):
                 return 0
-            if not self.tick_loop(t):
+
+            # save end time of the current loop iteration
+            t_start, t_end = self.get_domain()
+            assert t_start != t_end or t_start != -1
+            if t_end < 0:
+                t_end = t
+            self.t_end = t_end
+
+            if not self.tick_loop(t_end):
                 break
 
         raise FuncDoneException
 
-    def is_loop_done(self, t) -> bool:
+    def get_relative_time(self, t: NumFraction) -> NumFraction:
+        t = super().get_relative_time(t)
+        return t + self.t_offset
+
+    def is_loop_done(self, t: NumFraction) -> bool:
         """Whether the time ``t`` is after the end of the current
         loop iteration.
 
@@ -1647,7 +1699,10 @@ class CeedFunc(FuncBase):
         """
         if self.duration < 0:
             return False
-        return t - self.t_start >= self.duration * self.get_timebase()
+
+        duration = self.duration * self.get_timebase()
+        elapsed = t - self.t_start
+        return elapsed >= duration or isclose(elapsed, duration)
 
     def get_gui_props(self):
         d = super(CeedFunc, self).get_gui_props()
@@ -1694,7 +1749,7 @@ line 934, in __call__
          FuncDoneException
     """
 
-    funcs = []
+    funcs: List[CeedFuncOrRefInstance] = []
     '''The list of children functions of this function.
     '''
 
@@ -1713,7 +1768,7 @@ line 934, in __call__
         if funcs:
             funcs[0].init_func(t_start)
 
-    def init_loop_iteration(self, t_start):
+    def init_loop_iteration(self, t_start: NumFraction) -> None:
         super(FuncGroup, self).init_loop_iteration(t_start)
         self._func_idx = 0
 
@@ -1721,8 +1776,8 @@ line 934, in __call__
         if funcs:
             funcs[0].init_func(t_start)
 
-    def __call__(self, t):
-        if t < self.t_start:
+    def __call__(self, t: NumFraction) -> float:
+        if t < self.t_start and not isclose(t, self.t_start):
             raise ValueError(
                 'Cannot call function {} with time less than the '
                 'function start {}'.format(self, self.t_start))
@@ -1738,14 +1793,21 @@ line 934, in __call__
             try:
                 return funcs[self._func_idx](t)
             except FuncDoneException:
-                end_t = funcs[self._func_idx].get_domain()[1]
+                # the next function starts at the time the last function ends.
+                # Except if it's infinite, then we start from current time
+                end_t = funcs[self._func_idx].t_end
+                assert end_t >= 0, "Should be concrete value"
                 self._func_idx += 1
 
                 if self._func_idx >= len(self.funcs):
-                    if not self.tick_loop(t if end_t < 0 else end_t):
+                    if not self.tick_loop(end_t):
                         break
                 else:
-                    funcs[self._func_idx].init_func(t if end_t < 0 else end_t)
+                    funcs[self._func_idx].init_func(end_t)
+
+        # save end time of the end of last func
+        self.t_end = funcs[-1].t_end
+        assert self.t_end >= 0, "Should be concrete value"
 
         raise FuncDoneException
 
@@ -1772,7 +1834,7 @@ line 934, in __call__
         self.add_func(func, index=i)
         return func, i
 
-    def add_func(self, func, after=None, index=None):
+    def add_func(self, func: CeedFuncOrRefInstance, after=None, index=None):
         """Adds ``func`` to this function as a sub-function in :attr:`funcs`.
 
         If calling this manually, remember to check
@@ -1867,7 +1929,7 @@ line 934, in __call__
         self.duration = -1 if infinite else duration_min
 
     def _update_duration_min(self, *largs):
-        # don't do the default action
+        # don't update when duration is updated because it's already computed
         pass
 
     def get_state(self, recurse=True, expand_ref=False):
@@ -1890,7 +1952,9 @@ line 934, in __call__
         super(FuncGroup, self).apply_state(
             {k: v for k, v in state.items() if k != 'funcs'}, clone=clone)
 
-    def get_funcs(self, step_into_ref=True):
+    def get_funcs(
+            self, step_into_ref=True
+    ) -> Generator[CeedFuncOrRefInstance, None, None]:
         yield self
         for func in self.funcs:
             if isinstance(func, CeedFuncRef):

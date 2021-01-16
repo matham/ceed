@@ -2,15 +2,18 @@ import pytest
 import sys
 import copy
 import math
+from fractions import Fraction
 import pathlib
 import os
 from typing import Type, List, Tuple
+
 from ceed.function import FuncBase, FuncGroup, FunctionFactoryBase, \
     register_all_functions, FuncDoneException, \
     register_external_functions
 from .common import add_prop_watch
 from .test_app.examples.funcs import fake_plugin_function, \
     fake_plugin_distribution, fake_plugin, noise_test_parameters
+from ceed.utils import collapse_list_to_counts
 
 
 def register_callback_distribution(
@@ -27,6 +30,24 @@ def register_callback_distribution(
 
     function_factory.param_noise_factory.register_class(cls)
     return cls
+
+
+def get_function_values(func: FuncBase, frame_rate: float) -> List[float]:
+    frame_rate = int(frame_rate)
+    i = 1
+
+    func.init_func_tree(func)
+    func.init_func(Fraction(i, frame_rate))
+
+    values = []
+    while True:
+        try:
+            values.append(func(Fraction(i, frame_rate)))
+        except FuncDoneException:
+            break
+        i += 1
+
+    return values
 
 
 def test_register_funcs():
@@ -1297,3 +1318,64 @@ def test_copy_func_noise(
     assert f2.noisy_parameters['b'].lock_after_forked
     assert not f.noisy_parameters['m'].lock_after_forked
     assert f2.noisy_parameters['b'].lock_after_forked
+
+
+@pytest.mark.parametrize('rate', [60., 120., 100.])
+@pytest.mark.parametrize('duration', [
+    (.5, .5, .5), (.51, .5, .49), (.1, .1, .1), (.11, .33, .59),
+    (31 / 60, 5 / 12, 1441 / 720)])
+def test_func_float_duration(
+        function_factory: FunctionFactoryBase, rate, duration):
+    ConstFunc = function_factory.get('ConstFunc')
+    root = FuncGroup(function_factory=function_factory, loop=5)
+    child_a = ConstFunc(
+        function_factory=function_factory, loop=4, duration=duration[0], a=1)
+    child_b = ConstFunc(
+        function_factory=function_factory, loop=3, duration=duration[1], a=2)
+    child_c = ConstFunc(
+        function_factory=function_factory, loop=5, duration=duration[2], a=3)
+
+    root.add_func(child_a)
+    root.add_func(child_b)
+    root.add_func(child_c)
+
+    values = get_function_values(root, rate)
+
+    expected = int(
+        rate * 5 * (4 * duration[0] + 3 * duration[1] + 5 * duration[2]))
+    assert expected - 1 <= len(values) <= expected + 1
+
+    counts = collapse_list_to_counts(values)
+    loops = [4, 3, 5]
+    a = [1, 2, 3]
+    for i in range(5 * 3):
+        a_val, count = counts[i]
+        assert a_val == a[i % 3]
+        assert count - 1 <= round(loops[i % 3] * duration[i % 3] * rate) \
+            <= count + 1
+
+
+def test_func_float_duration_epsilon(function_factory: FunctionFactoryBase):
+    ConstFunc = function_factory.get('ConstFunc')
+    root = FuncGroup(function_factory=function_factory, loop=5)
+    child_a = ConstFunc(function_factory=function_factory, duration=1., a=1)
+    child_b = ConstFunc(function_factory=function_factory, duration=3 * .1, a=2)
+    child_c = ConstFunc(function_factory=function_factory, duration=3 * .1, a=3)
+    child_d = ConstFunc(function_factory=function_factory, duration=2., a=4)
+
+    root.add_func(child_a)
+    root.add_func(child_b)
+    root.add_func(child_c)
+    root.add_func(child_d)
+
+    values = get_function_values(root, 60.0)
+    expected = int(60. * 5 * 3.6)
+    assert expected - 1 <= len(values) <= expected + 1
+
+    counts = collapse_list_to_counts(values)
+    duration = [1., 3 * .1, 3 * .1, 2.]
+    a = [1, 2, 3, 4]
+    for i in range(5 * 4):
+        a_val, count = counts[i]
+        assert a_val == a[i % 4]
+        assert count - 1 <= round(duration[i % 4] * 60) <= count + 1

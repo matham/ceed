@@ -20,13 +20,16 @@ from kivy.event import EventDispatcher
 from kivy.graphics import Color
 
 from ceed.function import CeedFunc, FuncDoneException, CeedFuncRef, \
-    FunctionFactoryBase, FuncBase
+    FunctionFactoryBase, FuncBase, CeedFuncOrRefInstance
 from ceed.utils import fix_name, update_key_if_other_key
 from ceed.shape import CeedShapeGroup, CeedPaintCanvasBehavior, CeedShape
 
 __all__ = ('StageDoneException', 'StageFactoryBase', 'CeedStage', 'StageShape',
            'CeedStageRef', 'remove_shapes_upon_deletion',
            'last_experiment_stage_name')
+
+CeedStageOrRefInstance = Union['CeedStage', 'CeedStageRef']
+"""Instance of either :class:`CeedStage` or :class:`CeedStageRef`."""
 
 
 last_experiment_stage_name = 'experiment_sampled'
@@ -135,10 +138,10 @@ class StageFactoryBase(EventDispatcher):
 
     def make_stage(
             self, state: dict,
-            instance: Union['CeedStage', 'CeedStageRef'] = None,
+            instance: CeedStageOrRefInstance = None,
             clone=False, func_name_map: dict = {},
             old_name_to_shape_map: dict = None) -> \
-            Union['CeedStage', 'CeedStageRef']:
+            CeedStageOrRefInstance:
         """Instantiates the stage from the state and returns it.
 
         This method must be used to instantiate a stage from state.
@@ -651,7 +654,7 @@ class CeedStage(EventDispatcher):
     """Whether there's a CeedFuncRef pointing to this function.
     """
 
-    functions: List[Union[CeedFuncRef, FuncBase]] = []
+    functions: List[CeedFuncOrRefInstance] = []
     '''A list of :class:`ceed.function.FuncBase` instances through which the
     stage iterates through sequentially and updates the intensity of the
     :attr:`shapes` to the function value at each time point.
@@ -1076,21 +1079,25 @@ class CeedStage(EventDispatcher):
             >>>         break  # function is done
         '''
         raised = False
+        last_end_t = None
         for func in self.functions:
             # this function should have been copied when it was created for
             # this experiment in the `last_experiment_stage_name` stage
             assert not isinstance(func, CeedFuncRef)
+
             try:
                 if not raised:
                     t = yield
-                raised = False
-                func.init_func(t)
+
+                func.init_func(t if last_end_t is None else last_end_t)
                 yield func(t)
                 while True:
                     t = yield
                     yield func(t)
             except FuncDoneException:
                 raised = True
+                last_end_t = func.t_end
+                assert last_end_t >= 0, "Should be concrete value"
         raise FuncDoneException
 
     def resample_func_parameters(self, is_forked=False):
@@ -1145,7 +1152,7 @@ class CeedStage(EventDispatcher):
         return shapes
 
 
-class CeedStageRef(object):
+class CeedStageRef:
     """The function it refers to must be in the factory.
     """
 

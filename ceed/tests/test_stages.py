@@ -18,6 +18,7 @@ from ceed.tests.test_app.examples.shapes import Shape, EllipseShapeP1, \
 from .test_functions import register_callback_distribution
 from ceed.tests.test_app.examples.funcs import LinearFunctionF1, \
     ConstFunctionF1
+from ceed.utils import collapse_list_to_counts
 
 
 def create_recursive_stages(
@@ -891,3 +892,115 @@ def test_sample_ref_function_stage(stage_factory: StageFactoryBase):
     assert counter_b[0] == 1
 
     assert f.b == copied.stages[0].functions[0].b
+
+
+@pytest.mark.parametrize('rate', [60., 120., 100.])
+@pytest.mark.parametrize('duration', [
+    (.5, .5, .5), (.51, .5, .49), (.1, .1, .1), (.11, .33, .59),
+    (31 / 60, 5 / 12, 1441 / 720)])
+def test_stage_func_float_duration(
+        stage_factory: StageFactoryBase, rate, duration):
+    function_factory = stage_factory.function_factory
+
+    root = make_stage(
+        stage_factory, color_r=True, color_g=False, color_b=False)
+    stage_factory.add_stage(root)
+
+    shape = EllipseShapeP1(
+        app=None, painter=stage_factory.shape_factory, show_in_gui=False,
+        create_add_shape=True)
+    root.add_shape(shape.shape)
+
+    ConstFunc = function_factory.get('ConstFunc')
+    child_a = ConstFunc(
+        function_factory=function_factory, loop=4, duration=duration[0], a=.1)
+    child_b = ConstFunc(
+        function_factory=function_factory, loop=3, duration=duration[1], a=.2)
+    child_c = ConstFunc(
+        function_factory=function_factory, loop=5, duration=duration[2], a=.3)
+    root.add_func(child_a)
+    root.add_func(child_b)
+    root.add_func(child_c)
+
+    values, n = get_stage_time_intensity(stage_factory, root.name, rate)
+    expected = int(
+        rate * (4 * duration[0] + 3 * duration[1] + 5 * duration[2]))
+    assert expected - 1 <= n <= expected + 1
+
+    counts = collapse_list_to_counts(values[shape.name])
+    loops = [4, 3, 5]
+    a = [.1, .2, .3]
+    for i in range(3):
+        a_val, count = counts[i]
+        assert a_val == (a[i], 0, 0, 1)
+        assert count - 1 <= round(loops[i] * duration[i] * rate) <= count + 1
+
+
+def test_stage_func_float_duration_epsilon(stage_factory: StageFactoryBase):
+    function_factory = stage_factory.function_factory
+
+    root = make_stage(
+        stage_factory, color_r=True, color_g=False, color_b=False)
+    stage_factory.add_stage(root)
+
+    shape = EllipseShapeP1(
+        app=None, painter=stage_factory.shape_factory, show_in_gui=False,
+        create_add_shape=True)
+    root.add_shape(shape.shape)
+
+    ConstFunc = function_factory.get('ConstFunc')
+    child_a = ConstFunc(
+        function_factory=function_factory, duration=1., a=.1)
+    child_b = ConstFunc(
+        function_factory=function_factory, duration=3 * .1, a=.2)
+    child_c = ConstFunc(
+        function_factory=function_factory, duration=3 * .1, a=.3)
+    child_d = ConstFunc(
+        function_factory=function_factory, duration=2., a=.4)
+    root.add_func(child_a)
+    root.add_func(child_b)
+    root.add_func(child_c)
+    root.add_func(child_d)
+
+    values, n = get_stage_time_intensity(stage_factory, root.name, 60.)
+    expected = int(60. * 3.6)
+    assert expected - 1 <= n <= expected + 1
+
+    counts = collapse_list_to_counts(values[shape.name])
+    duration = [1., 3 * .1, 3 * .1, 2.]
+    a = [.1, .2, .3, .4]
+    for i in range(4):
+        a_val, count = counts[i]
+        assert a_val == (a[i], 0, 0, 1)
+        assert count - 1 <= round(duration[i] * 60) <= count + 1
+
+
+def test_stage_func_clip_range(stage_factory: StageFactoryBase):
+    function_factory = stage_factory.function_factory
+
+    root = make_stage(
+        stage_factory, color_r=True, color_g=False, color_b=False)
+    stage_factory.add_stage(root)
+
+    shape = EllipseShapeP1(
+        app=None, painter=stage_factory.shape_factory, show_in_gui=False,
+        create_add_shape=True)
+    root.add_shape(shape.shape)
+
+    ConstFunc = function_factory.get('ConstFunc')
+    child_a = ConstFunc(
+        function_factory=function_factory, duration=1., a=-.1)
+    child_b = ConstFunc(
+        function_factory=function_factory, duration=3 * .1, a=.2)
+    child_c = ConstFunc(
+        function_factory=function_factory, duration=3 * .1, a=.3)
+    child_d = ConstFunc(
+        function_factory=function_factory, duration=2., a=1.4)
+    root.add_func(child_a)
+    root.add_func(child_b)
+    root.add_func(child_c)
+    root.add_func(child_d)
+
+    values, n = get_stage_time_intensity(stage_factory, root.name, 60.)
+    intensities = {v[0] for v in values[shape.name]}
+    assert intensities == {0, .2, .3, 1}
