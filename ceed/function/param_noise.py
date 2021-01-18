@@ -8,7 +8,7 @@ randomized according to :attr:`~ceed.function.FuncBase.noisy_parameters`.
 This module provides a :class:`ParameterNoiseFactory` used to register noise
 type classes and some built in noise types.
 """
-from typing import Dict, Type, TypeVar
+from typing import Dict, Type, TypeVar, List
 
 from kivy.event import EventDispatcher
 from kivy.properties import NumericProperty, BooleanProperty
@@ -75,10 +75,50 @@ class NoiseBase(EventDispatcher):
     See :meth:`ceed.stage.CeedStage.copy_and_resample` for details.
     """
 
+    sample_each_loop = BooleanProperty(False)
+    """Whether the parameter should be resampled for each loop iteration
+    (True) or whether we sample once and use that sample for all loop
+    iterations.
+
+    The values are pre-sampled before the function is executed. If True, using
+    :meth:`sample_seq`, otherwise, it's sampled once with :meth:`sample`.
+
+    For example, for the following function structure::
+
+        GroupFunc:
+            name: 'root'
+            loop: 5
+            GroupFunc:
+                name: 'child_a'
+                loop: 2
+                ConstFunc:
+                    name: 'child'
+                    loop: 3
+
+    where the ``child`` function's ``a`` parameter is randomized and
+    the ``child`` function is looped ``5 * 2 * 3 = 30`` times total across the
+    whole experiment.
+
+    Then, if :attr:`sample_each_loop` is False, we :meth:`sample` the parameter
+    once and the same value is used for all 30 loop iterations. Otherwise, we
+    pre-compute 30 samples using :meth:`sample_seq` from
+    :meth:`~ceed.function.FuncBase.resample_parameters` and then update the
+    parameter with each corresponding sample when the loop iteration is
+    initialized (:meth:`~ceed.function.FuncBase.init_func` and
+    :meth:`~ceed.function.FuncBase.init_loop_iteration`).
+    """
+
     def sample(self) -> float:
         """Samples the distribution and returns a new value.
         """
         raise NotImplementedError
+
+    def sample_seq(self, n) -> List[float]:
+        """Samples the distribution ``n`` times and returns a list of values.
+
+        By default it just calls :meth:`sample` ``n`` times to get the samples.
+        """
+        return [self.sample() for _ in range(n)]
 
     @property
     def name(self) -> str:
@@ -98,10 +138,14 @@ class NoiseBase(EventDispatcher):
         """
         return {
             'cls': self.name,
-            'lock_after_forked': self.lock_after_forked}
+            'lock_after_forked': self.lock_after_forked,
+            'sample_each_loop': self.sample_each_loop}
 
     def get_prop_pretty_name(self) -> Dict[str, str]:
         """Returns a dict mapping names of the parameters used by the class
         to a nicer representation shown to the user.
         """
-        return {'lock_after_forked': 'Lock after fork'}
+        return {
+            'lock_after_forked': 'Lock after fork',
+            'sample_each_loop': 'Resample each loop',
+        }

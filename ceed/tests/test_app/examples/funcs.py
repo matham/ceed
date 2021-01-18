@@ -932,5 +932,11 @@ noise_test_parameters = [
     ('GaussianNoise',
      {'min_val': -1.5, 'max_val': 1.5, 'mean_val': 0.1, 'stdev': .15}),
     ('UniformNoise',
-     {'min_val': -1.4, 'max_val': 1.3})
+     {'min_val': -1.4, 'max_val': 1.3}),
+    ('DiscreteNoise',
+     {'start_value': 10, 'step': 2, 'num_values': 1000,
+      'with_replacement': False}),
+    ('DiscreteNoise',
+     {'start_value': 10, 'step': 2, 'num_values': 8,
+      'with_replacement': True}),
 ]

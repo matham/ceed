@@ -408,6 +408,8 @@ class StageFactoryBase(EventDispatcher):
         '''
         if stage is None:
             stage = self.stage_names[stage_name]
+        stage.init_stage_tree(stage)
+
         shapes = {s.name: [] for s in self.shape_factory.shapes}
         tick_stage = stage.tick_stage(shapes)
         next(tick_stage)
@@ -809,7 +811,7 @@ class CeedStage(EventDispatcher):
             stage_factory=self.stage_factory,
             function_factory=self.function_factory,
             shape_factory=self.shape_factory)
-        obj.apply_state(self.get_state())
+        obj.apply_state(deepcopy(self.get_state()))
         return obj
 
     def copy_expand_ref(self):
@@ -1100,7 +1102,16 @@ class CeedStage(EventDispatcher):
                 assert last_end_t >= 0, "Should be concrete value"
         raise FuncDoneException
 
-    def resample_func_parameters(self, is_forked=False):
+    def init_stage_tree(self, root: 'CeedStage') -> None:
+        """
+        """
+        for func in self.functions:
+            func.init_func_tree(func)
+
+        for child_stage in self.stages:
+            child_stage.init_stage_tree(root)
+
+    def resample_func_parameters(self, is_forked=False) -> None:
         """Resamples all parameters of all functions of the stage that have
         randomness associated with it.
 
@@ -1111,8 +1122,11 @@ class CeedStage(EventDispatcher):
             for root_func in stage.functions:
                 if isinstance(root_func, CeedFuncRef):
                     root_func = root_func.func
-                for func in root_func.get_funcs(step_into_ref=True):
-                    func.resample_parameters(is_forked=is_forked)
+
+                for functions in root_func.get_function_tree(
+                        step_into_ref=True):
+                    functions[-1].resample_parameters(
+                        functions, is_forked=is_forked)
 
     def copy_and_resample(self) -> 'CeedStage':
         """Resamples all the functions of the stage, copies the stage and

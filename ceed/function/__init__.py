@@ -467,10 +467,14 @@ values returned by :meth:`FuncBase.get_gui_props`,
 These methods control what properties are editable by the user and the values
 they may potentially take.
 """
-from typing import Type, List, Tuple, Dict, Optional, Set, TypeVar
+from typing import Type, List, Tuple, Dict, Optional, Set, TypeVar, \
+    Generator, Union
 from copy import deepcopy
 from collections import defaultdict
+from math import isclose
 from os.path import dirname
+from functools import reduce
+import operator
 from fractions import Fraction
 import importlib
 
@@ -490,7 +494,7 @@ FuncType = TypeVar('FuncType', bound='FuncBase')
 """The type-hint type for :class:`FuncBase`.
 """
 
-CeedFuncOrRefInstance = Union['CeedFunc', 'CeedFuncRef']
+CeedFuncOrRefInstance = Union['FuncBase', 'CeedFuncRef']
 """Instance of either :class:`CeedFunc` or :class:`CeedFuncRef`."""
 
 FloatOrInt = Union[float, int]
@@ -1089,14 +1093,25 @@ class FuncBase(EventDispatcher):
     :meth:`CeedFunc.is_loop_done` returned true) in global timebase.
 
     Set by the function when the loop is done and is typically the second value
-    from :meth:`get_domain`, or some current value if that is negative.
+    from :meth:`get_domain`, or some current time value if that is negative.
     """
 
     loop_count: int = 0
     '''The current loop iteration.
 
-    See :attr:`loop` and :mod:`ceed.function`.
+    This goes from zero (reset by :meth:`init_func` /
+    :meth:`init_loop_iteration`) to :attr:`loop`. The function is done when
+    it is exactly :attr:`loop`, having looped :attr:`times`.
+
+    See also :mod:`ceed.function`.
     '''
+
+    loop_tree_count: int = 0
+    """The current iteration, starting from zero, and incremented for each loop
+    of the function, including outside loops that loop over the function.
+
+    See :meth:`init_func_tree` for details.
+    """
 
     noisy_parameters: Dict[str, NoiseBase] = DictProperty({})
     """A dict mapping parameter names of the function to
@@ -1117,20 +1132,34 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
         2
         >>> f.b
         0.0
-        >>> f.resample_parameters()
+        >>> f.resample_parameters([f])
         >>> f.m
         12.902067284602595
-        >>> f.resample_parameters()
+        >>> f.resample_parameters([f])
         >>> f.m
         11.555420807597352
         >>> f.b
         0.0
     """
 
+    noisy_parameter_samples: Dict[str, List[float]] = {}
+    """For each parameter listed in :attr:`noisy_parameters`, if
+    :attr:`~ceed.function.param_noise.NoiseBase.sample_each_loop`, then during
+    the :meth:`resample_parameters` stage we pre-compute the values for the
+    parameter for each loop iteration and store it here.
+
+    The pre-computed values are then used to update the parameter during each
+    :meth:`init_func` and :meth:`init_loop_iteration`. The total number of
+    samples includes all outside loops, see
+    :attr:`~ceed.function.param_noise.NoiseBase.sample_each_loop` and
+    :meth:`init_func_tree`.
+    """
+
     __events__ = ('on_changed', )
 
     def __init__(self, function_factory, **kwargs):
         self.function_factory = function_factory
+        self.noisy_parameter_samples = {}
         super(FuncBase, self).__init__(**kwargs)
         for prop in self.get_state(recurse=False):
             self.fbind(prop, self.dispatch, 'on_changed', prop)
@@ -1319,6 +1348,7 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
             'timebase_denominator': self.timebase_denominator,
             'noisy_parameters':
                 {k: v.get_config() for k, v in self.noisy_parameters.items()},
+            'noisy_parameter_samples': self.noisy_parameter_samples,
         }
         return d
 
@@ -1385,7 +1415,41 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
         """
         yield self
 
-    def can_other_func_be_added(self, other_func) -> bool:
+    def get_function_tree(
+            self, tree: List[CeedFuncOrRefInstance] = None, step_into_ref=True
+    ) -> Generator[List[CeedFuncOrRefInstance], None, None]:
+        """Generator that yields the function tree leading to the function, for
+        all functions in the tree. It's in DFS order.
+
+        :param tree: a list of functions leading to this function. This starts
+            from the root and returns every function in the direct path to
+            this function. It then copies and appends this function and it'
+            children, if any, and yields them each.
+
+        E.g.::
+
+            >>> Cos = function_factory.get('CosFunc')
+            >>> cos = Cos(function_factory=function_factory)
+            >>> Group = function_factory.get('FuncGroup')
+            >>> g = Group(function_factory=function_factory)
+            >>> g.add_func(cos)
+            >>> gen = cos.get_function_tree()
+            >>> next(gen)
+            [<ceed.function.plugin.CosFunc at 0x216b93bccf8>]
+            >>> gen = g.get_function_tree()
+            >>> next(gen)
+            [<ceed.function.FuncGroup at 0x216b93bcc88>]
+            >>> next(gen)
+            [<ceed.function.FuncGroup at 0x216b93bcc88>,
+             <ceed.function.plugin.CosFunc at 0x216b93bccf8>]
+        """
+        if tree is None:
+            yield [self]
+        else:
+            yield tree + [self]
+
+    def can_other_func_be_added(
+            self, other_func: Union['CeedFuncRef', 'FuncBase']) -> bool:
         """Checks whether the other function may be added to this function.
 
         Specifically, it checks whether this function is a child of the other
@@ -1407,7 +1471,7 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
 
     def __deepcopy__(self, memo):
         obj = self.__class__(function_factory=self.function_factory)
-        obj.apply_state(self.get_state())
+        obj.apply_state(deepcopy(self.get_state()))
         return obj
 
     def copy_expand_ref(self) -> 'FuncBase':
@@ -1423,37 +1487,70 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
         obj.apply_state(self.get_state(expand_ref=True))
         return obj
 
+    def init_func_tree(self, root: 'FuncBase') -> None:
+        """Initializes the function as part of the function tree so it is ready
+        to be called to get the function values as part of the tree. It is
+        called once for each function of the entire function tree.
+
+        :param root: The root of the function tree.
+
+        For example, for the following function structure::
+
+            GroupFunc:
+                name: 'root'
+                loop: 5
+                GroupFunc:
+                    name: 'child_a'
+                    loop: 3
+                    ConstFunc:
+                        name: 'child'
+                        loop: 4
+
+        when the experiment is ready, after :meth:`resample_parameters` and the
+        stage is ready to run, ceed will call :meth:`init_func_tree` once for
+        ``root``, ``child_a``, and ``child`` in that order. The ``root``
+        parameter passed will be the ``root`` function.
+
+        Then, it will call :meth:`init_func` for ``root``, ``child_a``, and
+        ``child`` 1, 5, and 15 times, respectively. Once for each time the
+        function is started.
+
+        Finally, it will call :meth:`init_loop_iteration` for ``root``,
+        ``child_a``, and ``child`` 4, 10, and 45 times, respectively. Once for
+        each loop iteration of the function, except the first.
+        """
+        self.loop_tree_count = 0
+
     def init_func(self, t_start: NumFraction) -> None:
         """Initializes the function so it is ready to be called to get
-        the function values.
+        the function values. See also :meth:`init_func_tree`.
 
-        :Params:
-
-            `t_start`: float
-                The time in seconds in global time. :attr:`t_start`
-                will be set to this value. All subsequent calls to the
-                function with a time value will be relative to this given time.
+        :param t_start: The time in seconds in global time. :attr:`t_start`
+            will be set to this value. All subsequent calls to the
+            function with a time value will be relative to this given time.
         """
         self.t_start = t_start
         self.loop_count = 0
+
+        loop_tree_count = self.loop_tree_count
+        for key, values in self.noisy_parameter_samples.items():
+            setattr(self, key, values[loop_tree_count])
 
     def init_loop_iteration(self, t_start: NumFraction) -> None:
         """Initializes the function at the beginning of each loop.
 
         It's called internally at the start of every :attr:`loop` iteration,
-        **except the first**.
+        **except the first**. See also :meth:`init_func_tree`.
 
-        :attr:`t_start` will be set to the given value, except if
-        :attr:`duration` is not negative. Then :attr:`t_start` will simply be
-        incremented by the :attr:`duration` of the previous loop iteration.
-
-        :Params:
-
-            `t_start`: float
-                The time in seconds in global time. All subsequent calls to the
-                function with a time value will be relative to this given time.
+        :param t_start: The time in seconds in global time. :attr:`t_start`
+            will be set to this value. All subsequent calls to the
+            function with a time value will be relative to this given time.
         """
         self.t_start = t_start
+
+        loop_tree_count = self.loop_tree_count
+        for key, values in self.noisy_parameter_samples.items():
+            setattr(self, key, values[loop_tree_count])
 
     def get_domain(
             self, current_iteration: bool = True
@@ -1461,8 +1558,10 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
         """Returns the current domain of the function.
 
         :param current_iteration: If True, returns the domain for the current
-            loop iteration. Otherwise, returns the domain ending at the end of
-            the final loop iteration.
+            loop iteration (i.e. the end point is the expected end time of the
+            current loop). Otherwise, returns the domain ending at the end of
+            the final loop iteration. In both cases, the interval start is the
+            time the current loop iteration started, in **global time**.
 
         See :mod:`ceed.function` for details.
         """
@@ -1502,20 +1601,31 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
         done, which is when all the :attr:`loop` iterations are done and
         :attr:`loop_count` reached :attr:`loop`.
 
-        ``t`` is in seconds and this is only called
+        ``t`` is in seconds in global time and this is only called
         when the function time reached the end of its valid domain so that it
         makes sense to increment the loop. I.e. if the user called the function
         with a time past the current loop duration, this is called internally
         to increment the loop.
 
-        :param t: The time with which the function was called.
+        May not be called with time values smaller than the domain. Or if the
+        loop iterations are already done.
+
+        :param t: The time at which the last function in the tree or loop
+            iteration of this function ended, in global time.
         :return: True if it ticked the loop, otherwise False if we cannot tick
-            because we hit the max.
+            because we hit the max and the function is done.
         """
         if t < self.t_start and not isclose(t, self.t_start):
-            raise ValueError
+            raise ValueError(
+                f'Called with time {t} that is less than start '
+                f'time {self.t_start}')
+        if self.loop_count >= self.loop:
+            raise ValueError(
+                f'Called after the current loop iteration ({self.loop_count}) '
+                f'reached the end of all loops ({self.loop})')
 
         self.loop_count += 1
+        self.loop_tree_count += 1
 
         if self.loop_count >= self.loop:
             return False
@@ -1535,17 +1645,23 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
         """
         self.duration_min_total = self.loop * self.duration_min
 
-    def resample_parameters(self, is_forked=False):
+    def resample_parameters(
+            self, parent_tree: List['FuncBase'], is_forked=False) -> None:
         """Resamples all the function parameters that have randomness
         attached to it in :attr:`noisy_parameters` and updates their values.
 
+        For all parameters that are randomized and
+        :attr:`~ceed.function.param_noise.NoiseBase.sample_each_loop` is True,
+        the samples for all the iterations are also pre-sampled and stored in
+        :attr:`noisy_parameter_samples`.
+
         If ``is_forked``, then if
         :attr:`~ceed.function.param_noise.NoiseBase.lock_after_forked`, then
-        it won't be re-sampled.
-        This allows sampling a :class:`CeedFuncRef` function before forking it,
-        and then, when copying and forking the source functions into individual
-        functions we don't resample them. Then all these individual functions
-        share the same random parameters as the original referenced function.
+        it won't be re-sampled. This allows sampling a :class:`CeedFuncRef`
+        function before forking it, and then, when copying and forking the
+        source functions into individual functions we don't resample them.
+        Then all these individual functions share the same random parameters as
+        the original referenced function.
 
         E.g.::
 
@@ -1564,12 +1680,12 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
             >>> ref1 = function_factory.get_func_ref(func=f)
             >>> ref2 = function_factory.get_func_ref(func=f)
             >>> # resample the original function and fork refs into copies
-            >>> f.resample_parameters()
+            >>> f.resample_parameters([f])
             >>> f1 = ref1.copy_expand_ref()
             >>> f2 = ref2.copy_expand_ref()
             >>> # now resample only those that are not locked
-            >>> f1.resample_parameters(is_forked=True)
-            >>> f2.resample_parameters(is_forked=True)
+            >>> f1.resample_parameters([f1], is_forked=True)
+            >>> f2.resample_parameters([f2], is_forked=True)
             >>> # b is locked to pre-forked value and is not sampled after fork
             >>> f.m, f.b
             (0.22856343565686332, 0.3092686616300213)
@@ -1578,9 +1694,27 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
             >>> f2.m, f2.b
             (0.9117196772532972, 0.3092686616300213)
         """
+        samples = self.noisy_parameter_samples
+        for key in samples.keys() - self.noisy_parameters.keys():
+            del samples[key]
+
         for key, value in self.noisy_parameters.items():
-            if not value.lock_after_forked or not is_forked:
+            if value.lock_after_forked and is_forked:
+                continue
+
+            if value.sample_each_loop:
+                n = reduce(operator.mul, (f.loop for f in parent_tree))
+                if not n:
+                    if key in samples:
+                        del samples[key]
+                    continue
+
+                values = samples[key] = value.sample_seq(n)
+                setattr(self, key, values[0])
+            else:
                 setattr(self, key, value.sample())
+                if key in samples:
+                    del samples[key]
 
 
 class CeedFuncRef:
@@ -1630,7 +1764,13 @@ class CeedFuncRef:
 
     def __call__(self, t):
         raise TypeError(
-            'A CeedFuncRef fucntion instance cannot be called like a normal '
+            'A CeedFuncRef function instance cannot be called like a normal '
+            'function. To use, copy it into a normal function with '
+            'copy_expand_ref')
+
+    def init_func_tree(self, root: 'FuncBase'):
+        raise TypeError(
+            'A CeedFuncRef function instance cannot be called like a normal '
             'function. To use, copy it into a normal function with '
             'copy_expand_ref')
 
@@ -1691,10 +1831,10 @@ class CeedFunc(FuncBase):
         return t + self.t_offset
 
     def is_loop_done(self, t: NumFraction) -> bool:
-        """Whether the time ``t`` is after the end of the current
-        loop iteration.
+        """Whether the time ``t``, in global time, is after the end of the
+        current loop iteration.
 
-        :param t: Time in seconds in global time.
+        :param t: Time in seconds, in global time.
         :return: Whether it's past the end of the current loop iteration.
         """
         if self.duration < 0:
@@ -1760,7 +1900,12 @@ line 934, in __call__
         self.funcs = []
         self.fbind('timebase', self._dispatch_timebase)
 
-    def init_func(self, t_start):
+    def init_func_tree(self, root: 'FuncBase') -> None:
+        super().init_func_tree(root)
+        for func in self.funcs:
+            func.init_func_tree(root)
+
+    def init_func(self, t_start: NumFraction) -> None:
         super(FuncGroup, self).init_func(t_start)
         self._func_idx = 0
 
@@ -1964,6 +2109,23 @@ line 934, in __call__
 
                 func = func.func
             for f in func.get_funcs(step_into_ref):
+                yield f
+
+    def get_function_tree(
+            self, tree: List[CeedFuncOrRefInstance] = None, step_into_ref=True
+    ) -> Generator[List[CeedFuncOrRefInstance], None, None]:
+        if tree is None:
+            tree = []
+
+        yield tree + [self]
+        for func in self.funcs:
+            if isinstance(func, CeedFuncRef):
+                if not step_into_ref:
+                    yield tree + [self, func]
+                    continue
+
+                func = func.func
+            for f in func.get_function_tree(tree + [self], step_into_ref):
                 yield f
 
 

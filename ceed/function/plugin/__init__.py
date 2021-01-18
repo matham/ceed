@@ -38,15 +38,15 @@ from fractions import Fraction
 from math import exp, cos, pi
 from typing import Iterable, Union, Tuple, List, Type, Dict
 
-from kivy.properties import NumericProperty
+from kivy.properties import NumericProperty, BooleanProperty
 
 from ceed.function import CeedFunc, FuncType
 from ceed.function.param_noise import NoiseType, NoiseBase
 
 __all__ = (
     'get_plugin_functions', 'ConstFunc', 'LinearFunc', 'ExponentialFunc',
-    'CosFunc', 'GaussianNoise', 'UniformNoise', 'get_ceed_functions',
-    'get_ceed_distributions')
+    'CosFunc', 'GaussianNoise', 'UniformNoise', 'DiscreteNoise',
+    'get_ceed_functions', 'get_ceed_distributions')
 
 
 def get_plugin_functions(
@@ -390,6 +390,68 @@ class UniformNoise(NoiseBase):
         return names
 
 
+class DiscreteNoise(NoiseBase):
+    """Represents a uniform distribution of discrete values.
+    """
+
+    start_value = NumericProperty(0)
+    """The first value in the list of values (inclusive).
+    """
+
+    step = NumericProperty(1)
+    """The distance between values (e.g. if it's 1 and :attr:`start_value` is
+    0 and :attr:`num_values` is 5, we have ``0, 1, 2, 3, 4``).
+    """
+
+    num_values = NumericProperty(5)
+    """The total number of values (e.g. if it's 5 and :attr:`start_value` is
+    0 and :attr:`step` is 1, we have ``0, 1, 2, 3, 4``).
+    """
+
+    with_replacement = BooleanProperty(True)
+    """Whether, when sampling the distribution, to sample with replacement.
+
+    If False, then :attr:`num_values` must be at least as large as ``n`` of
+    :meth:`sample_seq`, if the distribution is used to sample more than once,
+    e.g. if each loop iteration is sampled.
+    """
+
+    def sample(self) -> float:
+        return random.randint(
+            0, self.num_values - 1) * self.step + self.start_value
+
+    def sample_seq(self, n) -> List[float]:
+        num_values = self.num_values
+        step = self.step
+        start_value = self.start_value
+
+        if self.with_replacement:
+            values = random.choices(range(num_values), k=n)
+        else:
+            if n > num_values:
+                raise ValueError(
+                    f'Sampling without replacement, but asked for {n} samples '
+                    f'but distribution only contains {num_values} values')
+
+            values = random.sample(range(num_values), n)
+
+        return [v * step + start_value for v in values]
+
+    def get_config(self) -> dict:
+        config = super().get_config()
+        for attr in ('start_value', 'step', 'num_values', 'with_replacement'):
+            config[attr] = getattr(self, attr)
+        return config
+
+    def get_prop_pretty_name(self) -> Dict[str, str]:
+        names = super().get_prop_pretty_name()
+        names['start_value'] = 'Lowest value'
+        names['step'] = 'Distance between values'
+        names['num_values'] = 'Num values'
+        names['with_replacement'] = 'With replacement'
+        return names
+
+
 def get_ceed_functions() -> Iterable[Type[FuncType]]:
     """Returns all the function classes defined and exported in this file
     (:class:`ConstFunc`, :class:`LinearFunc`, etc.).
@@ -401,4 +463,4 @@ def get_ceed_distributions() -> Iterable[Type[NoiseType]]:
     """Returns all the distribution classes defined and exported in this file
     (:class:`GaussianNoise`, :class:`UniformNoise`, etc.).
     """
-    return GaussianNoise, UniformNoise
+    return GaussianNoise, UniformNoise, DiscreteNoise

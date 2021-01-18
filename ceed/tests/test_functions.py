@@ -1196,26 +1196,50 @@ def test_noise_sampling(function_factory: FunctionFactoryBase, cls_name, props):
     assert function_factory.param_noise_factory.noise_classes[cls_name] is cls
 
     obj = cls(**props)
-    min_val = props['min_val']
-    max_val = props['max_val']
-
     samples = [obj.sample() for _ in range(100)]
-    assert min_val <= min(samples) <= max(samples) <= max_val
+
+    if 'min_val' in props:
+        min_val = props['min_val']
+        max_val = props['max_val']
+        assert min_val <= min(samples) <= max(samples) <= max_val
+
     # at least two are different (if random is not broken)
     assert len(set(samples)) > 1
 
 
 @pytest.mark.parametrize('cls_name,props', noise_test_parameters)
-def test_noise_create_from_config(
+def test_noise_seq_sampling(
         function_factory: FunctionFactoryBase, cls_name, props):
     cls = function_factory.param_noise_factory.get_cls(cls_name)
+    assert cls.__name__ == cls_name
+    assert function_factory.param_noise_factory.noise_classes[cls_name] is cls
 
     obj = cls(**props)
+    samples = obj.sample_seq(100)
+
+    if 'min_val' in props:
+        min_val = props['min_val']
+        max_val = props['max_val']
+        assert min_val <= min(samples) <= max(samples) <= max_val
+
+    # at least two are different (if random is not broken)
+    assert len(set(samples)) > 1
+
+
+@pytest.mark.parametrize('seq', [True, False])
+@pytest.mark.parametrize('cls_name,props', noise_test_parameters)
+def test_noise_create_from_config(
+        function_factory: FunctionFactoryBase, cls_name, props, seq):
+    cls = function_factory.param_noise_factory.get_cls(cls_name)
+
+    obj = cls(sample_each_loop=seq, **props)
     obj2 = function_factory.param_noise_factory.make_instance(obj.get_config())
 
     for key, value in props.items():
         assert getattr(obj, key) == value
         assert getattr(obj2, key) == value
+    assert obj.sample_each_loop is seq
+    assert obj2.sample_each_loop is seq
 
 
 @pytest.mark.parametrize('cls_name,props', noise_test_parameters)
@@ -1230,7 +1254,7 @@ def test_func_sampling(function_factory: FunctionFactoryBase, cls_name, props):
     b_vals = []
     m_vals = []
     for _ in range(100):
-        f.resample_parameters()
+        f.resample_parameters([f])
         b_vals.append(f.b)
         m_vals.append(f.m)
 
@@ -1240,23 +1264,40 @@ def test_func_sampling(function_factory: FunctionFactoryBase, cls_name, props):
 
 
 @pytest.mark.parametrize('cls_name,props', noise_test_parameters)
-@pytest.mark.parametrize('lock_param', [True, False])
-@pytest.mark.parametrize('is_forked', [True, False])
-def test_noise_lock(
-        function_factory: FunctionFactoryBase, cls_name, props, lock_param,
-        is_forked):
+def test_func_seq_sampling(
+        function_factory: FunctionFactoryBase, cls_name, props):
     cls = function_factory.param_noise_factory.get_cls(cls_name)
 
     f: FuncBase = function_factory.get('LinearFunc')(
+        function_factory=function_factory, loop=100)
+    f.noisy_parameters['m'] = cls(sample_each_loop=True, **props)
+
+    assert 'm' not in f.noisy_parameter_samples
+    assert 'b' not in f.noisy_parameter_samples
+    f.resample_parameters([f])
+    assert 'm' in f.noisy_parameter_samples
+    assert 'b' not in f.noisy_parameter_samples
+
+    # at least two are different (if random is not broken)
+    assert len(set(f.noisy_parameter_samples['m'])) > 1
+
+
+@pytest.mark.parametrize('lock_param', [True, False])
+@pytest.mark.parametrize('is_forked', [True, False])
+def test_noise_lock(
+        function_factory: FunctionFactoryBase, lock_param, is_forked):
+    cls = function_factory.param_noise_factory.get_cls('UniformNoise')
+
+    f: FuncBase = function_factory.get('LinearFunc')(
         function_factory=function_factory)
-    f.noisy_parameters['m'] = cls(**props)
-    f.noisy_parameters['b'] = cls(**props, lock_after_forked=lock_param)
+    f.noisy_parameters['m'] = cls()
+    f.noisy_parameters['b'] = cls(lock_after_forked=lock_param)
     b = f.b
 
     b_vals = []
     m_vals = []
     for _ in range(100):
-        f.resample_parameters(is_forked=is_forked)
+        f.resample_parameters([f], is_forked=is_forked)
         b_vals.append(f.b)
         m_vals.append(f.m)
 
@@ -1273,6 +1314,32 @@ def test_noise_lock(
     assert len(set(m_vals)) > 1
 
 
+@pytest.mark.parametrize('lock_param', [True, False])
+def test_noise_seq_lock(function_factory: FunctionFactoryBase, lock_param):
+    cls = function_factory.param_noise_factory.get_cls('UniformNoise')
+
+    f: FuncBase = function_factory.get('LinearFunc')(
+        function_factory=function_factory, loop=100)
+    f.noisy_parameters['b'] = cls(
+        lock_after_forked=lock_param, sample_each_loop=True)
+
+    assert 'b' not in f.noisy_parameter_samples
+    f.resample_parameters([f], is_forked=False)
+    b_vals = f.noisy_parameter_samples['b']
+    f.resample_parameters([f], is_forked=True)
+    b_vals2 = f.noisy_parameter_samples['b']
+
+    if lock_param:
+        assert b_vals is b_vals2
+        assert b_vals == b_vals2
+        assert len(b_vals) == 100
+    else:
+        assert b_vals is not b_vals2
+        assert b_vals != b_vals2
+        assert len(b_vals) == len(b_vals2)
+        assert len(b_vals) == 100
+
+
 def test_noise_ref_lock(function_factory: FunctionFactoryBase):
     cls = function_factory.param_noise_factory.get_cls('UniformNoise')
 
@@ -1284,12 +1351,12 @@ def test_noise_ref_lock(function_factory: FunctionFactoryBase):
     f.noisy_parameters['b'] = cls(lock_after_forked=True)
 
     ref2 = function_factory.get_func_ref(func=f)
-    f.resample_parameters()
+    f.resample_parameters([f])
 
     m_vals = set()
     f2: FuncBase = ref2.copy_expand_ref()
     for _ in range(100):
-        f2.resample_parameters(is_forked=True)
+        f2.resample_parameters([f2], is_forked=True)
         m_vals.add(f2.m)
         assert f2.b == f.b
 
@@ -1304,7 +1371,8 @@ def test_copy_func_noise(
     f: FuncBase = function_factory.get('LinearFunc')(
         function_factory=function_factory)
     f.noisy_parameters['m'] = cls(**props)
-    f.noisy_parameters['b'] = cls(**props, lock_after_forked=True)
+    f.noisy_parameters['b'] = cls(
+        **props, lock_after_forked=True, sample_each_loop=True)
 
     f2 = copy.deepcopy(f)
 
@@ -1315,9 +1383,36 @@ def test_copy_func_noise(
         assert getattr(f2.noisy_parameters['b'], key) == value
 
     assert not f.noisy_parameters['m'].lock_after_forked
+    assert f.noisy_parameters['b'].lock_after_forked
+    assert not f.noisy_parameters['m'].sample_each_loop
+    assert f.noisy_parameters['b'].sample_each_loop
+    assert not f2.noisy_parameters['m'].lock_after_forked
     assert f2.noisy_parameters['b'].lock_after_forked
-    assert not f.noisy_parameters['m'].lock_after_forked
-    assert f2.noisy_parameters['b'].lock_after_forked
+    assert not f2.noisy_parameters['m'].sample_each_loop
+    assert f2.noisy_parameters['b'].sample_each_loop
+
+
+def test_copy_func_noise_seq(function_factory: FunctionFactoryBase):
+    cls = function_factory.param_noise_factory.get_cls('UniformNoise')
+
+    f: FuncBase = function_factory.get('LinearFunc')(
+        function_factory=function_factory, loop=100)
+    f.noisy_parameters['m'] = cls()
+    f.noisy_parameters['b'] = cls(sample_each_loop=True)
+
+    f.resample_parameters([f])
+    assert 'm' not in f.noisy_parameter_samples
+    original = f.noisy_parameter_samples['b']
+    b_vals = list(original)
+
+    f2 = copy.deepcopy(f)
+
+    assert 'm' not in f.noisy_parameter_samples
+    assert 'm' not in f2.noisy_parameter_samples
+    assert f.noisy_parameter_samples['b'] is original
+    assert f.noisy_parameter_samples['b'] == b_vals
+    assert f2.noisy_parameter_samples['b'] is not original
+    assert f2.noisy_parameter_samples['b'] == b_vals
 
 
 @pytest.mark.parametrize('rate', [60., 120., 100.])
@@ -1379,3 +1474,36 @@ def test_func_float_duration_epsilon(function_factory: FunctionFactoryBase):
         a_val, count = counts[i]
         assert a_val == a[i % 4]
         assert count - 1 <= round(duration[i % 4] * 60) <= count + 1
+
+
+@pytest.mark.parametrize('with_replacement', [True, False])
+def test_discrete_without_replacement(
+        function_factory: FunctionFactoryBase, with_replacement):
+    cls = function_factory.param_noise_factory.get_cls('DiscreteNoise')
+    obj = cls(
+        start_value=.1, step=.1, num_values=4,
+        with_replacement=with_replacement)
+    legal_vals = {.1 + i * .1 for i in range(4)}
+
+    for _ in range(100):
+        assert .09 < obj.sample() < .41
+
+    vals = obj.sample_seq(3)
+    assert not (set(vals) - legal_vals)
+    assert legal_vals - set(vals)
+    assert len(vals) == 3
+    if not with_replacement:
+        assert len(set(vals)) == 3
+
+    if not with_replacement:
+        obj.sample_seq(4)
+        with pytest.raises(ValueError):
+            obj.sample_seq(5)
+        with pytest.raises(ValueError):
+            obj.sample_seq(10)
+        return
+
+    vals = obj.sample_seq(100)
+    assert not (set(vals) - legal_vals)
+    assert len(vals) == 100
+    assert len(set(vals)) > 1
