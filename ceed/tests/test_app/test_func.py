@@ -552,7 +552,7 @@ def add_to_path(tmp_path, *args):
       'app_context': add_to_path}, ],
     indirect=True
 )
-async def test_external_plugin_named_package(func_app: CeedTestApp, tmp_path):
+async def external_plugin_named_package(func_app: CeedTestApp, tmp_path):
     function_factory = func_app.app.function_factory
     noise_classes = function_factory.param_noise_factory.noise_classes
 
