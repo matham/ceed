@@ -1476,17 +1476,21 @@ def test_func_float_duration_epsilon(function_factory: FunctionFactoryBase):
         assert count - 1 <= round(duration[i % 4] * 60) <= count + 1
 
 
+@pytest.mark.parametrize('name,props,min_val,max_val,legal_vals', [
+    ('DiscreteNoise', {'start_value': .1, 'step': .1, 'num_values': 4},
+     .09, .41, {.1 + i * .1 for i in range(4)}),
+    ('DiscreteListNoise', {'csv_list': '.1, .2,.3  ,.4  ,,'},
+     .09, .41, {.1, .2, .3, .4}),
+])
 @pytest.mark.parametrize('with_replacement', [True, False])
 def test_discrete_without_replacement(
-        function_factory: FunctionFactoryBase, with_replacement):
-    cls = function_factory.param_noise_factory.get_cls('DiscreteNoise')
-    obj = cls(
-        start_value=.1, step=.1, num_values=4,
-        with_replacement=with_replacement)
-    legal_vals = {.1 + i * .1 for i in range(4)}
+        function_factory: FunctionFactoryBase, with_replacement, name, props,
+        min_val, max_val, legal_vals):
+    cls = function_factory.param_noise_factory.get_cls(name)
+    obj = cls(with_replacement=with_replacement, **props)
 
     for _ in range(100):
-        assert .09 < obj.sample() < .41
+        assert min_val < obj.sample() < max_val
 
     vals = obj.sample_seq(3)
     assert not (set(vals) - legal_vals)
@@ -1507,3 +1511,20 @@ def test_discrete_without_replacement(
     assert not (set(vals) - legal_vals)
     assert len(vals) == 100
     assert len(set(vals)) > 1
+
+
+@pytest.mark.parametrize('name,props', [
+    ('DiscreteNoise', {'num_values': 0}),
+    ('DiscreteListNoise', {'csv_list': ''}),
+    ('DiscreteListNoise', {'csv_list': ','}),
+])
+@pytest.mark.parametrize('with_replacement', [True, False])
+def test_discrete_empty(
+        function_factory: FunctionFactoryBase, with_replacement, name, props):
+    cls = function_factory.param_noise_factory.get_cls(name)
+    obj = cls(with_replacement=with_replacement, **props)
+
+    with pytest.raises(ValueError):
+        obj.sample()
+    with pytest.raises(ValueError):
+        obj.sample_seq(1)

@@ -939,4 +939,10 @@ noise_test_parameters = [
     ('DiscreteNoise',
      {'start_value': 10, 'step': 2, 'num_values': 8,
       'with_replacement': True}),
+    ('DiscreteListNoise',
+     {'csv_list': '5.6, 34,65.,34.54,45  ,34 , 43,.445',
+      'with_replacement': True}),
+    ('DiscreteListNoise',
+     {'csv_list': '5.6, 34,65.,34.54,' + ','.join(map(str, range(100))),
+      'with_replacement': False}),
 ]

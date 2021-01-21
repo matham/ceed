@@ -36,9 +36,9 @@ import importlib
 import pathlib
 from fractions import Fraction
 from math import exp, cos, pi
-from typing import Iterable, Union, Tuple, List, Type, Dict
+from typing import Iterable, Union, Tuple, List, Type, Dict, Optional
 
-from kivy.properties import NumericProperty, BooleanProperty
+from kivy.properties import NumericProperty, BooleanProperty, StringProperty
 
 from ceed.function import CeedFunc, FuncType
 from ceed.function.param_noise import NoiseType, NoiseBase
@@ -46,7 +46,7 @@ from ceed.function.param_noise import NoiseType, NoiseBase
 __all__ = (
     'get_plugin_functions', 'ConstFunc', 'LinearFunc', 'ExponentialFunc',
     'CosFunc', 'GaussianNoise', 'UniformNoise', 'DiscreteNoise',
-    'get_ceed_functions', 'get_ceed_distributions')
+    'DiscreteListNoise', 'get_ceed_functions', 'get_ceed_distributions')
 
 
 def get_plugin_functions(
@@ -391,7 +391,7 @@ class UniformNoise(NoiseBase):
 
 
 class DiscreteNoise(NoiseBase):
-    """Represents a uniform distribution of discrete values.
+    """Represents a uniform distribution from equally spaced discrete values.
     """
 
     start_value = NumericProperty(0)
@@ -417,6 +417,10 @@ class DiscreteNoise(NoiseBase):
     """
 
     def sample(self) -> float:
+        if not self.num_values:
+            raise ValueError(
+                f'Not value provided for noise distribution {self}')
+
         return random.randint(
             0, self.num_values - 1) * self.step + self.start_value
 
@@ -426,14 +430,18 @@ class DiscreteNoise(NoiseBase):
         start_value = self.start_value
 
         if self.with_replacement:
-            values = random.choices(range(num_values), k=n)
+            if not num_values:
+                raise ValueError(
+                    f'Not value provided for noise distribution {self}')
+
+            values = random.choices(range(int(num_values)), k=n)
         else:
             if n > num_values:
                 raise ValueError(
                     f'Sampling without replacement, but asked for {n} samples '
                     f'but distribution only contains {num_values} values')
 
-            values = random.sample(range(num_values), n)
+            values = random.sample(range(int(num_values)), n)
 
         return [v * step + start_value for v in values]
 
@@ -452,6 +460,75 @@ class DiscreteNoise(NoiseBase):
         return names
 
 
+class DiscreteListNoise(NoiseBase):
+    """Represents a uniform distribution from a list of discrete values.
+    """
+
+    csv_list: str = StringProperty('1, 2.1, 3, 4.2, 5')
+    """A comma-separated list of float or integers representing the items from
+    from which to sample. It may have optional spaces between the items, in
+    addition to the required commas.
+    """
+
+    with_replacement: bool = BooleanProperty(True)
+    """Whether, when sampling the distribution, to sample with replacement.
+
+    If False, then the number of items in :attr:`csv_list` must be at least as
+    large as ``n`` of :meth:`sample_seq`, if the distribution is used to
+    sample more than once, e.g. if each loop iteration is sampled.
+    """
+
+    _csv_list: Optional[str] = None
+
+    _parsed_csv_list: List[float] = []
+
+    @property
+    def parsed_csv_list(self) -> List[float]:
+        if self._csv_list != self.csv_list:
+            self._csv_list = self.csv_list
+            self._parsed_csv_list = list(
+                map(float, (s for s in self.csv_list.split(',') if s.strip())))
+
+        return self._parsed_csv_list
+
+    def sample(self) -> float:
+        items = self.parsed_csv_list
+        if not items:
+            raise ValueError(
+                f'Not value provided for noise distribution {self}')
+
+        return random.choice(items)
+
+    def sample_seq(self, n) -> List[float]:
+        items = self.parsed_csv_list
+
+        if self.with_replacement:
+            if not items:
+                raise ValueError(
+                    f'Not value provided for noise distribution {self}')
+
+            return random.choices(items, k=n)
+
+        if n > len(items):
+            raise ValueError(
+                f'Sampling without replacement, but asked for {n} samples '
+                f'but distribution only contains {len(items)} values')
+
+        return random.sample(items, n)
+
+    def get_config(self) -> dict:
+        config = super().get_config()
+        for attr in ('csv_list', 'with_replacement'):
+            config[attr] = getattr(self, attr)
+        return config
+
+    def get_prop_pretty_name(self) -> Dict[str, str]:
+        names = super().get_prop_pretty_name()
+        names['csv_list'] = 'CSV list'
+        names['with_replacement'] = 'With replacement'
+        return names
+
+
 def get_ceed_functions() -> Iterable[Type[FuncType]]:
     """Returns all the function classes defined and exported in this file
     (:class:`ConstFunc`, :class:`LinearFunc`, etc.).
@@ -463,4 +540,4 @@ def get_ceed_distributions() -> Iterable[Type[NoiseType]]:
     """Returns all the distribution classes defined and exported in this file
     (:class:`GaussianNoise`, :class:`UniformNoise`, etc.).
     """
-    return GaussianNoise, UniformNoise, DiscreteNoise
+    return GaussianNoise, UniformNoise, DiscreteNoise, DiscreteListNoise
