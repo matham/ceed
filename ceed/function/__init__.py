@@ -1425,6 +1425,10 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
             from the root and returns every function in the direct path to
             this function. It then copies and appends this function and it'
             children, if any, and yields them each.
+        :param step_into_ref: If, when encountering a :class:`CeedFuncRef`
+            in the tree we should yield that and terminate that branch, or
+            whether we should step into the original function referenced and
+            continue yielding its children.
 
         E.g.::
 

@@ -5,22 +5,11 @@ Displays the preview or live pixel output of the experiment.
 '''
 import multiprocessing as mp
 import os
-from math import radians
 import sys
 from fractions import Fraction
 import traceback
-from collections import defaultdict
-from functools import partial
-from threading import Thread
-# import cv2
-import numpy as np
-from scipy.ndimage import zoom
-try:
-    from Queue import Empty
-except ImportError:
-    from queue import Empty
+from queue import Empty
 import uuid
-from ffpyplayer.pic import Image, SWScale
 from tree_config import get_config_children_names
 
 from kivy.event import EventDispatcher
@@ -37,7 +26,6 @@ from kivy.graphics.transformation import Matrix
 from more_kivy_app.app import app_error
 from more_kivy_app.utils import yaml_dumps, yaml_loads
 
-import ceed
 from ceed.stage import StageDoneException, last_experiment_stage_name, \
     StageFactoryBase
 
@@ -381,35 +369,6 @@ class ViewControllerBase(EventDispatcher):
                 Rectangle(texture=tex, pos=(0, h - 1), size=(1, 1),
                           group=self.canvas_name)
 
-    def get_all_shape_values(self, frame_rate, stage_name='', stage=None):
-        '''For every shape in the stage ``stage_name`` it samples the shape
-        at the frame rate and returns a list of intensity values for the shape
-        for each frame.
-        frame_rate is not :attr:`frame_rate` bur rather the rate at which we
-        sample the functions.
-        '''
-        tick = _get_app().stage_factory.tick_stage(
-            stage_name=stage_name, stage=stage)
-        # the sampling rate at which we sample the functions
-        frame_rate = int(frame_rate)
-
-        obj_values = defaultdict(list)
-        count = 0
-        while True:
-            count += 1
-
-            try:
-                next(tick)
-                shape_values = tick.send(Fraction(count, frame_rate))
-            except StageDoneException:
-                break
-
-            values = _get_app().stage_factory.fill_shape_gl_color_values(
-                None, shape_values)
-            for name, r, g, b, a in values:
-                obj_values[name].append((r, g, b, a))
-        return obj_values
-
     def start_stage(self, stage_name, canvas):
         '''Starts the stage. It adds the graphics instructions to the canvas
         and starts playing the shapes.
@@ -524,6 +483,8 @@ class ViewControllerBase(EventDispatcher):
                     (bits & 0xFF0000) >> 16
                 self.serializer_tex.blit_buffer(
                     bytes([r, g, b]), colorfmt='rgb', bufferfmt='ubyte')
+            else:
+                bits = 0
 
             values = _get_app().stage_factory.fill_shape_gl_color_values(
                 shape_views, shape_values, proj)

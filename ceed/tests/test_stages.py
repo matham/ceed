@@ -72,27 +72,10 @@ def get_stage_time_intensity(
     """Samples the stage with the given frame rate and returns the intensity
     value for each shape for each timestamp.
     """
-    tick = stage_factory.tick_stage(stage_name)
-    # the sampling rate at which we sample the functions
-    frame_rate = int(frame_rate)
-
-    obj_values = defaultdict(list)
-    count = 0
-    while True:
-        count += 1
-
-        try:
-            next(tick)
-            shape_values = tick.send(Fraction(count, frame_rate))
-        except StageDoneException:
-            break
-
-        values = stage_factory.fill_shape_gl_color_values(
-            None, shape_values)
-        for name, r, g, b, a in values:
-            obj_values[name].append((r, g, b, a))
-
-    return obj_values, count - 1
+    obj_values = stage_factory.get_all_shape_values(
+        frame_rate, stage_name=stage_name)
+    n = len(obj_values[list(obj_values.keys())[0]])
+    return obj_values, n
 
 
 def test_factory_stage_unique_names(stage_factory: StageFactoryBase):
@@ -1004,3 +987,118 @@ def test_stage_func_clip_range(stage_factory: StageFactoryBase):
     values, n = get_stage_time_intensity(stage_factory, root.name, 60.)
     intensities = {v[0] for v in values[shape.name]}
     assert intensities == {0, .2, .3, 1}
+
+
+def test_stage_func_tree_init(stage_factory: StageFactoryBase):
+    from ceed.function.plugin import ConstFunc
+    tree_counter = defaultdict(int)
+    init_counter = defaultdict(int)
+    init_loop_counter = defaultdict(int)
+
+    class CounterMixIn:
+        def init_func_tree(self, *args, **kwargs):
+            tree_counter[self.name] += 1
+            super().init_func_tree(*args, **kwargs)
+
+        def init_func(self, *args, **kwargs):
+            init_counter[self.name] += 1
+            super().init_func(*args, **kwargs)
+
+        def init_loop_iteration(self, *args, **kwargs):
+            init_loop_counter[self.name] += 1
+            super().init_loop_iteration(*args, **kwargs)
+
+    class GroupHook(CounterMixIn, FuncGroup):
+        pass
+
+    class ConstHook(CounterMixIn, ConstFunc):
+        pass
+
+    class HookStage(CeedStage):
+        def init_stage_tree(self, *args, **kwargs):
+            tree_counter[self.name] += 1
+            super().init_stage_tree(*args, **kwargs)
+
+    root = HookStage(
+        stage_factory=stage_factory,
+        function_factory=stage_factory.function_factory,
+        shape_factory=stage_factory.shape_factory, name='root_stage')
+    stage_factory.add_stage(root)
+    s2 = HookStage(
+        stage_factory=stage_factory,
+        function_factory=stage_factory.function_factory,
+        shape_factory=stage_factory.shape_factory, name='s2')
+    root.add_stage(s2)
+
+    shape = EllipseShapeP1(
+        app=None, painter=stage_factory.shape_factory, show_in_gui=False,
+        create_add_shape=True)
+    shape2 = EllipseShapeP2(
+        app=None, painter=stage_factory.shape_factory, show_in_gui=False,
+        create_add_shape=True)
+    root.add_shape(shape.shape)
+    s2.add_shape(shape2.shape)
+
+    root.add_func(ConstHook(
+        function_factory=stage_factory.function_factory, name='f_root', loop=3,
+        duration=1)
+    )
+    s2.add_func(ConstHook(
+        function_factory=stage_factory.function_factory, name='f2_child',
+        loop=2, duration=1)
+    )
+
+    g = GroupHook(
+        function_factory=stage_factory.function_factory, name='root', loop=3)
+    g2 = GroupHook(
+        function_factory=stage_factory.function_factory, name='g_child', loop=4)
+    f = ConstHook(
+        function_factory=stage_factory.function_factory, name='gf_child',
+        loop=5, duration=1)
+    g2.add_func(f)
+    g.add_func(g2)
+    s2.add_func(g)
+
+    get_stage_time_intensity(stage_factory, root.name, 10)
+
+    for name in ('f_root', 'f2_child', 'root', 'g_child', 'gf_child',
+                 'root_stage', 's2'):
+        assert tree_counter[name] == 1
+
+    for name in ('f_root', 'f2_child', 'root'):
+        assert init_counter[name] == 1
+    assert init_counter['g_child'] == 3
+    assert init_counter['gf_child'] == 12
+
+    assert init_loop_counter['f_root'] == 2
+    assert init_loop_counter['f2_child'] == 1
+    assert init_loop_counter['root'] == 2
+    assert init_loop_counter['g_child'] == 9
+    assert init_loop_counter['gf_child'] == 48
+
+
+def test_stage_func_resample(stage_factory: StageFactoryBase):
+    function_factory = stage_factory.function_factory
+
+    stage = make_stage(
+        stage_factory, color_r=True, color_g=False, color_b=False)
+    stage_factory.add_stage(stage)
+
+    shape = EllipseShapeP1(
+        app=None, painter=stage_factory.shape_factory, show_in_gui=False,
+        create_add_shape=True)
+    stage.add_shape(shape.shape)
+
+    LinearFunc = function_factory.get('LinearFunc')
+    f = LinearFunc(
+        function_factory=function_factory, duration=1., loop=4)
+    stage.add_func(f)
+
+    cls = function_factory.param_noise_factory.get_cls('UniformNoise')
+    f.noisy_parameters['m'] = cls(sample_each_loop=False)
+    f.noisy_parameters['b'] = cls(sample_each_loop=True)
+
+    stage_copy = stage.copy_and_resample()
+    f_copy = stage_copy.functions[0]
+    assert 'm' not in f_copy.noisy_parameter_samples
+    assert len(f_copy.noisy_parameter_samples['b']) == 4

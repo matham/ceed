@@ -12,6 +12,7 @@ remove_shapes_upon_deletion must be bound
 """
 from copy import deepcopy
 from collections import defaultdict
+from fractions import Fraction
 from typing import Dict, List, Union, Tuple
 
 from kivy.properties import OptionProperty, ListProperty, ObjectProperty, \
@@ -576,6 +577,37 @@ class StageFactoryBase(EventDispatcher):
         '''
         if canvas:
             canvas.remove_group(name)
+
+    def get_all_shape_values(
+            self, frame_rate: float, stage_name='', stage=None
+    ) -> Dict[str, List[Tuple[float, float, float, float]]]:
+        '''For every shape in the stage ``stage_name`` it samples the shape
+        at the frame rate and returns a list of intensity values for the shape
+        for each frame.
+
+        frame_rate is not :attr:`frame_rate` (although it can be) bur rather
+        the rate at which we sample the functions.
+        '''
+        tick = self.tick_stage(stage_name=stage_name, stage=stage)
+        # the sampling rate at which we sample the functions
+        frame_rate = int(frame_rate)
+
+        obj_values = defaultdict(list)
+        count = 0
+        while True:
+            count += 1
+
+            try:
+                next(tick)
+                shape_values = tick.send(Fraction(count, frame_rate))
+            except StageDoneException:
+                break
+
+            values = self.fill_shape_gl_color_values(
+                None, shape_values)
+            for name, r, g, b, a in values:
+                obj_values[name].append((r, g, b, a))
+        return obj_values
 
 
 class CeedStage(EventDispatcher):

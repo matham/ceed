@@ -1528,3 +1528,157 @@ def test_discrete_empty(
         obj.sample()
     with pytest.raises(ValueError):
         obj.sample_seq(1)
+
+
+def test_function_tree(function_factory: FunctionFactoryBase):
+    factory = function_factory
+    const_cls = factory.get('ConstFunc')
+
+    g1 = FuncGroup(function_factory=factory, loop=2)
+
+    g2 = FuncGroup(function_factory=factory, loop=2)
+    g1.add_func(g2)
+    f = const_cls(function_factory=factory, a=.9, duration=2, loop=2)
+    g2.add_func(f)
+    f1 = const_cls(function_factory=factory, a=.1, duration=2)
+    g2.add_func(f1)
+
+    f2 = const_cls(function_factory=factory, a=.25, duration=2)
+    g1.add_func(f2)
+    f3 = const_cls(function_factory=factory, a=.75, duration=2)
+    g1.add_func(f3)
+
+    g3 = FuncGroup(function_factory=factory)
+    g1.add_func(g3)
+    f4 = const_cls(function_factory=factory, a=.8, duration=2)
+    g3.add_func(f4)
+    f5 = const_cls(function_factory=factory, a=.2, duration=2)
+    g3.add_func(f5)
+
+    for func in (f, f1, f2, f3, f4, f5):
+        assert list(func.get_function_tree()) == [[func]]
+
+    assert list(g2.get_function_tree()) == [[g2], [g2, f], [g2, f1]]
+    assert list(g3.get_function_tree()) == [[g3], [g3, f4], [g3, f5]]
+    assert list(g1.get_function_tree()) == [
+        [g1],
+        [g1, g2],
+        [g1, g2, f],
+        [g1, g2, f1],
+        [g1, f2],
+        [g1, f3],
+        [g1, g3],
+        [g1, g3, f4],
+        [g1, g3, f5],
+    ]
+
+    assert list(func.get_function_tree(tree=[f5])) == [[f5, func]]
+    assert list(g2.get_function_tree(tree=[f5])) == [
+        [f5, g2], [f5, g2, f], [f5, g2, f1]]
+
+    def assert_counts(
+            g1_count, g1_tree_count, g2_count, g2_tree_count, f_count,
+            f_tree_count):
+        assert g1.loop_count == g1_count
+        assert g1.loop_tree_count == g1_tree_count
+        assert g2.loop_count == g2_count
+        assert g2.loop_tree_count == g2_tree_count
+        assert f.loop_count == f_count
+        assert f.loop_tree_count == f_tree_count
+
+    g1.init_func_tree(g1)
+    g1.init_func(0)
+    assert_counts(0, 0, 0, 0, 0, 0)
+
+    g1(1)
+    assert_counts(0, 0, 0, 0, 0, 0)
+    g1(3)
+    assert_counts(0, 0, 0, 0, 1, 1)
+    g1(5)
+    assert_counts(0, 0, 0, 0, 2, 2)
+
+    g1(7)
+    assert_counts(0, 0, 1, 1, 0, 2)
+    g1(9)
+    assert_counts(0, 0, 1, 1, 1, 3)
+    g1(11)
+    assert_counts(0, 0, 1, 1, 2, 4)
+
+    g1(13)
+    assert_counts(0, 0, 2, 2, 2, 4)
+
+    g1(21)
+    assert_counts(1, 1, 0, 2, 0, 4)
+    g1(23)
+    assert_counts(1, 1, 0, 2, 1, 5)
+    g1(25)
+    assert_counts(1, 1, 0, 2, 2, 6)
+
+    g1(27)
+    assert_counts(1, 1, 1, 3, 0, 6)
+    g1(29)
+    assert_counts(1, 1, 1, 3, 1, 7)
+    g1(31)
+    assert_counts(1, 1, 1, 3, 2, 8)
+
+    g1(33)
+    assert_counts(1, 1, 2, 4, 2, 8)
+
+    with pytest.raises(FuncDoneException):
+        g1(41)
+
+    assert_counts(2, 2, 2, 4, 2, 8)
+
+
+def test_get_function_tree_ref(function_factory: FunctionFactoryBase):
+    const_cls = function_factory.get('ConstFunc')
+    g = FuncGroup(function_factory=function_factory)
+
+    g2 = FuncGroup(function_factory=function_factory)
+    f = const_cls(function_factory=function_factory)
+    f2 = const_cls(function_factory=function_factory)
+    g2.add_func(f)
+    g2.add_func(f2)
+
+    function_factory.add_func(g2)
+    ref = function_factory.get_func_ref(name=g2.name)
+    g.add_func(ref)
+
+    assert list(g.get_function_tree()) == [
+        [g], [g, g2], [g, g2, f], [g, g2, f2]]
+    assert list(g.get_function_tree(step_into_ref=False)) == [[g], [g, ref]]
+
+
+def test_call_func_loop_done(function_factory: FunctionFactoryBase):
+    from ceed.function.plugin import ConstFunc
+    factory = function_factory
+
+    f = ConstFunc(function_factory=factory, duration=2, loop=3)
+    f.init_func_tree(f)
+    f.init_func(0)
+    assert f.loop_count == 0
+    assert f.loop_tree_count == 0
+    f(1)
+    assert f.loop_count == 0
+    assert f.loop_tree_count == 0
+
+    f(3)
+    assert f.loop_count == 1
+    assert f.loop_tree_count == 1
+
+    f(5)
+    assert f.loop_count == 2
+    assert f.loop_tree_count == 2
+
+    with pytest.raises(FuncDoneException):
+        f(7)
+    assert f.loop_count == 3
+    assert f.loop_tree_count == 3
+    with pytest.raises(FuncDoneException):
+        f(8)
+
+    with pytest.raises(ValueError):
+        f.tick_loop(0)
+
+    with pytest.raises(ValueError):
+        f.tick_loop(8)

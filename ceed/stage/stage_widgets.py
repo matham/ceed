@@ -929,7 +929,7 @@ class StageGraph(Factory.FlatSplitter):
 
     plot_values = ObjectProperty(None)
     '''The computed intensity values for the shapes for all times as returned
-    by :meth:`ceed.view.controller.ViewControllerBase.get_all_shape_values`.
+    by :meth:`~ceed.stage.StageFactoryBase.get_all_shape_values`.
     '''
 
     plots = DictProperty({})
@@ -1030,13 +1030,13 @@ class StageGraph(Factory.FlatSplitter):
                 from the functions in time.
 
         '''
-        stage: CeedStage = App.get_running_app().stage_factory.\
-            stage_names[stage_name]
+        factory = App.get_running_app().stage_factory
+        stage: CeedStage = factory.stage_names[stage_name]
         stage = stage.copy_and_resample()
 
         frame_rate = self.frame_rate = float(frame_rate)
-        vals = self.plot_values = App.get_running_app().\
-            view_controller.get_all_shape_values(frame_rate, stage=stage)
+        vals = self.plot_values = factory.get_all_shape_values(
+            frame_rate, stage=stage)
         N = len(list(vals.values())[0]) if vals else 0
 
         plots = self.plots
