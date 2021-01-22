@@ -848,6 +848,7 @@ class FunctionFactoryBase(EventDispatcher):
         func.apply_state(state, clone=clone)
         if c == 'CeedFuncRef':
             self._ref_funcs[func.func] += 1
+            func.func.has_ref = True
         return func
 
     def save_functions(self) -> List[dict]:

@@ -175,8 +175,10 @@ class StageFactoryBase(EventDispatcher):
 
         stage.apply_state(state, clone=clone, func_name_map=func_name_map,
                           old_name_to_shape_map=old_name_to_shape_map)
-        if c == 'CeedStageRef' and not clone:
+
+        if c == 'CeedStageRef':
             self._stage_ref[stage.stage] += 1
+            stage.stage.has_ref = True
         return stage
 
     def add_stage(self, stage, allow_last_experiment=True):
