@@ -21,7 +21,7 @@
             hover_text: "Save current file"
             on_release:
                 if app.ceed_data.filename: app.ceed_data.save()
-                if not app.ceed_data.filename: app.open_filechooser(callback=app.ceed_data.get_filebrowser_callback(app.ceed_data.save_as, overwrite=True), mode='save', target=app.ceed_data.root_path, title='Save h5 file', filters=['*.h5', '*.*'])
+                if not app.ceed_data.filename: app.open_filechooser(callback=app.ceed_data.get_filebrowser_callback(app.ceed_data.save_as, overwrite=True, ext='.h5'), mode='save', target=app.ceed_data.root_path, title='Save h5 file', filters=['*.h5', '*.*'])
         FlatImageButton:
             scale_down_color: True
             source: 'flat_menu_down.png'
@@ -39,14 +39,14 @@
                 flat_color: app.theme.text_primary
                 on_release:
                     if app.ceed_data.filename: app.ceed_data.save()
-                    if not app.ceed_data.filename: app.open_filechooser(callback=app.ceed_data.get_filebrowser_callback(app.ceed_data.save_as, overwrite=True), mode='save', target=app.ceed_data.root_path, title='Save h5 file', filters=['*.h5', '*.*'])
+                    if not app.ceed_data.filename: app.open_filechooser(callback=app.ceed_data.get_filebrowser_callback(app.ceed_data.save_as, overwrite=True, ext='.h5'), mode='save', target=app.ceed_data.root_path, title='Save h5 file', filters=['*.h5', '*.*'])
             FlatButton:
                 text: 'Save as h5 file'
                 size_hint: None, None
                 size: self.texture_size
                 scale_down_color: True
                 flat_color: app.theme.text_primary
-                on_release: app.open_filechooser(callback=app.ceed_data.get_filebrowser_callback(app.ceed_data.save_as, overwrite=True), mode='save', target=app.ceed_data.root_path, title='Save h5 file', filters=['*.h5', '*.*'])
+                on_release: app.open_filechooser(callback=app.ceed_data.get_filebrowser_callback(app.ceed_data.save_as, overwrite=True, ext='.h5'), mode='save', target=app.ceed_data.root_path, title='Save h5 file', filters=['*.h5', '*.*'])
             FlatButton:
                 text: 'Discard unsaved changes'
                 size_hint: None, None
@@ -67,7 +67,7 @@
                 size: self.texture_size
                 scale_down_color: True
                 flat_color: app.theme.text_primary
-                on_release: app.open_filechooser(callback=app.ceed_data.get_filebrowser_callback(app.ceed_data.create_file, overwrite=True, clear_data=True), mode='save', target=app.ceed_data.root_path, title='Create h5 file', filters=['*.h5', '*.*'])
+                on_release: app.open_filechooser(callback=app.ceed_data.get_filebrowser_callback(app.ceed_data.create_file, overwrite=True, clear_data=True, ext='.h5'), mode='save', target=app.ceed_data.root_path, title='Create h5 file', filters=['*.h5', '*.*'])
             FlatButton:
                 text: 'Clear & open h5 file RO'
                 size_hint: None, None
@@ -116,14 +116,14 @@
                 size: self.texture_size
                 scale_down_color: True
                 flat_color: app.theme.text_primary
-                on_release: app.open_filechooser(callback=app.ceed_data.get_filebrowser_callback(app.ceed_data.write_yaml_config, overwrite=True), mode='save', target=app.ceed_data.root_path, title='Export yaml file', filters=['*.yml', '*.yaml', '*.*'])
+                on_release: app.open_filechooser(callback=app.ceed_data.get_filebrowser_callback(app.ceed_data.write_yaml_config, overwrite=True, ext='.yml'), mode='save', target=app.ceed_data.root_path, title='Export yaml file', filters=['*.yml', '*.yaml', '*.*'])
             FlatButton:
                 text: 'Export stages to YAML file'
                 size_hint: None, None
                 size: self.texture_size
                 scale_down_color: True
                 flat_color: app.theme.text_primary
-                on_release: app.open_filechooser(callback=app.ceed_data.get_filebrowser_callback(app.ceed_data.write_yaml_config, overwrite=True, stages_only=True), mode='save', target=app.ceed_data.root_path, title='Export yaml file', filters=['*.yml', '*.yaml', '*.*'])
+                on_release: app.open_filechooser(callback=app.ceed_data.get_filebrowser_callback(app.ceed_data.write_yaml_config, overwrite=True, stages_only=True, ext='.yml'), mode='save', target=app.ceed_data.root_path, title='Export yaml file', filters=['*.yml', '*.yaml', '*.*'])
         FlatImageButton:
             scale_down_color: True
             source: 'calendar-text-outline.png'

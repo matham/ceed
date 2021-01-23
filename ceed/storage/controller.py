@@ -150,12 +150,16 @@ class CeedDataWriterBase(EventDispatcher):
     def on_experiment_change(self, name, value):
         pass
 
-    def get_filebrowser_callback(self, func, clear_data=False, **kwargs):
+    def get_filebrowser_callback(
+            self, func, clear_data=False, ext=None, **kwargs):
 
         def callback(paths):
             if not paths:
                 return
             fname = paths[0]
+            if ext and not fname.endswith(ext):
+                fname += ext
+
             self.root_path = dirname(fname)
 
             def discard_callback(discard):
