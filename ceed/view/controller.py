@@ -82,7 +82,9 @@ class ViewControllerBase(EventDispatcher):
         'fullscreen', 'video_mode', 'LED_mode', 'LED_mode_idle',
         'mirror_mea', 'mea_num_rows', 'mea_num_cols',
         'mea_pitch', 'mea_diameter', 'mea_transform', 'cam_transform',
-        'flip_projector', 'flip_camera', 'pad_to_stage_handshake')
+        'flip_projector', 'flip_camera', 'pad_to_stage_handshake',
+        'pre_compute_stages',
+    )
 
     screen_width = NumericProperty(1920)
     '''The screen width on which the data is played. This is the full-screen
@@ -201,6 +203,10 @@ class ViewControllerBase(EventDispatcher):
         _get_do_quad_mode, None, cache=True, bind=('video_mode', ))
     '''Whether the video mode is a quad mode. Read-only.
     '''
+
+    pre_compute_stages: bool = BooleanProperty(False)
+    """
+    """
 
     _original_fps = Clock._max_fps if not os.environ.get(
         'KIVY_DOC_INCLUDE', None) else 0
@@ -397,7 +403,11 @@ class ViewControllerBase(EventDispatcher):
             self.serializer = data_serializer.get_bits(-1, msg)
 
         self.current_canvas = canvas
-        self.tick_func = stage_factory.tick_stage(last_experiment_stage_name)
+        self.tick_func = stage_factory.tick_stage(
+            Fraction(1, int(self.effective_frame_rate)),
+            self.effective_frame_rate, stage_name=last_experiment_stage_name,
+            pre_compute=self.pre_compute_stages)
+        next(self.tick_func)
 
         self._flip_stats['last_call_t'] = self._cpu_stats['last_call_t'] = \
             self._cpu_stats['tstart'] = clock()
@@ -464,10 +474,12 @@ class ViewControllerBase(EventDispatcher):
         effective_rate = int(self.effective_frame_rate)
 
         for shape_views, proj in zip(views, projections):
+            # we cannot skip frames (i.e. we may only increment frame by one).
+            # Because stages/func can be pre-computed and it assumes a constant
+            # frame rate. If need to skip n frames, tick n times and drop result
             self.count += 1
 
             try:
-                next(tick)
                 shape_values = tick.send(Fraction(self.count, effective_rate))
             except StageDoneException:
                 self.end_stage()

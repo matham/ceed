@@ -218,6 +218,7 @@ view:
   mirror_mea: true
   output_count: true
   pad_to_stage_handshake: true
+  pre_compute_stages: false
   screen_height: 1080
   screen_offset_x: 0
   screen_width: 1920

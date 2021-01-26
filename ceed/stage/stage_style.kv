@@ -268,6 +268,34 @@
                         size_hint_min_x: self.texture_size[0]
                         state: 'down' if root.stage_widget.stage.complete_on == 'any' else 'normal'
                         on_state: root.stage_widget.stage.complete_on = 'any' if self.state == 'down' else 'all'
+                FlatLabel:
+                    size_hint: (None, None)
+                    text: 'Pre-compute'
+                    size: self.texture_size
+                    flat_color: app.theme.text_primary
+                BoxLayout:
+                    spacing: '5dp'
+                    size_hint_y: None
+                    height: self.minimum_height
+                    size_hint_min_x: self.minimum_width
+                    LightThemedToggleButton:
+                        test_name: 'disable pre compute'
+                        size_hint_y: None
+                        padding: ('5dp', '5dp')
+                        text: 'Disabled'
+                        height: self.texture_size[1]
+                        size_hint_min_x: self.texture_size[0]
+                        state: 'down' if root.stage_widget.stage.disable_pre_compute else 'normal'
+                        on_state: root.stage_widget.stage.disable_pre_compute = self.state == 'down'
+                    LightThemedToggleButton:
+                        test_name: 'default pre compute'
+                        size_hint_y: None
+                        padding: ('5dp', '5dp')
+                        text: 'Default'
+                        height: self.texture_size[1]
+                        size_hint_min_x: self.texture_size[0]
+                        state: 'down' if not root.stage_widget.stage.disable_pre_compute else 'normal'
+                        on_state: root.stage_widget.stage.disable_pre_compute = self.state == 'normal'
 
 
 <StageShapeDisplayStyle@object>:

@@ -296,3 +296,11 @@
                 text: 'true' if app.view_controller.pad_to_stage_handshake else 'false'
                 state: 'down' if app.view_controller.pad_to_stage_handshake else 'normal'
                 on_state: app.view_controller.pad_to_stage_handshake = self.state == 'down'
+            ThemedLabel:
+                size_hint: None, None
+                size: self.texture_size
+                text: 'Pre-compute finite stages/functions'
+            LightThemedToggleButton:
+                text: 'true' if app.view_controller.pre_compute_stages else 'false'
+                state: 'down' if app.view_controller.pre_compute_stages else 'normal'
+                on_state: app.view_controller.pre_compute_stages = self.state == 'down'

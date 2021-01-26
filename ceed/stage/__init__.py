@@ -13,12 +13,14 @@ remove_shapes_upon_deletion must be bound
 from copy import deepcopy
 from collections import defaultdict
 from fractions import Fraction
-from typing import Dict, List, Union, Tuple
+import operator
+from functools import reduce
+from typing import Dict, List, Union, Tuple, Optional, Generator, Set
 
 from kivy.properties import OptionProperty, ListProperty, ObjectProperty, \
     StringProperty, NumericProperty, DictProperty, BooleanProperty
 from kivy.event import EventDispatcher
-from kivy.graphics import Color
+from kivy.graphics import Color, Canvas
 
 from ceed.function import CeedFunc, FuncDoneException, CeedFuncRef, \
     FunctionFactoryBase, FuncBase, CeedFuncOrRefInstance
@@ -32,6 +34,10 @@ __all__ = ('StageDoneException', 'StageFactoryBase', 'CeedStage', 'StageShape',
 CeedStageOrRefInstance = Union['CeedStage', 'CeedStageRef']
 """Instance of either :class:`CeedStage` or :class:`CeedStageRef`."""
 
+NumFraction = Union[float, int, Fraction]
+
+RGBA_Type = Tuple[
+    Optional[float], Optional[float], Optional[float], Optional[float]]
 
 last_experiment_stage_name = 'experiment_sampled'
 
@@ -77,7 +83,7 @@ class StageFactoryBase(EventDispatcher):
     or is associated with all the shapes used in the stages.
     """
 
-    _stage_ref = {}
+    _stage_ref: Dict['CeedStage', int] = {}
     """A dict mapping stages to the number of references to the stage.
 
     References are :class:`CeedStageRef` and created with with
@@ -124,7 +130,7 @@ class StageFactoryBase(EventDispatcher):
         stage.has_ref = True
         return ref
 
-    def return_stage_ref(self, stage_ref: 'CeedStageRef'):
+    def return_stage_ref(self, stage_ref: 'CeedStageRef') -> None:
         """Releases the stage ref created by :meth:`get_stage_ref`.
 
         :param stage_ref: Instance returned by :meth:`get_stage_ref`.
@@ -140,7 +146,7 @@ class StageFactoryBase(EventDispatcher):
     def make_stage(
             self, state: dict,
             instance: CeedStageOrRefInstance = None,
-            clone=False, func_name_map: dict = {},
+            clone: bool = False, func_name_map: dict = {},
             old_name_to_shape_map: dict = None) -> \
             CeedStageOrRefInstance:
         """Instantiates the stage from the state and returns it.
@@ -181,7 +187,7 @@ class StageFactoryBase(EventDispatcher):
             stage.stage.has_ref = True
         return stage
 
-    def add_stage(self, stage, allow_last_experiment=True):
+    def add_stage(self, stage: 'CeedStage', allow_last_experiment=True) -> None:
         """Adds the :class:`CeedStage` to the stage factory (:attr:`stages`)
         and makes it available in the GUI.
 
@@ -214,7 +220,7 @@ class StageFactoryBase(EventDispatcher):
 
         self.dispatch('on_changed')
 
-    def remove_stage(self, stage, force=False):
+    def remove_stage(self, stage: 'CeedStage', force=False) -> bool:
         """Removes a stage previously added with :meth:`add_stage`.
 
         :Params:
@@ -246,7 +252,7 @@ class StageFactoryBase(EventDispatcher):
         self.dispatch('on_changed')
         return True
 
-    def clear_stages(self, force=False):
+    def clear_stages(self, force=False) -> None:
         """Removes all the stages registered with :meth:`add_stage`.
 
         :Params:
@@ -258,7 +264,8 @@ class StageFactoryBase(EventDispatcher):
         for stage in self.stages[:]:
             self.remove_stage(stage, force)
 
-    def find_shape_in_all_stages(self, _, shape, process_shape_callback):
+    def find_shape_in_all_stages(
+            self, _, shape, process_shape_callback) -> None:
         '''Removes the :class:`ceed.shape.CeedShape` instance from all the
         :class:`CeedStage` instances that it is a associated with.
 
@@ -357,7 +364,11 @@ class StageFactoryBase(EventDispatcher):
 
         return stages, name_map
 
-    def tick_stage(self, stage_name='', stage=None):
+    def tick_stage(
+            self, t_start: NumFraction, frame_rate: float,
+            stage_name: str = '', stage: Optional['CeedStage'] = None,
+            pre_compute: bool = False
+    ) -> Generator[List[Tuple[str, List[RGBA_Type]]], NumFraction, None]:
         '''An iterator which starts a :class:`CeedStage` and ticks the time for
         every call.
 
@@ -411,13 +422,18 @@ class StageFactoryBase(EventDispatcher):
         '''
         if stage is None:
             stage = self.stage_names[stage_name]
-        stage.init_stage_tree(stage)
 
+        # shapes is updated in place with zero or more values for each shape
         shapes = {s.name: [] for s in self.shape_factory.shapes}
-        tick_stage = stage.tick_stage(shapes)
+
+        stage.init_stage_tree(stage)
+        stage.apply_pre_compute(pre_compute, frame_rate, shapes)
+
+        tick_stage = stage.tick_stage(shapes, t_start)
         next(tick_stage)
+        t = yield
+
         while True:
-            t = yield
             tick_stage.send(t)
 
             shape_values = []
@@ -425,9 +441,10 @@ class StageFactoryBase(EventDispatcher):
                 shape_values.append((name, colors[:]))
                 del colors[:]
 
-            yield shape_values
+            t = yield shape_values
 
-    def get_shapes_gl_color_instructions(self, canvas, name):
+    def get_shapes_gl_color_instructions(
+            self, canvas: Canvas, name: str) -> Dict[str, Color]:
         '''Adds all the kivy OpenGL instructions required to display the
         intensity-varying shapes to the kivy canvas and returns the color
         classes that control the color of each shape.
@@ -459,7 +476,10 @@ class StageFactoryBase(EventDispatcher):
         return shape_views
 
     def fill_shape_gl_color_values(
-            self, shape_views, shape_values, grayscale=None):
+            self, shape_views: Optional[Dict[str, Color]],
+            shape_values: List[Tuple[str, List[RGBA_Type]]],
+            grayscale: str = None
+    ) -> List[Tuple[str, float, float, float, float]]:
         '''Takes the dict of the Colors instance that control the color of
         each shape as well as the list of the color values for a time point
         and sets the shape colors to those values.
@@ -565,7 +585,8 @@ class StageFactoryBase(EventDispatcher):
                 result.append((name, r, g, b, a))
         return result
 
-    def remove_shapes_gl_color_instructions(self, canvas, name):
+    def remove_shapes_gl_color_instructions(
+            self, canvas: Canvas, name: str) -> None:
         '''Removes all the shape and color instructions that was added with
         :meth:`get_shapes_gl_color_instructions`.
 
@@ -581,7 +602,9 @@ class StageFactoryBase(EventDispatcher):
             canvas.remove_group(name)
 
     def get_all_shape_values(
-            self, frame_rate: float, stage_name='', stage=None
+            self, frame_rate: float, stage_name: str = '',
+            stage: Optional['CeedStage'] = None,
+            pre_compute: bool = False
     ) -> Dict[str, List[Tuple[float, float, float, float]]]:
         '''For every shape in the stage ``stage_name`` it samples the shape
         at the frame rate and returns a list of intensity values for the shape
@@ -590,9 +613,13 @@ class StageFactoryBase(EventDispatcher):
         frame_rate is not :attr:`frame_rate` (although it can be) bur rather
         the rate at which we sample the functions.
         '''
-        tick = self.tick_stage(stage_name=stage_name, stage=stage)
         # the sampling rate at which we sample the functions
         frame_rate = int(frame_rate)
+
+        tick = self.tick_stage(
+            Fraction(1, frame_rate), frame_rate, stage_name=stage_name,
+            stage=stage, pre_compute=pre_compute)
+        next(tick)
 
         obj_values = defaultdict(list)
         count = 0
@@ -600,7 +627,6 @@ class StageFactoryBase(EventDispatcher):
             count += 1
 
             try:
-                next(tick)
                 shape_values = tick.send(Fraction(count, frame_rate))
             except StageDoneException:
                 break
@@ -674,6 +700,10 @@ class CeedStage(EventDispatcher):
     See :class:`CeedStage` description for details.
     '''
 
+    disable_pre_compute: bool = BooleanProperty(False)
+
+    loop: int = NumericProperty(1)
+
     stages: List['CeedStage'] = []
     '''A list of :class:`CeedStage` instances that are sub-stages of this
     stage.
@@ -733,6 +763,24 @@ class CeedStage(EventDispatcher):
 
     pad_stage_ticks = 0
 
+    t_end: NumFraction = 0
+    """The time at which the loop or stage ended in global timebase.
+
+    Set by the function after each loop is done (i.e.
+    :meth:`CeedFunc.is_loop_done` returned True) and is typically the second
+    value from :meth:`get_domain`, or the current time value if that is
+    negative.
+
+    Is only valid once loop/stage is done.
+    """
+
+    _runtime_functions: List[
+        Tuple[Optional[FuncBase], Optional[List[float]], Optional[float]]] = []
+
+    can_pre_compute: bool = False
+    """Whether we can pre-compute the full stage.
+    """
+
     __events__ = ('on_changed', )
 
     def __init__(self, stage_factory, function_factory, shape_factory,
@@ -770,7 +818,7 @@ class CeedStage(EventDispatcher):
         '''
         d = {'cls': 'CeedStage'}
         for name in ('order', 'name', 'color_r', 'color_g', 'color_b',
-                     'complete_on'):
+                     'complete_on', 'disable_pre_compute'):
             d[name] = getattr(self, name)
 
         d['stages'] = [s.get_state(expand_ref=expand_ref) for s in self.stages]
@@ -991,7 +1039,25 @@ class CeedStage(EventDispatcher):
             for s in stage.get_stages(step_into_ref):
                 yield s
 
-    def tick_stage(self, shapes):
+    def _get_shape_names(self) -> Tuple[List[str], Set[str]]:
+        # all shapes in this stage
+        names = set()
+        # shapes to keep black
+        keep_dark = set()
+        for shape in self.shapes:
+            if shape.keep_dark:
+                keep_dark.add(shape.shape.name)
+
+            src_shape = shape.shape
+            if isinstance(src_shape, CeedShapeGroup):
+                for src_shape_item in src_shape.shapes:
+                    names.add(src_shape_item.name)
+            else:
+                names.add(src_shape.name)
+
+        return list(names), keep_dark
+
+    def tick_stage(self, shapes, last_end_t: NumFraction):
         '''Similar to :meth:`StageFactoryBase.tick_stage` but for this stage.
 
         It is an iterator that iterates through time and returns the
@@ -1036,38 +1102,77 @@ class CeedStage(EventDispatcher):
         4-tuple r, g, b, a values, each of which can be None similarly to what
         is described at :meth:`StageFactoryBase.tick_stage`.
         '''
-        names = set()
-        keep_dark = set()
-        for shape in self.shapes:
-            if shape.keep_dark:
-                keep_dark.add(shape.shape.name)
+        # next t to use. On the last t not used raises StageDoneException
+        pad_stage_ticks = self.pad_stage_ticks
+        names, keep_dark = self._get_shape_names()
 
-            shape = shape.shape
-            if isinstance(shape, CeedShapeGroup):
-                for shape in shape.shapes:
-                    names.add(shape.name)
-            else:
-                names.add(shape.name)
-        names = list(names)
+        t = yield
 
-        stages = [s.tick_stage(shapes) for s in self.stages]
-        funcs = self.tick_funcs()
+        count = 0
+        for _ in range(self.loop):
+            tick = self.tick_stage_loop(shapes, last_end_t)
+            next(tick)
+
+            try:
+                while True:
+                    tick.send(t)
+                    count += 1
+                    t = yield
+            except StageDoneException:
+                last_end_t = self.t_end
+
+        if count >= pad_stage_ticks:
+            raise StageDoneException
+
+        while count < pad_stage_ticks:
+            for name in names:
+                # as long as we don't return, the clock is going. Normal shapes
+                # will keep the color if set by any other stage (otherwise
+                # black). But these must be explicitly set to black
+                if name in keep_dark:
+                    shapes[name].append((0, 0, 0, 1))
+
+            count += 1
+            t = yield
+
+        self.t_end = t
+        raise StageDoneException
+
+    def tick_stage_loop(self, shapes, last_end_t: NumFraction):
+        names, keep_dark = self._get_shape_names()
+        stages = self.stages[:]
         serial = self.order == 'serial'
         end_on_first = self.complete_on == 'any' and not serial
         r, g, b = self.color_r, self.color_g, self.color_b
         a = self.color_a
-        pad_stage_ticks = self.pad_stage_ticks
-        count = 0
-        for tick_stage in stages[:]:
-            next(tick_stage)
 
-        while funcs is not None or stages:
-            count += 1
-            t = yield
+        func_end_t = None
+        stage_end_t = None
+
+        # init func/stages to the end of the last stage/loop, this could be
+        # between video frames (sampling points)
+        funcs = self.tick_funcs(last_end_t)
+        next(funcs)
+        current_stage = tick = ticks = None
+        if stages:
+            if serial:
+                current_stage = stages.pop(0)
+                tick = current_stage.tick_stage(shapes, last_end_t)
+                next(tick)
+            else:
+                ticks = [(s, s.tick_stage(shapes, last_end_t)) for s in stages]
+                for _, it in ticks:
+                    next(it)
+
+        # t is the next time to be used
+        t = yield
+
+        while True:
+            # if func is done, current t was not used
             if funcs is not None:
                 try:
-                    next(funcs)
                     val = funcs.send(t)
+
                     values = (val if r else None, val if g else None,
                               val if b else None, a)
                     for name in names:
@@ -1077,28 +1182,109 @@ class CeedStage(EventDispatcher):
                             shapes[name].append(values)
                 except FuncDoneException:
                     funcs = None
+                    func_end_t = self.t_end
 
-            for tick_stage in stages[:]:
-                try:
-                    tick_stage.send(t)
-                    if serial:
+            if serial and tick is not None:
+                while True:
+                    try:
+                        tick.send(t)
                         break
-                except StageDoneException:
-                    if end_on_first:
-                        del stages[:]
-                        break
-                    stages.remove(tick_stage)
+                    except StageDoneException:
+                        t_end = current_stage.t_end
+                        if stages and not end_on_first:
+                            current_stage = stages.pop(0)
+                            tick = current_stage.tick_stage(shapes, t_end)
+                            next(tick)
+                        else:
+                            stage_end_t = t_end
+                            tick = current_stage = None
+                            break
 
-        while count <= pad_stage_ticks:
-            count += 1
-            _ = yield
-            for name in names:
-                if name in keep_dark:
-                    shapes[name].append((0, 0, 0, 1))
+            elif not serial and ticks:
+                for stage, tick_stage in ticks[:]:
+                    try:
+                        tick_stage.send(t)
+                    except StageDoneException:
+                        if end_on_first:
+                            del ticks[:]
+                            stage_end_t = stage.t_end
+                            break
+
+                        ticks.remove((stage, tick_stage))
+                        if stage_end_t is None:
+                            stage_end_t = stage.t_end
+                        else:
+                            stage_end_t = max(stage_end_t, stage.t_end)
+
+            if funcs is None and tick is None and not ticks:
+                # the current t was not used (actually, if parallel and
+                # end_on_first, it may have been used by a earlier stage and
+                # that stage could have added values to shapes, but for now
+                # we'll pretend it wasn't). TODO: fix
+                break
+
+            t = yield
+
+        if func_end_t is None and stage_end_t is None:
+            self.t_end = last_end_t
+        elif func_end_t is None:
+            self.t_end = stage_end_t
+        elif stage_end_t is None:
+            self.t_end = func_end_t
+        else:
+            self.t_end = max(func_end_t, stage_end_t)
 
         raise StageDoneException
 
-    def tick_funcs(self):
+    def pre_compute_functions(
+            self, frame_rate: float
+    ) -> List[Tuple[
+            Optional[FuncBase], Optional[List[float]], Optional[float]]]:
+        computed = []
+        t = 0
+        last_end_t = None
+        values = []
+        frame_rate = int(frame_rate)
+
+        for func in self.functions:
+            # this function should have been copied when it was created for
+            # this experiment in the `last_experiment_stage_name` stage
+            assert not isinstance(func, CeedFuncRef)
+
+            # we hit a un-cacheable function, reset
+            if func.duration < 0:
+                if values:
+                    computed.append((None, values, last_end_t))
+
+                computed.append((func, None, None))
+                t = 0
+                last_end_t = None
+                values = []
+                continue
+
+            try:
+                func.init_func(
+                    Fraction(t, frame_rate)
+                    if last_end_t is None else last_end_t
+                )
+                values.append(func(Fraction(t, frame_rate)))
+
+                while True:
+                    t += 1
+                    values.append(func(Fraction(t, frame_rate)))
+            except FuncDoneException:
+                last_end_t = func.t_end
+                assert last_end_t >= 0, "Should be concrete value"
+
+        if values:
+            computed.append((None, values, last_end_t))
+
+        return computed
+
+    def pre_compute_stage(self):
+        pass
+
+    def tick_funcs(self, last_end_t: NumFraction):
         '''Iterates through the :attr:`functions` of this stage sequentially
         and returns the function's value associated with that time.
 
@@ -1114,26 +1300,37 @@ class CeedStage(EventDispatcher):
             >>>     except FuncDoneException:
             >>>         break  # function is done
         '''
-        raised = False
-        last_end_t = None
-        for func in self.functions:
+        # always get a time stamp
+        t = yield
+
+        for func, values, end_t in self._runtime_functions:
+            # values were pre-computed
+            if func is None:
+                # this was sampled with a init value of zero, so out end is
+                # relative to current sample time, not last end time of last
+                # func. Because with the latter, the sampled func could have
+                # ended before the last sample. So we align with sample time
+                last_end_t = t + end_t
+                for value in values:
+                    t = yield value
+                continue
+
             # this function should have been copied when it was created for
             # this experiment in the `last_experiment_stage_name` stage
             assert not isinstance(func, CeedFuncRef)
 
             try:
-                if not raised:
-                    t = yield
-
+                # on first func, last_end_t can be None
                 func.init_func(t if last_end_t is None else last_end_t)
-                yield func(t)
+                t = yield func(t)
                 while True:
-                    t = yield
-                    yield func(t)
+                    t = yield func(t)
             except FuncDoneException:
-                raised = True
                 last_end_t = func.t_end
                 assert last_end_t >= 0, "Should be concrete value"
+
+        # use start time if no funcs
+        self.t_end = last_end_t
         raise FuncDoneException
 
     def init_stage_tree(self, root: 'CeedStage') -> None:
@@ -1145,22 +1342,58 @@ class CeedStage(EventDispatcher):
         for child_stage in self.stages:
             child_stage.init_stage_tree(root)
 
-    def resample_func_parameters(self, is_forked=False) -> None:
+        funcs_are_finite = all((f.duration >= 0 for f in self.functions))
+        can_pre_compute_stages = all((s.can_pre_compute for s in self.stages))
+        self.can_pre_compute = funcs_are_finite and can_pre_compute_stages \
+            and not self.disable_pre_compute
+
+    def apply_pre_compute(self, pre_compute: bool, frame_rate: float, shapes):
+        if pre_compute and self.can_pre_compute:
+            return
+
+        if pre_compute:
+            if not self.disable_pre_compute:
+                self._runtime_functions = self.pre_compute_functions(
+                    frame_rate)
+            else:
+                self._runtime_functions = [
+                    (func, None, None) for func in self.functions]
+        else:
+            self._runtime_functions = [
+                (func, None, None) for func in self.functions]
+
+        for stage in self.stages:
+            stage.apply_pre_compute(pre_compute, frame_rate, shapes)
+
+    def resample_func_parameters(
+            self, parent_tree: Optional[List['CeedStage']] = None,
+            is_forked=False) -> None:
         """Resamples all parameters of all functions of the stage that have
         randomness associated with it.
+
+        ``parent_tree`` is not inclusive.
 
         See :meth:`FuncBase.resample_parameters` and :meth:`copy_and_resample`
         for the meaning of ``is_forked``.
         """
-        for stage in self.get_stages(step_into_ref=True):
-            for root_func in stage.functions:
-                if isinstance(root_func, CeedFuncRef):
-                    root_func = root_func.func
+        if parent_tree is None:
+            parent_tree = []
 
-                for functions in root_func.get_function_tree(
-                        step_into_ref=True):
-                    functions[-1].resample_parameters(
-                        functions, is_forked=is_forked)
+        base_loops = reduce(
+            operator.mul, (f.loop for f in parent_tree + [self]))
+
+        for root_func in self.functions:
+            if isinstance(root_func, CeedFuncRef):
+                root_func = root_func.func
+            root_func.resample_parameters(
+                is_forked=is_forked, base_loops=base_loops)
+
+        for stage in self.stages:
+            if isinstance(stage, CeedStageRef):
+                stage = stage.stage
+
+            stage.resample_func_parameters(
+                parent_tree + [self], is_forked=is_forked)
 
     def copy_and_resample(self) -> 'CeedStage':
         """Resamples all the functions of the stage, copies the stage and

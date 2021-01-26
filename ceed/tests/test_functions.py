@@ -1254,7 +1254,7 @@ def test_func_sampling(function_factory: FunctionFactoryBase, cls_name, props):
     b_vals = []
     m_vals = []
     for _ in range(100):
-        f.resample_parameters([f])
+        f.resample_parameters()
         b_vals.append(f.b)
         m_vals.append(f.m)
 
@@ -1274,7 +1274,7 @@ def test_func_seq_sampling(
 
     assert 'm' not in f.noisy_parameter_samples
     assert 'b' not in f.noisy_parameter_samples
-    f.resample_parameters([f])
+    f.resample_parameters()
     assert 'm' in f.noisy_parameter_samples
     assert 'b' not in f.noisy_parameter_samples
 
@@ -1297,7 +1297,7 @@ def test_noise_lock(
     b_vals = []
     m_vals = []
     for _ in range(100):
-        f.resample_parameters([f], is_forked=is_forked)
+        f.resample_parameters(is_forked=is_forked)
         b_vals.append(f.b)
         m_vals.append(f.m)
 
@@ -1324,9 +1324,9 @@ def test_noise_seq_lock(function_factory: FunctionFactoryBase, lock_param):
         lock_after_forked=lock_param, sample_each_loop=True)
 
     assert 'b' not in f.noisy_parameter_samples
-    f.resample_parameters([f], is_forked=False)
+    f.resample_parameters(is_forked=False)
     b_vals = f.noisy_parameter_samples['b']
-    f.resample_parameters([f], is_forked=True)
+    f.resample_parameters(is_forked=True)
     b_vals2 = f.noisy_parameter_samples['b']
 
     if lock_param:
@@ -1351,12 +1351,12 @@ def test_noise_ref_lock(function_factory: FunctionFactoryBase):
     f.noisy_parameters['b'] = cls(lock_after_forked=True)
 
     ref2 = function_factory.get_func_ref(func=f)
-    f.resample_parameters([f])
+    f.resample_parameters()
 
     m_vals = set()
     f2: FuncBase = ref2.copy_expand_ref()
     for _ in range(100):
-        f2.resample_parameters([f2], is_forked=True)
+        f2.resample_parameters(is_forked=True)
         m_vals.add(f2.m)
         assert f2.b == f.b
 
@@ -1400,7 +1400,7 @@ def test_copy_func_noise_seq(function_factory: FunctionFactoryBase):
     f.noisy_parameters['m'] = cls()
     f.noisy_parameters['b'] = cls(sample_each_loop=True)
 
-    f.resample_parameters([f])
+    f.resample_parameters()
     assert 'm' not in f.noisy_parameter_samples
     original = f.noisy_parameter_samples['b']
     b_vals = list(original)
@@ -1555,27 +1555,6 @@ def test_function_tree(function_factory: FunctionFactoryBase):
     f5 = const_cls(function_factory=factory, a=.2, duration=2)
     g3.add_func(f5)
 
-    for func in (f, f1, f2, f3, f4, f5):
-        assert list(func.get_function_tree()) == [[func]]
-
-    assert list(g2.get_function_tree()) == [[g2], [g2, f], [g2, f1]]
-    assert list(g3.get_function_tree()) == [[g3], [g3, f4], [g3, f5]]
-    assert list(g1.get_function_tree()) == [
-        [g1],
-        [g1, g2],
-        [g1, g2, f],
-        [g1, g2, f1],
-        [g1, f2],
-        [g1, f3],
-        [g1, g3],
-        [g1, g3, f4],
-        [g1, g3, f5],
-    ]
-
-    assert list(func.get_function_tree(tree=[f5])) == [[f5, func]]
-    assert list(g2.get_function_tree(tree=[f5])) == [
-        [f5, g2], [f5, g2, f], [f5, g2, f1]]
-
     def assert_counts(
             g1_count, g1_tree_count, g2_count, g2_tree_count, f_count,
             f_tree_count):
@@ -1628,25 +1607,6 @@ def test_function_tree(function_factory: FunctionFactoryBase):
         g1(41)
 
     assert_counts(2, 2, 2, 4, 2, 8)
-
-
-def test_get_function_tree_ref(function_factory: FunctionFactoryBase):
-    const_cls = function_factory.get('ConstFunc')
-    g = FuncGroup(function_factory=function_factory)
-
-    g2 = FuncGroup(function_factory=function_factory)
-    f = const_cls(function_factory=function_factory)
-    f2 = const_cls(function_factory=function_factory)
-    g2.add_func(f)
-    g2.add_func(f2)
-
-    function_factory.add_func(g2)
-    ref = function_factory.get_func_ref(name=g2.name)
-    g.add_func(ref)
-
-    assert list(g.get_function_tree()) == [
-        [g], [g, g2], [g, g2, f], [g, g2, f2]]
-    assert list(g.get_function_tree(step_into_ref=False)) == [[g], [g, ref]]
 
 
 def test_call_func_loop_done(function_factory: FunctionFactoryBase):

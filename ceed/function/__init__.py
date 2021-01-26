@@ -1090,11 +1090,12 @@ class FuncBase(EventDispatcher):
     '''
 
     t_end: NumFraction = 0
-    """The time at which the loop or function ended (e.g.
-    :meth:`CeedFunc.is_loop_done` returned true) in global timebase.
+    """The time at which the loop or function ends in global timebase.
 
-    Set by the function when the loop is done and is typically the second value
-    from :meth:`get_domain`, or some current time value if that is negative.
+    Set by the function after each loop is done (i.e.
+    :meth:`CeedFunc.is_loop_done` returned True) and is typically the second
+    value from :meth:`get_domain`, or the current time value if that is
+    negative.
     """
 
     loop_count: int = 0
@@ -1133,10 +1134,10 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
         2
         >>> f.b
         0.0
-        >>> f.resample_parameters([f])
+        >>> f.resample_parameters()
         >>> f.m
         12.902067284602595
-        >>> f.resample_parameters([f])
+        >>> f.resample_parameters()
         >>> f.m
         11.555420807597352
         >>> f.b
@@ -1416,43 +1417,6 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
         """
         yield self
 
-    def get_function_tree(
-            self, tree: List[CeedFuncOrRefInstance] = None, step_into_ref=True
-    ) -> Generator[List[CeedFuncOrRefInstance], None, None]:
-        """Generator that yields the function tree leading to the function, for
-        all functions in the tree. It's in DFS order.
-
-        :param tree: a list of functions leading to this function. This starts
-            from the root and returns every function in the direct path to
-            this function. It then copies and appends this function and it'
-            children, if any, and yields them each.
-        :param step_into_ref: If, when encountering a :class:`CeedFuncRef`
-            in the tree we should yield that and terminate that branch, or
-            whether we should step into the original function referenced and
-            continue yielding its children.
-
-        E.g.::
-
-            >>> Cos = function_factory.get('CosFunc')
-            >>> cos = Cos(function_factory=function_factory)
-            >>> Group = function_factory.get('FuncGroup')
-            >>> g = Group(function_factory=function_factory)
-            >>> g.add_func(cos)
-            >>> gen = cos.get_function_tree()
-            >>> next(gen)
-            [<ceed.function.plugin.CosFunc at 0x216b93bccf8>]
-            >>> gen = g.get_function_tree()
-            >>> next(gen)
-            [<ceed.function.FuncGroup at 0x216b93bcc88>]
-            >>> next(gen)
-            [<ceed.function.FuncGroup at 0x216b93bcc88>,
-             <ceed.function.plugin.CosFunc at 0x216b93bccf8>]
-        """
-        if tree is None:
-            yield [self]
-        else:
-            yield tree + [self]
-
     def can_other_func_be_added(
             self, other_func: Union['CeedFuncRef', 'FuncBase']) -> bool:
         """Checks whether the other function may be added to this function.
@@ -1651,7 +1615,8 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
         self.duration_min_total = self.loop * self.duration_min
 
     def resample_parameters(
-            self, parent_tree: List['FuncBase'], is_forked=False) -> None:
+            self, parent_tree: Optional[List['FuncBase']] = None,
+            is_forked=False, base_loops: int = 1) -> None:
         """Resamples all the function parameters that have randomness
         attached to it in :attr:`noisy_parameters` and updates their values.
 
@@ -1667,6 +1632,15 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
         source functions into individual functions we don't resample them.
         Then all these individual functions share the same random parameters as
         the original referenced function.
+
+        ``parent_tree`` is not inclusive.
+
+        ``base_loops`` indicates the expected number of times the function
+        is expected to loop due to the stage containing the function (if any).
+        This is in addition to :attr:`loop` of the function and its parent
+        tree. So e.g. if :attr:`loop` is ``3`` and ``base_loops`` is ``2`` with
+        no parents, then the function will be looped ``6`` times, twice by the
+        stage.
 
         E.g.::
 
@@ -1685,12 +1659,12 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
             >>> ref1 = function_factory.get_func_ref(func=f)
             >>> ref2 = function_factory.get_func_ref(func=f)
             >>> # resample the original function and fork refs into copies
-            >>> f.resample_parameters([f])
+            >>> f.resample_parameters()
             >>> f1 = ref1.copy_expand_ref()
             >>> f2 = ref2.copy_expand_ref()
             >>> # now resample only those that are not locked
-            >>> f1.resample_parameters([f1], is_forked=True)
-            >>> f2.resample_parameters([f2], is_forked=True)
+            >>> f1.resample_parameters(is_forked=True)
+            >>> f2.resample_parameters(is_forked=True)
             >>> # b is locked to pre-forked value and is not sampled after fork
             >>> f.m, f.b
             (0.22856343565686332, 0.3092686616300213)
@@ -1708,7 +1682,10 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
                 continue
 
             if value.sample_each_loop:
-                n = reduce(operator.mul, (f.loop for f in parent_tree))
+                n = 1
+                if parent_tree:
+                    n = reduce(operator.mul, (f.loop for f in parent_tree))
+                n *= self.loop * base_loops
                 if not n:
                     if key in samples:
                         del samples[key]
@@ -2116,22 +2093,20 @@ line 934, in __call__
             for f in func.get_funcs(step_into_ref):
                 yield f
 
-    def get_function_tree(
-            self, tree: List[CeedFuncOrRefInstance] = None, step_into_ref=True
-    ) -> Generator[List[CeedFuncOrRefInstance], None, None]:
-        if tree is None:
-            tree = []
+    def resample_parameters(
+            self, parent_tree: Optional[List['FuncBase']] = None,
+            is_forked=False, base_loops: int = 1) -> None:
+        super().resample_parameters(
+            parent_tree=parent_tree, is_forked=is_forked,
+            base_loops=base_loops)
 
-        yield tree + [self]
         for func in self.funcs:
             if isinstance(func, CeedFuncRef):
-                if not step_into_ref:
-                    yield tree + [self, func]
-                    continue
-
                 func = func.func
-            for f in func.get_function_tree(tree + [self], step_into_ref):
-                yield f
+
+            tree = (parent_tree or []) + [self]
+            func.resample_parameters(
+                parent_tree=tree, is_forked=is_forked, base_loops=base_loops)
 
 
 def register_all_functions(function_factory: FunctionFactoryBase):

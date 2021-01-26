@@ -1036,7 +1036,9 @@ class StageGraph(Factory.FlatSplitter):
 
         frame_rate = self.frame_rate = float(frame_rate)
         vals = self.plot_values = factory.get_all_shape_values(
-            frame_rate, stage=stage)
+            frame_rate, stage=stage,
+            pre_compute=App.get_running_app().view_controller.
+            pre_compute_stages)
         N = len(list(vals.values())[0]) if vals else 0
 
         plots = self.plots
