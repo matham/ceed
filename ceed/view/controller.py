@@ -142,6 +142,16 @@ class ViewControllerBase(EventDispatcher):
     mea_diameter = NumericProperty(3)
 
     pad_to_stage_handshake = BooleanProperty(True)
+    """Ceed sends some handshaking info to MCS for each experiment, to help
+    us align the ceed and MCS data afterwards. If the root stage of the
+    experiment is too short, it's possible the full handshake would not be
+    sent, preventing alignment afterwards.
+
+    If :attr:`pad_to_stage_handshake`, then the root stage will be padded
+    so it goes for the minimum number of clock frames required to finish
+    the handshake, if it's too short. The shapes will be black for those
+    padded frames.
+    """
 
     output_count = BooleanProperty(True)
     '''Whether the corner pixel is used to output frame information on the

@@ -14,6 +14,7 @@ from copy import deepcopy
 from collections import defaultdict
 from fractions import Fraction
 import operator
+from math import isclose
 from functools import reduce
 from typing import Dict, List, Union, Tuple, Optional, Generator, Set
 
@@ -427,7 +428,8 @@ class StageFactoryBase(EventDispatcher):
         shapes = {s.name: [] for s in self.shape_factory.shapes}
 
         stage.init_stage_tree(stage)
-        stage.apply_pre_compute(pre_compute, frame_rate, shapes)
+        stage.apply_pre_compute(
+            pre_compute, frame_rate, t_start, set(shapes.keys()))
 
         tick_stage = stage.tick_stage(shapes, t_start)
         next(tick_stage)
@@ -701,8 +703,17 @@ class CeedStage(EventDispatcher):
     '''
 
     disable_pre_compute: bool = BooleanProperty(False)
+    """Whether to disable pre-computing this stage and its :attr:`functions`
+    when :attr:`~ceed.view.controller.ViewControllerBase.pre_compute_stages` is
+    True.
+    """
 
     loop: int = NumericProperty(1)
+    """The number of loop iterations the stage should do.
+
+    If more than one, the stage will go through all its :attr:`functions` and
+    :attr:`stages` :attr:`loop` times.
+    """
 
     stages: List['CeedStageOrRefInstance'] = []
     '''A list of :class:`CeedStage` instances that are sub-stages of this
@@ -762,6 +773,18 @@ class CeedStage(EventDispatcher):
     display = None
 
     pad_stage_ticks: int = 0
+    """If the number of clock cycles of the stage is less than
+    :attr:`pad_stage_ticks`, the stage will be padded with
+    :attr:`pad_stage_ticks` clock cycles at the end.
+
+    During those cycles, the shapes will be unchanged by this stage (i.e. if
+    another stage set it that value will be used, otherwise it'll be
+    transparent), except for the shapes with :attr:`StageShape.keep_dark` that
+    will be set to black.
+
+    See :attr:`~ceed.view.controller.ViewControllerBase.pad_to_stage_handshake`
+    for usage details.
+    """
 
     t_end: NumFraction = 0
     """The time at which the loop or stage ended in global timebase.
@@ -774,11 +797,19 @@ class CeedStage(EventDispatcher):
     Is only valid once loop/stage is done.
     """
 
-    _runtime_functions: List[
+    runtime_functions: List[
         Tuple[Optional[FuncBase], Optional[List[float]], Optional[float]]] = []
 
+    runtime_stage: Optional[
+        Tuple[Dict[str, List[RGBA_Type]], int, NumFraction]] = None
+
     can_pre_compute: bool = False
-    """Whether we can pre-compute the full stage.
+    """Whether we can pre-compute the full stage. This means that all the
+    :attr:`functions` have finite duration (i.e. non-negative), all
+    :attr:`stages` :attr:`can_pre_compute` is True, and
+    :attr:`disable_pre_compute` is False.
+
+    If False, the
     """
 
     __events__ = ('on_changed', )
@@ -1120,6 +1151,32 @@ class CeedStage(EventDispatcher):
         4-tuple r, g, b, a values, each of which can be None similarly to what
         is described at :meth:`StageFactoryBase.tick_stage`.
         '''
+        # quick path is stage was pre-computed
+        if self.runtime_stage is not None:
+            # next t to use. On the last t not used raises StageDoneException
+            t = yield
+            stage_data, n, t_end = self.runtime_stage
+
+            # stage was sampled with a init value of zero, so end is
+            # relative to current sample time, not end time of last
+            # stage. Because with the latter, the sampled stage could have
+            # ended before the sample (t). So we align with sample time
+            self.t_end = t + t_end
+            prev_t = t
+
+            for i in range(n):
+                for name, colors in stage_data.items():
+                    shapes[name].append(colors[i])
+                prev_t = t
+                t = yield
+
+            assert prev_t <= self.t_end or isclose(prev_t, self.t_end)
+            assert t >= self.t_end or isclose(t, self.t_end)
+
+            raise StageDoneException
+
+        # slow path - evaluate the functions and stages
+
         # next t to use. On the last t not used raises StageDoneException
         pad_stage_ticks = self.pad_stage_ticks
         names, keep_dark = self._get_shape_names()
@@ -1301,12 +1358,43 @@ class CeedStage(EventDispatcher):
 
         return computed
 
-    def pre_compute_stage(self):
-        pass
+    def pre_compute_stage(
+            self, frame_rate: float, t_start: NumFraction, shapes: Set[str]
+    ) -> Tuple[Dict[str, List[RGBA_Type]], int, NumFraction]:
+        frame_rate = int(frame_rate)
+        stage_data = {s: [] for s in shapes}
+        stage_data_temp = {s: [] for s in shapes}
+
+        # we ignore t_start because we sample relative to zero so we can just
+        # add end time to actual passed in time at runtime
+        tick = self.tick_stage(stage_data_temp, 0)
+        next(tick)
+        # is the next timestamp to use at start of loop and on exit
+        i = 0
+
+        try:
+            while True:
+                tick.send(Fraction(i, frame_rate))
+
+                for name, colors in stage_data_temp.items():
+                    color = [None, None, None, None]
+                    for item in colors:
+                        for j, c in enumerate(item):
+                            if c is not None:
+                                color[j] = c
+                    stage_data[name].append(tuple(color))
+
+                    del colors[:]
+
+                i += 1
+        except StageDoneException:
+            pass
+
+        return stage_data, i, self.t_end
 
     def tick_funcs(
             self, last_end_t: NumFraction
-    ) -> Generator[None, NumFraction, None]:
+    ) -> Generator[Optional[float], NumFraction, None]:
         '''Iterates through the :attr:`functions` of this stage sequentially
         and returns the function's value associated with that time.
 
@@ -1325,16 +1413,20 @@ class CeedStage(EventDispatcher):
         # always get a time stamp
         t = yield
 
-        for func, values, end_t in self._runtime_functions:
+        for func, values, end_t in self.runtime_functions:
             # values were pre-computed
             if func is None:
-                # this was sampled with a init value of zero, so out end is
-                # relative to current sample time, not last end time of last
+                # this was sampled with a init value of zero, so end is
+                # relative to current sample time, not end time of last
                 # func. Because with the latter, the sampled func could have
-                # ended before the last sample. So we align with sample time
+                # ended before the sample. So we align with sample time
                 last_end_t = t + end_t
+                prev_t = t
                 for value in values:
+                    prev_t = t
                     t = yield value
+                assert prev_t <= last_end_t or isclose(prev_t, last_end_t)
+                assert t >= last_end_t or isclose(t, last_end_t)
                 continue
 
             # this function should have been copied when it was created for
@@ -1369,25 +1461,27 @@ class CeedStage(EventDispatcher):
         self.can_pre_compute = funcs_are_finite and can_pre_compute_stages \
             and not self.disable_pre_compute
 
-    def apply_pre_compute(
-            self, pre_compute: bool, frame_rate: float,
-            shapes: Dict[str, List[RGBA_Type]]) -> None:
-        if pre_compute and self.can_pre_compute:
-            return
+        self.runtime_functions = [(func, None, None) for func in self.functions]
+        self.runtime_stage = None
 
+    def apply_pre_compute(
+            self, pre_compute: bool, frame_rate: float, t_start: NumFraction,
+            shapes: Set[str]
+    ) -> None:
         if pre_compute:
+            if self.can_pre_compute:
+                self.runtime_stage = self.pre_compute_stage(
+                    frame_rate, t_start, shapes)
+
+                # don't do anything for the children stages/funcs
+                return
+
             if not self.disable_pre_compute:
-                self._runtime_functions = self.pre_compute_functions(
+                self.runtime_functions = self.pre_compute_functions(
                     frame_rate)
-            else:
-                self._runtime_functions = [
-                    (func, None, None) for func in self.functions]
-        else:
-            self._runtime_functions = [
-                (func, None, None) for func in self.functions]
 
         for stage in self.stages:
-            stage.apply_pre_compute(pre_compute, frame_rate, shapes)
+            stage.apply_pre_compute(pre_compute, frame_rate, t_start, shapes)
 
     def resample_func_parameters(
             self, parent_tree: Optional[List['CeedStage']] = None,

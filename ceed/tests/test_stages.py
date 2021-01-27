@@ -67,13 +67,14 @@ def create_recursive_stages(
 
 
 def get_stage_time_intensity(
-        stage_factory: StageFactoryBase, stage_name: str, frame_rate
+        stage_factory: StageFactoryBase, stage_name: str, frame_rate,
+        pre_compute: bool = False
 ) -> Tuple[Dict[str, List[Tuple[float, float, float, float]]], int]:
     """Samples the stage with the given frame rate and returns the intensity
     value for each shape for each timestamp.
     """
     obj_values = stage_factory.get_all_shape_values(
-        frame_rate, stage_name=stage_name)
+        frame_rate, stage_name=stage_name, pre_compute=pre_compute)
     n = len(obj_values[list(obj_values.keys())[0]])
     return obj_values, n
 
@@ -662,7 +663,8 @@ def test_group_remove_stage(stage_factory: StageFactoryBase):
     assert list(g1.get_stages(step_into_ref=False)) == [g1, ]
 
 
-def test_simple_stage_intensity(stage_factory: StageFactoryBase):
+@pytest.mark.parametrize('pre_compute', [True, False])
+def test_simple_stage_intensity(stage_factory: StageFactoryBase, pre_compute):
     from ceed.function.plugin import LinearFunc
     shape = EllipseShapeP1(
         app=None, painter=stage_factory.shape_factory, show_in_gui=False,
@@ -682,7 +684,8 @@ def test_simple_stage_intensity(stage_factory: StageFactoryBase):
     stage.add_shape(shape.shape)
     stage.add_shape(shape2.shape)
 
-    values, n = get_stage_time_intensity(stage_factory, stage.name, 10)
+    values, n = get_stage_time_intensity(
+        stage_factory, stage.name, 10, pre_compute=pre_compute)
     assert n == 5 * 10
     assert len(values) == 2
     colors = values[shape.name]
@@ -700,7 +703,9 @@ def test_simple_stage_intensity(stage_factory: StageFactoryBase):
         assert g == 0
 
 
-def test_recursive_stage_intensity(stage_factory: StageFactoryBase):
+@pytest.mark.parametrize('pre_compute', [True, False])
+def test_recursive_stage_intensity(
+        stage_factory: StageFactoryBase, pre_compute):
     root, g1, g2, s1, s2, s3, s4, s5, s6 = create_recursive_stages(
         stage_factory)
 
@@ -720,7 +725,8 @@ def test_recursive_stage_intensity(stage_factory: StageFactoryBase):
     s1.stage.add_shape(shape.shape)
     s2.stage.add_shape(shape2.shape)
 
-    values, n = get_stage_time_intensity(stage_factory, root.name, 10)
+    values, n = get_stage_time_intensity(
+        stage_factory, root.name, 10, pre_compute=pre_compute)
     assert n == 10 * 10
     assert len(values) == 2
     colors = values[shape.name]
@@ -743,7 +749,9 @@ def test_recursive_stage_intensity(stage_factory: StageFactoryBase):
         assert math.isclose(b, i / 10 * .1) if s2.color_b else b == 0
 
 
-def test_recursive_full_stage_intensity(stage_factory: StageFactoryBase):
+@pytest.mark.parametrize('pre_compute', [True, False])
+def test_recursive_full_stage_intensity(
+        stage_factory: StageFactoryBase, pre_compute):
     root, g1, g2, s1, s2, s3, s4, s5, s6 = create_recursive_stages(
         stage_factory)
 
@@ -767,7 +775,8 @@ def test_recursive_full_stage_intensity(stage_factory: StageFactoryBase):
     s3.stage.add_shape(shape2.shape)
     s6.stage.add_shape(shape2.shape)
 
-    values, n = get_stage_time_intensity(stage_factory, root.name, 10)
+    values, n = get_stage_time_intensity(
+        stage_factory, root.name, 10, pre_compute=pre_compute)
     assert n == 10 * (10 + 5 + 10 + 5)
     assert len(values) == 2
     colors = values[shape.name]
@@ -807,7 +816,9 @@ def test_recursive_full_stage_intensity(stage_factory: StageFactoryBase):
             assert b == 0
 
 
-def test_single_frame_stage_intensity(stage_factory: StageFactoryBase):
+@pytest.mark.parametrize('pre_compute', [True, False])
+def test_single_frame_stage_intensity(
+        stage_factory: StageFactoryBase, pre_compute):
     from ceed.function.plugin import ConstFunc
 
     shape = EllipseShapeP1(
@@ -831,7 +842,8 @@ def test_single_frame_stage_intensity(stage_factory: StageFactoryBase):
     stage.add_func(f)
     stage.add_shape(shape.shape)
 
-    values, n = get_stage_time_intensity(stage_factory, stage.name, 120)
+    values, n = get_stage_time_intensity(
+        stage_factory, stage.name, 120, pre_compute=pre_compute)
     assert n == 3 * 2
     assert len(values) == 1
     colors = values[shape.name]
@@ -877,12 +889,13 @@ def test_sample_ref_function_stage(stage_factory: StageFactoryBase):
     assert f.b == copied.stages[0].functions[0].b
 
 
+@pytest.mark.parametrize('pre_compute', [True, False])
 @pytest.mark.parametrize('rate', [60., 120., 100.])
 @pytest.mark.parametrize('duration', [
     (.5, .5, .5), (.51, .5, .49), (.1, .1, .1), (.11, .33, .59),
     (31 / 60, 5 / 12, 1441 / 720)])
 def test_stage_func_float_duration(
-        stage_factory: StageFactoryBase, rate, duration):
+        stage_factory: StageFactoryBase, rate, duration, pre_compute):
     function_factory = stage_factory.function_factory
 
     root = make_stage(
@@ -905,7 +918,8 @@ def test_stage_func_float_duration(
     root.add_func(child_b)
     root.add_func(child_c)
 
-    values, n = get_stage_time_intensity(stage_factory, root.name, rate)
+    values, n = get_stage_time_intensity(
+        stage_factory, root.name, rate, pre_compute=pre_compute)
     expected = int(
         rate * (4 * duration[0] + 3 * duration[1] + 5 * duration[2]))
     assert expected - 1 <= n <= expected + 1
@@ -919,7 +933,9 @@ def test_stage_func_float_duration(
         assert count - 1 <= round(loops[i] * duration[i] * rate) <= count + 1
 
 
-def test_stage_func_float_duration_epsilon(stage_factory: StageFactoryBase):
+@pytest.mark.parametrize('pre_compute', [True, False])
+def test_stage_func_float_duration_epsilon(
+        stage_factory: StageFactoryBase, pre_compute):
     function_factory = stage_factory.function_factory
 
     root = make_stage(
@@ -945,7 +961,8 @@ def test_stage_func_float_duration_epsilon(stage_factory: StageFactoryBase):
     root.add_func(child_c)
     root.add_func(child_d)
 
-    values, n = get_stage_time_intensity(stage_factory, root.name, 60.)
+    values, n = get_stage_time_intensity(
+        stage_factory, root.name, 60., pre_compute=pre_compute)
     expected = int(60. * 3.6)
     assert expected - 1 <= n <= expected + 1
 
@@ -958,7 +975,8 @@ def test_stage_func_float_duration_epsilon(stage_factory: StageFactoryBase):
         assert count - 1 <= round(duration[i] * 60) <= count + 1
 
 
-def test_stage_func_clip_range(stage_factory: StageFactoryBase):
+@pytest.mark.parametrize('pre_compute', [True, False])
+def test_stage_func_clip_range(stage_factory: StageFactoryBase, pre_compute):
     function_factory = stage_factory.function_factory
 
     root = make_stage(
@@ -984,12 +1002,14 @@ def test_stage_func_clip_range(stage_factory: StageFactoryBase):
     root.add_func(child_c)
     root.add_func(child_d)
 
-    values, n = get_stage_time_intensity(stage_factory, root.name, 60.)
+    values, n = get_stage_time_intensity(
+        stage_factory, root.name, 60., pre_compute=pre_compute)
     intensities = {v[0] for v in values[shape.name]}
     assert intensities == {0, .2, .3, 1}
 
 
-def test_stage_func_tree_init(stage_factory: StageFactoryBase):
+@pytest.mark.parametrize('pre_compute', [True, False])
+def test_stage_func_tree_init(stage_factory: StageFactoryBase, pre_compute):
     from ceed.function.plugin import ConstFunc
     tree_counter = defaultdict(int)
     init_counter = defaultdict(int)
@@ -1059,7 +1079,8 @@ def test_stage_func_tree_init(stage_factory: StageFactoryBase):
     g.add_func(g2)
     s2.add_func(g)
 
-    get_stage_time_intensity(stage_factory, root.name, 10)
+    get_stage_time_intensity(
+        stage_factory, root.name, 10, pre_compute=pre_compute)
 
     for name in ('f_root', 'f2_child', 'root', 'g_child', 'gf_child',
                  'root_stage', 's2'):
