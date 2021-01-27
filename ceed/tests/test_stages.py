@@ -3,6 +3,7 @@ from copy import deepcopy, copy
 import math
 from typing import Tuple, List, Dict
 from collections import defaultdict
+from itertools import product
 from fractions import Fraction
 
 from ceed.function import FunctionFactoryBase, FuncGroup, FuncBase
@@ -749,34 +750,8 @@ def test_recursive_stage_intensity(
         assert math.isclose(b, i / 10 * .1) if s2.color_b else b == 0
 
 
-@pytest.mark.parametrize('pre_compute', [True, False])
-def test_recursive_full_stage_intensity(
-        stage_factory: StageFactoryBase, pre_compute):
-    root, g1, g2, s1, s2, s3, s4, s5, s6 = create_recursive_stages(
-        stage_factory)
-
-    from ceed.function.plugin import LinearFunc
-    for i, stage in enumerate((s1, s2, s3, s4, s5, s6)):
-        stage.stage.add_func(LinearFunc(
-            function_factory=stage_factory.function_factory, b=0, m=.1,
-            duration=(i % 2 + 1) * 5))
-
-    shape = CircleShapeP1(
-        app=None, painter=stage_factory.shape_factory, show_in_gui=False,
-        create_add_shape=True)
-
-    shape2 = CircleShapeP1Internal(
-        app=None, painter=stage_factory.shape_factory, show_in_gui=False,
-        create_add_shape=True)
-    s1.stage.add_shape(shape.shape)
-    s4.stage.add_shape(shape.shape)
-    s5.stage.add_shape(shape.shape)
-    s2.stage.add_shape(shape2.shape)
-    s3.stage.add_shape(shape2.shape)
-    s6.stage.add_shape(shape2.shape)
-
-    values, n = get_stage_time_intensity(
-        stage_factory, root.name, 10, pre_compute=pre_compute)
+def assert_recursive_stages_intensity(
+        s1, s2, s3, s4, s5, s6, values, n, shape, shape2):
     assert n == 10 * (10 + 5 + 10 + 5)
     assert len(values) == 2
     colors = values[shape.name]
@@ -814,6 +789,38 @@ def test_recursive_full_stage_intensity(
             assert r == 0
             assert g == 0
             assert b == 0
+
+
+@pytest.mark.parametrize('pre_compute', [True, False])
+def test_recursive_full_stage_intensity(
+        stage_factory: StageFactoryBase, pre_compute):
+    root, g1, g2, s1, s2, s3, s4, s5, s6 = create_recursive_stages(
+        stage_factory)
+
+    from ceed.function.plugin import LinearFunc
+    for i, stage in enumerate((s1, s2, s3, s4, s5, s6)):
+        stage.stage.add_func(LinearFunc(
+            function_factory=stage_factory.function_factory, b=0, m=.1,
+            duration=(i % 2 + 1) * 5))
+
+    shape = CircleShapeP1(
+        app=None, painter=stage_factory.shape_factory, show_in_gui=False,
+        create_add_shape=True)
+
+    shape2 = CircleShapeP1Internal(
+        app=None, painter=stage_factory.shape_factory, show_in_gui=False,
+        create_add_shape=True)
+    s1.stage.add_shape(shape.shape)
+    s4.stage.add_shape(shape.shape)
+    s5.stage.add_shape(shape.shape)
+    s2.stage.add_shape(shape2.shape)
+    s3.stage.add_shape(shape2.shape)
+    s6.stage.add_shape(shape2.shape)
+
+    values, n = get_stage_time_intensity(
+        stage_factory, root.name, 10, pre_compute=pre_compute)
+    assert_recursive_stages_intensity(
+        s1, s2, s3, s4, s5, s6, values, n, shape, shape2)
 
 
 @pytest.mark.parametrize('pre_compute', [True, False])
@@ -936,6 +943,8 @@ def test_stage_func_float_duration(
 @pytest.mark.parametrize('pre_compute', [True, False])
 def test_stage_func_float_duration_epsilon(
         stage_factory: StageFactoryBase, pre_compute):
+    # before isclose was used, this would error with floating point equality
+    # issues
     function_factory = stage_factory.function_factory
 
     root = make_stage(
@@ -1123,3 +1132,78 @@ def test_stage_func_resample(stage_factory: StageFactoryBase):
     f_copy = stage_copy.functions[0]
     assert 'm' not in f_copy.noisy_parameter_samples
     assert len(f_copy.noisy_parameter_samples['b']) == 4
+
+
+@pytest.mark.parametrize('pre_compute', product([True, False], repeat=8))
+def test_recursive_stage_pre_compute(
+        stage_factory: StageFactoryBase, pre_compute):
+    stages = root, g1, g2, s1, s2, s3, s4, s5, s6 = create_recursive_stages(
+        stage_factory)
+
+    from ceed.function.plugin import LinearFunc
+    for i, stage in enumerate((s1, s2, s3, s4, s5, s6)):
+        stage.stage.add_func(LinearFunc(
+            function_factory=stage_factory.function_factory, b=0, m=.1,
+            duration=(i % 2 + 1) * 5))
+
+    shape = CircleShapeP1(
+        app=None, painter=stage_factory.shape_factory, show_in_gui=False,
+        create_add_shape=True)
+
+    shape2 = CircleShapeP1Internal(
+        app=None, painter=stage_factory.shape_factory, show_in_gui=False,
+        create_add_shape=True)
+    s1.stage.add_shape(shape.shape)
+    s4.stage.add_shape(shape.shape)
+    s5.stage.add_shape(shape.shape)
+    s2.stage.add_shape(shape2.shape)
+    s3.stage.add_shape(shape2.shape)
+    s6.stage.add_shape(shape2.shape)
+
+    for disable, s in zip(pre_compute, stages):
+        s.disable_pre_compute = disable
+
+    values, n = get_stage_time_intensity(
+        stage_factory, root.name, 10, pre_compute=True)
+    assert_recursive_stages_intensity(
+        s1, s2, s3, s4, s5, s6, values, n, shape, shape2)
+
+    root, g1, g2, s1, s2, s3, s4, s5, s6 = [s.stage for s in stages]
+    for s in (s1, s2, s3, s4, s5, s6):
+        assert s.can_pre_compute != s.disable_pre_compute
+    assert g1.can_pre_compute == \
+        s1.can_pre_compute and s2.can_pre_compute and not g1.disable_pre_compute
+    assert g2.can_pre_compute == \
+        s5.can_pre_compute and s6.can_pre_compute and not g2.disable_pre_compute
+    assert root.can_pre_compute == \
+        g1.can_pre_compute and g2.can_pre_compute and s3.can_pre_compute and \
+        s4.can_pre_compute and not root.disable_pre_compute
+
+    for s, parent in [
+            (s1, g1), (s2, g1), (s5, g2), (s6, g2), (s3, root), (s4, root),
+            (g1, root), (g2, root)]:
+        if s.can_pre_compute and not parent.can_pre_compute:
+            assert s.runtime_stage is not None
+        else:
+            assert s.runtime_stage is None
+
+    if root.can_pre_compute:
+        assert root.runtime_stage is not None
+    else:
+        assert root.runtime_stage is None
+
+    for s in (s1, s2, s3, s4, s5, s6):
+        if s.can_pre_compute:
+            for f, items, t_end in s.runtime_functions:
+                assert f is not None
+                assert items is None
+                assert t_end is None
+        else:
+            assert s.disable_pre_compute
+            for f, items, t_end in s.runtime_functions:
+                assert f is None
+                assert items
+                assert t_end in {5, 10}
+
+    for s in (root, g1, g2):
+        assert not s.runtime_functions
