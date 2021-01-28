@@ -6,15 +6,16 @@ and made available to the :class:`ceed.function.FunctionFactoryBase`
 used in the GUI to list available functions, and for :mod:`analysis`.
 
 :func:`ceed.function.register_all_functions` is called by the GUI and it
-provides it the :class:`ceed.function.FunctionFactoryBase` used by the GUI for
-managing functions. :func:`ceed.function.register_all_functions` then calls
+registers any plugin functions with the
+:class:`ceed.function.FunctionFactoryBase` used by the GUI for managing
+functions. :func:`ceed.function.register_all_functions` internally calls
 :func:`get_plugin_functions` to get all the functions exported by all the
-Python plugin modules in the ``ceed/function/plugin`` directory and registers
-them with the :class:`ceed.function.FunctionFactoryBase`.
+Python plugin module files in the ``ceed/function/plugin`` directory and
+registers them with the :class:`ceed.function.FunctionFactoryBase`.
 
 Additionally, if the user provides a package name in the
-``external_function_plugin_package`` configuration variable, the GUI will
-similarly import and register the plugins in
+:attr:`~ceed.main.CeedApp.external_function_plugin_package` configuration
+variable, the GUI will similarly import and register the plugins in
 that package with :func:`ceed.function.register_external_functions`.
 
 Files in ``ceed/function/plugin`` that want to define new function or function
@@ -40,7 +41,7 @@ from typing import Iterable, Union, Tuple, List, Type, Dict, Optional
 
 from kivy.properties import NumericProperty, BooleanProperty, StringProperty
 
-from ceed.function import CeedFunc, FuncType
+from ceed.function import CeedFunc, FuncType, FunctionFactoryBase
 from ceed.function.param_noise import NoiseType, NoiseBase
 
 __all__ = (
@@ -50,7 +51,8 @@ __all__ = (
 
 
 def get_plugin_functions(
-        base_package: str, root: Union[str, pathlib.Path]
+        function_factory: FunctionFactoryBase, base_package: str,
+        root: Union[str, pathlib.Path]
 ) -> Tuple[List[Type[FuncType]], List[Type[NoiseType]],
            List[Tuple[Tuple[str], bytes]]]:
     """Imports all the ``.py`` files in the given directory and sub-directories
@@ -67,6 +69,9 @@ def get_plugin_functions(
     Ceed will automatically import all the plugins under
     ``ceed/function/plugin``.
 
+    :parameter function_factory: The
+        :class:`~ceed.function.FunctionFactoryBase` instance with which the
+        returned plugin functions will be registered.
     :parameter base_package: The package name from which the plugins will be
         imported. E.g. to import the plugins in ``ceed/function/plugin``,
         ``base_package`` is ``ceed.function.plugin`` because that's the package
@@ -118,9 +123,9 @@ def get_plugin_functions(
 
             m = importlib.import_module(package)
             if hasattr(m, 'get_ceed_functions'):
-                funcs.extend(m.get_ceed_functions())
+                funcs.extend(m.get_ceed_functions(function_factory))
             if hasattr(m, 'get_ceed_distributions'):
-                distributions.extend(m.get_ceed_distributions())
+                distributions.extend(m.get_ceed_distributions(function_factory))
     return funcs, distributions, files
 
 
@@ -529,15 +534,23 @@ class DiscreteListNoise(NoiseBase):
         return names
 
 
-def get_ceed_functions() -> Iterable[Type[FuncType]]:
+def get_ceed_functions(
+        function_factory: FunctionFactoryBase) -> Iterable[Type[FuncType]]:
     """Returns all the function classes defined and exported in this file
     (:class:`ConstFunc`, :class:`LinearFunc`, etc.).
+
+    :param function_factory: The :class:`~ceed.function.FunctionFactoryBase`
+        instance currently active in Ceed.
     """
     return ConstFunc, LinearFunc, ExponentialFunc, CosFunc
 
 
-def get_ceed_distributions() -> Iterable[Type[NoiseType]]:
+def get_ceed_distributions(
+        function_factory: FunctionFactoryBase) -> Iterable[Type[NoiseType]]:
     """Returns all the distribution classes defined and exported in this file
     (:class:`GaussianNoise`, :class:`UniformNoise`, etc.).
+
+    :param function_factory: The :class:`~ceed.function.FunctionFactoryBase`
+        instance currently active in Ceed.
     """
     return GaussianNoise, UniformNoise, DiscreteNoise, DiscreteListNoise

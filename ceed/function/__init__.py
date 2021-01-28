@@ -2127,7 +2127,8 @@ def register_all_functions(function_factory: FunctionFactoryBase):
     package = 'ceed.function.plugin'
 
     functions, distributions, contents = get_plugin_functions(
-        base_package=package, root=dirname(ceed.function.plugin.__file__))
+        function_factory, base_package=package,
+        root=dirname(ceed.function.plugin.__file__))
     for f in functions:
         function_factory.register(f)
     for d in distributions:
@@ -2158,7 +2159,8 @@ def register_external_functions(
     m = importlib.import_module(package)
 
     functions, distributions, contents = get_plugin_functions(
-        base_package=package, root=dirname(m.__file__))
+        function_factory, base_package=package,
+        root=dirname(m.__file__))
     for f in functions:
         function_factory.register(f)
     for d in distributions:

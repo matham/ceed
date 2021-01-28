@@ -897,7 +897,7 @@ class FakeFunc(CeedFunc):
         d['val'] = self.val
         return d
 
-def get_ceed_functions():
+def get_ceed_functions(function_factory):
     return FakeFunc,
 """
 
@@ -922,7 +922,7 @@ class FakeNoise(NoiseBase):
         names['val'] = 'Value'
         return names
 
-def get_ceed_distributions():
+def get_ceed_distributions(function_factory):
     return FakeNoise,
 """
 
