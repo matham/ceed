@@ -831,6 +831,13 @@ class CeedStage(EventDispatcher):
                 continue
             self.fbind(prop, self.dispatch, 'on_changed', prop)
 
+    def __repr__(self):
+        module = self.__class__.__module__
+        qualname = self.__class__.__qualname__
+        name = f'{module}.{qualname}'
+        return f'<{name}: "{self.name}" children=({len(self.functions)}, ' \
+            f'{len(self.stages)}), at {hex(id(self))}>'
+
     def on_changed(self, *largs, **kwargs):
         pass
 
