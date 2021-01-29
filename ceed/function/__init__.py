@@ -624,8 +624,8 @@ class FunctionFactoryBase(EventDispatcher):
     '''
 
     funcs_inst: Dict[str, 'FuncBase'] = DictProperty({})
-    '''Dict whose keys is the function :attr:`name` and whose values is the
-    corresponding function instances.
+    '''Dict whose keys is the function :attr:`FuncBase.name` and whose values
+    is the corresponding function instances.
 
     Contains functions added with :meth:`add_func` as well as those
     automatically created and added when :meth:`register` is called on a class.
@@ -642,9 +642,9 @@ class FunctionFactoryBase(EventDispatcher):
          'line-2': <ceed.function.plugin.LinearFunc at 0x1da866f0e48>}
     '''
 
-    funcs_inst_default = {}
-    '''Dict whose keys is the function :attr:`name` and whose values are the
-    corresponding function instances.
+    funcs_inst_default: Dict[str, 'FuncBase'] = {}
+    '''Dict whose keys is the function :attr:`FuncBase.name` and whose values
+    are the corresponding function instances.
 
     Contains only the functions that are automatically created and added when
     :meth:`register` is called on a class. ::
@@ -663,7 +663,7 @@ class FunctionFactoryBase(EventDispatcher):
     register and get noise classes for use with functions.
     """
 
-    _ref_funcs = {}
+    _ref_funcs: Dict['FuncBase', int] = {}
     """A dict mapping functions to the number of references to the function.
 
     References are :class:`CeedFuncRef` and created with with
@@ -750,7 +750,7 @@ class FunctionFactoryBase(EventDispatcher):
         name = cls.__name__
         funcs = self.funcs_cls
         if name in funcs:
-            raise Exception(
+            raise ValueError(
                 '"{}" is already a registered function'.format(name))
         funcs[name] = cls
 
@@ -828,7 +828,7 @@ class FunctionFactoryBase(EventDispatcher):
             raise ValueError('function factory is incorrect')
         self.dispatch('on_changed')
 
-    def remove_func(self, func: 'CeedFunc', force: bool = False) -> bool:
+    def remove_func(self, func: 'FuncBase', force: bool = False) -> bool:
         """Removes a function previously added with :meth:`add_func`.
 
         :Params:
@@ -1465,7 +1465,7 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
                         config)
 
                 self.noisy_parameters = noisy_parameters
-            elif clone or k not in p:
+            elif (clone or k not in p) and k != 'cls':
                 setattr(self, k, v)
 
     def get_funcs(
@@ -2230,10 +2230,8 @@ def register_external_functions(
     for how to make your plugin functions and distributions discoverable.
 
     Plugin source code files are copied to the data file when a a data file is
-    created. However, it only copies the files containing the discoverable
-    plugin functions and distributions (i.e. ignoring e.g. files starting with
-    a underscore, unless it's ``init__.py``) so it should be independently
-    tracked for each experiment.
+    created. However, it doesn't copy all files (i.e. it ignores non-python
+    files) so it should be independently tracked for each experiment.
 
     :param function_factory: A :class:`FunctionFactoryBase` instance.
     :param package: The name of the package containing the plugins.
@@ -2242,8 +2240,7 @@ def register_external_functions(
     m = importlib.import_module(package)
 
     functions, distributions, contents = get_plugin_functions(
-        function_factory, base_package=package,
-        root=dirname(m.__file__))
+        function_factory, base_package=package, root=dirname(m.__file__))
     for f in functions:
         function_factory.register(f)
     for d in distributions:

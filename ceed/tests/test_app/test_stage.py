@@ -1,4 +1,6 @@
 import trio
+import sys
+from contextlib import contextmanager
 import math
 import numpy as np
 import pytest
@@ -13,6 +15,7 @@ from ceed.function import CeedFuncRef, FuncBase, FuncGroup
 from ceed.shape import CeedShape, CeedShapeGroup
 from .examples.shapes import assert_add_three_groups
 from .examples.funcs import create_funcs, GroupFunction
+from .examples.stages import fake_plugin_stage
 from .test_func import assert_func_params_in_gui, \
     replace_last_ref_with_original_func, assert_funcs_same
 
@@ -845,3 +848,29 @@ async def test_pad_stage_ticks(stage_app: CeedTestApp, tmp_path):
         stage_app.app.data_serializer.num_ticks_handshake(16), 4)
 
     f.close_h5()
+
+
+@contextmanager
+def add_to_path(tmp_path, *args):
+    sys.path.append(str(tmp_path))
+    mod = tmp_path / 'my_stage_plugin' / '__init__.py'
+    try:
+        mod.parent.mkdir()
+        mod.write_text(fake_plugin_stage)
+        yield None
+    finally:
+        sys.path.remove(str(tmp_path))
+        if 'my_stage_plugin' in sys.modules:
+            del sys.modules['my_stage_plugin']
+
+
+@pytest.mark.parametrize(
+    "ceed_app",
+    [{'yaml_config': {'external_stage_plugin_package': 'my_stage_plugin'},
+      'app_context': add_to_path}, ],
+    indirect=True
+)
+async def external_plugin_named_package(stage_app: CeedTestApp, tmp_path):
+    stage_factory = stage_app.app.stage_factory
+
+    assert 'FakeStage' in stage_factory.stages_cls

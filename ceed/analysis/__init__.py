@@ -25,7 +25,8 @@ from ffpyplayer.writer import MediaWriter
 
 from ceed.function import FunctionFactoryBase, register_all_functions, \
     register_external_functions
-from ceed.stage import StageFactoryBase
+from ceed.stage import StageFactoryBase, register_external_stages, \
+    register_all_stages
 from ceed.shape import CeedPaintCanvasBehavior
 from ceed.storage.controller import DataSerializerBase, CeedDataWriterBase
 from ceed.view.controller import ViewControllerBase
@@ -201,6 +202,12 @@ class CeedDataReader:
     experiment.
     """
 
+    external_stage_plugin_package: str = ''
+    """Once set by :meth:`open_h5`, it contains the external stage plugin
+    package containing any additional stages, if it was specified during the
+    experiment.
+    """
+
     app_logs = ''
     """Once set in :meth:`open_h5`, it contains the experimental logs
     of ceed for the experiments stored in the file.
@@ -295,18 +302,25 @@ class CeedDataReader:
             CeedDataWriterBase.get_file_num_fluorescent_images(self._nix_file)
         self.load_application_data()
 
-    def dump_function_plugin_sources(
-            self, target_root: Union[str, pathlib.Path]):
-        """Dumps the source code of all the registered function plugins that
-        was saved to the data file.
+    def dump_plugin_sources(
+            self, plugin_type: str, target_root: Union[str, pathlib.Path]):
+        """Dumps the source code of all the registered function or stage
+        plugins (depending on ``plugin_type``) that was saved to the data file.
 
-        See :func:`ceed.function.register_external_functions` and
-        :func:`ceed.function.register_all_functions`.
+        See :func:`ceed.function.register_external_functions`,
+        :func:`ceed.function.register_all_functions`,
+        :func:`ceed.stage.register_external_stages`, and
+        :func:`ceed.stage.register_all_stages`.
+
+        :param plugin_type: either ``'function'`` or ``'stage'`` to indicate
+            which plugin to dump.
+        :param target_root: the root directory where to dump the source code.
         """
         root = pathlib.Path(target_root)
         nix_file = self._nix_file
 
-        contents_s = nix_file.sections['function_plugin_sources']['contents']
+        contents_s = nix_file.sections[
+            f'{plugin_type}_plugin_sources']['contents']
 
         for package, contents in yaml_loads(contents_s).items():
             for file_parts, content in contents:
@@ -357,6 +371,8 @@ class CeedDataReader:
         self.ceed_version = config_data.get('ceed_version', '')
         self.external_function_plugin_package = config_data.get(
             'external_function_plugin_package', '')
+        self.external_stage_plugin_package = config_data.get(
+            'external_stage_plugin_package', '')
 
         view = ViewControllerBase()
         ser = DataSerializerBase()
@@ -370,6 +386,10 @@ class CeedDataReader:
         shape = CeedPaintCanvasBehavior()
         stage = StageFactoryBase(
             function_factory=func, shape_factory=shape)
+        register_all_stages(stage)
+        if self.external_stage_plugin_package:
+            register_external_stages(
+                stage, self.external_stage_plugin_package)
 
         for name, obj in {
                 'view': view, 'serializer': ser, 'function': func}.items():
@@ -427,6 +447,10 @@ class CeedDataReader:
         shape = self.shape_factory = CeedPaintCanvasBehavior()
         stage = self.stage_factory = StageFactoryBase(
             function_factory=func, shape_factory=shape)
+        register_all_stages(stage)
+        package = config_data.get('external_stage_plugin_package', '')
+        if package:
+            register_external_stages(stage, package)
 
         for name, obj in {
                 'view': view, 'serializer': ser, 'function': func}.items():

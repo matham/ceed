@@ -53,7 +53,6 @@ plugin.
 """
 
 import random
-from collections import deque
 import importlib
 import pathlib
 from fractions import Fraction
@@ -64,6 +63,7 @@ from kivy.properties import NumericProperty, BooleanProperty, StringProperty
 
 from ceed.function import CeedFunc, FuncType, FunctionFactoryBase
 from ceed.function.param_noise import NoiseType, NoiseBase
+from ceed.utils import get_plugin_modules
 
 __all__ = (
     'get_plugin_functions', 'ConstFunc', 'LinearFunc', 'ExponentialFunc',
@@ -116,37 +116,15 @@ def get_plugin_functions(
     """
     funcs = []
     distributions = []
-    files = []
+    packages, files = get_plugin_modules(base_package, root)
 
-    fifo = deque([pathlib.Path(root)])
-    while fifo:
-        directory = fifo.popleft()
-        relative_dir = directory.relative_to(root)
-        directory_mod = '.'.join((base_package,) + relative_dir.parts)
-        for item in directory.iterdir():
-            if item.is_dir():
-                fifo.append(item)
-                continue
+    for package in packages:
+        m = importlib.import_module(package)
+        if hasattr(m, 'get_ceed_functions'):
+            funcs.extend(m.get_ceed_functions(function_factory))
+        if hasattr(m, 'get_ceed_distributions'):
+            distributions.extend(m.get_ceed_distributions(function_factory))
 
-            if not item.is_file() or not item.name.endswith('.py'):
-                continue
-
-            files.append(
-                (relative_dir.parts + (item.name, ), item.read_bytes()))
-            if item.name.startswith('_') and item.name != '__init__.py':
-                continue
-
-            name = item.name[:-3]
-            if name == '__init__':
-                package = directory_mod
-            else:
-                package = f'{directory_mod}.{name}'
-
-            m = importlib.import_module(package)
-            if hasattr(m, 'get_ceed_functions'):
-                funcs.extend(m.get_ceed_functions(function_factory))
-            if hasattr(m, 'get_ceed_distributions'):
-                distributions.extend(m.get_ceed_distributions(function_factory))
     return funcs, distributions, files
 
 

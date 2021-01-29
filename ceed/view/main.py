@@ -25,7 +25,8 @@ from ceed.function import FunctionFactoryBase, register_all_functions, \
 from ceed.view.controller import ViewSideViewControllerBase
 from ceed.view.view_widgets import ViewRootFocusBehavior
 from ceed.storage.controller import DataSerializerBase, CeedDataWriterBase
-from ceed.stage import StageFactoryBase
+from ceed.stage import StageFactoryBase, register_external_stages, \
+    register_all_stages
 from ceed.shape import CeedPaintCanvasBehavior
 
 if ceed.is_view_inst or __name__ == '__main__':
@@ -58,7 +59,9 @@ class CeedViewApp(BaseKivyApp):
     '''The app which runs the GUI.
     '''
 
-    _config_props_ = ('external_function_plugin_package', )
+    _config_props_ = (
+        'external_function_plugin_package',
+        'external_stage_plugin_package')
 
     _config_children_ = {
         'view': 'view_controller', 'data': 'ceed_data',
@@ -82,6 +85,11 @@ class CeedViewApp(BaseKivyApp):
     to be displayed in the UI.
     """
 
+    external_stage_plugin_package: str = ''
+    """A external stage plugin package containing any additional stages
+    to be displayed in the UI.
+    """
+
     def __init__(self, **kwargs):
         self.view_controller = ViewSideViewControllerBase()
         self.ceed_data = CeedDataWriterBase()
@@ -94,6 +102,7 @@ class CeedViewApp(BaseKivyApp):
         self.stage_factory = StageFactoryBase(
             function_factory=self.function_factory,
             shape_factory=self.shape_factory)
+        register_all_stages(self.stage_factory)
 
         super(CeedViewApp, self).__init__(**kwargs)
 
@@ -143,6 +152,11 @@ class CeedViewApp(BaseKivyApp):
             register_external_functions(
                 self.function_factory,
                 self.external_function_plugin_package)
+
+        if self.external_stage_plugin_package:
+            register_external_stages(
+                self.stage_factory,
+                self.external_stage_plugin_package)
 
     def ask_cannot_close(self, *largs, **kwargs):
         return False

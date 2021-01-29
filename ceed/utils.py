@@ -4,9 +4,14 @@
 Utilities used in :mod:`ceed`.
 '''
 import re
-from typing import List, Tuple, Any
+import pathlib
+from collections import deque
+from typing import List, Tuple, Any, Union
 
-__all__ = ('fix_name', 'update_key_if_other_key', 'collapse_list_to_counts')
+__all__ = (
+    'fix_name', 'update_key_if_other_key', 'collapse_list_to_counts',
+    'get_plugin_modules',
+)
 
 _name_pat = re.compile('^(.+)-([0-9]+)$')
 
@@ -94,3 +99,46 @@ def collapse_list_to_counts(values: list) -> List[Tuple[Any, int]]:
         res.append((last_item, counter))
 
     return res
+
+
+def get_plugin_modules(
+        base_package: str, root: Union[str, pathlib.Path]
+) -> Tuple[List[str], List[Tuple[Tuple[str], bytes]]]:
+    """Takes a package name and it's corresponding root path and returns a list
+    of the modules recursively within this package, as well as the source files
+    in bytes.
+
+    Only ``*.py`` files are considered, and although included with the source
+    bytes, the ``packages`` list skips any files that start with a underscore
+    (except ``__init__.py`` of course).
+    """
+    packages = []
+    files = []
+
+    fifo = deque([pathlib.Path(root)])
+    while fifo:
+        directory = fifo.popleft()
+        relative_dir = directory.relative_to(root)
+        directory_mod = '.'.join((base_package,) + relative_dir.parts)
+        for item in directory.iterdir():
+            if item.is_dir():
+                fifo.append(item)
+                continue
+
+            if not item.is_file() or not item.name.endswith('.py'):
+                continue
+
+            files.append(
+                (relative_dir.parts + (item.name, ), item.read_bytes()))
+            if item.name.startswith('_') and item.name != '__init__.py':
+                continue
+
+            name = item.name[:-3]
+            if name == '__init__':
+                package = directory_mod
+            else:
+                package = f'{directory_mod}.{name}'
+
+            packages.append(package)
+
+    return packages, files

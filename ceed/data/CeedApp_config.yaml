@@ -3,6 +3,7 @@ data:
   compression: Auto
   root_path: ''
 external_function_plugin_package: ''
+external_stage_plugin_package: ''
 function: {}
 inspect: false
 last_directory: '~'

@@ -96,11 +96,19 @@ def test_auto_register(function_factory: FunctionFactoryBase):
     assert function_factory.get('CosFunc') is CosFunc
     assert function_factory.get('ExponentialFunc') is ExponentialFunc
 
+    assert isinstance(function_factory.funcs_inst_default['Const'], ConstFunc)
+    assert isinstance(function_factory.funcs_inst_default['Linear'], LinearFunc)
+    assert isinstance(function_factory.funcs_inst_default['Cos'], CosFunc)
+    assert isinstance(
+        function_factory.funcs_inst_default['Exp'], ExponentialFunc)
+
     assert isinstance(function_factory.funcs_inst['Const'], ConstFunc)
     assert isinstance(function_factory.funcs_inst['Linear'], LinearFunc)
     assert isinstance(function_factory.funcs_inst['Cos'], CosFunc)
     assert isinstance(
         function_factory.funcs_inst['Exp'], ExponentialFunc)
+
+    assert function_factory.get('SomeFunc') is None
 
 
 def test_register_user_func(function_factory: FunctionFactoryBase):
@@ -127,10 +135,10 @@ def test_register_user_func(function_factory: FunctionFactoryBase):
 
 def test_factory_re_register(function_factory: FunctionFactoryBase):
     from ceed.function.plugin import ConstFunc, LinearFunc
-    with pytest.raises(Exception):
+    with pytest.raises(ValueError):
         function_factory.register(ConstFunc)
 
-    with pytest.raises(Exception):
+    with pytest.raises(ValueError):
         function_factory.register(LinearFunc)
 
 
@@ -246,6 +254,7 @@ def test_clear_funcs(function_factory: FunctionFactoryBase):
     function_factory.clear_added_funcs()
     assert len(function_factory.funcs_inst) == initial_funcs_n
     assert not function_factory.funcs_user
+    assert function_factory.test_changes_count
 
 
 def test_recover_funcs(function_factory: FunctionFactoryBase):

@@ -9,6 +9,26 @@ from .funcs import ConstFunctionF1, LinearFunctionF1, ExponentialFunctionF1, \
     CosFunctionF1, GroupFunctionF1, Function, create_funcs
 from .shapes import assert_add_three_groups
 
+fake_plugin_stage = """
+from kivy.properties import NumericProperty
+from ceed.stage import CeedStage
+
+class FakeStage(CeedStage):
+
+    val = NumericProperty(0.)
+
+    def __init__(self, name='Fake', **kwargs):
+        super().__init__(name=name, **kwargs)
+
+    def get_state(self, *largs, **kwargs):
+        d = super().get_state(*largs, **kwargs)
+        d['val'] = self.val
+        return d
+
+def get_ceed_stages(stage_factory):
+    return FakeStage,
+"""
+
 
 def make_stage(stage_factory: StageFactoryBase, **kwargs) -> CeedStage:
     return CeedStage(

@@ -10,13 +10,16 @@ See :class:`StageFactoryBase` and :class:`CeedStage` for details.
 
 remove_shapes_upon_deletion must be bound
 """
+import importlib
 from copy import deepcopy
 from collections import defaultdict
 from fractions import Fraction
+from os.path import dirname
 import operator
 from math import isclose
 from functools import reduce
-from typing import Dict, List, Union, Tuple, Optional, Generator, Set
+from typing import Dict, List, Union, Tuple, Optional, Generator, Set, Type, \
+    TypeVar
 
 from kivy.properties import OptionProperty, ListProperty, ObjectProperty, \
     StringProperty, NumericProperty, DictProperty, BooleanProperty
@@ -28,19 +31,33 @@ from ceed.function import CeedFunc, FuncDoneException, CeedFuncRef, \
 from ceed.utils import fix_name, update_key_if_other_key
 from ceed.shape import CeedShapeGroup, CeedPaintCanvasBehavior, CeedShape
 
-__all__ = ('StageDoneException', 'StageFactoryBase', 'CeedStage', 'StageShape',
-           'CeedStageRef', 'remove_shapes_upon_deletion',
-           'last_experiment_stage_name')
+__all__ = (
+    'StageDoneException', 'StageType', 'CeedStageOrRefInstance',
+    'last_experiment_stage_name', 'StageFactoryBase', 'CeedStage',
+    'StageShape', 'CeedStageRef', 'remove_shapes_upon_deletion',
+    'register_all_stages', 'register_external_stages'
+)
+
+StageType = TypeVar('StageType', bound='CeedStage')
+"""The type-hint type for :class:`FuncBase`.
+"""
 
 CeedStageOrRefInstance = Union['CeedStage', 'CeedStageRef']
 """Instance of either :class:`CeedStage` or :class:`CeedStageRef`."""
 
 NumFraction = Union[float, int, Fraction]
+"""Float, int, or Fraction type.
+"""
 
 RGBA_Type = Tuple[
     Optional[float], Optional[float], Optional[float], Optional[float]]
+"""A RGBA tuple for floats.
+"""
 
 last_experiment_stage_name = 'experiment_sampled'
+"""The stage name used for the last experiment run. This name cannot be used
+by a stage and this stage is overwritten after each experiment run.
+"""
 
 
 class StageDoneException(Exception):
@@ -61,17 +78,48 @@ class StageFactoryBase(EventDispatcher):
             Triggered whenever a stage is added or removed from the factory.
     """
 
+    stages_cls: Dict[str, Type['StageType']] = {}
+    '''Dict whose keys is the name of the stage classes registered
+    with :meth:`register` and whose values is the corresponding classes.::
+
+        >>> stage_factory.stages_cls
+        {'CeedStage': ceed.stage.CeedStage}
+    '''
+
     stages: List['CeedStage'] = []
-    '''The list of the currently available :class:`CeedStage` instances.
+    '''The list of the currently available :class:`CeedStage` instances added
+    with :meth:`add_stage`.
+
     These stages are listed in the GUI and can be used by name to start a stage
     to run.
+
+    It does not include the instances automatically created and stored in
+    :attr:`stages_inst_default` when you :meth:`register` a stage class.
+    '''
+
+    stages_inst_default: Dict[str, 'CeedStage'] = {}
+    '''Dict whose keys is the function :attr:`CeedStage.name` and whose values
+    are the corresponding stage instances.
+
+    Contains only the stages that are automatically created and added when
+    :meth:`register` is called on a class. ::
+
+        >>> stage_factory.stages_inst_default
+        {'Stage': <ceed.stage.CeedStage at 0x1da866f00b8>}
     '''
 
     stage_names: Dict[str, 'CeedStage'] = DictProperty({})
     '''A dict of all the stages whose keys are the stage :attr:`CeedStage.name`
     and whose values are the corresponding :class:`CeedStage` instances.
 
-    This contains the same stages as in :attr:`stages`.
+
+    Contains stages added with :meth:`add_stage` as well as those
+    automatically created and added when :meth:`register` is called on a class.
+
+    ::
+
+        >>> stage_factory.stage_names
+        {'Stage': <ceed.stage.CeedStage at 0x1da866f00b8>}
     '''
 
     function_factory: FunctionFactoryBase = None
@@ -91,6 +139,16 @@ class StageFactoryBase(EventDispatcher):
     :meth:`get_stage_ref` and released with :meth:`return_stage_ref`.
     """
 
+    plugin_sources: Dict[str, List[Tuple[Tuple[str], bytes]]] = {}
+    """A dictionary of the names of all the plugin packages imported, mapped to
+    the python file contents of the directories in the package. Each value is a
+    list of tuples.
+
+    The first item of each tuple is also a tuple containing the names of the
+    directories leading to and including the python filename relative to the
+    package. The second item in the tuple is the bytes content of the file.
+    """
+
     __events__ = ('on_changed', )
 
     def __init__(self, function_factory, shape_factory, **kwargs):
@@ -98,7 +156,10 @@ class StageFactoryBase(EventDispatcher):
         self.function_factory = function_factory
         super(StageFactoryBase, self).__init__(**kwargs)
         self.stages = []
+        self.stages_cls = {}
+        self.stages_inst_default = {}
         self._stage_ref = defaultdict(int)
+        self.plugin_sources = {}
 
     def on_changed(self, *largs, **kwargs):
         pass
@@ -143,6 +204,79 @@ class StageFactoryBase(EventDispatcher):
         if not self._stage_ref[stage_ref.stage]:
             del self._stage_ref[stage_ref.stage]
             stage_ref.stage.has_ref = False
+
+    def register(self, cls: Type[StageType], instance: 'CeedStage' = None):
+        """Registers the class and adds it to :attr:`stages_cls`. It also
+        creates an instance (unless ``instance`` is provided, in which case
+        that is used) of the class that is added to :attr:`stage_names` and
+        :attr:`stages_inst_default`.
+
+        See :mod:`ceed.stage` for details.
+
+        :Params:
+
+            `cls`: subclass of :class:`CeedStage`
+                The class to register.
+            `instance`: instance of `cls`
+                The instance of `cls` to use. If None, a default
+                class instance, using the default :attr:`CeedStage.name` is
+                stored. Defaults to None.
+        """
+        name = cls.__name__
+        stages = self.stages_cls
+        if name in stages:
+            raise ValueError(
+                '"{}" is already a registered stage'.format(name))
+        stages[name] = cls
+
+        s = cls(
+            stage_factory=self, function_factory=self.function_factory,
+            shape_factory=self.shape_factory) if instance is None else instance
+        if s.stage_factory is not self:
+            raise ValueError('Instance stage factory is set incorrectly')
+        s.name = fix_name(s.name, self.stage_names)
+
+        self.stage_names[s.name] = s
+        self.stages_inst_default[s.name] = s
+        self.dispatch('on_changed')
+
+    def add_plugin_source(
+            self, package: str, contents: List[Tuple[Tuple[str], bytes]]):
+        """Adds the package contents to :attr:`plugin_sources` if it hasn't
+        already been added. Otherwise raises an error.
+        """
+        if package in self.plugin_sources:
+            raise ValueError(f'{package} has already been added')
+        self.plugin_sources[package] = contents
+
+    def get(self, name: str) -> Optional[Type[StageType]]:
+        """Returns the class with name ``name`` that was registered with
+        :meth:`register`.
+
+        See :mod:`ceed.stage` for details.
+
+        :Params:
+
+            `name`: str
+                The name of the class (e.g. ``'CosStage'``).
+
+        :returns: The class if found, otherwise None.
+        """
+        stages = self.stages_cls
+        if name not in stages:
+            return None
+        return stages[name]
+
+    def get_names(self) -> List[str]:
+        """Returns the class names of all classes registered with
+        :meth:`register`.
+        """
+        return list(self.stages_cls.keys())
+
+    def get_classes(self) -> List[Type[StageType]]:
+        """Returns the classes registered with :meth:`register`.
+        """
+        return list(self.stages_cls.values())
 
     def make_stage(
             self, state: dict,
@@ -209,6 +343,9 @@ class StageFactoryBase(EventDispatcher):
             False and a stage with that name is added, it is renamed.
             Otherwise, it's original name is kept.
         """
+        if stage.stage_factory is not self:
+            raise ValueError('stage factory is incorrect')
+
         names = [s.name for s in self.stages]
         if not allow_last_experiment:
             names.append(last_experiment_stage_name)
@@ -784,6 +921,11 @@ class CeedStage(EventDispatcher):
 
     See :attr:`~ceed.view.controller.ViewControllerBase.pad_to_stage_handshake`
     for usage details.
+
+    .. warning::
+
+        This is primarily for internal use and is not saved with the stage
+        state.
     """
 
     t_end: NumFraction = 0
@@ -811,6 +953,13 @@ class CeedStage(EventDispatcher):
 
     If False, the
     """
+
+    _clone_props: Set[str] = {'cls', 'name'}
+    '''Set of non user-customizable property names that are specific to the
+    stage instance and should not be copied when duplicating the stage.
+    They are only copied when a stage is cloned, i.e. when it is created
+    from state to be identical to the original.
+    '''
 
     __events__ = ('on_changed', )
 
@@ -884,18 +1033,21 @@ class CeedStage(EventDispatcher):
         :param state: The state dict representing the stage as returned by
             :meth:`get_state`.
         :param clone: If False, only user customizable properties of the
-            stage will be set, otherwise, all properties from state are
-            applied to the stage. Clone is meant to be an complete
+            stage will be set (i.e those not listed in :attr:`_clone_props`),
+            otherwise, all properties from state are
+            applied to the stage. Clone is meant to be a complete
             re-instantiation of stage function.
         :param func_name_map:
         :param old_name_to_shape_map:
         """
+        p = self._clone_props
         stages = state.pop('stages', [])
         functions = state.pop('functions', [])
         shapes_state = state.pop('shapes', [])
 
         for k, v in state.items():
-            setattr(self, k, v)
+            if (clone or k not in p) and k != 'cls':
+                setattr(self, k, v)
 
         for data in stages:
             s = self.stage_factory.make_stage(
@@ -1711,3 +1863,53 @@ def remove_shapes_upon_deletion(
     shape_factory.fbind(
         'on_remove_group', stage_factory.find_shape_in_all_stages,
         process_shape_callback=process_shape_callback)
+
+
+def register_all_stages(stage_factory: StageFactoryBase):
+    """Registers all the internal plugins and built-in stages with the
+    :class:`StageFactoryBase` instance.
+
+    It gets and registers all the plugins stages under
+    ``ceed/stage/plugin`` using :func:`~ceed.stage.plugin.get_plugin_stages`.
+    See that function for how to make your plugin stages discoverable.
+
+    :param stage_factory: a :class:`StageFactoryBase` instance.
+    """
+    stage_factory.register(CeedStage)
+    import ceed.stage.plugin
+    from ceed.stage.plugin import get_plugin_stages
+    package = 'ceed.stage.plugin'
+
+    stages, contents = get_plugin_stages(
+        stage_factory, base_package=package,
+        root=dirname(ceed.stage.plugin.__file__))
+    for s in stages:
+        stage_factory.register(s)
+
+    stage_factory.add_plugin_source(package, contents)
+
+
+def register_external_stages(
+        stage_factory: StageFactoryBase, package: str):
+    """Registers all the plugin stages in the package with the
+    :class:`StageFactoryBase` instance.
+
+    See :func:`~ceed.stage.plugin.get_plugin_stages` for how to make your
+    plugin stages discoverable.
+
+    Plugin source code files are copied to the data file when a a data file is
+    created. However, it doesn't copy all files (i.e. it ignores non-python
+    files) so it should be independently tracked for each experiment.
+
+    :param stage_factory: A :class:`StageFactoryBase` instance.
+    :param package: The name of the package containing the plugins.
+    """
+    from ceed.stage.plugin import get_plugin_stages
+    m = importlib.import_module(package)
+
+    stages, contents = get_plugin_stages(
+        stage_factory, base_package=package, root=dirname(m.__file__))
+    for s in stages:
+        stage_factory.register(s)
+
+    stage_factory.add_plugin_source(package, contents)

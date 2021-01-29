@@ -13,7 +13,7 @@ Config.set('modules', 'touchring', '')
 
 from ceed.function import FunctionFactoryBase
 from ceed.shape import CeedPaintCanvasBehavior
-from ceed.stage import StageFactoryBase
+from ceed.stage import StageFactoryBase, register_all_stages
 from ceed.tests.ceed_app import CeedTestGUIApp, CeedTestApp
 from .common import add_prop_watch
 
@@ -203,8 +203,6 @@ async def stage_app(paint_app: CeedTestApp):
     await paint_app.wait_clock_frames(2)
 
     assert paint_app.app.stage_factory is not None
-    assert not paint_app.app.stage_factory.stages
-    assert not paint_app.app.stage_factory.stage_names
 
     assert not paint_app.app.stages_container.children
 
@@ -248,6 +246,7 @@ def stage_factory(
         shape_factory: CeedPaintCanvasBehavior) -> StageFactoryBase:
     stage_factory = StageFactoryBase(
         function_factory=function_factory, shape_factory=shape_factory)
+    register_all_stages(stage_factory)
     add_prop_watch(stage_factory, 'on_changed', 'test_changes_count')
 
     yield stage_factory

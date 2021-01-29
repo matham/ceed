@@ -31,7 +31,8 @@ import ceed.storage.storage_widgets
 
 from ceed.function import FunctionFactoryBase, register_all_functions, \
     register_external_functions
-from ceed.stage import StageFactoryBase, remove_shapes_upon_deletion
+from ceed.stage import StageFactoryBase, remove_shapes_upon_deletion, \
+    register_external_stages, register_all_stages
 from ceed.stage.stage_widgets import StageList
 from ceed.view.controller import ControllerSideViewControllerBase
 from ceed.storage.controller import CeedDataWriterBase, DataSerializerBase
@@ -50,7 +51,10 @@ class CeedApp(BaseKivyApp):
     '''The app which runs the GUI.
     '''
 
-    _config_props_ = ('last_directory', 'external_function_plugin_package')
+    _config_props_ = (
+        'last_directory', 'external_function_plugin_package',
+        'external_stage_plugin_package'
+    )
 
     _config_children_ = {
         'function': 'function_factory', 'view': 'view_controller',
@@ -62,6 +66,11 @@ class CeedApp(BaseKivyApp):
 
     external_function_plugin_package: str = ''
     """A external function plugin package containing any additional functions
+    to be displayed in the UI.
+    """
+
+    external_stage_plugin_package: str = ''
+    """A external stage plugin package containing any additional stages
     to be displayed in the UI.
     """
 
@@ -120,6 +129,7 @@ class CeedApp(BaseKivyApp):
 
         self.stage_factory = StageFactoryBase(
             function_factory=self.function_factory, shape_factory=None)
+        register_all_stages(self.stage_factory)
         self.player = CeedPlayer(open_player_thread=open_player_thread)
         self.view_controller = ControllerSideViewControllerBase()
         self.ceed_data = CeedDataWriterBase()
@@ -160,6 +170,11 @@ class CeedApp(BaseKivyApp):
             register_external_functions(
                 self.function_factory,
                 self.external_function_plugin_package)
+
+        if self.external_stage_plugin_package:
+            register_external_stages(
+                self.stage_factory,
+                self.external_stage_plugin_package)
 
         self.stage_factory.shape_factory = self.shape_factory
         remove_shapes_upon_deletion(

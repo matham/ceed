@@ -1,16 +1,20 @@
 import pytest
+import os
 from copy import deepcopy, copy
 import math
 from typing import Tuple, List, Dict
 from collections import defaultdict
+import sys
 from itertools import product
 from fractions import Fraction
 
+from ceed.shape import CeedPaintCanvasBehavior
 from ceed.function import FunctionFactoryBase, FuncGroup, FuncBase
 from ceed.stage import StageFactoryBase, CeedStage, CeedStageRef, \
-    StageDoneException
+    StageDoneException, register_all_stages, register_external_stages
 from ceed.tests.test_app.examples.stages import ParaAllStage, ParaAnyStage, \
-    SerialAllStage, SerialAnyStage, assert_stages_same, make_stage
+    SerialAllStage, SerialAnyStage, assert_stages_same, make_stage, \
+    fake_plugin_stage
 from ceed.tests.test_app.test_shape import make_4_shapes
 from ceed.tests.test_app.examples.shapes import Shape, EllipseShapeP1, \
     CircleShapeP1, PolygonShapeP1, FreeformPolygonShapeP1, EllipseShapeP2, \
@@ -67,6 +71,36 @@ def create_recursive_stages(
     return root, g1, g2, s1, s2, s3, s4, s5, s6
 
 
+def create_4_stages(stage_factory: StageFactoryBase):
+    cls = stage_factory.get('CeedStage')
+    s1 = cls(
+        stage_factory=stage_factory,
+        function_factory=stage_factory.function_factory,
+        shape_factory=stage_factory.shape_factory, name='s', order='serial',
+        complete_on='any', disable_pre_compute=True, loop=4, color_r=True,
+        color_g=False, color_b=True, color_a=.4)
+    s2 = cls(
+        stage_factory=stage_factory,
+        function_factory=stage_factory.function_factory,
+        shape_factory=stage_factory.shape_factory, name='s2', order='parallel',
+        complete_on='all', disable_pre_compute=False, loop=5, color_r=False,
+        color_g=True, color_b=False, color_a=.5)
+    s3 = cls(
+        stage_factory=stage_factory,
+        function_factory=stage_factory.function_factory,
+        shape_factory=stage_factory.shape_factory, name='s3', order='serial',
+        complete_on='any', disable_pre_compute=True, loop=6, color_r=False,
+        color_g=False, color_b=False, color_a=.6)
+    s4 = cls(
+        stage_factory=stage_factory,
+        function_factory=stage_factory.function_factory,
+        shape_factory=stage_factory.shape_factory, name='s4', order='parallel',
+        complete_on='all', disable_pre_compute=False, loop=7, color_r=True,
+        color_g=True, color_b=True, color_a=.9)
+
+    return s1, s2, s3, s4
+
+
 def get_stage_time_intensity(
         stage_factory: StageFactoryBase, stage_name: str, frame_rate,
         pre_compute: bool = False
@@ -83,9 +117,92 @@ def get_stage_time_intensity(
     return obj_values, n
 
 
-def test_factory_stage_unique_names(stage_factory: StageFactoryBase):
-    assert not stage_factory.stages
+def test_register_stages(
+        function_factory: FunctionFactoryBase,
+        shape_factory: CeedPaintCanvasBehavior):
+    class MyCeedStage(CeedStage):
+
+        def __init__(self, name='MyStage', **kwargs):
+            super().__init__(name=name, **kwargs)
+
+    class MyCeedStage2(CeedStage):
+
+        def __init__(self, name='MyStage2', **kwargs):
+            super().__init__(name=name, **kwargs)
+
+    stage_factory = StageFactoryBase(
+        function_factory=function_factory, shape_factory=shape_factory)
+    count = 0
+
+    def count_changes(*largs):
+        nonlocal count
+        count += 1
+    stage_factory.fbind('on_changed', count_changes)
+
+    assert not stage_factory.stages_cls
     assert not stage_factory.stage_names
+    assert not stage_factory.stages
+    assert not stage_factory.stages_inst_default
+    assert not stage_factory.get_classes()
+    assert not stage_factory.get_names()
+
+    stage_factory.register(MyCeedStage)
+    assert count
+    assert stage_factory.stages_cls['MyCeedStage'] is MyCeedStage
+    assert isinstance(stage_factory.stage_names['MyStage'], MyCeedStage)
+    assert isinstance(stage_factory.stages_inst_default['MyStage'], MyCeedStage)
+    assert MyCeedStage in stage_factory.get_classes()
+    assert 'MyCeedStage' in stage_factory.get_names()
+
+    s = MyCeedStage2(
+        stage_factory=stage_factory, function_factory=function_factory,
+        shape_factory=shape_factory)
+    count = 0
+    stage_factory.register(MyCeedStage2, instance=s)
+    assert count
+    assert stage_factory.stages_cls['MyCeedStage2'] is MyCeedStage2
+    assert stage_factory.stage_names['MyStage2'] is s
+    assert stage_factory.stages_inst_default['MyStage2'] is s
+    assert MyCeedStage2 in stage_factory.get_classes()
+    assert 'MyCeedStage2' in stage_factory.get_names()
+    assert not stage_factory.stages
+
+
+def test_auto_register(stage_factory: StageFactoryBase):
+    assert not stage_factory.stages
+    assert stage_factory.get('CeedStage') is CeedStage
+    assert isinstance(stage_factory.stage_names['Stage'], CeedStage)
+    assert isinstance(stage_factory.stages_inst_default['Stage'], CeedStage)
+
+    assert stage_factory.get('SomeStage') is None
+
+
+def test_register_user_stage(stage_factory: StageFactoryBase):
+    assert not stage_factory.stages
+
+    s, s2, _, _ = create_4_stages(stage_factory)
+
+    stage_factory.test_changes_count = 0
+    stage_factory.add_stage(s)
+    assert stage_factory.test_changes_count
+    assert s in stage_factory.stages
+    assert stage_factory.stage_names['s'] is s
+
+    stage_factory.test_changes_count = 0
+    stage_factory.add_stage(s2)
+    assert stage_factory.test_changes_count
+    assert s2 in stage_factory.stages
+    assert stage_factory.stage_names['s2'] is s2
+
+
+def test_factory_re_register(stage_factory: StageFactoryBase):
+    with pytest.raises(ValueError):
+        stage_factory.register(CeedStage)
+
+
+def test_factory_stage_unique_names(stage_factory: StageFactoryBase):
+    assert not len(stage_factory.stages)
+    n = len(stage_factory.stage_names)
     stage = SerialAllStage(stage_factory=stage_factory, show_in_gui=False)
     stage.create_stage()
     stage = stage.stage
@@ -94,7 +211,7 @@ def test_factory_stage_unique_names(stage_factory: StageFactoryBase):
     stage_factory.test_changes_count = 0
     stage_factory.add_stage(stage)
     assert len(stage_factory.stages) == 1
-    assert len(stage_factory.stage_names) == 1
+    assert len(stage_factory.stage_names) == 1 + n
     assert stage in stage_factory.stages
     assert stage.name in stage_factory.stage_names
     assert stage is stage_factory.stage_names[stage.name]
@@ -111,7 +228,7 @@ def test_factory_stage_unique_names(stage_factory: StageFactoryBase):
     stage_factory.add_stage(stage2)
     assert stage2.name != stage.name
     assert len(stage_factory.stages) == 2
-    assert len(stage_factory.stage_names) == 2
+    assert len(stage_factory.stage_names) == 2 + n
     assert stage2 in stage_factory.stages
     assert stage2.name in stage_factory.stage_names
     assert stage2 is stage_factory.stage_names[stage2.name]
@@ -122,7 +239,7 @@ def test_factory_stage_unique_names(stage_factory: StageFactoryBase):
     stage2.name = stage.name
     assert stage2.name != stage.name
     assert len(stage_factory.stages) == 2
-    assert len(stage_factory.stage_names) == 2
+    assert len(stage_factory.stage_names) == 2 + n
     assert stage2 in stage_factory.stages
     assert stage2.name in stage_factory.stage_names
     assert stage2 is stage_factory.stage_names[stage2.name]
@@ -134,7 +251,7 @@ def test_factory_stage_unique_names(stage_factory: StageFactoryBase):
     assert stage2.name != stage.name
     assert stage.name == 'stagnation'
     assert len(stage_factory.stages) == 2
-    assert len(stage_factory.stage_names) == 2
+    assert len(stage_factory.stage_names) == 2 + n
     assert stage in stage_factory.stages
     assert stage is stage_factory.stage_names['stagnation']
     assert stage_factory.test_changes_count
@@ -145,7 +262,7 @@ def test_factory_stage_unique_names(stage_factory: StageFactoryBase):
     assert stage2.name != stage.name
     assert stage2.name
     assert len(stage_factory.stages) == 2
-    assert len(stage_factory.stage_names) == 2
+    assert len(stage_factory.stage_names) == 2 + n
     assert stage2 in stage_factory.stages
     assert stage2.name in stage_factory.stage_names
     assert stage2 is stage_factory.stage_names[stage2.name]
@@ -153,8 +270,8 @@ def test_factory_stage_unique_names(stage_factory: StageFactoryBase):
 
 
 def test_shape_add_remove(stage_factory: StageFactoryBase):
-    assert not stage_factory.stages
-    assert not stage_factory.stage_names
+    assert not len(stage_factory.stages)
+    n = len(stage_factory.stage_names)
 
     stage = SerialAllStage(stage_factory=stage_factory, show_in_gui=False)
     stage.create_stage()
@@ -180,9 +297,56 @@ def test_shape_add_remove(stage_factory: StageFactoryBase):
         stage_factory.remove_stage(stage)
 
 
-def test_clear_stages(stage_factory: StageFactoryBase):
+def test_factory_stage_remove(stage_factory: StageFactoryBase):
     assert not stage_factory.stages
-    assert not stage_factory.stage_names
+    initial_stages_n = len(stage_factory.stage_names)
+
+    s, s2, _, _ = create_4_stages(stage_factory)
+    stage_factory.add_stage(s)
+    stage_factory.add_stage(s2)
+
+    assert len(stage_factory.stage_names) == initial_stages_n + 2
+
+    stage_factory.test_changes_count = 0
+    assert stage_factory.remove_stage(s2)
+
+    assert stage_factory.test_changes_count
+    assert s in stage_factory.stages
+    assert s2 not in stage_factory.stages
+    assert len(stage_factory.stages) == 1
+    assert s.name == 's'
+    assert s2.name == 's2'
+
+    assert stage_factory.stage_names['s'] is s
+    assert 's2' not in stage_factory.stage_names
+    assert len(stage_factory.stage_names) == initial_stages_n + 1
+
+    stage_factory.test_changes_count = 0
+    s2.name = 's'
+
+    assert not stage_factory.test_changes_count
+    assert s.name == 's'
+    assert s2.name == 's'
+
+    stage_factory.test_changes_count = 0
+    assert stage_factory.remove_stage(s)
+
+    assert stage_factory.test_changes_count
+    assert s not in stage_factory.stages
+    assert s2 not in stage_factory.stages
+    assert not stage_factory.stages
+    assert s.name == 's'
+    assert s2.name == 's'
+
+    assert 's' not in stage_factory.stage_names
+    assert 's2' not in stage_factory.stage_names
+
+    assert len(stage_factory.stage_names) == initial_stages_n
+
+
+def test_clear_stages(stage_factory: StageFactoryBase):
+    assert not len(stage_factory.stages)
+    n = len(stage_factory.stage_names)
 
     stage = SerialAllStage(stage_factory=stage_factory, show_in_gui=False)
     stage.create_stage()
@@ -198,7 +362,71 @@ def test_clear_stages(stage_factory: StageFactoryBase):
     stage_factory.test_changes_count = 0
     stage_factory.clear_stages()
     assert not stage_factory.stages
-    assert not stage_factory.stage_names
+    assert len(stage_factory.stage_names) == n
+    assert stage_factory.test_changes_count
+
+
+def test_recover_stages(stage_factory: StageFactoryBase):
+    s1, s2, s3, s4 = create_4_stages(stage_factory)
+
+    stage_factory.add_stage(s1)
+    stage_factory.add_stage(s2)
+    stage_factory.add_stage(s3)
+    stage_factory.add_stage(s4)
+
+    stages = stage_factory.save_stages()
+    assert len(stages) == 4
+
+    recovered_stages, name_mapping = stage_factory.recover_stages(
+        stages, {}, {})
+    assert len(recovered_stages) == 4
+    assert len(name_mapping) == 4
+
+    # name cannot be the same because both old and new are in the factory
+    for s_name in ('s', 's2', 's3', 's4'):
+        assert s_name in name_mapping
+        assert name_mapping[s_name] != s_name
+        assert s_name in stage_factory.stage_names
+        assert name_mapping[s_name] in stage_factory.stage_names
+
+        original_s = stage_factory.stage_names[s_name]
+        new_s = stage_factory.stage_names[name_mapping[s_name]]
+        assert_stages_same(original_s, new_s, compare_name=False)
+        assert original_s.name != new_s.name
+        assert new_s.name.startswith(original_s.name)
+
+
+def test_make_function(stage_factory: StageFactoryBase):
+    stages = s1, s2, s3, s4 = create_4_stages(stage_factory)
+
+    states = [s.get_state() for s in stages]
+    new_stages = [stage_factory.make_stage(state) for state in states]
+    assert len(new_stages) == len(stages)
+
+    for new_stage, s in zip(new_stages, stages):
+        assert_stages_same(new_stage, s, compare_name=False)
+        assert s.name != new_stage.name
+
+    # close should make them identical in all ways
+    new_stages = [
+        stage_factory.make_stage(state, clone=True) for state in states]
+    assert len(new_stages) == len(stages)
+
+    for new_stage, s in zip(new_stages, stages):
+        assert_stages_same(new_stage, s, compare_name=True)
+
+    # provide instances
+    new_stages = [
+        stage_factory.make_stage(
+            state, instance=CeedStage(
+                stage_factory=stage_factory,
+                function_factory=stage_factory.function_factory,
+                shape_factory=stage_factory.shape_factory), clone=True)
+        for state in states]
+    assert len(new_stages) == len(stages)
+
+    for new_stage, s in zip(new_stages, stages):
+        assert_stages_same(new_stage, s, compare_name=True)
 
 
 def test_can_other_stage_be_added(stage_factory: StageFactoryBase):
@@ -1352,3 +1580,38 @@ def test_t_end_empty_stage_func(stage_factory: StageFactoryBase):
     assert f1.t_end == Fraction(1, 10) + .05
     assert f2.t_end == Fraction(1, 10) + .05
     assert root.t_end == Fraction(1, 10) + .05
+
+
+def test_external_plugin_source_in_factory(
+        stage_factory: StageFactoryBase, tmp_path):
+    sys.path.append(str(tmp_path))
+    mod = tmp_path / 'my_stage_plugin' / '__init__.py'
+    try:
+        mod.parent.mkdir()
+        mod.write_text(fake_plugin_stage)
+        register_external_stages(stage_factory, 'my_stage_plugin')
+
+        assert 'CeedStage' in stage_factory.stages_cls
+        assert 'FakeStage' in stage_factory.stages_cls
+
+        assert 'ceed.stage.plugin' in stage_factory.plugin_sources
+        plugin_contents = stage_factory.plugin_sources['my_stage_plugin']
+        assert plugin_contents == [
+            (('__init__.py', ),
+             fake_plugin_stage.replace('\n', os.linesep).encode())
+        ]
+    finally:
+        sys.path.remove(str(tmp_path))
+        del sys.modules['my_stage_plugin']
+
+
+def test_external_plugin_single_file(
+        stage_factory: StageFactoryBase, tmp_path):
+    sys.path.append(str(tmp_path))
+    mod = tmp_path / 'my_stage_plugin.py'
+    try:
+        mod.write_text(fake_plugin_stage)
+        with pytest.raises(ModuleNotFoundError):
+            register_external_stages(stage_factory, 'my_stage_plugin')
+    finally:
+        sys.path.remove(str(tmp_path))

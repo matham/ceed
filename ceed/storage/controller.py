@@ -100,6 +100,10 @@ class CeedDataWriterBase(EventDispatcher):
         app = App.get_running_app()
         return app.function_factory.plugin_sources
 
+    def get_stage_plugin_contents(self):
+        app = App.get_running_app()
+        return app.stage_factory.plugin_sources
+
     def gather_config_data_dict(self, stages_only=False):
         app = App.get_running_app()
         data = {}
@@ -247,6 +251,10 @@ class CeedDataWriterBase(EventDispatcher):
         f.sections['function_plugin_sources']['contents'] = yaml_dumps(
             self.get_function_plugin_contents())
 
+        f.create_section('stage_plugin_sources', 'files')
+        f.sections['stage_plugin_sources']['contents'] = yaml_dumps(
+            self.get_stage_plugin_contents())
+
         block = f.create_block('fluorescent_images', 'image')
         sec = f.create_section('fluorescent_images_metadata', 'metadata')
         block.metadata = sec
@@ -267,6 +275,11 @@ class CeedDataWriterBase(EventDispatcher):
         if 'function_plugin_sources' not in nix_file.sections:
             nix_file.create_section('function_plugin_sources', 'files')
             nix_file.sections['function_plugin_sources']['contents'] = \
+                yaml_dumps({})
+
+        if 'stage_plugin_sources' not in nix_file.sections:
+            nix_file.create_section('stage_plugin_sources', 'files')
+            nix_file.sections['stage_plugin_sources']['contents'] = \
                 yaml_dumps({})
 
         if 'fluorescent_images' not in nix_file.blocks:
