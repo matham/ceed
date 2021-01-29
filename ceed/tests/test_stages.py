@@ -76,7 +76,10 @@ def get_stage_time_intensity(
     """
     obj_values = stage_factory.get_all_shape_values(
         frame_rate, stage_name=stage_name, pre_compute=pre_compute)
-    n = len(obj_values[list(obj_values.keys())[0]])
+
+    n = 0
+    if obj_values:
+        n = len(obj_values[list(obj_values.keys())[0]])
     return obj_values, n
 
 
@@ -751,39 +754,47 @@ def test_recursive_stage_intensity(
 
 
 def assert_recursive_stages_intensity(
-        s1, s2, s3, s4, s5, s6, values, n, shape, shape2):
-    assert n == 10 * (10 + 5 + 10 + 5)
+        s1, s2, s3, s4, s5, s6, values, n, shape, shape2, rate=10):
+    assert n == rate * (2 * 10 + 5 + 2 * 10 + 3 * 5)
     assert len(values) == 2
     colors = values[shape.name]
     colors2 = values[shape2.name]
     assert len(colors) == n
 
-    for s, start, e in [(s1, 0, 5), (s4, 15, 25), (s5, 25, 30)]:
+    # first shape is in s1, s4, s5
+    for s, start, e in [
+            (s1, 0, 5), (s1, 10, 15), (s4, 25, 35), (s4, 35, 45), (s5, 45, 50),
+            (s5, 50, 55), (s5, 55, 60)]:
         for i in range(start * 10, e * 10):
             r, g, b, a = colors[i]
 
-            i -= start * 10
+            i -= start * rate  # convert zero offset
             assert math.isclose(r, i / 10 * .1) if s.color_r else r == 0
             assert math.isclose(g, i / 10 * .1) if s.color_g else g == 0
             assert math.isclose(b, i / 10 * .1) if s.color_b else b == 0
 
-    for start, e in [(5, 15), ]:
+    # shape is not active during s2, s3
+    for start, e in [(5, 10), (15, 25)]:
         for i in range(start * 10, e * 10):
             r, g, b, a = colors[i]
             assert r == 0
             assert g == 0
             assert b == 0
 
-    for s, start, e in [(s2, 0, 10), (s3, 10, 15), (s6, 25, 30)]:
+    # second shape is in s2, s3, s6
+    for s, start, e in [
+            (s2, 0, 10), (s2, 10, 20), (s3, 20, 25), (s6, 45, 50),
+            (s6, 50, 55), (s6, 55, 60)]:
         for i in range(start * 10, e * 10):
             r, g, b, a = colors2[i]
 
-            i -= start * 10
+            i -= start * rate  # convert zero offset
             assert math.isclose(r, i / 10 * .1) if s.color_r else r == 0
             assert math.isclose(g, i / 10 * .1) if s.color_g else g == 0
             assert math.isclose(b, i / 10 * .1) if s.color_b else b == 0
 
-    for start, e in [(15, 25), ]:
+    # shape2 is not active during s4, s5
+    for start, e in [(25, 45), ]:
         for i in range(start * 10, e * 10):
             r, g, b, a = colors2[i]
             assert r == 0
@@ -792,7 +803,7 @@ def assert_recursive_stages_intensity(
 
 
 @pytest.mark.parametrize('pre_compute', [True, False])
-def test_recursive_full_stage_intensity(
+def test_recursive_full_stage_with_loop_intensity(
         stage_factory: StageFactoryBase, pre_compute):
     root, g1, g2, s1, s2, s3, s4, s5, s6 = create_recursive_stages(
         stage_factory)
@@ -802,6 +813,10 @@ def test_recursive_full_stage_intensity(
         stage.stage.add_func(LinearFunc(
             function_factory=stage_factory.function_factory, b=0, m=.1,
             duration=(i % 2 + 1) * 5))
+
+    g1.stage.loop = 2
+    s4.stage.loop = 2
+    g2.stage.loop = 3
 
     shape = CircleShapeP1(
         app=None, painter=stage_factory.shape_factory, show_in_gui=False,
@@ -1134,9 +1149,10 @@ def test_stage_func_resample(stage_factory: StageFactoryBase):
     assert len(f_copy.noisy_parameter_samples['b']) == 4
 
 
-@pytest.mark.parametrize('pre_compute', product([True, False], repeat=8))
+@pytest.mark.parametrize(
+    'disable_pre_compute', product([True, False], repeat=9))
 def test_recursive_stage_pre_compute(
-        stage_factory: StageFactoryBase, pre_compute):
+        stage_factory: StageFactoryBase, disable_pre_compute):
     stages = root, g1, g2, s1, s2, s3, s4, s5, s6 = create_recursive_stages(
         stage_factory)
 
@@ -1145,6 +1161,10 @@ def test_recursive_stage_pre_compute(
         stage.stage.add_func(LinearFunc(
             function_factory=stage_factory.function_factory, b=0, m=.1,
             duration=(i % 2 + 1) * 5))
+
+    g1.stage.loop = 2
+    s4.stage.loop = 2
+    g2.stage.loop = 3
 
     shape = CircleShapeP1(
         app=None, painter=stage_factory.shape_factory, show_in_gui=False,
@@ -1160,8 +1180,8 @@ def test_recursive_stage_pre_compute(
     s3.stage.add_shape(shape2.shape)
     s6.stage.add_shape(shape2.shape)
 
-    for disable, s in zip(pre_compute, stages):
-        s.disable_pre_compute = disable
+    for disable, s in zip(disable_pre_compute, stages):
+        s.stage.disable_pre_compute = disable
 
     values, n = get_stage_time_intensity(
         stage_factory, root.name, 10, pre_compute=True)
@@ -1171,13 +1191,15 @@ def test_recursive_stage_pre_compute(
     root, g1, g2, s1, s2, s3, s4, s5, s6 = [s.stage for s in stages]
     for s in (s1, s2, s3, s4, s5, s6):
         assert s.can_pre_compute != s.disable_pre_compute
-    assert g1.can_pre_compute == \
-        s1.can_pre_compute and s2.can_pre_compute and not g1.disable_pre_compute
-    assert g2.can_pre_compute == \
-        s5.can_pre_compute and s6.can_pre_compute and not g2.disable_pre_compute
-    assert root.can_pre_compute == \
-        g1.can_pre_compute and g2.can_pre_compute and s3.can_pre_compute and \
-        s4.can_pre_compute and not root.disable_pre_compute
+    assert g1.can_pre_compute == (
+        s1.can_pre_compute and s2.can_pre_compute and
+        not g1.disable_pre_compute)
+    assert g2.can_pre_compute == (
+        s5.can_pre_compute and s6.can_pre_compute and
+        not g2.disable_pre_compute)
+    assert root.can_pre_compute == (
+        g1.can_pre_compute and g2.can_pre_compute and s3.can_pre_compute and
+        s4.can_pre_compute and not root.disable_pre_compute)
 
     for s, parent in [
             (s1, g1), (s2, g1), (s5, g2), (s6, g2), (s3, root), (s4, root),
@@ -1193,17 +1215,140 @@ def test_recursive_stage_pre_compute(
         assert root.runtime_stage is None
 
     for s in (s1, s2, s3, s4, s5, s6):
-        if s.can_pre_compute:
-            for f, items, t_end in s.runtime_functions:
-                assert f is not None
-                assert items is None
-                assert t_end is None
-        else:
-            assert s.disable_pre_compute
+        if not s.can_pre_compute and not s.disable_pre_compute:
             for f, items, t_end in s.runtime_functions:
                 assert f is None
                 assert items
                 assert t_end in {5, 10}
+        else:
+            for f, items, t_end in s.runtime_functions:
+                assert f is not None
+                assert items is None
+                assert t_end is None
 
     for s in (root, g1, g2):
         assert not s.runtime_functions
+
+    # the global clock starts at 1 / 10 (that's how it's computed)
+    for s, t_end in [
+            (s1, 15.1), (s2, 20.1), (s3, 25.1), (s4, 45.1), (s5, 60.1),
+            (s6, 60.1), (root, 60.1), (g1, 20.1), (g2, 60.1)]:
+        # if parent can pre-compute, this stage is not set
+        if not s.parent_stage or not s.parent_stage.can_pre_compute:
+            assert s.t_end == t_end
+
+    # s6 func is never finished as it's parallel any
+    for s, t_end in [
+            (s1, 15.1), (s2, 20.1), (s3, 25.1), (s4, 45.1), (s5, 60.1)]:
+        if s.disable_pre_compute:
+            assert s.functions[0].t_end == t_end
+
+
+def test_pre_compute_infinite_func(stage_factory: StageFactoryBase):
+    function_factory = stage_factory.function_factory
+
+    root = make_stage(
+        stage_factory, color_r=True, color_g=False, color_b=False)
+    stage_factory.add_stage(root)
+
+    shape = EllipseShapeP1(
+        app=None, painter=stage_factory.shape_factory, show_in_gui=False,
+        create_add_shape=True)
+    root.add_shape(shape.shape)
+
+    ConstFunc = function_factory.get('ConstFunc')
+    f = FuncGroup(function_factory=stage_factory.function_factory)
+    f1 = ConstFunc(function_factory=stage_factory.function_factory, duration=1)
+    f2 = ConstFunc(
+        function_factory=stage_factory.function_factory, duration=-1)
+    f.add_func(f1)
+    f.add_func(f2)
+
+    root.add_func(f)
+
+    root.init_stage_tree()
+    root.apply_pre_compute(True, 60, 0, {shape.name})
+
+    assert not root.can_pre_compute
+    assert not root.disable_pre_compute
+
+
+@pytest.mark.parametrize('pad', [True, False])
+@pytest.mark.parametrize('pre_compute', [True, False])
+@pytest.mark.parametrize('blank', [True, False])
+def test_stage_padding(
+        stage_factory: StageFactoryBase, pre_compute, pad, blank):
+    function_factory = stage_factory.function_factory
+
+    root = make_stage(
+        stage_factory, color_r=True, color_g=False, color_b=False)
+    stage_factory.add_stage(root)
+
+    shape = EllipseShapeP1(
+        app=None, painter=stage_factory.shape_factory, show_in_gui=False,
+        create_add_shape=True)
+    root.add_shape(shape.shape)
+
+    ConstFunc = function_factory.get('ConstFunc')
+    f = ConstFunc(function_factory=stage_factory.function_factory, duration=1)
+    if not blank:
+        root.add_func(f)
+
+    if pad:
+        root.pad_stage_ticks = 22
+
+    _, n = get_stage_time_intensity(
+        stage_factory, root.name, 10, pre_compute=pre_compute)
+
+    if pad:
+        assert n == 22
+    elif blank:
+        assert not n
+    else:
+        assert n == 10
+
+
+@pytest.mark.parametrize('pre_compute', [True, False])
+def test_t_end_empty_stage(stage_factory: StageFactoryBase, pre_compute):
+    root = make_stage(
+        stage_factory, color_r=True, color_g=False, color_b=False)
+    stage_factory.add_stage(root)
+
+    shape = EllipseShapeP1(
+        app=None, painter=stage_factory.shape_factory, show_in_gui=False,
+        create_add_shape=True)
+    root.add_shape(shape.shape)
+
+    get_stage_time_intensity(
+        stage_factory, root.name, 10, pre_compute=pre_compute)
+
+    # global time starts at 1 / 10
+    assert root.t_end == Fraction(1, 10)
+
+
+def test_t_end_empty_stage_func(stage_factory: StageFactoryBase):
+    function_factory = stage_factory.function_factory
+
+    root = make_stage(
+        stage_factory, color_r=True, color_g=False, color_b=False)
+    stage_factory.add_stage(root)
+
+    shape = EllipseShapeP1(
+        app=None, painter=stage_factory.shape_factory, show_in_gui=False,
+        create_add_shape=True)
+    root.add_shape(shape.shape)
+
+    ConstFunc = function_factory.get('ConstFunc')
+    f1 = ConstFunc(
+        function_factory=stage_factory.function_factory, duration=.05)
+    f2 = ConstFunc(
+        function_factory=stage_factory.function_factory, duration=0)
+    root.add_func(f1)
+    root.add_func(f2)
+
+    get_stage_time_intensity(stage_factory, root.name, 10, pre_compute=False)
+
+    # global time starts at 1 / 10
+    assert f1.t_end == Fraction(1, 10) + .05
+    assert f2.t_end == Fraction(1, 10) + .05
+    assert root.t_end == Fraction(1, 10) + .05

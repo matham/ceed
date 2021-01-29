@@ -1689,8 +1689,11 @@ def remove_shapes_upon_deletion(
         stage_factory: StageFactoryBase,
         shape_factory: CeedPaintCanvasBehavior, process_shape_callback) -> None:
     """Once called, whenever a shape or group of shapes is deleted in the
-    ``shape_factory``, it'll also remove the shape or group from all stages
-    that reference it.
+    ``shape_factory``, it'll also remove the shape or shape group from all
+    stages that reference it.
+
+    This is automatically called by the Ceed GUI, but should be manually called
+    if manually creating these factories.
 
     :param stage_factory: The :class:`StageFactoryBase` that lists all the
         stages.

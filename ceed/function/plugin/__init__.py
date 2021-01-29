@@ -2,7 +2,7 @@
 =====================
 
 Defines a plugin architecture so that new functions can be defined at runtime
-and made available to the :class:`ceed.function.FunctionFactoryBase`
+and made available to the :class:`~ceed.function.FunctionFactoryBase`
 used in the GUI to list available functions, and for :mod:`analysis`.
 
 :func:`ceed.function.register_all_functions` is called by the GUI and it
@@ -26,9 +26,30 @@ automatically registered with the function factory
 :class:`~ceed.function.FunctionFactoryBase` or
 :attr:`~ceed.function.FunctionFactoryBase.param_noise_factory`, respectively,
 using :meth:`~ceed.function.FunctionFactoryBase.register` or
-:meth:`~ceed.function.param_noise.ParameterNoiseFactory.register_class`. See
-the ``ceed/function/plugin/__init__.py`` file and :func:`get_ceed_functions`
-and :func:`get_ceed_distributions` for an example.
+:meth:`~ceed.function.param_noise.ParameterNoiseFactory.register_class`.
+
+To write a plugin, familiarize yourself with
+:class:`~ceed.function.FuncBase`, it's properties, and relevant methods that
+need to be overridden. :class:`~ceed.function.CeedFunc` is the actual class
+to inherit from. Some relevant methods are
+:meth:`~ceed.function.FuncBase.get_gui_props`,
+:meth:`~ceed.function.FuncBase.get_state`,
+:meth:`~ceed.function.FuncBase.get_noise_supported_parameters`,
+:meth:`~ceed.function.FuncBase.get_prop_pretty_name`,
+:meth:`~ceed.function.FuncBase.init_func_tree`,
+:meth:`~ceed.function.FuncBase.init_func`,
+:meth:`~ceed.function.FuncBase.init_loop_iteration`,
+:meth:`~ceed.function.FuncBase.get_relative_time`, and
+:meth:`~ceed.function.FuncBase.resample_parameters`.
+
+:meth:`~ceed.function.CeedFunc.__call__` is how the function is called. It
+takes the time in global time so it should convert it to function local time
+with :meth:`~ceed.function.FuncBase.get_relative_time` and then return the
+function value.
+
+See the ``ceed/function/plugin/__init__.py`` file and
+:func:`get_ceed_functions` and :func:`get_ceed_distributions` for an example
+plugin.
 """
 
 import random

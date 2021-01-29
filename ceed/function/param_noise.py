@@ -83,28 +83,31 @@ class NoiseBase(EventDispatcher):
     The values are pre-sampled before the function is executed. If True, using
     :meth:`sample_seq`, otherwise, it's sampled once with :meth:`sample`.
 
-    For example, for the following function structure::
+    For example, for the following function structure contained in a Stage::
 
-        GroupFunc:
-            name: 'root'
-            loop: 5
+        CeedStage:
+            name: 'stage'
+            loop: 2
             GroupFunc:
-                name: 'child_a'
-                loop: 2
-                ConstFunc:
-                    name: 'child'
-                    loop: 3
+                name: 'root'
+                loop: 5
+                GroupFunc:
+                    name: 'child_a'
+                    loop: 2
+                    ConstFunc:
+                        name: 'child'
+                        loop: 3
 
     where the ``child`` function's ``a`` parameter is randomized and
-    the ``child`` function is looped ``5 * 2 * 3 = 30`` times total across the
-    whole experiment.
+    the ``child`` function is looped ``2 * 5 * 2 * 3 = 60`` times total across
+    the whole experiment.
 
     Then, if :attr:`sample_each_loop` is False, we :meth:`sample` the parameter
-    once and the same value is used for all 30 loop iterations. Otherwise, we
-    pre-compute 30 samples using :meth:`sample_seq` from
+    once and the same value is used for all 60 loop iterations. Otherwise, we
+    pre-compute 60 samples using :meth:`sample_seq` from
     :meth:`~ceed.function.FuncBase.resample_parameters` and then update the
-    parameter with each corresponding sample when the loop iteration is
-    initialized (:meth:`~ceed.function.FuncBase.init_func` and
+    parameter with each corresponding sample when the function or loop
+    iteration is initialized (:meth:`~ceed.function.FuncBase.init_func` and
     :meth:`~ceed.function.FuncBase.init_loop_iteration`).
     """
 

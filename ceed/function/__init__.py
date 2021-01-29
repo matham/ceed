@@ -2,8 +2,9 @@
 =========================
 
 Defines the functions used with :mod:`ceed.shape` to create time-varying
-intensities of the shapes during an experiment. :mod:`ceed.stage` combines
-functions with shapes and visualizes them during a stage in an experiment.
+intensities for the shapes during an experiment. :class:`~ceed.stage.CeedStage`
+combines functions with shapes and displays them during an experiment according
+to the stage's function.
 
 Although the functions' range is ``(-infinity, +infinity)`` and this module
 places no restriction on the function output so that it may return any
@@ -29,12 +30,18 @@ analysis and can then be used to get these functions. E.g.::
     >>> LinearFunc
     ceed.function.plugin.LinearFunc
 
-Classes can be registered with manually with
+Classes can be registered manually with
 :meth:`FunctionFactoryBase.register` or they can be registered automatically
-with :func:`register_all_functions` if they are a plugin or a built in
-function. See :mod:`ceed.function.plugin` for details.
+with :func:`register_all_functions` if they are an internal plugin or
+:func:`register_external_functions` for an external plugin. The GUI calls
+:func:`register_all_functions` when started as well as
+:func:`register_external_functions` if the
+:attr:`~ceed.main.CeedApp.external_function_plugin_package` configuration
+variable contains a package name.
 
-To get a function class registered with :meth:`register`, e.g.
+See :mod:`ceed.function.plugin` for details on writing plugins.
+
+To get a function class registered with :class:`FunctionFactoryBase`, e.g.
 :class:`ceed.function.plugin.CosFunc`::
 
     >>> CosFunc = function_factory.get('CosFunc')  # using class name
@@ -86,13 +93,13 @@ used. e.g.::
 
     >>> from copy import deepcopy
     >>> f = deepcopy(function_factory.funcs_inst['line'])
-    >>> f.init_func(0)
+    >>> f.init_func_tree()
     >>> ...
 
 Function basics
 ---------------
 
-A function inherits from :class:`FuncBase` that defines the interface and
+A function inherits from :class:`FuncBase`. It defines the interface that
 returns a (stateful) number when called with a time argument.
 
 Ceed functions are not like typical functions that can be called with any
@@ -106,16 +113,20 @@ usage::
     >>> function_factory = FunctionFactoryBase()
     >>> # register all plugin functions
     >>> register_all_functions(function_factory)
-    >>> # get cosine function class.
+    >>> # get cosine function class from internal plugin
     >>> CosFunc = function_factory.get('CosFunc')
-    >>> # cos will have amplitude of 10, frequency of 1Hz and 10s deuration
+    >>> # cos will have amplitude of 10, frequency of 1Hz and 10s duration
     >>> f = CosFunc(function_factory=function_factory, duration=10, A=10, f=1)
     >>> f
     <ceed.function.plugin.CosFunc at 0x4eadba8>
     >>> # we must specify the time axis. All subsequent times passed to the
     >>> # function will be relative to the time given here (3 seconds).
+    >>> f.init_func_tree()
+    >>> # initialize function base time at 3. I.e. 3 will be subtracted from
+    >>> # future times to convert from global to function-local time
     >>> f.init_func(3)
-    >>> f(3)  # evaluate the function at time 3 - 3 = 0 seconds
+    >>> # evaluate the function at time 3 - 3 = 0 seconds
+    >>> f(3)
     10.0
     >>> f(3.25)  # now at 3.25 - 3 = 0.25 seconds
     6.123233995736766e-16
@@ -129,11 +140,18 @@ __call__
     ceed.function.FuncDoneException
 
 Before a function can be used, it must be initialized with
-:meth:`FuncBase.init_func`. It takes a time value in seconds where the domain
+:meth:`FuncBase.init_func_tree` and :meth:`FuncBase.init_func`.
+:meth:`FuncBase.init_func_tree` intializes all functions and sub-functions in
+the function tree recursively. :meth:`FuncBase.init_func` on the other hand
+intitializes each function in the tree just before it is going to be used.
+It takes a time value in seconds (in global time) where the domain
 of the function starts. This is how we can evaluate the function independant of
-the baseline time. E.g. if a function computes ``f(t) = m * t + b``, it'll
-actually always be computed as ``f(t) = m * (t - t_start) + b``, where
-:attr:`FuncBase.t_start` is the value passed to :meth:`FuncBase.init_func`.
+the baseline global time. E.g. if a function computes ``f(t) = m * t + b``,
+it'll actually always be internally computed as
+``f(t) = m * (t - t_start) + b``, where :attr:`FuncBase.t_start` is the value
+passed to :meth:`FuncBase.init_func` (and :meth:`FuncBase.init_loop_iteration`
+at each loop iteration, but :meth:`FuncBase.init_loop_iteration` is called
+internally, not by user code).
 
 To evaluate the function, just call it with a time value as in the example
 above.
@@ -142,19 +160,22 @@ Function domain and monotonicity
 --------------------------------
 
 Functions have a domain, as determined by :meth:`FuncBase.get_domain`.
-By default the domain for a function is [:attr:`FuncBase.t_start`,
-:attr:`FuncBase.t_start` +
-:attr:`FuncBase.duration` * :meth:`FuncBase.get_timebase`).
+By default the domain for a just initialized function is
+[:attr:`FuncBase.t_start`, :attr:`FuncBase.t_start` +
+:attr:`FuncBase.duration` * :attr:`FuncBase.loop` *
+:meth:`FuncBase.get_timebase`).
 :attr:`FuncBase.duration` can ``-1``, indicating the domain extends to
 +infinity. :meth:`FuncBase.get_timebase` allows one to state the
 :attr:`FuncBase.duration` in :attr:`FuncBase.timebase` units, for better
 accuracy, rather than in seconds. If a function
-loops (:attr:`FuncBase.loop`), the domain extends until the end of the loops.
+loops (:attr:`FuncBase.loop`), the domain extends until the end of the loops,
+but the domain obviously shrinks with each loop iteration.
 
 The domain always starts at :attr:`FuncBase.t_start`, but
 :attr:`FuncBase.t_start` is updated internally for each loop to the time at the
-start of the current loop. So the domain gets smaller as we iterate the loops.
-E.g.::
+start of the current loop (or more accurately the time the last loop ended,
+:attr:`FuncBase.t_end` if it's before the current time). So the domain gets
+smaller as we iterate the loops. E.g.::
 
     >>> LinearFunc = function_factory.get('LinearFunc')
     >>> # slope of 2, with 2 loop iterations
@@ -162,6 +183,7 @@ E.g.::
 loop=2, m=2)
     >>> f.loop
     2
+    >>> f.init_func_tree()
     >>> f.init_func(2)  # the valid domain starts at 2 seconds
     >>> f(0)  # zero seconds is outside the domain
     Traceback (most recent call last):
@@ -212,8 +234,7 @@ line 1034, in __call__
 As seen above, the domain of a function changes as it's called with time
 values. Consequently, functions may only be called with monotonically
 increasing time arguments. If violated, it may raise an error, but it doesn't
-always. Calling :meth:`FuncBase.add_func` resets to function, however, so
-ot can be called again.
+always.
 
 This rule is required to support functions that perform some IO and
 therefore may change some state, so calling with the same time input multiple
@@ -231,6 +252,7 @@ loop. E.g.::
     >>> f = FuncGroup(function_factory=function_factory, loop=2)
     >>> f.add_func(f1)
     >>> f.add_func(f2)
+    >>> f.init_func_tree()
     >>> f.init_func(1)
     >>> f.get_domain(current_iteration=False)
     (1, Fraction(9, 1))
@@ -276,9 +298,10 @@ duration is multiplied by it to get the duration in seconds. So e.g. with
 ``Fraction(1, 120)``, if duration is ``12``, then the stage duration is
 ``12/120`` seconds, or 12 frames.
 
-During an experimental stage when functions are called, we pass time
-represented as fractions where the denominator represents the true framerate
-of the projector, and the time value is the elapsed time since the start. So
+During an experimental stage when functions are called, we pass time to the
+functions represented as fractions rather than decimel, where the denominator
+represents the true framerate of the projector, the numerator is the number of
+frames elpased, so the time value is the elapsed time since the start. So
 e.g. we'd call it with ``f(Fraction(180, 120))`` if we are 1.5 seconds into
 the stage and the projector frame rate is ``120``. This allows us to do more
 precise duration math. E.g.::
@@ -287,6 +310,7 @@ precise duration math. E.g.::
     >>> # duration will be 2 frames at 120 fps (2/120 seconds)
     >>> f = LinearFunc(function_factory=function_factory, duration=2, \
 timebase_numerator=1, timebase_denominator=120, m=2)
+    >>> f.init_func_tree()
     >>> f.init_func(1)  # start at 1 sec
     >>> f.get_domain(current_iteration=False)
     (1, Fraction(61, 60))
@@ -304,11 +328,17 @@ timebase_numerator=1, timebase_denominator=120, m=2)
 1150, in __call__
     ceed.function.FuncDoneException
 
+Inheriting timebase
+^^^^^^^^^^^^^^^^^^^
+
 Functions can be grouped, e.g. in the example above. We don't want to have to
-specify the :attr:`FuncBase.timebase` for each function. Consequently,
-functions will inherit the timebase from the function they belong to as a
-group all the way to the root. E.g. we want the group function to alternate
-between 2 and 10 for each frame at 120fps::
+specify the :attr:`FuncBase.timebase` for each function. Consequently, if the
+:attr:`FuncBase.timebase` is unspecified (i.e. zero), a
+function will inherit the timebase from the :attr:`FuncBase.parent_func` they
+belong to all the way to the root where :attr:`FuncBase.parent_func` is None.
+
+E.g. we want the function to alternate between 2 and 10 for each frame at
+120fps::
 
     >>> # each sub-function is exactly one frame long
     >>> f1 = ConstFunc(function_factory=function_factory, duration=1, a=2)
@@ -316,7 +346,7 @@ between 2 and 10 for each frame at 120fps::
     >>> # so far the timbease are the defaults
     >>> f1.timebase
     Fraction(0, 1)
-    >>> f1.get_timebase()  # it's in seconds
+    >>> f1.get_timebase()  # so it's in seconds
     1
     >>> # because we specify a timebase for the group, all the sub-functions
     >>> # will share the same timebase. Unless a sub function specifically sets
@@ -331,7 +361,7 @@ timebase_numerator=1, timebase_denominator=120, loop=2)
     Fraction(0, 1)
     >>> f1.get_timebase()  # our parents timebase
     Fraction(1, 120)
-    >>> f.init_func(1)
+    >>> f.init_func(1)  # i.e. 120 / 120
     >>> f.get_domain(current_iteration=False)
     (1, Fraction(31, 30))
     >>> f(Fraction(120, 120))  # loop 0, f1
@@ -354,8 +384,9 @@ from parent functions if they set it. Therefore, to get the actual timebase use
 is only used to directly set the function's timebase. Functions that need to
 use the timebase should design all the duration values with that in mind.
 
-The downside is that to handle functions in different timebases, they would
-need to be replicated for each timebase.
+The downside to setting a timebase is that it's specific to that timebase, so
+to have a function in different timebases, it would need to be replicated
+for each timebase.
 
 Saving and restoring functions
 ------------------------------
@@ -405,6 +436,12 @@ internal property and not always user-customizable. E.g. with clone::
      ...
      'b': 0.0}
 
+A fundumental part of Ceed is copying and reconstructing function objects.
+E.g. this is required to recover functions from a template file, from old data,
+or even to be able to run the experiment because it is run from a second
+process. Consequently, anything required for the function to be reconstructed
+must be returned by :meth:`FuncBase.get_state`.
+
 
 Reference functions
 -------------------
@@ -413,7 +450,7 @@ Sometimes you may want to create a function group containing other functions.
 Instead of explicitly defining these sub-functions, we may want to refer to
 existing registered functions and let these sub-functions update when the
 existing function's parameters are updated. They are mostly meant to be used
-from the GUI, although work work perfectly otherwise.
+from the GUI, although work fine otherwise.
 
 :class:`CeedFuncRef` allows one to reference functions in such a manner.
 Instead of copying a function, just get a reference to it with
@@ -449,10 +486,10 @@ Copying functions
 
 Functions can be copied automatically using ``deepcopy`` or
 :meth:`FuncBase.copy_expand_ref`. The former makes a full copy of all the
-functions, but any :class:`CeedFuncRef` functions encountered will be copied
-by a new :class:`CeedFuncRef`. The latter, instead of copying the
-:class:`CeedFuncRef`, it'll replace the :class:`CeedFuncRef` with copies of
-the class it refers to.
+functions, but any :class:`CeedFuncRef` functions will only copy the
+:class:`CeedFuncRef`, not the original function being refered to. The latter,
+instead of copying the :class:`CeedFuncRef`, will replace any
+:class:`CeedFuncRef` with copies of the class it refers to.
 
 Functions can be manually copied with :meth:`FuncBase.get_state` and
 :meth:`FuncBase.set_state`.
@@ -466,6 +503,45 @@ values returned by :meth:`FuncBase.get_gui_props`,
 
 These methods control what properties are editable by the user and the values
 they may potentially take.
+
+Randomizing function parameters
+-------------------------------
+
+A :class:`FuncBase` subclass typically contains parameters. E.g.
+:class:`ceed.function.plugin.LinearFunc` has a offset and slope (
+:attr:`ceed.function.plugin.LinearFunc.b` and
+:attr:`ceed.function.plugin.LinearFunc.m`). Sometimes it is desireable for the
+parameters to be randomly re-sampled before each experiment, or even for each
+loop iteration (:attr:`FuncBase.loop_tree_count`).
+
+All parameters that support randomization must be returned by
+:meth:`FuncBase.get_noise_supported_parameters` and the specific distribution
+used to randomize each parameter is stored in
+:attr:`FuncBase.noisy_parameters`. The GUI manages
+:attr:`FuncBase.noisy_parameters` from user configuration based on
+:meth:`FuncBase.get_noise_supported_parameters`.
+
+Then, when the function is prepared by Ceed it calls
+:meth:`FuncBase.resample_parameters` that re-samples all the randomized
+parameters. Parameters that are randomized once for the function lifetime
+(:attr:`~ceed.function.param_noise.NoiseBase.sample_each_loop` is False)
+are sampled once and the parameter is set to that value. Parameters that are
+randomized once for each loop iteration (see the docs for
+:attr:`~ceed.function.param_noise.NoiseBase.sample_each_loop`) are sampled for
+as many iterations they'll experience and the samples are stored in
+:attr:`FuncBase.noisy_parameter_samples`. Then, the parameter is set to the
+corresponding value for each iteration at the start in
+:meth:`FuncBase.init_func` and :meth:`FuncBase.init_loop_iteration`.
+
+Possible noise distributions are listed in the
+:class:`ceed.function.param_noise.ParameterNoiseFactory` stored in
+:attr:`FunctionFactoryBase.param_noise_factory`. See
+:mod:`ceed.function.plugin` for how to add distributions.
+
+Running a function
+------------------
+
+
 """
 from typing import Type, List, Tuple, Dict, Optional, Set, TypeVar, \
     Generator, Union
@@ -498,8 +574,12 @@ CeedFuncOrRefInstance = Union['FuncBase', 'CeedFuncRef']
 """Instance of either :class:`CeedFunc` or :class:`CeedFuncRef`."""
 
 FloatOrInt = Union[float, int]
+"""Float or in type.
+"""
 
 NumFraction = Union[float, int, Fraction]
+"""Float, int, or Fraction type.
+"""
 
 
 class FuncDoneException(Exception):
@@ -1172,7 +1252,7 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
         self._update_duration_min()
         self._update_total_duration()
 
-    def __call__(self, t):
+    def __call__(self, t: NumFraction) -> float:
         raise NotImplementedError
 
     def get_timebase(self) -> Union[float, Fraction]:
@@ -1744,7 +1824,7 @@ class CeedFuncRef:
     def copy_expand_ref(self):
         return self.func.copy_expand_ref()
 
-    def __call__(self, t):
+    def __call__(self, t: NumFraction) -> float:
         raise TypeError(
             'A CeedFuncRef function instance cannot be called like a normal '
             'function. To use, copy it into a normal function with '
