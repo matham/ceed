@@ -1267,8 +1267,10 @@ class CeedStage(EventDispatcher):
             self, shapes: Dict[str, List[RGBA_Type]], last_end_t: NumFraction
     ) -> Generator[None, NumFraction, None]:
         '''Similar to :meth:`StageFactoryBase.tick_stage` but for this stage.
+        This calls internally either :meth:`evaluate_pre_computed_stage` or
+        :meth:`evaluate_pre_computed_stage`evaluate_stage`.
 
-        It is an iterator that iterates through time and returns the
+        It is an iterator that iterates through time and updates the
         intensity values for the shapes associated with this stage and its
         sub-stages.
 
@@ -1276,25 +1278,24 @@ class CeedStage(EventDispatcher):
         which then updates the ``shapes`` dict with the intensity values of the
         shape for this time-point.
 
-        :Params:
-
-            `shapes`: dict
-                A dict whose keys is the name of all the shapes of this stage
-                and its sub-stages. The corresponding values are empty lists.
-                At every iteration the list will be filled in with color values
-                and should be cleared before the next iteration.
+        :param shapes: A dict whose keys is the name of all the shapes of this
+            stage and its sub-stages. The corresponding values are empty lists.
+            At every iteration the list should be filled in with the desired
+            color values.
+        :param last_end_t: the start time of the stage in globbal time.
 
         :raises:
 
             `StageDoneException`:
-                When done with the stage (time is out of bounds).
+                When done with the stage (time is out of bounds). The time
+                value that raised this was not used.
 
         E.g. to get the shape values for time 0, .1, .2, ..., 1.0 for this
         stage::
 
             >>> # get dict of shapes using the painter controller
             >>> shapes = {s.name: [] for s in shape_factory.shapes}
-            >>> tick_stage = stage.tick_stage(shapes)  # create iterator
+            >>> tick_stage = stage.tick_stage(shapes, 0)  # create iterator
             >>> next(tick_stage)
             >>> for t in [0, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1.]:
             >>>     try:
@@ -1312,30 +1313,80 @@ class CeedStage(EventDispatcher):
         '''
         # quick path is stage was pre-computed
         if self.runtime_stage is not None:
-            # next t to use. On the last t not used raises StageDoneException
+            tick = self.evaluate_pre_computed_stage(shapes, last_end_t)
+        else:
+            tick = self.evaluate_stage(shapes, last_end_t)
+        next(tick)
+
+        t = yield
+        while True:
+            tick.send(t)
             t = yield
-            stage_data, n, t_end = self.runtime_stage
 
-            # stage was sampled with a init value of zero, so end is
-            # relative to current sample time, not end time of last
-            # stage. Because with the latter, the sampled stage could have
-            # ended before the sample (t). So we align with sample time
-            self.t_end = t + t_end
+    def evaluate_pre_computed_stage(
+            self, shapes: Dict[str, List[RGBA_Type]], last_end_t: NumFraction
+    ) -> Generator[None, NumFraction, None]:
+        """Generator called by :meth:`tick_stage` if the stage was
+        pre-computed. See that method for details.
+
+        This should not be overwritten, rather
+        can be set to desired values and this method will iterate through it.
+        If setting :attr:`runtime_stage` manually, :meth:`apply_pre_compute`
+        should be overwritten, otherwise it may overwrite
+        :attr:`runtime_stage`. But it's generally safer to customize
+        :meth:`evaluate_stage` instead.
+        """
+        # next t to use. On the last t not used raises StageDoneException
+        t = yield
+        stage_data, n, t_end = self.runtime_stage
+
+        # stage was sampled with a init value of zero, so end is
+        # relative to current sample time, not end time of last
+        # stage. Because with the latter, the sampled stage could have
+        # ended before the sample (t). So we align with sample time
+        self.t_end = t + t_end
+        prev_t = t
+
+        for i in range(n):
+            for name, colors in stage_data.items():
+                shapes[name].append(colors[i])
             prev_t = t
+            t = yield
 
-            for i in range(n):
-                for name, colors in stage_data.items():
-                    shapes[name].append(colors[i])
-                prev_t = t
+        assert prev_t <= self.t_end or isclose(prev_t, self.t_end)
+        assert t >= self.t_end or isclose(t, self.t_end)
+
+        raise StageDoneException
+
+    def evaluate_stage(
+            self, shapes: Dict[str, List[RGBA_Type]], last_end_t: NumFraction
+    ) -> Generator[None, NumFraction, None]:
+        """Generator called by :meth:`tick_stage` if the stage won't be
+        pre-computed or to pre-compute the stage. See that method for details.
+
+        This method can safely be overwritten to set exact stage values. And
+        if the stage will be pre-computed, this method will internally be
+        called to get the shape values so pre-computing does not have to be
+        considered at all when overwriting this method.
+
+        However, :attr:`t_end` must be set with the final stage time, otherwise
+        it'll break. E.g. is an appropriate customization (assuming those
+        shapes exist)::
+
+            def evaluate_stage(self, shapes, last_end_t):
+                # always get the first time
                 t = yield
+                for i in range(10):
+                    # r, g, b, a values
+                    shapes['my shape'].append((.1, .2,  (i % 2) * .3, None))
+                    shapes['other shape'].append((.1, .2,  (i % 2) * .5, None))
+                    t = yield
 
-            assert prev_t <= self.t_end or isclose(prev_t, self.t_end)
-            assert t >= self.t_end or isclose(t, self.t_end)
-
-            raise StageDoneException
-
-        # slow path - evaluate the functions and stages
-
+                # this time value was not used and this effectively makes the
+                # stage 11 samples long
+                self.t_end = t
+                raise StageDoneException
+        """
         # next t to use. On the last t not used raises StageDoneException
         pad_stage_ticks = self.pad_stage_ticks
         names, keep_dark = self._get_shape_names()

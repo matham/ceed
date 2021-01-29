@@ -1615,3 +1615,52 @@ def test_external_plugin_single_file(
             register_external_stages(stage_factory, 'my_stage_plugin')
     finally:
         sys.path.remove(str(tmp_path))
+
+
+@pytest.mark.parametrize('pre_compute', [True, False])
+def test_custom_stage_evaluate(stage_factory: StageFactoryBase, pre_compute):
+    shape = EllipseShapeP1(
+        app=None, painter=stage_factory.shape_factory, show_in_gui=False,
+        create_add_shape=True)
+
+    shape2 = EllipseShapeP2(
+        app=None, painter=stage_factory.shape_factory, show_in_gui=False,
+        create_add_shape=True)
+
+    class MyStage(CeedStage):
+
+        def evaluate_stage(self, shapes, last_end_t):
+            t = yield
+            for i in range(10):
+                shapes[shape.name].append((.1, .2,  (i % 2) * .3, None))
+                shapes[shape2.name].append((.1, .2,  (i % 2) * .5, None))
+                t = yield
+
+            self.t_end = t
+            raise StageDoneException
+
+    stage = MyStage(
+        stage_factory=stage_factory,
+        function_factory=stage_factory.function_factory,
+        shape_factory=stage_factory.shape_factory)
+    stage_factory.add_stage(stage)
+    stage.add_shape(shape.shape)
+    stage.add_shape(shape2.shape)
+
+    values, n = get_stage_time_intensity(
+        stage_factory, stage.name, 10, pre_compute=pre_compute)
+    assert n == 10
+
+    for i, (r, g, b, a) in enumerate(values[shape.name]):
+        assert r == .1
+        assert g == .2
+        assert b == (i % 2) * .3
+        assert a == 1
+
+    for i, (r, g, b, a) in enumerate(values[shape2.name]):
+        assert r == .1
+        assert g == .2
+        assert b == (i % 2) * .5
+        assert a == 1
+
+    assert stage.t_end == Fraction(11, 10)
