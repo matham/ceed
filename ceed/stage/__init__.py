@@ -1231,6 +1231,7 @@ class CeedStage(EventDispatcher):
         funcs = self.tick_funcs(last_end_t)
         next(funcs)
         current_stage = tick = ticks = None
+        remaining_ticks = None
         if stages:
             if serial:
                 current_stage = stages.pop(0)
@@ -1240,76 +1241,92 @@ class CeedStage(EventDispatcher):
                 ticks = [(s, s.tick_stage(shapes, last_end_t)) for s in stages]
                 for _, it in ticks:
                     next(it)
+                remaining_ticks = ticks
 
-        # t is the next time to be used
-        t = yield
-
-        while True:
-            # if func is done, current t was not used
-            if funcs is not None:
-                try:
-                    val = funcs.send(t)
-
-                    values = (val if r else None, val if g else None,
-                              val if b else None, a)
-                    for name in names:
-                        if name in keep_dark:
-                            shapes[name].append((0, 0, 0, 1))
-                        else:
-                            shapes[name].append(values)
-                except FuncDoneException:
-                    funcs = None
-                    func_end_t = self.t_end
-
-            if serial and tick is not None:
-                while True:
-                    try:
-                        tick.send(t)
-                        break
-                    except StageDoneException:
-                        t_end = current_stage.t_end
-                        if stages and not end_on_first:
-                            current_stage = stages.pop(0)
-                            tick = current_stage.tick_stage(shapes, t_end)
-                            next(tick)
-                        else:
-                            stage_end_t = t_end
-                            tick = current_stage = None
-                            break
-
-            elif not serial and ticks:
-                for stage, tick_stage in ticks[:]:
-                    try:
-                        tick_stage.send(t)
-                    except StageDoneException:
-                        if end_on_first:
-                            del ticks[:]
-                            stage_end_t = stage.t_end
-                            break
-
-                        ticks.remove((stage, tick_stage))
-                        if stage_end_t is None:
-                            stage_end_t = stage.t_end
-                        else:
-                            stage_end_t = max(stage_end_t, stage.t_end)
-
-            if funcs is None and tick is None and not ticks:
-                # the current t was not used (actually, if parallel and
-                # end_on_first, it may have been used by a earlier stage and
-                # that stage could have added values to shapes, but for now
-                # we'll pretend it wasn't). TODO: fix
-                break
-
+        try:
+            # t is the next time to be used
             t = yield
 
-        if func_end_t is None and stage_end_t is None:
-            self.t_end = last_end_t
-        elif func_end_t is None:
-            self.t_end = stage_end_t
-        elif stage_end_t is None:
-            self.t_end = func_end_t
-        else:
-            self.t_end = max(func_end_t, stage_end_t)
+            while True:
+                # if func is done, current t was not used
+                if funcs is not None:
+                    try:
+                        val = funcs.send(t)
+
+                        values = (val if r else None, val if g else None,
+                                  val if b else None, a)
+                        for name in names:
+                            if name in keep_dark:
+                                shapes[name].append((0, 0, 0, 1))
+                            else:
+                                shapes[name].append(values)
+                    except FuncDoneException:
+                        funcs = None
+                        func_end_t = self.t_end
+
+                if serial and tick is not None:
+                    while True:
+                        try:
+                            tick.send(t)
+                            break
+                        except StageDoneException:
+                            t_end = current_stage.t_end
+                            if stages and not end_on_first:
+                                current_stage = stages.pop(0)
+                                tick = current_stage.tick_stage(shapes, t_end)
+                                next(tick)
+                            else:
+                                stage_end_t = t_end
+                                tick = current_stage = None
+                                break
+
+                elif not serial and ticks:
+                    for stage, tick_stage in ticks[:]:
+                        try:
+                            tick_stage.send(t)
+                        except StageDoneException:
+                            ticks.remove((stage, tick_stage))
+
+                            if end_on_first:
+                                ticks = None  # leave remaining
+                                stage_end_t = stage.t_end
+                                break
+
+                            if stage_end_t is None:
+                                stage_end_t = stage.t_end
+                            else:
+                                stage_end_t = max(stage_end_t, stage.t_end)
+
+                if funcs is None and tick is None and not ticks:
+                    # the current t was not used (actually, if parallel and
+                    # end_on_first, it may have been used by a earlier stage and
+                    # that stage could have added values to shapes, but for now
+                    # we'll pretend it wasn't). TODO: fix
+                    break
+
+                t = yield
+
+            if func_end_t is None and stage_end_t is None:
+                self.t_end = last_end_t
+            elif func_end_t is None:
+                self.t_end = stage_end_t
+            elif stage_end_t is None:
+                self.t_end = func_end_t
+            else:
+                self.t_end = max(func_end_t, stage_end_t)
+        finally:
+            # set all unfinished stages (that are already started) to our
+            # t_end. If we're exiting due to
+            # GeneratorExit whoever closed us must have set our t_end, so we'll
+            # use that. If we are exiting normally, we set it above so use that
+            if serial:
+                if current_stage is not None:
+                    current_stage.t_end = self.t_end
+                    tick.close()
+            elif remaining_ticks:
+                for stage, tick_stage in remaining_ticks:
+                    stage.t_end = self.t_end
+                    tick_stage.close()
 
         raise StageDoneException
 
