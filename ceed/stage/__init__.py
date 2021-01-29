@@ -427,7 +427,7 @@ class StageFactoryBase(EventDispatcher):
         # shapes is updated in place with zero or more values for each shape
         shapes = {s.name: [] for s in self.shape_factory.shapes}
 
-        stage.init_stage_tree(stage)
+        stage.init_stage_tree()
         stage.apply_pre_compute(
             pre_compute, frame_rate, t_start, set(shapes.keys()))
 
@@ -1445,14 +1445,17 @@ class CeedStage(EventDispatcher):
 
         # use start time if no funcs
         self.t_end = last_end_t
+
         raise FuncDoneException
 
-    def init_stage_tree(self, root: 'CeedStage') -> None:
+    def init_stage_tree(self, root: Optional['CeedStage'] = None) -> None:
         """
         """
         for func in self.functions:
-            func.init_func_tree(func)
+            func.init_func_tree()
 
+        if root is None:
+            root = self
         for child_stage in self.stages:
             child_stage.init_stage_tree(root)
 

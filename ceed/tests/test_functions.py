@@ -36,7 +36,7 @@ def get_function_values(func: FuncBase, frame_rate: float) -> List[float]:
     frame_rate = int(frame_rate)
     i = 1
 
-    func.init_func_tree(func)
+    func.init_func_tree()
     func.init_func(Fraction(i, frame_rate))
 
     values = []
@@ -1565,7 +1565,7 @@ def test_function_tree(function_factory: FunctionFactoryBase):
         assert f.loop_count == f_count
         assert f.loop_tree_count == f_tree_count
 
-    g1.init_func_tree(g1)
+    g1.init_func_tree()
     g1.init_func(0)
     assert_counts(0, 0, 0, 0, 0, 0)
 
@@ -1614,7 +1614,7 @@ def test_call_func_loop_done(function_factory: FunctionFactoryBase):
     factory = function_factory
 
     f = ConstFunc(function_factory=factory, duration=2, loop=3)
-    f.init_func_tree(f)
+    f.init_func_tree()
     f.init_func(0)
     assert f.loop_count == 0
     assert f.loop_tree_count == 0

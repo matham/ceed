@@ -1456,12 +1456,12 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
         obj.apply_state(self.get_state(expand_ref=True))
         return obj
 
-    def init_func_tree(self, root: 'FuncBase') -> None:
+    def init_func_tree(self, root: Optional['FuncBase'] = None) -> None:
         """Initializes the function as part of the function tree so it is ready
         to be called to get the function values as part of the tree. It is
         called once for each function of the entire function tree.
 
-        :param root: The root of the function tree.
+        :param root: The root of the function tree. If None, it's self.
 
         For example, for the following function structure::
 
@@ -1750,7 +1750,7 @@ class CeedFuncRef:
             'function. To use, copy it into a normal function with '
             'copy_expand_ref')
 
-    def init_func_tree(self, root: 'FuncBase'):
+    def init_func_tree(self, root: Optional['FuncBase'] = None):
         raise TypeError(
             'A CeedFuncRef function instance cannot be called like a normal '
             'function. To use, copy it into a normal function with '
@@ -1882,7 +1882,10 @@ line 934, in __call__
         self.funcs = []
         self.fbind('timebase', self._dispatch_timebase)
 
-    def init_func_tree(self, root: 'FuncBase') -> None:
+    def init_func_tree(self, root: Optional['FuncBase'] = None) -> None:
+        if root is None:
+            root = self
+
         super().init_func_tree(root)
         for func in self.funcs:
             func.init_func_tree(root)
