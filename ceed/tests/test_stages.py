@@ -1664,3 +1664,23 @@ def test_custom_stage_evaluate(stage_factory: StageFactoryBase, pre_compute):
         assert a == 1
 
     assert stage.t_end == Fraction(11, 10)
+
+
+def test_add_stage_unique_built_in_name(stage_factory: StageFactoryBase):
+    assert not stage_factory.stages
+
+    cls = stage_factory.get('CeedStage')
+    s = cls(
+        stage_factory=stage_factory,
+        function_factory=stage_factory.function_factory,
+        shape_factory=stage_factory.shape_factory)
+    orig_name = s.name
+    n = len(stage_factory.stage_names)
+    assert orig_name in stage_factory.stage_names
+
+    stage_factory.add_stage(s)
+    assert s in stage_factory.stages
+    assert len(stage_factory.stage_names) == n + 1
+    assert stage_factory.stage_names[s.name] is s
+    assert orig_name in stage_factory.stage_names
+    assert s.name != orig_name

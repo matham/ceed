@@ -1651,3 +1651,20 @@ def test_call_func_loop_done(function_factory: FunctionFactoryBase):
 
     with pytest.raises(ValueError):
         f.tick_loop(8)
+
+
+def test_add_func_unique_built_in_name(function_factory: FunctionFactoryBase):
+    assert not function_factory.funcs_user
+
+    const_cls = function_factory.get('ConstFunc')
+    f = const_cls(function_factory=function_factory)
+    orig_name = f.name
+    n = len(function_factory.funcs_inst)
+    assert orig_name in function_factory.funcs_inst
+
+    function_factory.add_func(f)
+    assert f in function_factory.funcs_user
+    assert len(function_factory.funcs_inst) == n + 1
+    assert function_factory.funcs_inst[f.name] is f
+    assert orig_name in function_factory.funcs_inst
+    assert f.name != orig_name

@@ -18,21 +18,41 @@
             scroll_type: ['bars']
             do_scroll_y: False
             size_hint_y: None
-            height: '38dp'
+            height: '68dp'
             BoxLayout:
-                size_hint_min_x: self.minimum_width
-                orientation: 'horizontal'
-                FlatImageButton:
-                    test_name: 'add empty stage'
-                    scale_down_color: True
-                    source: 'flat_plus.png'
-                    flat_color: app.theme.accent
-                    on_release: stages.add_empty_stage()
+                size_hint_min_x: control_box.minimum_width
+                orientation: 'vertical'
                 FlatLabel:
                     text: 'Stages'
-                    width: self.texture_size[0]
-                    size_hint_x: None
                     flat_color: app.theme.text_primary
+                BoxLayout:
+                    id: control_box
+                    orientation: 'horizontal'
+                    padding: '5dp'
+                    spacing: '5dp'
+                    DraggingWidget:
+                        test_name: 'stage list drag'
+                        drag_controller: app.drag_controller
+                        drag_widget: stage_spin.__self__
+                        obj_dragged: stage_spin.__self__
+                        drag_cls: 'stage_spinner'
+                    FlatImageButton:
+                        test_name: 'stage add'
+                        scale_down_color: True
+                        source: 'flat_plus.png'
+                        flat_color: app.theme.accent
+                        on_release: stages.add_stage(stage_spin.text)
+                    FlatSpinner:
+                        id: stage_spin
+                        test_name: 'stage spinner'
+                        values: sorted(app.stage_factory.stage_names.keys()) if app.stage_factory.stage_names else []
+                        text_autoupdate: True
+                        size_hint_min_x: self.minimum_width
+                        flat_color: app.theme.text_primary
+                        flat_menu_color: app.theme.accent
+                        flat_drop_background_color: app.theme.primary_text
+                        flat_drop_text_color: app.theme.text_primary
+                        flat_border_color: app.theme.divider
         ScrollView:
             bar_width: '10dp'
             scroll_type: ['bars']
@@ -49,11 +69,11 @@
                 size_hint_min_x: self.minimum_width
                 touch_deselect_last: True
                 spacer_props: {'size_hint_y': None, 'height': '40dp', 'size_hint_min_x': '40dp'}
-                drag_classes: ['shape', 'shape_group', 'func', 'func_spinner', 'stage']
+                drag_classes: ['shape', 'shape_group', 'func', 'func_spinner', 'stage', 'stage_spinner']
                 drag_append_end: True
                 canvas:
                     Color:
-                        rgba: (152 / 255., 153 / 255., 155 / 255., 1.) if app.drag_controller.dragging and app.drag_controller.widget_dragged and app.drag_controller.widget_dragged.drag_cls in ('shape', 'shape_group', 'func', 'func_spinner', 'stage') else (0, 0, 0, 0)
+                        rgba: (152 / 255., 153 / 255., 155 / 255., 1.) if app.drag_controller.dragging and app.drag_controller.widget_dragged and app.drag_controller.widget_dragged.drag_cls in ('shape', 'shape_group', 'func', 'func_spinner', 'stage', 'stage_spinner') else (0, 0, 0, 0)
                     Rectangle:
                         pos: self.pos
                         size: self.width, dp(10)

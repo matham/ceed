@@ -346,9 +346,9 @@ class StageFactoryBase(EventDispatcher):
         if stage.stage_factory is not self:
             raise ValueError('stage factory is incorrect')
 
-        names = [s.name for s in self.stages]
+        names = set(self.stage_names.keys())
         if not allow_last_experiment:
-            names.append(last_experiment_stage_name)
+            names.add(last_experiment_stage_name)
 
         stage.name = fix_name(stage.name, names)
         stage.fbind('name', self._change_stage_name, stage)

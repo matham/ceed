@@ -24,7 +24,7 @@ from kivy.graphics import Rectangle, Color, Line
 from ceed.graphics import WidgetList, ShowMoreSelection, BoxSelector, \
     ShowMoreBehavior
 from ceed.stage import CeedStage, StageFactoryBase, CeedStageRef, \
-    last_experiment_stage_name, StageShape
+    last_experiment_stage_name, StageShape, CeedStageOrRefInstance
 from ceed.function.func_widgets import FuncWidget, FuncWidgetGroup
 from ceed.function import CeedFuncRef, FunctionFactoryBase
 
@@ -74,36 +74,40 @@ class StageList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
         if stage_shape.display is not None:
             stage_shape.display.remove_shape()
 
-    def add_empty_stage(self) -> CeedStage:
-        """Creates and adds a new stage to the :attr:`stage_factory`.
-
-        The stage is added as a child of any stage currently selected in the
-        GUI, or globally if non is selected.
-
-        :return: The newly created stage.
+    def add_stage(self, name: str) -> None:
+        """Adds a copy of the the stage with the given ``name`` from
+        :attr:`stage_factory` to the available stages in
+        :attr:`stage_factory` (with a new name of course) or to a stage.
         """
-        stage = CeedStage(
-            stage_factory=self.stage_factory,
-            function_factory=self.stage_factory.function_factory,
-            shape_factory=self.stage_factory.shape_factory)
-
+        # to whom to add the stage
+        parent: Optional[CeedStage] = None
         if self.selected_nodes:
-            stage_widget = self.selected_nodes[-1]
-            stage_widget.stage.add_stage(stage)
-            self.show_sub_stage(stage, stage_widget.stage)
+            parent = self.selected_nodes[-1].stage
+
+        src_stage: CeedStage = self.stage_factory.stage_names[name]
+
+        if parent is not None:
+            if parent.can_other_stage_be_added(src_stage):
+                stage = self.stage_factory.get_stage_ref(stage=src_stage)
+                parent.add_stage(stage)
+                self.show_sub_stage(stage, parent)
         else:
+            stage = deepcopy(src_stage)
             self.stage_factory.add_stage(stage, allow_last_experiment=False)
             self.show_stage(stage)
-        return stage
 
     def handle_drag_release(self, index, drag_widget):
-        if drag_widget.drag_cls == 'stage':
-            # we dragged a stage so we need to copy it
-            stage = drag_widget.obj_dragged.stage
-            if isinstance(drag_widget.obj_dragged.stage, CeedStageRef):
-                stage = stage.stage
-            stage = deepcopy(stage)
+        if drag_widget.drag_cls in ('stage_spinner', 'stage'):
+            if drag_widget.drag_cls == 'stage_spinner':
+                stage = self.stage_factory.stage_names[
+                    drag_widget.obj_dragged.text]
+            else:
+                # we dragged a stage so we need to copy it
+                stage = drag_widget.obj_dragged.stage
+                if isinstance(stage, CeedStageRef):
+                    stage = stage.stage
 
+            stage = deepcopy(stage)
             self.stage_factory.add_stage(stage, allow_last_experiment=False)
             self.show_stage(stage)
             return
@@ -175,7 +179,8 @@ class StageList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
             if not expand_stage:
                 widget.expand_widget.state = 'normal'
 
-    def show_sub_stage(self, stage: CeedStage, parent_stage: CeedStage):
+    def show_sub_stage(
+            self, stage: CeedStageOrRefInstance, parent_stage: CeedStage):
         """Displays the widget of the stage in the GUI. This is for displaying
         a sub-stages within the parent stage.
 
@@ -251,13 +256,17 @@ class StageChildrenList(StageChildrenViewList):
         stage_widget = self.stage_widget
         stage = stage_widget.stage
         stage_factory = stage.stage_factory
-        dragged_stage = drag_widget.obj_dragged.stage
+
+        if drag_widget.drag_cls == 'stage_spinner':
+            dragged_stage = stage.stage_factory.stage_names[
+                drag_widget.obj_dragged.text]
+        else:
+            assert drag_widget.drag_cls == 'stage'
+            dragged_stage = drag_widget.obj_dragged.stage
+            if isinstance(dragged_stage, CeedStageRef):
+                dragged_stage = dragged_stage.stage
 
         assert not isinstance(stage, CeedStageRef)
-        if not stage.can_other_stage_be_added(dragged_stage):
-            return
-
-        assert drag_widget.drag_cls == 'stage'
         if not stage.can_other_stage_be_added(dragged_stage):
             return
 
@@ -601,7 +610,7 @@ class StageWidget(ShowMoreBehavior, BoxLayout):
         """
         stage_widget = self.stage_widget = StageChildrenList()
         stage_widget.stage_widget = self
-        stage_widget.drag_classes = ['stage']
+        stage_widget.drag_classes = ['stage', 'stage_spinner']
         stage_widget.drag_append_end = False
         stage_widget.back_color = (.482, .114, 0, 1)
         more_widget.add_widget(stage_widget)

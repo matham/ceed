@@ -193,6 +193,8 @@ class CeedApp(BaseKivyApp):
         self.ceed_data.create_file('')
 
         self.stage_factory.fbind('on_changed', self.changed_callback)
+        for stage in self.stage_factory.stages_inst_default.values():
+            stage.fbind('on_changed', self.changed_callback)
         self.function_factory.fbind('on_changed', self.changed_callback)
         for func in self.function_factory.funcs_inst_default.values():
             func.fbind('on_changed', self.changed_callback)
@@ -267,6 +269,8 @@ class CeedApp(BaseKivyApp):
         if self.view_controller is not None:
             self.view_controller.funbind('on_changed', self.changed_callback)
 
+        for stage in self.stage_factory.stages_inst_default.values():
+            stage.funbind('on_changed', self.changed_callback)
         for func in self.function_factory.funcs_inst_default.values():
             func.funbind('on_changed', self.changed_callback)
 
