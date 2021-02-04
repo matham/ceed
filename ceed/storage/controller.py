@@ -880,43 +880,57 @@ class DataSerializerBase(EventDispatcher):
         if self.counter_bit_width % 8:
             raise ValueError('counter_bit_width must be a multiple of 8')
 
-        clock_base = 1 << self.clock_idx
-        clock = 0
+        clock_bit_set = 1 << self.clock_idx
+        clock_state = 0
 
-        count_i = [1 << v for v in self.count_indices]
-        short_i = [(i, 1 << v) for i, v in enumerate(self.short_count_indices)]
+        count_bits_set = [1 << v for v in self.count_indices]
+        short_bits_set_idx = [
+            (i, 1 << v) for i, v in enumerate(self.short_count_indices)]
 
-        short_n = 2 ** len(short_i)
-        short_val = 0
+        short_max_value = 2 ** len(short_bits_set_idx)
+        short_count = 0
+        n_count_bits = len(count_bits_set)
 
-        count_cycles = int(ceil(self.counter_bit_width / float(len(count_i))))
+        n_samples_per_count = int(ceil(self.counter_bit_width / n_count_bits))
+        # output bits and corresponding input indices. Each item is the list
+        # for that sample sent. E.g. [[(0b01, 0), (0b10, 1)],
+        # [(0b01, 0), (0b10, 1)], [(0b01, 2), (0b10, 3)],
+        # [(0b01, 2), (0b10, 3)]], each duplicated for high/low clock
         count_iters = []
-        for i in range(count_cycles):
-            count_iters.append(list(enumerate(count_i, i * len(count_i))))
-            count_iters.append(list(enumerate(count_i, i * len(count_i))))
+        for i in range(n_samples_per_count):
+            count_iters.append(list(enumerate(
+                count_bits_set, i * n_count_bits)))
+            count_iters.append(list(enumerate(
+                count_bits_set, i * n_count_bits)))
 
-        num_bytes = self.counter_bit_width // 8
-        config_bytes += b'\0' * (num_bytes - (len(config_bytes) % num_bytes))
+        n_bytes_per_count = self.counter_bit_width // 8
+        # pad config bytes to n_bytes_per_count
+        pad = n_bytes_per_count - (len(config_bytes) % n_bytes_per_count) - \
+            len(config_bytes) // n_bytes_per_count
+        config_bytes += b'\0' * pad
         if 2 ** self.counter_bit_width - 1 < len(config_bytes):
             raise ValueError(
                 'Cannot transmit config, its too long for counter_bit_width')
 
+        # send the size of the config, followed by
         config_bytes = [
             len(config_bytes)] + \
-            list(struct.unpack('<{}L'.format(len(config_bytes) // num_bytes),
-                               config_bytes))
+            list(struct.unpack(
+                '<{}L'.format(len(config_bytes) // n_bytes_per_count),
+                config_bytes))
         sending_config = bool(config_bytes)
 
         while True:
             first = True
             for k, data in enumerate(count_iters):
                 count = yield
-                value = clock = clock ^ clock_base
+                value = clock_state = clock_state ^ clock_bit_set
 
-                short_val = (short_val + count - last_count) % short_n
+                short_count = (
+                    short_count + count - last_count) % short_max_value
                 last_count = count
-                for i, v in short_i:
-                    if (1 << i) & short_val:
+                for i, v in short_bits_set_idx:
+                    if (1 << i) & short_count:
                         value |= v
 
                 if first:
@@ -956,10 +970,10 @@ def num_ticks_handshake(counter_bit_width, count_indices, config_len):
 
     :param config_len: The number of config **bytes** being sent.
     """
-    num_bytes = counter_bit_width // 8
+    n_bytes_per_count = counter_bit_width // 8
     # the message + padding in bytes
-    config_len += num_bytes - (config_len % num_bytes)
-    config_len //= num_bytes  # in
+    config_len += n_bytes_per_count - (config_len % n_bytes_per_count)
+    config_len //= n_bytes_per_count  # in
     config_len += 1  # the message length byte
 
     ticks_per_int = int(ceil(counter_bit_width / len(count_indices)))

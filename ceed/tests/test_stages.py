@@ -71,6 +71,34 @@ def create_recursive_stages(
     return root, g1, g2, s1, s2, s3, s4, s5, s6
 
 
+def create_2_shape_stage(
+        stage_factory: StageFactoryBase, show_in_gui=False, app=None):
+    from .test_app.examples.shapes import CircleShapeP1, CircleShapeP2
+
+    shape1 = CircleShapeP1(
+        app=None, painter=stage_factory.shape_factory, show_in_gui=show_in_gui)
+    shape2 = CircleShapeP2(
+        app=None, painter=stage_factory.shape_factory, show_in_gui=show_in_gui)
+
+    root = ParaAllStage(
+        stage_factory=stage_factory, show_in_gui=show_in_gui, app=app,
+        create_add_to_parent=not show_in_gui)
+
+    s1 = SerialAllStage(
+        stage_factory=stage_factory, show_in_gui=show_in_gui, app=app,
+        parent_wrapper_stage=root,
+        create_add_to_parent=not show_in_gui)
+    s2 = SerialAllStage(
+        stage_factory=stage_factory, show_in_gui=show_in_gui, app=app,
+        parent_wrapper_stage=root,
+        create_add_to_parent=not show_in_gui)
+
+    s1.stage.add_shape(shape1.shape)
+    s2.stage.add_shape(shape2.shape)
+
+    return root, s1, s2, shape1, shape2
+
+
 def create_4_stages(stage_factory: StageFactoryBase):
     cls = stage_factory.get('CeedStage')
     s1 = cls(
@@ -1632,8 +1660,8 @@ def test_custom_stage_evaluate(stage_factory: StageFactoryBase, pre_compute):
         def evaluate_stage(self, shapes, last_end_t):
             t = yield
             for i in range(10):
-                shapes[shape.name].append((.1, .2,  (i % 2) * .3, None))
-                shapes[shape2.name].append((.1, .2,  (i % 2) * .5, None))
+                shapes[shape.name].append((.1, .2, (i % 2) * .3, None))
+                shapes[shape2.name].append((.1, .2, (i % 2) * .5, None))
                 t = yield
 
             self.t_end = t

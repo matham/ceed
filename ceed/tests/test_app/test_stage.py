@@ -1,10 +1,12 @@
 import trio
+import pathlib
 import sys
 from contextlib import contextmanager
-import math
+from math import isclose
 import numpy as np
 import pytest
 
+import ceed
 from .examples.stages import create_test_stages, make_stage, StageWrapper, \
     stage_classes, assert_stages_same
 from typing import Type, List, Union
@@ -595,13 +597,13 @@ async def test_recursive_play_stage_intensity(
         (r1, g1, b1, _), (r2, g2, b2, _) = points
 
         val = shape_color[frame]
-        assert math.isclose(r1, val[0], abs_tol=2 / 255) if val[0] else r1 == 0
-        assert math.isclose(g1, val[1], abs_tol=2 / 255) if val[1] else g1 == 0
-        assert math.isclose(b1, val[2], abs_tol=2 / 255) if val[2] else b1 == 0
+        assert isclose(r1, val[0], abs_tol=2 / 255) if val[0] else r1 == 0
+        assert isclose(g1, val[1], abs_tol=2 / 255) if val[1] else g1 == 0
+        assert isclose(b1, val[2], abs_tol=2 / 255) if val[2] else b1 == 0
         val = shape2_color[frame]
-        assert math.isclose(r2, val[0], abs_tol=2 / 255) if val[0] else r2 == 0
-        assert math.isclose(g2, val[1], abs_tol=2 / 255) if val[1] else g2 == 0
-        assert math.isclose(b2, val[2], abs_tol=2 / 255) if val[2] else b2 == 0
+        assert isclose(r2, val[0], abs_tol=2 / 255) if val[0] else r2 == 0
+        assert isclose(g2, val[1], abs_tol=2 / 255) if val[1] else g2 == 0
+        assert isclose(b2, val[2], abs_tol=2 / 255) if val[2] else b2 == 0
 
         frame += 1
 
@@ -628,13 +630,13 @@ async def test_recursive_play_stage_intensity(
     assert len(shape_data) == num_frames
     assert len(shape2_data) == num_frames
     for (r, g, b), (r1, g1, b1, _) in zip(shape_color, shape_data):
-        assert math.isclose(r, r1, abs_tol=2 / 255) if r else r1 == 0
-        assert math.isclose(g, g1, abs_tol=2 / 255) if g else g1 == 0
-        assert math.isclose(b, b1, abs_tol=2 / 255) if b else b1 == 0
+        assert isclose(r, r1, abs_tol=2 / 255) if r else r1 == 0
+        assert isclose(g, g1, abs_tol=2 / 255) if g else g1 == 0
+        assert isclose(b, b1, abs_tol=2 / 255) if b else b1 == 0
     for (r, g, b), (r1, g1, b1, _) in zip(shape2_color, shape2_data):
-        assert math.isclose(r, r1, abs_tol=2 / 255) if r else r1 == 0
-        assert math.isclose(g, g1, abs_tol=2 / 255) if g else g1 == 0
-        assert math.isclose(b, b1, abs_tol=2 / 255) if b else b1 == 0
+        assert isclose(r, r1, abs_tol=2 / 255) if r else r1 == 0
+        assert isclose(g, g1, abs_tol=2 / 255) if g else g1 == 0
+        assert isclose(b, b1, abs_tol=2 / 255) if b else b1 == 0
 
     f.close_h5()
 

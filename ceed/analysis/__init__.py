@@ -12,7 +12,7 @@ import sys
 import itertools
 import nixio as nix
 import pathlib
-from typing import List, Union, Optional
+from typing import List, Union, Optional, Dict, List, Any
 from numpy.lib.format import open_memmap
 
 from more_kivy_app.utils import yaml_loads
@@ -94,28 +94,28 @@ class CeedDataReader:
     :meth:`get_image_from_file`.
     """
 
-    electrodes_data = {}
+    electrodes_data: Dict[str, np.ndarray] = {}
     """Once set in :meth:`load_mcs_data`, it is a mapping whose keys are
     electrode names and whose values are 1D arrays with the electrode data.
     """
 
-    electrodes_metadata = {}
+    electrodes_metadata: Dict[str, Dict[str, Any]] = {}
     """Similar to :attr:`electrodes_data`, but instead the values are the
     electrode metadata such as sampling rate etc.
     """
 
-    electrode_dig_data = None
+    electrode_dig_data: Optional[np.ndarray] = None
     """If present, it's an array containing the digital input data as sampled
     by the MCS system. There should be the same number of samples in the time
     dimension as for the :attr:`electrodes_data`.
     """
 
-    electrode_intensity_alignment = None
+    electrode_intensity_alignment: Optional[np.ndarray] = None
     """Once set in :meth:`load_experiment` it is a 1D array, mapping the ceed
     array data into the MCS :attr:`electrodes_data` by indices.
     """
 
-    shapes_intensity = {}
+    shapes_intensity: Dict[str, np.ndarray] = {}
     """Once set in :meth:`load_experiment`, it is a mapping whose keys are the
     names of the shapes available in ceed for this experiment and whose values
     is a 1D array with the intensity value of the shape for each time point.
@@ -125,7 +125,7 @@ class CeedDataReader:
     :attr:`electrode_intensity_alignment`.
     """
 
-    led_state = None
+    led_state: np.ndarray = None
     """The projector lets us set the state of each of the 3 RGB LEDs
     independently. This is 2D array of Tx4:
 
@@ -137,37 +137,37 @@ class CeedDataReader:
       the projector.
     """
 
-    view_controller = None
+    view_controller: ViewControllerBase = None
     """Once set in :meth:`load_experiment`, it is the
     :class:`~ceed.view.controller.ViewControllerBase` instance configured to
     the same settings as used during the :attr:`loaded_experiment`.
     """
 
-    data_serializer = None
+    data_serializer: DataSerializerBase = None
     """Once set in :meth:`load_experiment`, it is the
     :class:`~ceed.storage.controller.DataSerializerBase` instance configured to
     the same settings as used during the :attr:`loaded_experiment`.
     """
 
-    function_factory = None
+    function_factory: FunctionFactoryBase = None
     """Once set in :meth:`load_experiment`, it is the
     :class:`~ceed.function.FunctionFactoryBase` instance configured to
     the same settings as used during the :attr:`loaded_experiment`.
     """
 
-    stage_factory = None
+    stage_factory: StageFactoryBase = None
     """Once set in :meth:`load_experiment`, it is the
     :class:`~ceed.stage.StageFactoryBase` instance configured to
     the same settings as used during the :attr:`loaded_experiment`.
     """
 
-    shape_factory = None
+    shape_factory: CeedPaintCanvasBehavior = None
     """Once set in :meth:`load_experiment`, it is the
     :class:`~ceed.shape.CeedPaintCanvasBehavior` instance configured to
     the same settings as used during the :attr:`loaded_experiment`.
     """
 
-    experiment_stage_name = ''
+    experiment_stage_name: str = ''
     """Once set in :meth:`load_experiment`, it is the name of the stage among
     the stages in :attr:`stage_factory` that was used to run the currently
     :attr:`loaded_experiment`.
@@ -181,7 +181,7 @@ class CeedDataReader:
     """The timestamp that the currently :attr:`loaded_experiment` started.
     """
 
-    experiment_cam_image = None
+    experiment_cam_image: Optional[Image] = None
     """The camera image stored for the currently :attr:`loaded_experiment`.
     """
 
@@ -191,7 +191,7 @@ class CeedDataReader:
     This stores the experiment number currently loaded.
     """
 
-    ceed_version = ''
+    ceed_version: str = ''
     """Once set in :meth:`open_h5`, it is the version of ceed that created
     the file.
     """
@@ -208,23 +208,25 @@ class CeedDataReader:
     experiment.
     """
 
-    app_logs = ''
+    app_logs: str = ''
     """Once set in :meth:`open_h5`, it contains the experimental logs
     of ceed for the experiments stored in the file.
     """
 
-    app_notes = ''
+    app_notes: str = ''
     """Once set in :meth:`open_h5`, it contains the overall notes stored
     with the file.
     """
 
-    app_config = {}
-    """Once set in :meth:`open_h5`, it is the last ceed application
-    configuration options saved in the file. I.e. this is the configuration
-    classes that configure the app when the file was saved. A copy of the
-    options is stored in each experiment, with the configuration options used
-    at the time the experiment was executed - :attr:`app_config` is the options
-    when the file was last closed/saved.
+    app_config: Dict[str, Any] = {}
+    """Set by :meth:`open_h5`; it is the last ceed application
+    configuration objects as saved in the file.
+
+    A copy of the options is also stored in each experiment - with the
+    configuration options used at the time the experiment was executed. These
+    are stored in :attr:`function_factory`, :attr:`stage_factory` etc.
+    :attr:`app_config` are these options when the file was last closed/saved
+    and it's stored in a dict.
     """
 
     _nix_file: Optional[nix.File] = None
@@ -465,16 +467,17 @@ class CeedDataReader:
         for item in block.data_arrays:
             if not item.name.startswith('shape_'):
                 continue
-            data[item.name[6:]] = item
+            data[item.name[6:]] = np.asarray(item)
 
-        self.led_state = block.data_arrays['led_state']
+        self.led_state = np.asarray(block.data_arrays['led_state'])
 
         if ('ceed_mcs_alignment' in self._nix_file.blocks and
                 'experiment_{}'.format(experiment) in
                 self._nix_file.blocks['ceed_mcs_alignment'].data_arrays):
-            self.electrode_intensity_alignment = self._nix_file.blocks[
-                'ceed_mcs_alignment'].data_arrays[
-                'experiment_{}'.format(experiment)]
+            self.electrode_intensity_alignment = np.asarray(
+                self._nix_file.blocks[
+                    'ceed_mcs_alignment'].data_arrays[
+                    'experiment_{}'.format(experiment)])
         else:
             self.electrode_intensity_alignment = None
 
@@ -482,18 +485,23 @@ class CeedDataReader:
         if self.electrodes_data:  # already loaded
             return
 
+        if 'mcs_data' not in self._nix_file.blocks:
+            raise TypeError(
+                'Cannot load MCS data because no MCS data was merged in file')
+
         mcs_block = self._nix_file.blocks['mcs_data']
         mcs_metadata = mcs_block.metadata
         self.electrode_dig_data = None
         if 'digital_io' in mcs_block.data_arrays:
-            self.electrode_dig_data = mcs_block.data_arrays['digital_io']
+            self.electrode_dig_data = np.asarray(
+                mcs_block.data_arrays['digital_io'])
 
         electrode_data = self.electrodes_data = {}
         electrodes_metadata = self.electrodes_metadata = {}
         for item in mcs_block.data_arrays:
             if not item.name.startswith('electrode_'):
                 continue
-            electrode_data[item.name[10:]] = np.array(item)
+            electrode_data[item.name[10:]] = np.asarray(item)
 
             electrodes_metadata[item.name[10:]] = electrode_metadata = {}
             for prop in mcs_metadata.sections[item.name].props:

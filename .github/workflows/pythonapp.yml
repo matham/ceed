@@ -36,6 +36,7 @@ jobs:
         sudo apt update
         sudo apt -y install libsdl2-dev libsdl2-ttf-dev libsdl2-image-dev libsdl2-mixer-dev
         sudo apt-get -y install python3-setuptools build-essential libgl1-mesa-dev libgles2-mesa-dev
+        sudo apt -y install wget unzip
         /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1280x720x24 -ac +extension GLX
 
         python3 -m pip install --upgrade pip virtualenv wheel setuptools
@@ -47,6 +48,9 @@ jobs:
         python3 -m pip install https://github.com/matham/cpl_media/archive/master.zip
         python3 -m pip install -e .[dev] --extra-index-url https://kivy-garden.github.io/simple/
         python3 -m pip uninstall pytest-asyncio -y
+
+        wget https://github.com/matham/ceed/releases/download/v1.0.0.dev0/ceed_data.zip
+        unzip ceed_data.zip -d ceed/examples/data/
     - name: Make wheel
       run: python3 setup.py bdist_wheel --universal
     - name: Upload wheels as artifact
@@ -99,6 +103,9 @@ jobs:
         python -m pip install https://github.com/matham/cpl_media/archive/master.zip
         python -m pip install -e .[dev] --extra-index-url https://kivy-garden.github.io/simple/
         python -m pip uninstall pytest-asyncio -y
+
+        Invoke-WebRequest "https://github.com/matham/ceed/releases/download/v1.0.0.dev0/ceed_data.zip" -OutFile "ceed_data.zip"
+        Expand-Archive -LiteralPath .\ceed_data.zip -DestinationPath .\ceed\examples\data\
     - name: Make PyInstaller app
       if: startsWith(github.ref, 'refs/tags/') || contains(github.event.head_commit.message, '[build app]')
       run: |
