@@ -73,8 +73,6 @@ def create_recursive_stages(
 
 def create_2_shape_stage(
         stage_factory: StageFactoryBase, show_in_gui=False, app=None):
-    from .test_app.examples.shapes import CircleShapeP1, CircleShapeP2
-
     shape1 = CircleShapeP1(
         app=None, painter=stage_factory.shape_factory, show_in_gui=show_in_gui)
     shape2 = CircleShapeP2(

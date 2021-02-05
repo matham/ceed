@@ -12,7 +12,7 @@ import sys
 import itertools
 import nixio as nix
 import pathlib
-from typing import List, Union, Optional, Dict, List, Any
+from typing import List, Union, Optional, Dict, Any
 from numpy.lib.format import open_memmap
 
 from more_kivy_app.utils import yaml_loads

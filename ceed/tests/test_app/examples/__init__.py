@@ -22,4 +22,3 @@ def assert_image_same(image1: Image, image2: Image, exact=True) -> None:
     else:
         for a, b in zip(data1[0], data2[0]):
             assert a - 1 <= b <= a + 1
-

@@ -872,7 +872,7 @@ def add_to_path(tmp_path, *args):
       'app_context': add_to_path}, ],
     indirect=True
 )
-async def external_plugin_named_package(stage_app: CeedTestApp, tmp_path):
+async def test_external_plugin_named_package(stage_app: CeedTestApp, tmp_path):
     stage_factory = stage_app.app.stage_factory
 
     assert 'FakeStage' in stage_factory.stages_cls
