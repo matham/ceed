@@ -231,15 +231,16 @@ async def test_stage_find_shape_in_all_stages(stage_app: CeedTestApp):
 async def test_add_empty_stage(stage_app: CeedTestApp):
     stage_factory = stage_app.app.stage_factory
     assert not stage_factory.stages
-    assert not stage_factory.stage_names
+    n = len(stage_factory.stage_names)
 
     # add first empty stage
-    add_stage = stage_app.resolve_widget().down(test_name='add empty stage')()
+    add_stage = stage_app.resolve_widget().down(test_name='stage add')()
     await touch_widget(stage_app, add_stage)
 
     assert stage_factory.stages
     stage = stage_factory.stages[0]
-    assert list(stage_factory.stage_names.values()) == [stage]
+    assert stage in list(stage_factory.stage_names.values())
+    assert len(stage_factory.stage_names) == n + 1
     assert stage.display.show_more
 
     # select the stage and add stage to it
@@ -263,7 +264,7 @@ async def test_add_empty_stage(stage_app: CeedTestApp):
 
 async def test_gui_add_stages(stage_app: CeedTestApp):
     stages = []
-    add_stage = stage_app.resolve_widget().down(test_name='add empty stage')()
+    add_stage = stage_app.resolve_widget().down(test_name='stage add')()
     for i, stage_cls in enumerate(stage_classes):
         stage = stage_cls(app=stage_app, show_in_gui=False)
         stages.append(stage)
@@ -312,7 +313,7 @@ async def test_gui_add_stages(stage_app: CeedTestApp):
 
 
 async def test_gui_add_sub_stages(stage_app: CeedTestApp):
-    add_stage = stage_app.resolve_widget().down(test_name='add empty stage')()
+    add_stage = stage_app.resolve_widget().down(test_name='stage add')()
     await touch_widget(stage_app, add_stage)
 
     base_stage: CeedStage = stage_app.app.stage_factory.stages[0]
