@@ -1144,11 +1144,11 @@ def test_internal_plugin_source_in_factory(
 def test_external_plugin_source_in_factory(
         function_factory: FunctionFactoryBase, tmp_path, contents, config):
     sys.path.append(str(tmp_path))
-    mod = tmp_path / 'my_plugin' / '__init__.py'
+    mod = tmp_path / 'my_func_plugin' / '__init__.py'
     try:
         mod.parent.mkdir()
         mod.write_text(contents)
-        register_external_functions(function_factory, 'my_plugin')
+        register_external_functions(function_factory, 'my_func_plugin')
 
         noise_classes = function_factory.param_noise_factory.noise_classes
 
@@ -1166,24 +1166,24 @@ def test_external_plugin_source_in_factory(
             assert 'FakeNoise' not in noise_classes
 
         assert 'ceed.function.plugin' in function_factory.plugin_sources
-        plugin_contents = function_factory.plugin_sources['my_plugin']
+        plugin_contents = function_factory.plugin_sources['my_func_plugin']
         assert plugin_contents == [
             (('__init__.py', ),
              contents.replace('\n', os.linesep).encode())
         ]
     finally:
         sys.path.remove(str(tmp_path))
-        del sys.modules['my_plugin']
+        del sys.modules['my_func_plugin']
 
 
 def test_external_plugin_single_file(
         function_factory: FunctionFactoryBase, tmp_path):
     sys.path.append(str(tmp_path))
-    mod = tmp_path / 'my_plugin.py'
+    mod = tmp_path / 'my_bad_plugin.py'
     try:
         mod.write_text(fake_plugin)
         with pytest.raises(ModuleNotFoundError):
-            register_external_functions(function_factory, 'my_plugin')
+            register_external_functions(function_factory, 'my_bad_plugin')
     finally:
         sys.path.remove(str(tmp_path))
 

@@ -535,20 +535,20 @@ async def test_add_global_ref_func_and_replace(func_app: CeedTestApp):
 @contextmanager
 def add_to_path(tmp_path, *args):
     sys.path.append(str(tmp_path))
-    mod = tmp_path / 'my_plugin' / '__init__.py'
+    mod = tmp_path / 'my_gui_func_plugin' / '__init__.py'
     try:
         mod.parent.mkdir()
         mod.write_text(fake_plugin)
         yield None
     finally:
         sys.path.remove(str(tmp_path))
-        if 'my_plugin' in sys.modules:
-            del sys.modules['my_plugin']
+        if 'my_gui_func_plugin' in sys.modules:
+            del sys.modules['my_gui_func_plugin']
 
 
 @pytest.mark.parametrize(
     "ceed_app",
-    [{'yaml_config': {'external_function_plugin_package': 'my_plugin'},
+    [{'yaml_config': {'external_function_plugin_package': 'my_gui_func_plugin'},
       'app_context': add_to_path}, ],
     indirect=True
 )

@@ -856,20 +856,20 @@ async def test_pad_stage_ticks(stage_app: CeedTestApp, tmp_path):
 @contextmanager
 def add_to_path(tmp_path, *args):
     sys.path.append(str(tmp_path))
-    mod = tmp_path / 'my_stage_plugin' / '__init__.py'
+    mod = tmp_path / 'my_gui_stage_plugin' / '__init__.py'
     try:
         mod.parent.mkdir()
         mod.write_text(fake_plugin_stage)
         yield None
     finally:
         sys.path.remove(str(tmp_path))
-        if 'my_stage_plugin' in sys.modules:
-            del sys.modules['my_stage_plugin']
+        if 'my_gui_stage_plugin' in sys.modules:
+            del sys.modules['my_gui_stage_plugin']
 
 
 @pytest.mark.parametrize(
     "ceed_app",
-    [{'yaml_config': {'external_stage_plugin_package': 'my_stage_plugin'},
+    [{'yaml_config': {'external_stage_plugin_package': 'my_gui_stage_plugin'},
       'app_context': add_to_path}, ],
     indirect=True
 )
