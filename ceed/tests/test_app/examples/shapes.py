@@ -373,7 +373,7 @@ class FreeofrmPolygonShape(PolygonShape):
         # place until last point
         points = list(zip(self.points[::2], self.points[1::2]))
         async for _ in self.app.do_touch_drag_path(
-                path=points, axis_widget=self.painter):
+                path=points, axis_widget=self.painter, duration=0):
             pass
         self.shape = self.painter.shapes[-1]
 
