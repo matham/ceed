@@ -134,7 +134,13 @@ class CeedDataWriterBase(EventDispatcher):
 
         if not stages_only and (
                 requires_app_settings or 'app_settings' in data):
-            app_settings = data['app_settings']
+            try:
+                app_settings = data['app_settings']
+            except KeyError as e:
+                raise KeyError(
+                    'You attempted to import configuration data for the app '
+                    'and stages/functions, but there is no app config in the '
+                    'file. Did you mean to import only the stages?') from e
             # filter classes that are not of this app
             classes = get_config_children_names(app)
             app.app_settings = {cls: app_settings[cls] for cls in classes}
@@ -505,8 +511,9 @@ class CeedDataWriterBase(EventDispatcher):
             if not f.blocks:
                 raise ValueError('Image not found in {}'.format(filename))
 
-            names = set(CeedDataWriterBase.get_blocks_experiment_numbers(
-                f.blocks))
+            names = set(
+                self.get_experiment_block_name(i) for i in
+                CeedDataWriterBase.get_blocks_experiment_numbers(f.blocks))
             for block in reversed(f.blocks):
                 if block.name not in names:
                     continue

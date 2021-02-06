@@ -25,6 +25,28 @@ stored_stage_name = ParaAllStage.name
 pytestmark = pytest.mark.ceed_app
 
 
+def verify_experiment(values, n, first):
+    shape1, shape2 = stored_shape_names
+    if first:
+        b1, b2 = stored_b_values[0]
+    else:
+        b1, b2 = stored_b_values[1]
+    assert n == 240
+
+    for i in range(240):
+        for name, b, (active, inactive) in zip(
+                (shape1, shape2), (b1, b2), stored_colors):
+            d = values[name]
+            assert d[i][3] == 1
+            for j in inactive:
+                assert d[i][j] == 0
+
+            # 2.4 = .6 * 120 / 30
+            val = .6 * (i % 30) / 30 + b
+            for j in active:
+                assert isclose(float(d[i][j]), val, abs_tol=.001)
+
+
 def exp_source(filename):
     filename = pathlib.Path(filename).name
     return not ('internal' in filename or 'external' in filename), \
@@ -129,26 +151,51 @@ async def test_stage_plugin_source_in_data_file(
 
 @pytest.fixture(scope='module')
 def internal_experiment_filename(tmp_path_factory):
+    """All tests depending on this, also depend on
+    test_create_internal_experiment."""
     return str(
         tmp_path_factory.mktemp('experiment') / 'new_experiment_internal.h5')
 
 
 @pytest.fixture(scope='module')
 def external_experiment_filename(tmp_path_factory):
+    """All tests depending on this, also depend on
+    test_create_external_experiment."""
     return str(
         tmp_path_factory.mktemp('experiment') / 'new_experiment_external.h5')
 
 
 @pytest.fixture(scope='module')
-def merge_experiment_filename(tmp_path_factory):
+def existing_experiment_filename():
+    root = pathlib.Path(ceed.__file__).parent.joinpath('examples', 'data')
+    return str(root.joinpath('ceed_data.h5'))
+
+
+@pytest.fixture(scope='module')
+def merge_experiment_filename(tmp_path_factory, existing_experiment_filename):
+    """All tests depending on this, also depend on
+    test_create_merge_experiment."""
     return str(
         tmp_path_factory.mktemp('experiment') / 'new_experiment_merged.h5')
+
+
+@pytest.fixture(scope='module')
+def existing_template_filename():
+    root = pathlib.Path(ceed.__file__).parent.joinpath('examples', 'data')
+    return str(root.joinpath('ceed_template.yml'))
+
+
+@pytest.fixture(scope='module')
+def existing_merged_experiment_filename():
+    root = pathlib.Path(ceed.__file__).parent.joinpath('examples', 'data')
+    return str(root.joinpath('ceed_mcs_data_merged.h5'))
 
 
 @pytest.fixture(scope='module', params=filename_source)
 def experiment_filename(
         request, internal_experiment_filename, external_experiment_filename,
-        merge_experiment_filename):
+        merge_experiment_filename, existing_experiment_filename,
+        existing_merged_experiment_filename):
     src = request.param
     if src == 'internal':
         return internal_experiment_filename
@@ -156,32 +203,37 @@ def experiment_filename(
         return external_experiment_filename
     if src == 'internal_merged':
         return merge_experiment_filename
-
-    root = pathlib.Path(ceed.__file__).parent.joinpath('examples', 'data')
     if src == 'merged':
-        return str(root.joinpath('ceed_mcs_data_merged.h5'))
-    return str(root.joinpath('ceed_data.h5'))
+        return existing_merged_experiment_filename
+    return existing_experiment_filename
 
 
 @pytest.fixture(scope='module', params=filename_source_merged)
-def merged_filename(request, merge_experiment_filename):
+def merged_filename(
+        request, merge_experiment_filename,
+        existing_merged_experiment_filename):
     src = request.param
     if src == 're_merged':
         return merge_experiment_filename
-
-    root = pathlib.Path(ceed.__file__).parent.joinpath('examples', 'data')
-    return str(root.joinpath('ceed_mcs_data_merged.h5'))
+    return existing_merged_experiment_filename
 
 
-async def test_internal_experiment(
+async def test_create_internal_experiment(
         stage_app: CeedTestApp, internal_experiment_filename):
+    filename = internal_experiment_filename
+
     await run_data_experiment(stage_app)
 
-    stage_app.app.ceed_data.save(filename=internal_experiment_filename)
+    stage_app.app.ceed_data.save(filename=filename)
+    base = filename[:-3]
+    stage_app.app.ceed_data.write_yaml_config(base + '.yml', stages_only=True)
+    stage_app.app.ceed_data.write_yaml_config(
+        base + 'app.yml', stages_only=False)
 
 
-async def test_external_experiment(
+async def test_create_external_experiment(
         stage_app: CeedTestApp, external_experiment_filename):
+    filename = external_experiment_filename
     stage_app.app.view_controller.start_process()
     await stage_app.wait_clock_frames(2)
 
@@ -190,13 +242,15 @@ async def test_external_experiment(
     stage_app.app.view_controller.stop_process()
     await stage_app.wait_clock_frames(2)
 
-    stage_app.app.ceed_data.save(filename=external_experiment_filename)
+    stage_app.app.ceed_data.save(filename=filename)
 
 
-def test_create_merged_experiment(merge_experiment_filename):
+def test_create_merge_experiment(
+        merge_experiment_filename, existing_experiment_filename):
+    filename = merge_experiment_filename
+
     root = pathlib.Path(ceed.__file__).parent.joinpath('examples', 'data')
     mcs_filename = str(root.joinpath('mcs_data.h5'))
-    ceed_filename = str(root.joinpath('ceed_data.h5'))
 
     merger = CeedMCSDataMerger()
     merger.read_mcs_digital_data(mcs_filename)
@@ -204,7 +258,7 @@ def test_create_merged_experiment(merge_experiment_filename):
     first = True
     alignment = {}
     for experiment in ('0', '1'):
-        merger.read_ceed_digital_data(ceed_filename, experiment)
+        merger.read_ceed_digital_data(existing_experiment_filename, experiment)
         merger.parse_ceed_digital_data()
 
         if first:
@@ -214,7 +268,7 @@ def test_create_merged_experiment(merge_experiment_filename):
         alignment[experiment] = merger.get_alignment()
 
     merger.merge_data(
-        merge_experiment_filename, ceed_filename, mcs_filename, alignment,
+        filename, existing_experiment_filename, mcs_filename, alignment,
         notes='app notes')
 
 
@@ -431,12 +485,10 @@ def test_mcs_data(merged_filename):
             assert shape in ((n, ), (n - 1, ))
 
 
-def test_create_movie(tmp_path):
+def test_create_movie(tmp_path, existing_merged_experiment_filename):
     from ceed.analysis import CeedDataReader
-    root = pathlib.Path(ceed.__file__).parent.joinpath('examples', 'data')
-    data_filename = str(root.joinpath('ceed_mcs_data_merged.h5'))
 
-    with CeedDataReader(data_filename) as f:
+    with CeedDataReader(existing_merged_experiment_filename) as f:
         f.load_mcs_data()
         f.load_experiment(0)
 
@@ -464,3 +516,52 @@ def test_create_movie(tmp_path):
         )
 
         assert filename.exists()
+
+
+@pytest.mark.parametrize('stages_only', [True, False])
+@pytest.mark.parametrize('suffix', ['app.yml', '.yml'])
+async def test_import_yml_stages(
+        stage_app: CeedTestApp, internal_experiment_filename, suffix,
+        stages_only):
+    filename = internal_experiment_filename[:-3] + suffix
+
+    if not stages_only and suffix == '.yml':
+        with pytest.raises(KeyError):
+            stage_app.app.ceed_data.read_yaml_config(filename)
+        return
+
+    stage_app.app.ceed_data.read_yaml_config(filename, stages_only=stages_only)
+    await stage_app.wait_clock_frames(2)
+
+    values, n = get_stage_time_intensity(
+        stage_app.app.stage_factory, stored_stage_name, 120)
+    verify_experiment(values, n, False)
+
+
+async def test_import_yml_existing(
+        stage_app: CeedTestApp, existing_template_filename):
+    stage_app.app.ceed_data.read_yaml_config(
+        existing_template_filename, stages_only=True)
+    await stage_app.wait_clock_frames(2)
+
+    values, n = get_stage_time_intensity(
+        stage_app.app.stage_factory, stored_stage_name, 120)
+    verify_experiment(values, n, True)
+
+
+@pytest.mark.parametrize('stages_only', [True, False])
+@pytest.mark.parametrize('src', ['internal', 'existing'])
+async def test_import_h5_stages(
+        stage_app: CeedTestApp, internal_experiment_filename,
+        existing_experiment_filename, src, stages_only):
+    if src == 'internal':
+        filename = internal_experiment_filename
+    else:
+        filename = existing_experiment_filename
+
+    stage_app.app.ceed_data.import_file(filename, stages_only=stages_only)
+    await stage_app.wait_clock_frames(2)
+
+    values, n = get_stage_time_intensity(
+        stage_app.app.stage_factory, stored_stage_name, 120)
+    verify_experiment(values, n, False)
