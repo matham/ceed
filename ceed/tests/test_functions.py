@@ -12,7 +12,8 @@ from ceed.function import FuncBase, FuncGroup, FunctionFactoryBase, \
     register_external_functions
 from .common import add_prop_watch
 from .test_app.examples.funcs import fake_plugin_function, \
-    fake_plugin_distribution, fake_plugin, noise_test_parameters
+    fake_plugin_distribution, fake_plugin, noise_test_parameters, \
+    func_classes, func_classes_dedup
 from ceed.utils import collapse_list_to_counts
 
 
@@ -1668,3 +1669,26 @@ def test_add_func_unique_built_in_name(function_factory: FunctionFactoryBase):
     assert function_factory.funcs_inst[f.name] is f
     assert orig_name in function_factory.funcs_inst
     assert f.name != orig_name
+
+
+def test_funcs_add(function_factory: FunctionFactoryBase):
+    for func_cls in func_classes:
+        func = func_cls(function_factory=function_factory, show_in_gui=False)
+        func.create_func()
+
+        ceed_func = func.func
+        func.assert_init()
+
+        assert func.name == ceed_func.name
+        assert func.duration == ceed_func.duration
+        assert func.loop == ceed_func.loop
+        if hasattr(ceed_func, 't_offset'):
+            assert func.t_offset == ceed_func.t_offset
+        assert math.isclose(
+            func.duration_min_total, ceed_func.duration_min_total)
+        assert func.timebase[0] == ceed_func.timebase_numerator
+        assert func.timebase[1] == ceed_func.timebase_denominator
+        assert func.timebase[0] / func.timebase[1] == \
+            float(ceed_func.timebase)
+
+        func.assert_func_values()

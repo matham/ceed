@@ -560,6 +560,10 @@ paired_tests = [
     (FreeformPolygonShapeP1, FreeformPolygonShapeP2),
 ]
 
+paired_tests_one = [
+    (CircleShapeP1, CircleShapeP2),
+]
+
 shape_classes = [
     PolygonShapeP1, PolygonShapeP2,
     CircleShapeP1, CircleShapeP2,

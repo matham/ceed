@@ -6,7 +6,7 @@ from ceed.tests.common import exhaust
 from ceed.tests.test_app import replace_text, touch_widget
 from ceed.tests.test_app.examples.shapes import paired_tests, PolygonShapeP1, \
     CircleShapeP1, EllipseShapeP1, FreeformPolygonShapeP1, Shape, \
-    EnclosingPolygon
+    EnclosingPolygon, paired_tests_one
 
 pytestmark = pytest.mark.ceed_app
 
@@ -56,7 +56,7 @@ async def test_multiple_shapes_add(
     shape2.check_shape_visible(True)
 
 
-@pytest.mark.parametrize("shape_classes", paired_tests)
+@pytest.mark.parametrize("shape_classes", paired_tests_one)
 async def test_multiple_shapes_remove(
         paint_app: CeedTestApp, shape_classes: List[Type[Shape]]):
     painter = paint_app.app.shape_factory
@@ -84,7 +84,7 @@ async def test_multiple_shapes_remove(
     shape2.check_shape_visible(True)
 
 
-@pytest.mark.parametrize("shape_classes", paired_tests)
+@pytest.mark.parametrize("shape_classes", paired_tests_one)
 async def test_multiple_shapes_move_depth(
         paint_app: CeedTestApp, shape_classes: List[Type[Shape]]):
     # tests move_shape_lower, move_shape_upwards, and reorder_shape
@@ -115,7 +115,7 @@ async def test_multiple_shapes_move_depth(
     shape2.check_shape_visible(True)
 
 
-@pytest.mark.parametrize("shape_classes", paired_tests)
+@pytest.mark.parametrize("shape_classes", paired_tests_one)
 async def test_multiple_shapes_duplicate(
         paint_app: CeedTestApp, shape_classes: List[Type[Shape]]):
     painter = paint_app.app.shape_factory
@@ -157,7 +157,7 @@ async def test_multiple_shapes_duplicate(
         'Names must be unique'
 
 
-@pytest.mark.parametrize("shape_classes", paired_tests)
+@pytest.mark.parametrize("shape_classes", paired_tests_one)
 async def test_shape_lock(
         paint_app: CeedTestApp, shape_classes: List[Type[Shape]]):
     painter = paint_app.app.shape_factory
@@ -205,7 +205,7 @@ async def test_shape_lock(
     assert intensity_locked < intensity_unlocked / 5. * 3
 
 
-@pytest.mark.parametrize("shape_classes", paired_tests)
+@pytest.mark.parametrize("shape_classes", paired_tests_one)
 async def test_shape_hide(
         paint_app: CeedTestApp, shape_classes: List[Type[Shape]]):
     painter = paint_app.app.shape_factory
@@ -241,7 +241,7 @@ async def test_shape_hide(
     shape2.check_shape_visible(True)
 
 
-@pytest.mark.parametrize("shape_classes", paired_tests)
+@pytest.mark.parametrize("shape_classes", paired_tests_one)
 async def test_shape_name(
         paint_app: CeedTestApp, shape_classes: List[Type[Shape]]):
     # tests _change_shape_name
@@ -414,7 +414,7 @@ async def test_shape_add_enclosing_polygon(paint_app: CeedTestApp):
     shape.check_shape_visible(True)
 
 
-@pytest.mark.parametrize("shape_classes", paired_tests)
+@pytest.mark.parametrize("shape_classes", paired_tests_one)
 async def test_shape_duplicate_selection(
         paint_app: CeedTestApp, shape_classes: List[Type[Shape]]):
     painter = paint_app.app.shape_factory
@@ -469,7 +469,7 @@ async def test_shape_duplicate_selection(
         'Names must be unique'
 
 
-@pytest.mark.parametrize("shape_classes", paired_tests)
+@pytest.mark.parametrize("shape_classes", paired_tests_one)
 async def test_shape_delete_selection(
         paint_app: CeedTestApp, shape_classes: List[Type[Shape]]):
     painter = paint_app.app.shape_factory
@@ -516,7 +516,7 @@ async def test_shape_delete_selection(
     shape2.check_shape_visible(False)
 
 
-@pytest.mark.parametrize("shape_classes", paired_tests)
+@pytest.mark.parametrize("shape_classes", paired_tests_one)
 async def test_shape_single_select_widget(
         paint_app: CeedTestApp, shape_classes: List[Type[Shape]]):
     painter = paint_app.app.shape_factory
@@ -597,7 +597,7 @@ async def test_shape_single_select_widget(
     assert not shape2.shape.widget.selected
 
 
-@pytest.mark.parametrize("shape_classes", paired_tests)
+@pytest.mark.parametrize("shape_classes", paired_tests_one)
 async def test_shape_single_select_shape(
         paint_app: CeedTestApp, shape_classes: List[Type[Shape]]):
     painter = paint_app.app.shape_factory
@@ -678,7 +678,7 @@ async def test_shape_single_select_shape(
     assert not shape2.shape.widget.selected
 
 
-@pytest.mark.parametrize("shape_classes", paired_tests)
+@pytest.mark.parametrize("shape_classes", paired_tests_one)
 async def test_shape_multiselect_widget(
         paint_app: CeedTestApp, shape_classes: List[Type[Shape]]):
     painter = paint_app.app.shape_factory
@@ -777,7 +777,7 @@ async def test_shape_multiselect_widget(
     assert not shape2.shape.widget.selected
 
 
-@pytest.mark.parametrize("shape_classes", paired_tests)
+@pytest.mark.parametrize("shape_classes", paired_tests_one)
 async def test_shape_multiselect_shape(
         paint_app: CeedTestApp, shape_classes: List[Type[Shape]]):
     painter = paint_app.app.shape_factory

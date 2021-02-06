@@ -85,6 +85,7 @@ class Function:
     def assert_func_values(self):
         from ceed.function import FuncDoneException
         func = self.func
+        func.init_func_tree()
         func.init_func(self.t_start)
 
         times = list(itertools.chain(*self.func_times))
@@ -758,7 +759,9 @@ class GroupFunction(Function):
         self.func: FuncGroup = func_group
 
         for wrapper_cls in self.wrapper_classes:
-            wrapper_func = wrapper_cls(app=self.app, show_in_gui=False)
+            wrapper_func = wrapper_cls(
+                app=self.app, show_in_gui=False,
+                function_factory=self.function_factory)
             wrapper_func.create_func()
             funcs.append(wrapper_func)
             func_group.add_func(wrapper_func.func)
@@ -782,9 +785,7 @@ class GroupFunctionF1(GroupFunction):
 
     loop = 2
 
-    wrapper_classes = [
-        ConstFunctionF1, ExponentialFunctionF1, LinearFunctionF1,
-        CosFunctionF1]
+    wrapper_classes = [ConstFunctionF1, ExponentialFunctionF1]
 
     timebase = FunctionF1.timebase
 
@@ -797,9 +798,7 @@ class GroupFunctionF2(GroupFunction):
 
     loop = 3
 
-    wrapper_classes = [
-        ConstFunctionF2, ExponentialFunctionF2, LinearFunctionF2,
-        CosFunctionF2]
+    wrapper_classes = [ConstFunctionF2, ExponentialFunctionF2]
 
     timebase = FunctionF2.timebase
 
@@ -812,9 +811,7 @@ class GroupFunctionF3(GroupFunction):
 
     loop = 2
 
-    wrapper_classes = [
-        ConstFunctionF3, ExponentialFunctionF3, LinearFunctionF3,
-        CosFunctionF3]
+    wrapper_classes = [LinearFunctionF3, CosFunctionF3]
 
     timebase = FunctionF3.timebase
 
@@ -827,9 +824,7 @@ class GroupFunctionF4(GroupFunction):
 
     loop = 3
 
-    wrapper_classes = [
-        ConstFunctionF4, ExponentialFunctionF4, LinearFunctionF4,
-        CosFunctionF4]
+    wrapper_classes = [LinearFunctionF4, CosFunctionF4]
 
     timebase = FunctionF4.timebase
 
@@ -842,9 +837,7 @@ class GroupFunctionF5(GroupFunction):
 
     loop = 2
 
-    wrapper_classes = [
-        ConstFunctionF5, ExponentialFunctionF5, LinearFunctionF5,
-        CosFunctionF5]
+    wrapper_classes = [LinearFunctionF5, CosFunctionF5]
 
     timebase = FunctionF5.timebase
 
@@ -865,12 +858,21 @@ func_classes = [
     GroupFunctionF5
 ]
 
+func_classes_cos = [
+    CosFunctionF1, CosFunctionF2, CosFunctionF3, CosFunctionF4, CosFunctionF5]
+
+func_classes_linear = [
+    LinearFunctionF1, LinearFunctionF2, LinearFunctionF3, LinearFunctionF4,
+    LinearFunctionF5]
+
+func_classes_group = [
+    GroupFunctionF1, GroupFunctionF2, GroupFunctionF3, GroupFunctionF4,
+    GroupFunctionF5]
 
 func_classes_dedup = [
     ConstFunctionF5, LinearFunctionF5, ExponentialFunctionF5, CosFunctionF5,
     GroupFunctionF5,
 ]
-
 
 fake_plugin_function = """
 from kivy.properties import NumericProperty

@@ -10,10 +10,11 @@ from ceed.tests.test_app import replace_text, touch_widget, \
     select_spinner_value as select_spinner_func, escape
 from ceed.function import FuncBase, FuncGroup, FunctionFactoryBase, \
     CeedFuncRef, register_external_functions
-from .examples.funcs import func_classes, func_classes_dedup, GroupFunction, \
+from .examples.funcs import GroupFunction, \
     GroupFunctionF5, Function, LinearFunctionF1, LinearFunctionF2, \
     GroupFunctionF4, CosFunctionF4, ExponentialFunctionF3, ConstFunctionF1, \
-    ExponentialFunctionF1, CosFunctionF1, GroupFunctionF1
+    ExponentialFunctionF1, CosFunctionF1, GroupFunctionF1, \
+    func_classes_group, func_classes_linear
 from .examples.funcs import fake_plugin_function, \
     fake_plugin_distribution, fake_plugin, noise_test_parameters
 
@@ -139,7 +140,7 @@ async def open_func_settings(func_app: CeedTestApp, func: FuncBase):
 
 
 async def test_funcs_add(func_app: CeedTestApp):
-    for func_cls in func_classes:
+    for func_cls in func_classes_linear[:2] + func_classes_group[:2]:
         func = func_cls(app=func_app)
         await func_app.wait_clock_frames(2)
 
@@ -164,7 +165,7 @@ async def test_funcs_add(func_app: CeedTestApp):
 async def test_funcs_params(func_app: CeedTestApp):
     from kivy.uix.textinput import TextInput
     funcs = []
-    for func_cls in func_classes:
+    for func_cls in func_classes_linear[:2] + func_classes_group[:2]:
         func = func_cls(app=func_app)
 
         funcs.append(func)
@@ -259,7 +260,7 @@ async def test_gui_add_funcs(func_app: CeedTestApp):
     funcs = []
     spinner = func_app.resolve_widget().down(test_name='func spinner')()
     add = func_app.resolve_widget().down(test_name='func add')()
-    for func_cls in func_classes:
+    for func_cls in func_classes_linear[:2] + func_classes_group[:2]:
         func = func_cls(app=func_app, show_in_gui=False)
         funcs.append(func)
 

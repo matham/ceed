@@ -346,6 +346,12 @@ async def test_gui_add_sub_stages(stage_app: CeedTestApp):
         assert len(base_stage.stages) == min(2, i + 1)
         stage.stage = base_stage.stages[-1]
 
+        # replace the ref stage
+        settings_btn = stage_app.resolve_widget(stage.stage.display).down(
+            test_name='stage settings open')()
+        await touch_widget(stage_app, settings_btn)
+        stage.stage = base_stage.stages[-1]
+
         await assert_set_params_in_gui(stage_app, stage, check_name=False)
 
 
