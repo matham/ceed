@@ -66,7 +66,7 @@
     size_hint_x: None
     width: '250dp'
     sizable_from: 'left'
-    strip_size: '5dp'
+    strip_size: '20dp'
     min_size: '15dp'
     max_size: '400dp'
     flat_color: app.theme.accent
@@ -257,7 +257,9 @@
             test_name: 'shape expand'
         FlatLabel:
             test_name: 'shape name'
-            size_hint_min_x: self.texture_size[0]
+            text_size: self.width, None
+            shorten: True
+            size_hint_min_x: '55dp'
             padding: '5dp', '5dp'
             flat_color: app.theme.text_primary
             center_texture: False
@@ -280,18 +282,18 @@
             flat_color: app.theme.accent
             on_release: app.shape_factory.move_shape_lower(root.shape)
             test_name: 'shape up'
-        IconSwitchBehavior:
-            source_down: 'flat_lock.png'
-            source_normal: 'flat_unlock.png'
+        FlatImageToggleButton:
+            hover_text: 'unlock shape' if self.state == 'down' else 'lock shape'
+            source: 'flat_lock.png' if self.state == 'down' else 'flat_unlock.png'
             flat_color: app.theme.accent
             state: 'down' if root.shape and root.shape.locked else 'normal'
             on_state: root.painter.lock_shape(root.shape) if self.state == 'down' else root.painter.unlock_shape(root.shape)
             disabled: hidden.state == 'normal'
             test_name: 'shape lock'
-        IconSwitchBehavior:
+        FlatImageToggleButton:
             id: hidden
-            source_down: 'eye.png'
-            source_normal: 'eye-off.png'
+            hover_text: 'hide shape' if self.state == 'down' else 'show shape'
+            source: 'eye.png' if self.state == 'down' else 'eye-off.png'
             flat_color: app.theme.accent
             state: 'down'
             test_name: 'shape hide'

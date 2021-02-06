@@ -5,7 +5,7 @@
     size_hint_x: None
     width: '200dp'
     sizable_from: 'left'
-    strip_size: '5dp'
+    strip_size: '20dp'
     min_size: '15dp'
     max_size: dp(400) + max(funcs.minimum_width, control_box.minimum_width)
     spacing: '5dp'
@@ -137,7 +137,9 @@
             padding: '5dp', '5dp'
             flat_color: app.theme.text_primary
             text: root.ref_func.name if root.ref_func is not None else root.func.name
-            size_hint_min_x: self.texture_size[0]
+            text_size: self.width, None
+            shorten: True
+            size_hint_min_x: '25dp'
         FlatImageButton:
             id: del_btn
             test_name: 'del_btn_func'
