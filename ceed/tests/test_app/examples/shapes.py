@@ -321,9 +321,8 @@ class PolygonShape(Shape):
 
         # put final point
         async for _ in self.app.do_touch_down_up(
-                pos=self.points[-2:], widget=self.painter, duration=0.01):
+                pos=self.points[-2:], widget=self.painter, duration=0):
             pass
-        await self.app.wait_clock_frames(2)
         async for _ in self.app.do_touch_down_up(
                 pos=self.points[-2:], widget=self.painter, duration=0.01):
             pass

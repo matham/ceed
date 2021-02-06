@@ -619,7 +619,7 @@ async def test_shape_single_select_shape(
 
     # select first shape
     async for _ in paint_app.do_touch_down_up(
-            widget=painter, pos=shape1.drag_point):
+            widget=painter, pos=shape1.drag_point, duration=0):
         pass
     await paint_app.wait_clock_frames(2)
 

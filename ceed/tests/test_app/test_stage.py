@@ -383,9 +383,11 @@ async def test_gui_drag_shape_to_stage(stage_app: CeedTestApp):
                 src = stage_app.resolve_widget(shape.widget).down(
                     test_name='shape drag')()
 
+            offset = (0, 5) if container.height else (0, 0)
             async for _ in stage_app.do_touch_drag_follow(
                     widget=src, target_widget=container,
-                    target_widget_loc=('center_x', 'y'), drag_n=15):
+                    target_widget_loc=('center_x', 'y'),
+                    target_widget_offset=offset, drag_n=15):
                 pass
 
             # check that shape was added
