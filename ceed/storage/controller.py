@@ -17,8 +17,8 @@ from queue import Queue, Empty
 import numpy as np
 from functools import partial
 import struct
+from typing import Generator, Dict, List
 import re
-from ffpyplayer.pic import Image
 import time
 from tree_config import get_config_children_names
 
@@ -32,7 +32,9 @@ from kivy.logger import Logger
 from more_kivy_app.app import app_error
 from more_kivy_app.utils import yaml_dumps, yaml_loads
 
-__all__ = ('CeedDataWriterBase', 'DataSerializerBase', 'num_ticks_handshake')
+__all__ = (
+    'CeedDataWriterBase', 'DataSerializerBase', 'num_ticks_handshake',
+    'num_ticks_handshake_1_0_0_dev0')
 
 
 class CeedDataWriterBase(EventDispatcher):
@@ -734,7 +736,6 @@ class CeedDataWriterBase(EventDispatcher):
                     flip_count_buf[:] = flip_t_buf[:] = 0
                 finally:
                     lock.release()
-
                 flip_i = 0
 
             if eof:
@@ -867,26 +868,165 @@ class CeedDataWriterBase(EventDispatcher):
 
 
 class DataSerializerBase(EventDispatcher):
+    """To facilitate temporal data alignment between the Ceed data (shape
+    intensity) and MCS (electrode data), Ceed outputs a bit pattern in the
+    corner pixel that is output by the projector controller as a bit pattern
+    on its digital port, and is recorded by MCS.
+
+    Post-experiment we locate each Ceed frame in the recorded MCS data by
+    locating the Ceed frame bit-pattern in the MCS data, thereby locating the
+    sample index in the MCS data, corresponding to the Ceed frame.
+
+    While we have 24 bits to use from the Ceed side, MCS can only record upto
+    16 bits, possibly less depending on the config, so we have to be flexible
+    on the bit-pattern to send. Our bit-pattern has three components:
+
+    1. A clock bit that alternates low/high for each frame, starting with high.
+       The clock bit is set by :attr:`clock_idx`.
+    2. Some bits are dedicated to simple short counter that overflows back to
+       zero at the top. E.g. if we dedicate 3-bits for the counter, then it'll
+       go 0,1,...,6,7,0,1,...,6,7,0,1,... etc.
+
+       The bits used by the short counter is set with
+       :attr:`short_count_indices`. The length of the list determines the size
+       of the counter, as explained.
+
+       As explained in #3 below, there's a global counter that increments for
+       each frame. Potentially, this increment could be larger than one
+       (although currently it's always one). The short counter increments the
+       counter with this frame increment, so it could potentially go
+       0,1,3,...,6,7,0,1,2,... if the third frame incremented the global
+       counter by two instead of one.
+    3. Some bits are dedicated to a long term counter (and initial
+       handshaking). E.g. if the counter is a 32-bit int, then the counter will
+       just count up until 2 ^ 32 when it overflows back to zero.
+
+       However, the counter could be 32-bits wide, but the number of bits
+       available on the projector is much less. So, we split up the counter
+       across multiple frames. E.g. if :attr:`counter_bit_width` is 32 and
+       :attr:`count_indices` has only, say, 4 bits available. Then we split
+       the 32 bits into ``32 / 4`` transactions. However, each transaction is
+       sent twice, the value and its one's complement (aligning with the clock
+       being low), except for the first transaction of each number and for the
+       initial handshake bytes sent, where it's sent twice, identically,
+       without inverting to one's complement. So, the total number of frames
+       required is ``32 / 4 * 2 = 16`` frames.
+
+       So, overall for this example, if the first count value starts at zero
+       and increments with each frame, then the first 16 frames sends the
+       number 0. When it's done, the counter is at 16, so we send the number 16
+       over the next 16 frames, then the number 32 over the next 16 frames etc.
+
+       The counter is broken and sent starting from the least significant
+       (lower) bits to the most significant (upper) bits.
+
+       At the start, we also optionally send an arbitrary sequence of bytes
+       to help identify experimental specific metadata as described in
+       :meth:`get_bits`. The counter then starts sending its current value when
+       the bytes are done. The length of the bytes is sent before the bytes
+       (zero is sent if empty).
+    """
 
     _config_props_ = (
         'counter_bit_width', 'clock_idx', 'count_indices',
         'short_count_indices', 'projector_to_aquisition_map')
 
-    counter_bit_width = NumericProperty(32)
+    counter_bit_width: int = NumericProperty(32)
+    """The number of bits in the long counter, as described in
+    :class:`DataSerializerBase`.
 
-    clock_idx = NumericProperty(2)
+    Must be a multiple of 8 (to align with a byte).
+    """
 
-    count_indices = ListProperty([19, 20])
+    clock_idx: int = NumericProperty(2)
+    """The bit index to use for the clock.
 
-    short_count_indices = ListProperty([3, 4, 10, 11, 12, 18])
+    A number between 0-23, inclusive.
+    """
 
-    projector_to_aquisition_map = DictProperty(
+    count_indices: List[int] = ListProperty([19, 20])
+    """A list of bit indices to use for the long counter as explained in
+    :class:`DataSerializerBase`.
+
+    Each item is a number between 0-23, inclusive. Their order is the order of
+    the counter bit pattern. The first index is for the first (least
+    significant) bit of the counter etc.
+
+    If the length of :attr:`count_indices` doesn't divide
+    :attr:`counter_bit_width` exactly, the ends are padded with zeros for those
+    bits.
+    """
+
+    short_count_indices: List[int] = ListProperty([3, 4, 10, 11, 12, 18])
+    """A list of bit indices to use for the short counter as explained in
+    :class:`DataSerializerBase`.
+
+    Each item is a number between 0-23, inclusive. Their order is the order of
+    the counter bit pattern. E.g. if it was ``[1, 3]``, the the bit pattern for
+    just the counter would look like: 0b0000, 0b0010, 0b1000, 0b1010, 0b0000,
+    0b0010, 0b1000...
+    """
+
+    projector_to_aquisition_map: Dict[int, int] = DictProperty(
         {2: 0, 3: 1, 4: 2, 10: 3, 11: 4, 12: 5, 18: 6, 19: 7, 20: 8})
+    """Maps the bit indices used by Ceed to the corresponding bit indices used
+    by MCS. It is required to be able to align the two systems.
 
-    def get_bits(self, last_count, config_bytes=b''):
+    I.e. if port zero of the projector is connected to port 3 of the MCS
+    controller, then this would be ``{0: 3}``.
+    """
+
+    def _validate_config(self):
         if self.counter_bit_width % 8:
             raise ValueError('counter_bit_width must be a multiple of 8')
+        if self.counter_bit_width > 64:
+            raise ValueError('counter_bit_width can be at most 64')
+        if self.counter_bit_width < 8:
+            raise ValueError('counter_bit_width must be at least 8')
+        if not self.count_indices:
+            raise ValueError('The counter bits were not provided')
+        if not self.short_count_indices:
+            raise ValueError('The short counter bits were not provided')
 
+        clock_idx = self.clock_idx
+        if (clock_idx in self.count_indices or
+                clock_idx in self.count_indices):
+            raise ValueError('The clock bit is re-used in the counter')
+        if set(self.count_indices) & set(self.short_count_indices):
+            raise ValueError('The counter and short counter bits overlap')
+
+        mapping = self.projector_to_aquisition_map
+        for b in [clock_idx] + self.short_count_indices + self.count_indices:
+            if b not in mapping:
+                raise ValueError(
+                    f'bit {b} is used but is not listed in the acquisition map')
+
+    def get_bits(
+            self, config_bytes: bytes = b'') -> Generator[int, int, None]:
+        """A generator that yields a 24 bit value for each clock frame, that is
+        to be used as a RGB value which is then output to the projector
+        controller by the hardware and connected to the MCS controller.
+
+        At each iteration, the generator gets send the current frame count
+        (typically increments by one) and it yields the RGB value to use for
+        that frame.
+
+        If ``n_sub_frames`` is more than 1, the digital IO is simply duplicated
+        for those sub-frames by Ceed increasing the number of frames. However,
+        :meth:`DataSerializerBase.get_bits` gets only called once per group of
+        sub-frames. So while the short counter is only incremented once per
+        group of sub-frames, the counter does get incremented once per
+        sub-frame.
+
+        :param config_bytes: An optional bytes object to be sent. If provided,
+            it will be padded with zeros to :attr:`counter_bit_width` divided
+            by eight. E.g. if the length of ``config_bytes`` is 15 and
+            :attr:`counter_bit_width` is 32, it'll be padded with one zero byte
+            at the end.
+        """
+        self._validate_config()
+
+        # the clock
         clock_bit_set = 1 << self.clock_idx
         clock_state = 0
 
@@ -895,9 +1035,11 @@ class DataSerializerBase(EventDispatcher):
             (i, 1 << v) for i, v in enumerate(self.short_count_indices)]
 
         short_max_value = 2 ** len(short_bits_set_idx)
-        short_count = 0
         n_count_bits = len(count_bits_set)
 
+        # the counter is broken across multiple frames, each part sent twice.
+        # this maps all the count bits parts to the rgb bits (which are the
+        # same for each part). Pad the ends to counter_bit_width
         n_samples_per_count = int(ceil(self.counter_bit_width / n_count_bits))
         # output bits and corresponding input indices. Each item is the list
         # for that sample sent. E.g. [[(0b01, 0), (0b10, 1)],
@@ -910,72 +1052,108 @@ class DataSerializerBase(EventDispatcher):
             count_iters.append(list(enumerate(
                 count_bits_set, i * n_count_bits)))
 
+        # pad config bytes to exact multiple of counter_bit_width // 8
         n_bytes_per_count = self.counter_bit_width // 8
         # pad config bytes to n_bytes_per_count
-        pad = n_bytes_per_count - (len(config_bytes) % n_bytes_per_count) - \
-            len(config_bytes) // n_bytes_per_count
+        pad = n_bytes_per_count - len(config_bytes) % n_bytes_per_count
         config_bytes += b'\0' * pad
         if 2 ** self.counter_bit_width - 1 < len(config_bytes):
             raise ValueError(
                 'Cannot transmit config, its too long for counter_bit_width')
 
-        # send the size of the config, followed by
+        # send the size of the config, followed by the config bytes in groups
+        # of counter_bit_width
         config_bytes = [
-            len(config_bytes)] + \
+            len(config_bytes) // n_bytes_per_count] + \
             list(struct.unpack(
-                '<{}L'.format(len(config_bytes) // n_bytes_per_count),
-                config_bytes))
-        sending_config = bool(config_bytes)
+                f'<{len(config_bytes) // n_bytes_per_count}L', config_bytes))
+        sending_config = True
 
+        value = 0
+        count_val = 0
+        short_count = 0
         while True:
-            first = True
+            first_transaction = True
             for k, data in enumerate(count_iters):
-                count = yield
+                odd_frame = bool(k % 2)
+                # yield last value, wait to get new frame count
+                count = yield value
+
+                # reset value to just the clock state (which alternates)
                 value = clock_state = clock_state ^ clock_bit_set
 
-                short_count = (
-                    short_count + count - last_count) % short_max_value
-                last_count = count
                 for i, v in short_bits_set_idx:
                     if (1 << i) & short_count:
                         value |= v
+                short_count = (short_count + 1) % short_max_value
 
-                if first:
+                # update count number sent only at the first transaction
+                if first_transaction:
+                    # either send the current count, or the next config value
+                    # until transactions done
                     if config_bytes:
                         count_val = config_bytes.pop(0)
                         sending_config = True
                     else:
                         count_val = count
                         sending_config = False
-                    first = False
+                    first_transaction = False
 
                 for i, v in data:
-                    if ((not k % 2 or k == 1 or sending_config) and
-                        ((1 << i) & count_val)) or \
-                            k % 2 and not ((1 << i) & count_val):
-                        value |= v
+                    if not odd_frame or k == 1 or sending_config:
+                        # sending number itself
+                        # if bit i of the n-bit number is 1, set the rgb bit
+                        # corresponding to the part containing i
+                        if (1 << i) & count_val:
+                            value |= v
+                    else:
+                        # sending one's complement
+                        if not ((1 << i) & count_val):
+                            value |= v
 
-                yield value
-            else:
-                pass
+    def num_ticks_handshake(self, config_len, n_sub_frames):
+        """Gets the number of frames required to transmit the handshake
+        signature (i.e. config bytes) of the experiment as provided to
+        :meth:`get_bits` with the given ``config_bytes``.
 
-    def num_ticks_handshake(self, config_len):
-        """Gets the number of ticks required to transmit the handshake
-        signature of the experiment as provided to :meth:`get_bits` with
-        ``config_bytes``.
+        See also :func:`num_ticks_handshake`.
 
-        :param config_len: The number of config **bytes** being sent.
+        :param config_len: The number of config **bytes** being sent (not
+            including padding bytes).
+        :param n_sub_frames: the number of sub-frames in each frame.
         """
         return num_ticks_handshake(
-            self.counter_bit_width, self.count_indices, config_len)
+            self.counter_bit_width, self.count_indices, config_len,
+            n_sub_frames)
 
 
-def num_ticks_handshake(counter_bit_width, count_indices, config_len):
-    """Gets the number of ticks required to transmit the handshake
-    signature of the experiment as provided to :meth:`get_bits` with
-    ``config_bytes``.
+def num_ticks_handshake(
+        counter_bit_width, count_indices, config_len, n_sub_frames):
+    """Gets the number of frames required to transmit the handshake
+    signature (i.e. config bytes) of the experiment as provided to
+    :meth:`DataSerializerBase.get_bits` with the given ``config_bytes``.
 
-    :param config_len: The number of config **bytes** being sent.
+    :param counter_bit_width: See :attr:`DataSerializerBase.counter_bit_width`.
+    :param count_indices: See :attr:`DataSerializerBase.count_indices`.
+    :param config_len: The number of config **bytes** being sent (not including
+        padding bytes).
+    :param n_sub_frames: the number of sub-frames in each frame. E.g. in quad4x
+        mode, each frame is actually 4 frames, but the digital IO is the same
+        for all of them.
+    """
+    n_bytes_per_value = counter_bit_width // 8
+    # the message + padding + message length
+    n_values = int(ceil(config_len / n_bytes_per_value)) + 1
+
+    frames_per_int = int(ceil(counter_bit_width / len(count_indices)))
+    # each frame is duplicated and sub-frames have the same value
+    return n_values * frames_per_int * 2 * n_sub_frames
+
+
+def num_ticks_handshake_1_0_0_dev0(
+        counter_bit_width, count_indices, config_len, n_sub_frames):
+    """Same as :func:`num_ticks_handshake`, but it returns the value used for
+    ceed version 1.0.0.dev0.
     """
     n_bytes_per_count = counter_bit_width // 8
     # the message + padding in bytes

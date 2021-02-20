@@ -1,11 +1,11 @@
+from itertools import cycle, chain
 
+from ceed.storage.controller import DataSerializerBase
 from ceed.analysis import CeedDataReader
 from ceed.tests.ceed_app import CeedTestApp
 from ceed.tests.test_app.examples.stages import SerialAllStage, StageWrapper
 from ceed.tests.test_app.examples.funcs import LinearFunctionF1
 from .shapes import CircleShapeP1
-
-__all__ = ('create_basic_experiment', 'run_experiment')
 
 
 async def create_basic_experiment(
@@ -61,3 +61,128 @@ async def run_experiment(
     f = CeedDataReader(filename)
 
     return f
+
+
+def set_serializer_even_count_bits(
+        serializer: DataSerializerBase, n_sub_frames):
+    serializer_config_bytes = [
+        0b00000001, 0b00010010, 0b00100011, 0b00110100, 0b01000101, 0b01010110,
+        0b01100111
+    ]
+
+    serializer.clock_idx = 3
+    serializer.count_indices = [0, 2, 4, 5]
+    serializer.short_count_indices = [1, 6, 8]
+    serializer.counter_bit_width = 32
+
+    num_handshake_ticks = 3 * 2 * 8 * n_sub_frames
+
+    counter = [
+        # length of config is 2 ints, duplicated
+        0b0000_0100, 0b0000_0100,
+        0b0000_0000, 0b0000_0000,
+        0b0000_0000, 0b0000_0000,
+        0b0000_0000, 0b0000_0000,
+        0b0000_0000, 0b0000_0000,
+        0b0000_0000, 0b0000_0000,
+        0b0000_0000, 0b0000_0000,
+        0b0000_0000, 0b0000_0000,
+        # first 4 config bytes
+        0b0000_0001, 0b0000_0001,
+        0b0000_0000, 0b0000_0000,
+        0b0000_0100, 0b0000_0100,
+        0b0000_0001, 0b0000_0001,
+        0b0000_0101, 0b0000_0101,
+        0b0000_0100, 0b0000_0100,
+        0b0001_0000, 0b0001_0000,
+        0b0000_0101, 0b0000_0101,
+        # next 3 config bytes
+        0b0001_0001, 0b0001_0001,
+        0b0001_0000, 0b0001_0000,
+        0b0001_0100, 0b0001_0100,
+        0b0001_0001, 0b0001_0001,
+        0b0001_0101, 0b0001_0101,
+        0b0001_0100, 0b0001_0100,
+        0b0000_0000, 0b0000_0000,
+        0b0000_0000, 0b0000_0000,
+    ]
+    # counter is incremented once per sub-frame, short counter is the same
+    # for all sub-frames
+    if n_sub_frames == 1:
+        counter += [
+            # counter is now 49 frames (started at 1)
+            0b0000_0001, 0b0000_0001,
+            0b0000_0101, 0b0011_0000,
+            0b0000_0000, 0b0011_0101,
+            0b0000_0000, 0b0011_0101,
+            0b0000_0000, 0b0011_0101,
+            0b0000_0000, 0b0011_0101,
+            0b0000_0000, 0b0011_0101,
+            0b0000_0000, 0b0011_0101,
+            # counter is now 65 frames
+            0b0000_0001, 0b0000_0001,
+            0b0001_0000, 0b0010_0101,
+            0b0000_0000, 0b0011_0101,
+            0b0000_0000, 0b0011_0101,
+            0b0000_0000, 0b0011_0101,
+            0b0000_0000, 0b0011_0101,
+            0b0000_0000, 0b0011_0101,
+            0b0000_0000, 0b0011_0101,
+        ]
+    elif n_sub_frames == 4:
+        counter += [
+            # counter is now 193 frames (started at 1)
+            0b0000_0001, 0b0000_0001,
+            0b0011_0000, 0b0000_0101,
+            0b0000_0000, 0b0011_0101,
+            0b0000_0000, 0b0011_0101,
+            0b0000_0000, 0b0011_0101,
+            0b0000_0000, 0b0011_0101,
+            0b0000_0000, 0b0011_0101,
+            0b0000_0000, 0b0011_0101,
+            # counter is now 257 frames
+            0b0000_0001, 0b0000_0001,
+            0b0000_0000, 0b0011_0101,
+            0b0000_0001, 0b0011_0100,
+            0b0000_0000, 0b0011_0101,
+            0b0000_0000, 0b0011_0101,
+            0b0000_0000, 0b0011_0101,
+            0b0000_0000, 0b0011_0101,
+            0b0000_0000, 0b0011_0101,
+        ]
+    elif n_sub_frames == 12:
+        counter += [
+            # counter is now 577 frames (started at 1)
+            0b0000_0001, 0b0000_0001,
+            0b0001_0000, 0b0010_0101,
+            0b0000_0100, 0b0011_0001,
+            0b0000_0000, 0b0011_0101,
+            0b0000_0000, 0b0011_0101,
+            0b0000_0000, 0b0011_0101,
+            0b0000_0000, 0b0011_0101,
+            0b0000_0000, 0b0011_0101,
+            # counter is now 767 frames
+            0b0000_0001, 0b0000_0001,
+            0b0000_0000, 0b0011_0101,
+            0b0000_0101, 0b0011_0000,
+            0b0000_0000, 0b0011_0101,
+            0b0000_0000, 0b0011_0101,
+            0b0000_0000, 0b0011_0101,
+            0b0000_0000, 0b0011_0101,
+            0b0000_0000, 0b0011_0101,
+        ]
+
+    clock_values = cycle([0b1000, 0])
+    short_values = cycle([
+        0b0_0000_0000,
+        0b0_0000_0010,
+        0b0_0100_0000,
+        0b0_0100_0010,
+        0b1_0000_0000,
+        0b1_0000_0010,
+        0b1_0100_0000,
+        0b1_0100_0010,
+    ])
+
+    return bytes(serializer_config_bytes), num_handshake_ticks, counter, \
+        short_values, clock_values

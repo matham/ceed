@@ -113,6 +113,10 @@ class CeedDataReader:
     electrode_intensity_alignment: Optional[np.ndarray] = None
     """Once set in :meth:`load_experiment` it is a 1D array, mapping the ceed
     array data into the MCS :attr:`electrodes_data` by indices.
+
+    This may be shorter than the values in :attr:`shapes_intensity`, because
+    this contains only indices for frames that were rendered (e.g. the last
+    frame may not have been rendered if stage stopped early).
     """
 
     shapes_intensity: Dict[str, np.ndarray] = {}
@@ -123,6 +127,29 @@ class CeedDataReader:
     This is sampled at the projector frame rate, not the MEA sampling rate and
     should have the same size as the shape of
     :attr:`electrode_intensity_alignment`.
+    """
+
+    rendered_frame_time: np.ndarray = None
+    """Once set in :meth:`load_experiment` it is a 1D array containing the
+    ceed computer's estimated time just before the shapes were actually
+    rendered.
+
+    Each array item has a corresponding index value in
+    :attr:`rendered_time_index`. This value is the index in the values of
+    :attr:`shapes_intensity`, indicating the time of the corresponding frame.
+    When e.g. the video mode is QUAD4X, only every forth frame has a timestamp,
+    so :attr:`rendered_time_index` provides those timestamped indices.
+
+    If :attr:`electrode_intensity_alignment` hasn't been set (e.g. if the file
+    hasn't been merged), it's possible some frames have not been rendered
+    (which is normally verified during the alignment step), in which case it
+    may have discontinuities.
+    """
+
+    rendered_time_index: np.ndarray = None
+    """Once set in :meth:`load_experiment` it is a 1D array containing the
+    indices in :attr:`shapes_intensity` that correspond to the time points in
+    :attr:`rendered_frame_time`.
     """
 
     led_state: np.ndarray = None
@@ -470,6 +497,12 @@ class CeedDataReader:
             data[item.name[6:]] = np.asarray(item)
 
         self.led_state = np.asarray(block.data_arrays['led_state'])
+
+        self.rendered_frame_time = np.asarray(block.data_arrays['frame_time'])
+        self.rendered_time_index = np.asarray(
+            block.data_arrays['frame_time_counter'])
+        if len(self.rendered_time_index):
+            self.rendered_time_index -= self.rendered_time_index[0]
 
         if ('ceed_mcs_alignment' in self._nix_file.blocks and
                 'experiment_{}'.format(experiment) in

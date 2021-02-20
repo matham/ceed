@@ -635,10 +635,18 @@ class StageFactoryBase(EventDispatcher):
                 yielded by :meth:`tick_stage`.
             `grayscale`: str
                 The colors to operate on. Can be any subset of the string
-                'rgb'. Specifically, although we get intensity values for every
-                color, this takes the average intensity of the colors listed in
-                ``grayscale`` and assigns their mean to all those colors.
-                It's how we turn the color into a gray-scale value.
+                'rgb'. Specifically, although we get intensity values for some
+                subset of r, g, b values for each stage, this takes their
+                average intensity and assigns their mean to all of the colors
+                listed in ``grayscale``.
+
+                E.g. if a stage selects the r, g colors in its config, and
+                ``grayscale`` is ``"gb"``, then both the g and b channels are
+                set to the mean r, g values (b is excluded since the stage
+                provides no value for it). The b channel is not set so it's
+                left unchanged (i.e. it'll keep the last value).
+                It's how we turn the color into a gray-scale value when e.g. in
+                ``GREY3X`` mode.
 
         :returns:
 

@@ -69,7 +69,7 @@
                 flat_color: app.theme.text_primary
                 on_release: app.open_filechooser(callback=app.ceed_data.get_filebrowser_callback(app.ceed_data.create_file, overwrite=True, clear_data=True, ext='.h5'), mode='save', target=app.ceed_data.root_path, title='Create h5 file', filters=['*.h5', '*.*'])
             FlatButton:
-                text: 'Clear & open h5 file RO'
+                text: 'Clear & open h5 file (read only)'
                 size_hint: None, None
                 size: self.texture_size
                 scale_down_color: True

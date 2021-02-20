@@ -10,6 +10,7 @@ from fractions import Fraction
 import traceback
 from queue import Empty
 import uuid
+from typing import Optional, Dict, List
 from tree_config import get_config_children_names
 
 from kivy.event import EventDispatcher
@@ -83,7 +84,7 @@ class ViewControllerBase(EventDispatcher):
         'mirror_mea', 'mea_num_rows', 'mea_num_cols',
         'mea_pitch', 'mea_diameter', 'mea_transform', 'cam_transform',
         'flip_projector', 'flip_camera', 'pad_to_stage_handshake',
-        'pre_compute_stages',
+        'pre_compute_stages', 'experiment_uuid',
     )
 
     screen_width = NumericProperty(1920)
@@ -181,8 +182,7 @@ class ViewControllerBase(EventDispatcher):
     '''True when the propixx python library is available. Read-only.
     '''
 
-    video_modes = ['RGB', 'RB3D', 'RGB240', 'RGB180', 'QUAD4X', 'QUAD12X',
-                   'GREY3X']
+    video_modes = ['RGB', 'QUAD4X', 'QUAD12X']
     '''The video modes that the PROPixx projector can be set to.
     '''
 
@@ -233,7 +233,7 @@ class ViewControllerBase(EventDispatcher):
     was added.
     '''
 
-    shape_views = []
+    shape_views: List[Dict[str, Color]] = []
     '''List of kivy graphics instructions added to the :attr:`current_canvas`.
     '''
 
@@ -253,6 +253,8 @@ class ViewControllerBase(EventDispatcher):
     count = 0
     '''The current frame count.
     '''
+
+    experiment_uuid: bytes = b''
 
     def _get_effective_rate(self):
         if self.video_mode == 'QUAD4X':
@@ -404,13 +406,20 @@ class ViewControllerBase(EventDispatcher):
         stage.pad_stage_ticks = 0
 
         if self.output_count:
-            msg = uuid.uuid4().bytes
+            msg = self.experiment_uuid
             n = len(msg)
 
             data_serializer = App.get_running_app().data_serializer
             if self.pad_to_stage_handshake:
-                stage.pad_stage_ticks = data_serializer.num_ticks_handshake(n)
-            self.serializer = data_serializer.get_bits(-1, msg)
+                n_sub = 1
+                if self.video_mode == 'QUAD4X':
+                    n_sub = 4
+                elif self.video_mode == 'QUAD12X':
+                    n_sub = 12
+                stage.pad_stage_ticks = data_serializer.num_ticks_handshake(
+                    n, n_sub)
+            self.serializer = data_serializer.get_bits(msg)
+            next(self.serializer)
 
         self.current_canvas = canvas
         self.tick_func = stage_factory.tick_stage(
@@ -474,15 +483,18 @@ class ViewControllerBase(EventDispatcher):
         tick = self.tick_func
         if self.video_mode == 'QUAD4X':
             projections = [None, ] * 4
+            # it already has 4 views
             views = self.shape_views
         elif self.video_mode == 'QUAD12X':
             projections = (['r', ] * 4) + (['g', ] * 4) + (['b', ] * 4)
-            views = [view for _ in range(4) for view in self.shape_views]
+            views = self.shape_views * 3
         else:
             projections = [None, ]
             views = self.shape_views
         effective_rate = int(self.effective_frame_rate)
 
+        first_blit = True
+        bits = 0
         for shape_views, proj in zip(views, projections):
             # we cannot skip frames (i.e. we may only increment frame by one).
             # Because stages/func can be pre-computed and it assumes a constant
@@ -499,12 +511,14 @@ class ViewControllerBase(EventDispatcher):
                 raise
 
             if self.serializer:
-                next(self.serializer)
-                bits = self.serializer.send(self.count)
-                r, g, b = bits & 0xFF, (bits & 0xFF00) >> 8, \
-                    (bits & 0xFF0000) >> 16
-                self.serializer_tex.blit_buffer(
-                    bytes([r, g, b]), colorfmt='rgb', bufferfmt='ubyte')
+                if first_blit:
+                    bits = self.serializer.send(self.count)
+                    # if in e.g. quad mode, only blit on first section
+                    r, g, b = bits & 0xFF, (bits & 0xFF00) >> 8, \
+                        (bits & 0xFF0000) >> 16
+                    self.serializer_tex.blit_buffer(
+                        bytes([r, g, b]), colorfmt='rgb', bufferfmt='ubyte')
+                    first_blit = False
             else:
                 bits = 0
 
@@ -692,7 +706,9 @@ class ControllerSideViewControllerBase(ViewControllerBase):
             canvas, black_back=black_back)
 
     @app_error
-    def request_stage_start(self, stage_name):
+    def request_stage_start(
+            self, stage_name: str, experiment_uuid: Optional[bytes] = None
+    ) -> None:
         '''Starts the stage either in the GUI when previewing or in the
         viewer.
 
@@ -706,6 +722,11 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         if not stage_name:
             self.stage_active = False
             raise ValueError('No stage specified')
+
+        if experiment_uuid is None:
+            self.experiment_uuid = uuid.uuid4().bytes
+        else:
+            self.experiment_uuid = experiment_uuid
 
         app = App.get_running_app()
         app.stages_container.\

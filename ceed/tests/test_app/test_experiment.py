@@ -1,12 +1,13 @@
 import pytest
-from math import isclose
+from math import isclose, ceil
 import numpy as np
 import pathlib
 
 import ceed
 from .examples.shapes import CircleShapeP1, CircleShapeP2
 from .examples import assert_image_same, create_test_image
-from .examples.experiment import create_basic_experiment, run_experiment
+from .examples.experiment import create_basic_experiment, run_experiment, \
+    set_serializer_even_count_bits
 from ceed.tests.ceed_app import CeedTestApp
 from ceed.tests.test_stages import get_stage_time_intensity
 from ceed.analysis.merge_data import CeedMCSDataMerger
@@ -252,18 +253,19 @@ def test_create_merge_experiment(
     root = pathlib.Path(ceed.__file__).parent.joinpath('examples', 'data')
     mcs_filename = str(root.joinpath('mcs_data.h5'))
 
-    merger = CeedMCSDataMerger()
-    merger.read_mcs_digital_data(mcs_filename)
+    merger = CeedMCSDataMerger(
+        ceed_filename=existing_experiment_filename, mcs_filename=mcs_filename)
 
-    first = True
+    assert merger.get_experiment_numbers() == ['0', '1']
+
+    merger.read_mcs_data()
+    merger.read_ceed_data()
+    merger.parse_mcs_data()
+
     alignment = {}
     for experiment in ('0', '1'):
-        merger.read_ceed_digital_data(existing_experiment_filename, experiment)
-        merger.parse_ceed_digital_data()
-
-        if first:
-            merger.parse_mcs_digital_data()
-            first = False
+        merger.read_ceed_experiment_data(experiment)
+        merger.parse_ceed_experiment_data()
 
         alignment[experiment] = merger.get_alignment()
 
@@ -378,11 +380,21 @@ def test_saved_data(experiment_filename):
 
         for exp, image, (b1, b2) in zip((0, 1), stored_images, stored_b_values):
             f.load_experiment(exp)
-            d1 = np.array(f.shapes_intensity[shape1])
-            d2 = np.array(f.shapes_intensity[shape2])
+            d1 = f.shapes_intensity[shape1]
+            d2 = f.shapes_intensity[shape2]
 
             assert d1.shape == (240, 4)
             assert d2.shape == (240, 4)
+            assert len(f.rendered_frame_time) == 240
+
+            assert len(np.asarray(f._block.data_arrays['frame_bits'])) == 240
+            counter = np.asarray(f._block.data_arrays['frame_counter'])
+            assert len(counter) == 240
+            assert np.all(counter == np.arange(1, 241))
+            render = np.asarray(f._block.data_arrays['frame_time_counter'])
+            assert len(render) == 240
+            assert np.all(render == np.arange(1, 241))
+            assert len(np.asarray(f._block.data_arrays['frame_time'])) == 240
 
             for i in range(240):
                 for d, b, (active, inactive) in zip(
@@ -565,3 +577,151 @@ async def test_import_h5_stages(
     values, n = get_stage_time_intensity(
         stage_app.app.stage_factory, stored_stage_name, 120)
     verify_experiment(values, n, False)
+
+
+@pytest.mark.parametrize('video_mode', ['RGB', 'QUAD4X', 'QUAD12X'])
+@pytest.mark.parametrize('flip', [True, False])
+async def test_serializer_corner_pixel(
+        stage_app: CeedTestApp, flip, video_mode):
+    from kivy.clock import Clock
+    from ceed.function.plugin import ConstFunc
+    from ..test_stages import create_2_shape_stage
+
+    n_sub_frames = 1
+    if video_mode == 'QUAD4X':
+        n_sub_frames = 4
+    elif video_mode == 'QUAD12X':
+        n_sub_frames = 12
+    config, num_handshake_ticks, counter, short_values, clock_values = \
+        set_serializer_even_count_bits(
+            stage_app.app.data_serializer, n_sub_frames)
+    stage_app.app.data_serializer.projector_to_aquisition_map = {
+        i: i for i in range(16)}
+
+    root, s1, s2, shape1, shape2 = create_2_shape_stage(
+        stage_app.app.stage_factory, show_in_gui=True, app=stage_app)
+    s1.stage.add_func(ConstFunc(
+        function_factory=stage_app.app.function_factory, duration=20))
+    await stage_app.wait_clock_frames(2)
+
+    stage_app.app.view_controller.frame_rate = 120
+    stage_app.app.view_controller.use_software_frame_rate = False
+    stage_app.app.view_controller.pad_to_stage_handshake = True
+    stage_app.app.view_controller.flip_projector = flip
+    stage_app.app.view_controller.output_count = True
+    stage_app.app.view_controller.video_mode = video_mode
+    assert stage_app.app.view_controller.do_quad_mode == (video_mode != 'RGB')
+    assert stage_app.app.view_controller.effective_frame_rate == \
+        120 * n_sub_frames
+
+    frame = 0
+    expected_values = list(zip(counter, short_values, clock_values))
+
+    def verify_serializer(*largs):
+        nonlocal frame
+
+        if frame >= len(counter):
+            stage_app.app.view_controller.request_stage_end()
+            return
+
+        (r, g, b, a), = stage_app.get_widget_pos_pixel(
+            stage_app.app.shape_factory, [(0, 1079)])
+        value = r | g << 8 | b << 16
+        if not value and not frame:
+            return
+
+        count, short, clock = expected_values[frame]
+        print(frame, f'{value:010b}, {count:010b}, {short:010b}, {clock:08b}')
+        assert value == count | short | clock
+        frame += 1
+
+    event = Clock.create_trigger(verify_serializer, timeout=0, interval=True)
+    event()
+    stage_app.app.view_controller.request_stage_start(
+        root.name, experiment_uuid=config)
+
+    while stage_app.app.view_controller.stage_active:
+        await stage_app.wait_clock_frames(5)
+    await stage_app.wait_clock_frames(2)
+
+    assert frame == len(counter)
+
+
+@pytest.mark.parametrize('video_mode', ['RGB', 'QUAD4X', 'QUAD12X'])
+async def test_serializer_saved_data(
+        stage_app: CeedTestApp, tmp_path, video_mode):
+    from ceed.function.plugin import ConstFunc
+    from ..test_stages import create_2_shape_stage
+
+    n_sub_frames = 1
+    if video_mode == 'QUAD4X':
+        n_sub_frames = 4
+    elif video_mode == 'QUAD12X':
+        n_sub_frames = 12
+
+    config, num_handshake_ticks, counter, short_values, clock_values = \
+        set_serializer_even_count_bits(
+            stage_app.app.data_serializer, n_sub_frames)
+    stage_app.app.data_serializer.projector_to_aquisition_map = {
+        i: i for i in range(16)}
+    expected_values = list(zip(counter, short_values, clock_values))
+
+    root, s1, s2, shape1, shape2 = create_2_shape_stage(
+        stage_app.app.stage_factory, show_in_gui=True, app=stage_app)
+    s1.stage.add_func(ConstFunc(
+        function_factory=stage_app.app.function_factory, duration=2))
+    await stage_app.wait_clock_frames(2)
+
+    stage_app.app.view_controller.frame_rate = 120
+    stage_app.app.view_controller.use_software_frame_rate = False
+    stage_app.app.view_controller.pad_to_stage_handshake = True
+    stage_app.app.view_controller.output_count = True
+    stage_app.app.view_controller.video_mode = video_mode
+
+    stage_app.app.view_controller.request_stage_start(
+        root.name, experiment_uuid=config)
+
+    while stage_app.app.view_controller.stage_active:
+        await stage_app.wait_clock_frames(5)
+    await stage_app.wait_clock_frames(2)
+
+    filename = str(tmp_path / 'serializer_data.h5')
+    stage_app.app.ceed_data.save(filename=filename)
+
+    merger = CeedMCSDataMerger(ceed_filename=filename, mcs_filename='')
+
+    merger.read_ceed_data()
+    merger.read_ceed_experiment_data('0')
+    merger.parse_ceed_experiment_data()
+
+    # logged data is one per frame (where e.g. in 12x each is still a frame)
+    raw_data = merger.ceed_data_container.data
+    clock_data = merger.ceed_data_container.clock_data
+    short_count_data = merger.ceed_data_container.short_count_data
+    short_count_max = 2 ** len(
+        stage_app.app.data_serializer.short_count_indices)
+
+    # clock and short count are one-per group of n_sub_frames
+    for i, (raw_s, short_s, clock_s) in enumerate(
+            zip(raw_data, short_count_data, clock_data)):
+        root_frame_i = i // n_sub_frames
+
+        if root_frame_i < len(expected_values):
+            count, short, clock = expected_values[root_frame_i]
+            assert raw_s == count | short | clock
+
+        if root_frame_i % 2:
+            assert not clock_s
+        else:
+            assert clock_s == 1
+
+        assert short_s == root_frame_i % short_count_max
+
+    # counter is one per frame, including sub frames
+    assert np.all(merger.ceed_data_container.counter == np.arange(
+        1, 1 + len(raw_data)))
+
+    n_bytes_per_int = stage_app.app.data_serializer.counter_bit_width // 8
+    config += b'\0' * (n_bytes_per_int - len(config) % n_bytes_per_int)
+    assert merger.ceed_data_container.expected_handshake_len == len(config)
+    assert merger.ceed_data_container.handshake_data == config

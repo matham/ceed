@@ -813,7 +813,10 @@ async def test_moat_single_stage_shapes(stage_app: CeedTestApp, tmp_path):
     f.close_h5()
 
 
-async def test_pad_stage_ticks(stage_app: CeedTestApp, tmp_path):
+@pytest.mark.parametrize(
+    'quad,sub_frames', [('RGB', 1), ('QUAD4X', 4), ('QUAD12X', 12)])
+async def test_pad_stage_ticks(
+        stage_app: CeedTestApp, tmp_path, quad, sub_frames):
     from ..test_stages import create_recursive_stages
     from .examples.shapes import CircleShapeP1
     from ceed.analysis import CeedDataReader
@@ -830,6 +833,7 @@ async def test_pad_stage_ticks(stage_app: CeedTestApp, tmp_path):
 
     stage_app.app.view_controller.frame_rate = 10
     stage_app.app.view_controller.use_software_frame_rate = False
+    stage_app.app.view_controller.video_mode = quad
 
     stage_app.app.view_controller.pad_to_stage_handshake = False
     stage_app.app.view_controller.request_stage_start(root.name)
@@ -851,12 +855,31 @@ async def test_pad_stage_ticks(stage_app: CeedTestApp, tmp_path):
     assert f.experiments_in_file == ['0', '1']
     assert not f.num_images_in_file
 
-    f.load_experiment(0)
-    assert np.array(f.shapes_intensity[shape.name]).shape == (0, 4)
+    f.load_experiment('0')
+    assert f.shapes_intensity[shape.name].shape == (0, 4)
 
-    f.load_experiment(1)
-    assert np.array(f.shapes_intensity[shape.name]).shape == (
-        stage_app.app.data_serializer.num_ticks_handshake(16), 4)
+    f.load_experiment('1')
+    # sub_frames scales up the handshake since IO is same for each sub-frame
+    assert f.shapes_intensity[shape.name].shape == (
+        stage_app.app.data_serializer.num_ticks_handshake(16, sub_frames), 4)
+    assert f.shapes_intensity[shape.name].shape == (
+        stage_app.app.data_serializer.num_ticks_handshake(16, 1) * sub_frames,
+        4)
+
+    n = f.shapes_intensity[shape.name].shape[0]
+    assert len(f.rendered_time_index) == len(f.rendered_frame_time)
+    assert sub_frames * len(f.rendered_time_index) == n
+
+    # we didn't stop early so all frames are rendered. Also,
+    # rendered_time_index is zero-based
+    rendered_indices = np.arange(0, n, sub_frames)
+    assert np.all(f.rendered_time_index == rendered_indices)
+
+    frame_time_counter = np.asarray(f._block.data_arrays['frame_time_counter'])
+    frame_counter = np.asarray(f._block.data_arrays['frame_counter'])
+    # count recorded is last sub-frame
+    assert np.all(
+        frame_counter[rendered_indices + sub_frames - 1] == frame_time_counter)
 
     f.close_h5()
 
