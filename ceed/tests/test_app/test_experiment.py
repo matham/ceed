@@ -2,6 +2,7 @@ import pytest
 from math import isclose, ceil
 import numpy as np
 import pathlib
+from pytest_dependency import depends
 
 import ceed
 from .examples.shapes import CircleShapeP1, CircleShapeP2
@@ -19,8 +20,8 @@ stored_shape_names = CircleShapeP1.name, CircleShapeP2.name
 # r, g is active, b is inactive
 stored_colors = [((0, 1, ), (2,)), ] * 2
 filename_source = [
-    'internal', 'external', 're_merged', 'merged', 'unmerged']
-filename_source_merged = ['re_merged', 'merged']
+    'internal', 'external', 'internal_merged', 'merged', 'unmerged']
+filename_source_merged = ['internal_merged', 'merged']
 stored_stage_name = ParaAllStage.name
 
 pytestmark = pytest.mark.ceed_app
@@ -176,8 +177,12 @@ def existing_experiment_filename():
 def merge_experiment_filename(tmp_path_factory, existing_experiment_filename):
     """All tests depending on this, also depend on
     test_create_merge_experiment."""
-    return str(
+    root = pathlib.Path(ceed.__file__).parent.joinpath('examples', 'data')
+    mcs_filename = str(root.joinpath('mcs_data.h5'))
+
+    filename = str(
         tmp_path_factory.mktemp('experiment') / 'new_experiment_merged.h5')
+    return filename, existing_experiment_filename, mcs_filename
 
 
 @pytest.fixture(scope='module')
@@ -192,33 +197,47 @@ def existing_merged_experiment_filename():
     return str(root.joinpath('ceed_mcs_data_merged.h5'))
 
 
-@pytest.fixture(scope='module', params=filename_source)
+@pytest.fixture(params=filename_source)
 def experiment_filename(
         request, internal_experiment_filename, external_experiment_filename,
         merge_experiment_filename, existing_experiment_filename,
         existing_merged_experiment_filename):
     src = request.param
     if src == 'internal':
+        depends(request, ['internal_experiment'])
         return internal_experiment_filename
     if src == 'external':
+        depends(request, ['external_experiment'])
         return external_experiment_filename
     if src == 'internal_merged':
-        return merge_experiment_filename
+        depends(request, ['merge_experiment'])
+        return merge_experiment_filename[0]
     if src == 'merged':
+        if not pathlib.Path(existing_merged_experiment_filename).exists():
+            pytest.skip(
+                f'"{existing_merged_experiment_filename}" does not exist')
         return existing_merged_experiment_filename
+
+    if not pathlib.Path(existing_experiment_filename).exists():
+        pytest.skip(f'"{existing_experiment_filename}" does not exist')
     return existing_experiment_filename
 
 
-@pytest.fixture(scope='module', params=filename_source_merged)
+@pytest.fixture(params=filename_source_merged)
 def merged_filename(
         request, merge_experiment_filename,
         existing_merged_experiment_filename):
     src = request.param
-    if src == 're_merged':
-        return merge_experiment_filename
+    if src == 'internal_merged':
+        depends(request, ['merge_experiment'])
+        return merge_experiment_filename[0]
+
+    if not pathlib.Path(existing_merged_experiment_filename).exists():
+        pytest.skip(f'"{existing_merged_experiment_filename}" does not exist')
     return existing_merged_experiment_filename
 
 
+@pytest.mark.dependency(name='internal_experiment')
 async def test_create_internal_experiment(
         stage_app: CeedTestApp, internal_experiment_filename):
     filename = internal_experiment_filename
@@ -232,6 +251,7 @@ async def test_create_internal_experiment(
         base + 'app.yml', stages_only=False)
 
 
+@pytest.mark.dependency(name='external_experiment')
 async def test_create_external_experiment(
         stage_app: CeedTestApp, external_experiment_filename):
     filename = external_experiment_filename
@@ -246,15 +266,16 @@ async def test_create_external_experiment(
     stage_app.app.ceed_data.save(filename=filename)
 
 
-def test_create_merge_experiment(
-        merge_experiment_filename, existing_experiment_filename):
-    filename = merge_experiment_filename
-
-    root = pathlib.Path(ceed.__file__).parent.joinpath('examples', 'data')
-    mcs_filename = str(root.joinpath('mcs_data.h5'))
+@pytest.mark.dependency(name='merge_experiment')
+def test_create_merge_experiment(merge_experiment_filename):
+    filename, ceed_filename, mcs_filename = merge_experiment_filename
+    if not pathlib.Path(ceed_filename).exists():
+        pytest.skip(f'"{ceed_filename}" does not exist')
+    if not pathlib.Path(mcs_filename).exists():
+        pytest.skip(f'"{mcs_filename}" does not exist')
 
     merger = CeedMCSDataMerger(
-        ceed_filename=existing_experiment_filename, mcs_filename=mcs_filename)
+        ceed_filename=ceed_filename, mcs_filename=mcs_filename)
 
     assert merger.get_experiment_numbers() == ['0', '1']
 
@@ -270,10 +291,11 @@ def test_create_merge_experiment(
         alignment[experiment] = merger.get_alignment()
 
     merger.merge_data(
-        filename, existing_experiment_filename, mcs_filename, alignment,
+        filename, ceed_filename, mcs_filename, alignment,
         notes='app notes')
 
 
+@pytest.mark.dependency()
 def test_saved_metadata(experiment_filename):
     from ceed.analysis import CeedDataReader
     existing_exp, merged_exp = exp_source(experiment_filename)
@@ -370,6 +392,7 @@ def test_saved_metadata(experiment_filename):
             assert not f.external_stage_plugin_package
 
 
+@pytest.mark.dependency()
 def test_saved_data(experiment_filename):
     from ceed.analysis import CeedDataReader
     existing_exp, merged_exp = exp_source(experiment_filename)
@@ -421,6 +444,7 @@ def test_saved_data(experiment_filename):
             assert f.led_state.tolist() == [(0, 1, 1, 1)]
 
 
+@pytest.mark.dependency()
 def test_saved_image(experiment_filename):
     from ceed.analysis import CeedDataReader
     existing_exp, merged_exp = exp_source(experiment_filename)
@@ -442,6 +466,7 @@ def test_saved_image(experiment_filename):
                 image, stored_images[2 + i], exact=not existing_exp)
 
 
+@pytest.mark.dependency()
 def test_replay_experiment_data(experiment_filename):
     from ceed.analysis import CeedDataReader
     shape1, shape2 = stored_shape_names
@@ -476,6 +501,7 @@ def test_replay_experiment_data(experiment_filename):
             verify_values()
 
 
+@pytest.mark.dependency()
 def test_mcs_data(merged_filename):
     from ceed.analysis import CeedDataReader
     shape1, shape2 = stored_shape_names
@@ -499,6 +525,8 @@ def test_mcs_data(merged_filename):
 
 def test_create_movie(tmp_path, existing_merged_experiment_filename):
     from ceed.analysis import CeedDataReader
+    if not pathlib.Path(existing_merged_experiment_filename).exists():
+        pytest.skip(f'"{existing_merged_experiment_filename}" does not exist')
 
     with CeedDataReader(existing_merged_experiment_filename) as f:
         f.load_mcs_data()
@@ -532,6 +560,7 @@ def test_create_movie(tmp_path, existing_merged_experiment_filename):
 
 @pytest.mark.parametrize('stages_only', [True, False])
 @pytest.mark.parametrize('suffix', ['app.yml', '.yml'])
+@pytest.mark.dependency(depends=['internal_experiment'])
 async def test_import_yml_stages(
         stage_app: CeedTestApp, internal_experiment_filename, suffix,
         stages_only):
@@ -552,6 +581,9 @@ async def test_import_yml_stages(
 
 async def test_import_yml_existing(
         stage_app: CeedTestApp, existing_template_filename):
+    if not pathlib.Path(existing_template_filename).exists():
+        pytest.skip(f'"{existing_template_filename}" does not exist')
+
     stage_app.app.ceed_data.read_yaml_config(
         existing_template_filename, stages_only=True)
     await stage_app.wait_clock_frames(2)
@@ -564,11 +596,14 @@ async def test_import_yml_existing(
 @pytest.mark.parametrize('stages_only', [True, False])
 @pytest.mark.parametrize('src', ['internal', 'existing'])
 async def test_import_h5_stages(
-        stage_app: CeedTestApp, internal_experiment_filename,
+        request, stage_app: CeedTestApp, internal_experiment_filename,
         existing_experiment_filename, src, stages_only):
     if src == 'internal':
+        depends(request, ['internal_experiment'])
         filename = internal_experiment_filename
     else:
+        if not pathlib.Path(existing_experiment_filename).exists():
+            pytest.skip(f'"{existing_experiment_filename}" does not exist')
         filename = existing_experiment_filename
 
     stage_app.app.ceed_data.import_file(filename, stages_only=stages_only)
