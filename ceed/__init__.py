@@ -11,7 +11,7 @@ import pathlib
 
 __all__ = ('__version__', 'is_view_inst', 'get_pyinstaller_datas')
 
-__version__ = '1.0.0.dev0'
+__version__ = '1.0.0.dev1'
 
 is_view_inst = 'CEED_IS_VIEW' in os.environ
 '''Whether ceed is imported from the client code that displays the projector
