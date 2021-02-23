@@ -141,60 +141,66 @@
                             Rectangle:
                                 pos: self.pos
                                 size: self.width, dp(10)
-        BoxLayout:
+        ScrollView:
             size_hint_y: None
             height: '34dp'
-            Widget
+            bar_width: '10dp'
+            scroll_type: ['bars']
+            do_scroll_y: False
             BoxLayout:
-                size_hint: None, None
-                size: self.minimum_width, '34dp'
-                padding: '5dp'
-                spacing: '5dp'
-                canvas:
-                    Color:
-                        rgba: app.theme.primary
-                    Rectangle:
-                        pos: self.pos
-                        size: self.size
-                FlatImageButton:
-                    scale_down_color: True
-                    source: 'checkbox-blank-outline.png'
-                    hover_text: 'Add enclosing polygon'
-                    flat_color: app.theme.accent
-                    on_release: app.shape_factory.add_enclosing_polygon()
-                    test_name: 'add enclosing polygon'
-                FlatDivider:
-                    color: app.theme.divider
-                FlatImageButton:
-                    scale_down_color: True
-                    source: 'flat_copy.png'
-                    hover_text: 'duplicate shapes' if self.state == 'normal' else '[b]duplicate[/b] shapes'
-                    flat_color: app.theme.accent
-                    on_release: app.shape_factory.duplicate_selected_shapes()
-                    test_name: 'shape duplicate'
-                FlatImageButton:
-                    scale_down_color: True
-                    source: 'flat_delete.png'
-                    hover_text: 'delete shapes' if self.state == 'normal' else '[b]delete[/b] shapes'
-                    flat_color: app.theme.accent
-                    on_release: app.shape_factory.delete_selected_shapes()
-                    test_name: 'shape delete'
-                FlatDivider:
-                    color: app.theme.divider
-                FlatImageToggleButton:
-                    scale_down_color: True
-                    hover_text: 'multiselect' if self.state == 'normal' else '[b]multi[/b]select'
-                    source: 'flat_add_to_selection.png'
-                    flat_color: app.theme.accent
-                    test_name: 'shape multiselect'
-                    on_state:
-                        app.shape_groups_container.touch_multiselect = app.shapes_container.touch_multiselect = app.shape_factory.multiselect = self.state == 'down'
-                FlatImageToggleButton:
-                    hover_text: '[b]hide[/b] / show pos' if self.state == 'normal' else 'hide / [b]show[/b] pos'
-                    source: 'flat_map.png' if self.state == 'down' else 'flat_map_off.png'
-                    flat_color: app.theme.accent
-                    on_state: app.shape_factory.show_label = self.state == 'down'
-            Widget
+                size_hint_min_x: self.minimum_width
+                Widget
+                BoxLayout:
+                    id: paint_box
+                    size_hint: None, None
+                    size: self.minimum_width, '34dp'
+                    padding: '5dp'
+                    spacing: '5dp'
+                    canvas:
+                        Color:
+                            rgba: app.theme.primary
+                        Rectangle:
+                            pos: self.pos
+                            size: self.size
+                    FlatImageButton:
+                        scale_down_color: True
+                        source: 'checkbox-blank-outline.png'
+                        hover_text: 'Add enclosing polygon'
+                        flat_color: app.theme.accent
+                        on_release: app.shape_factory.add_enclosing_polygon()
+                        test_name: 'add enclosing polygon'
+                    FlatDivider:
+                        color: app.theme.divider
+                    FlatImageButton:
+                        scale_down_color: True
+                        source: 'flat_copy.png'
+                        hover_text: 'duplicate shapes' if self.state == 'normal' else '[b]duplicate[/b] shapes'
+                        flat_color: app.theme.accent
+                        on_release: app.shape_factory.duplicate_selected_shapes()
+                        test_name: 'shape duplicate'
+                    FlatImageButton:
+                        scale_down_color: True
+                        source: 'flat_delete.png'
+                        hover_text: 'delete shapes' if self.state == 'normal' else '[b]delete[/b] shapes'
+                        flat_color: app.theme.accent
+                        on_release: app.shape_factory.delete_selected_shapes()
+                        test_name: 'shape delete'
+                    FlatDivider:
+                        color: app.theme.divider
+                    FlatImageToggleButton:
+                        scale_down_color: True
+                        hover_text: 'multiselect' if self.state == 'normal' else '[b]multi[/b]select'
+                        source: 'flat_add_to_selection.png'
+                        flat_color: app.theme.accent
+                        test_name: 'shape multiselect'
+                        on_state:
+                            app.shape_groups_container.touch_multiselect = app.shapes_container.touch_multiselect = app.shape_factory.multiselect = self.state == 'down'
+                    FlatImageToggleButton:
+                        hover_text: '[b]hide[/b] / show pos' if self.state == 'normal' else 'hide / [b]show[/b] pos'
+                        source: 'flat_map.png' if self.state == 'down' else 'flat_map_off.png'
+                        flat_color: app.theme.accent
+                        on_state: app.shape_factory.show_label = self.state == 'down'
+                Widget
         ScrollView:
             bar_width: '10dp'
             scroll_type: ['bars']
