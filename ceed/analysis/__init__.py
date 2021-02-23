@@ -117,6 +117,11 @@ class CeedDataReader:
     This may be shorter than the values in :attr:`shapes_intensity`, because
     this contains only indices for frames that were rendered (e.g. the last
     frame may not have been rendered if stage stopped early).
+
+    If the experiment ran in QUAD4X or QUAD12X mode, the start of each sub-frame
+    (i.e. 4 or 12 frames in each main frame) is estimated by splitting the main
+    frames into the given number of sub-frames. The main frames start time is
+    exactly recorded in the Ceed-MCS data link.
     """
 
     shapes_intensity: Dict[str, np.ndarray] = {}

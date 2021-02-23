@@ -340,13 +340,8 @@ class ViewControllerBase(EventDispatcher):
             canvas, self.canvas_name)
         self.shape_views = []
         w, h = self.screen_width, self.screen_height
-
-        with canvas:
-            PushMatrix()
-            s = Scale()
-            if self.flip_projector:
-                s.x = -1
-            s.origin = w / 2., h / 2.
+        half_w = w // 2
+        half_h = h // 2
 
         if black_back:
             with canvas:
@@ -354,8 +349,6 @@ class ViewControllerBase(EventDispatcher):
                 Rectangle(size=(w, h), group=self.canvas_name)
 
         if self.do_quad_mode:
-            half_w = w // 2
-            half_h = h // 2
 
             for (x, y) in ((0, 1), (1, 1), (0, 0), (1, 0)):
                 with canvas:
@@ -364,6 +357,12 @@ class ViewControllerBase(EventDispatcher):
                     s = Scale(group=self.canvas_name)
                     s.x = s.y = 0.5
                     s.origin = 0, 0
+
+                    if self.flip_projector:
+                        s = Scale(group=self.canvas_name)
+                        s.x = -1
+                        s.origin = half_w, half_h
+
                 instructs = _get_app().\
                     stage_factory.get_shapes_gl_color_instructions(
                     canvas, self.canvas_name)
@@ -371,12 +370,20 @@ class ViewControllerBase(EventDispatcher):
                     PopMatrix(group=self.canvas_name)
                 self.shape_views.append(instructs)
         else:
+            if self.flip_projector:
+                with canvas:
+                    PushMatrix(group=self.canvas_name)
+                    s = Scale(group=self.canvas_name)
+                    s.x = -1
+                    s.origin = half_w, half_h
+
             self.shape_views = [
                 _get_app().stage_factory.get_shapes_gl_color_instructions(
                     canvas, self.canvas_name)]
 
-        with canvas:
-            PopMatrix()
+            if self.flip_projector:
+                with canvas:
+                    PopMatrix(group=self.canvas_name)
 
         if self.output_count and not self.serializer_tex:
             with canvas:

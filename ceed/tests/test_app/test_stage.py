@@ -1,5 +1,4 @@
 import trio
-import pathlib
 import sys
 from contextlib import contextmanager
 from math import isclose
@@ -532,12 +531,72 @@ async def test_gui_drag_stage_to_stage(stage_app: CeedTestApp):
             await stage_app.wait_clock_frames(2)
 
 
+def verify_color(
+        stage_app, shape_color, shape2_color, frame, centers, flip, video_mode):
+    (cx1, cy1), (cx2, cy2) = centers
+    if flip:
+        cx1 = 1920 - cx1
+        cx2 = 1920 - cx2
+
+    centers = [[(cx1, cy1), (cx2, cy2)]]
+    if 'QUAD' in video_mode:
+        cx1, cx2, cy1, cy2 = cx1 // 2, cx2 // 2, cy1 // 2, cy2 // 2
+        corners = ((0, 540), (960, 540), (0, 0), (960, 0))
+        centers = [
+            [(cx + x, cy + y) for cx, cy in [(cx1, cy1), (cx2, cy2)]]
+            for x, y in corners]
+
+    if video_mode == 'QUAD12X':
+        # first get all 4 centers values, one for each quadrant
+        rgb_values = []
+        for i in range(4):
+            rgb = stage_app.get_widget_pos_pixel(
+                stage_app.app.shape_factory, centers[i])
+            rgb = [[c / 255 for c in p] for p in rgb]
+            rgb_values.append(rgb)
+
+        # r, g, b
+        for plane in [0, 1, 2]:
+            # 4 quads
+            for color1, color2 in rgb_values:
+                assert isclose(
+                    color1[plane], shape_color[frame][3], abs_tol=2 / 255)
+                assert isclose(
+                    color2[plane], shape2_color[frame][3], abs_tol=2 / 255)
+                frame += 1
+    else:
+        n_sub_frames = 1
+        if video_mode == 'QUAD4X':
+            n_sub_frames = 4
+
+        for i in range(n_sub_frames):
+            points = stage_app.get_widget_pos_pixel(
+                stage_app.app.shape_factory, centers[i])
+            points = [[c / 255 for c in p] for p in points]
+            (r1, g1, b1, _), (r2, g2, b2, _) = points
+
+            val = shape_color[frame]
+            assert isclose(r1, val[3], abs_tol=2 / 255) if val[0] else r1 == 0
+            assert isclose(g1, val[3], abs_tol=2 / 255) if val[1] else g1 == 0
+            assert isclose(b1, val[3], abs_tol=2 / 255) if val[2] else b1 == 0
+            val = shape2_color[frame]
+            assert isclose(r2, val[3], abs_tol=2 / 255) if val[0] else r2 == 0
+            assert isclose(g2, val[3], abs_tol=2 / 255) if val[1] else g2 == 0
+            assert isclose(b2, val[3], abs_tol=2 / 255) if val[2] else b2 == 0
+            frame += 1
+
+    return frame
+
+
+@pytest.mark.parametrize('video_mode', ['RGB', 'QUAD4X', 'QUAD12X'])
+@pytest.mark.parametrize('flip', [True, False])
 async def test_recursive_play_stage_intensity(
-        stage_app: CeedTestApp, tmp_path):
+        stage_app: CeedTestApp, tmp_path, flip, video_mode):
     from ..test_stages import create_recursive_stages
     from .examples.shapes import CircleShapeP1, CircleShapeP2
     from kivy.clock import Clock
     from ceed.analysis import CeedDataReader
+
     root, g1, g2, s1, s2, s3, s4, s5, s6 = create_recursive_stages(
         stage_app.app.stage_factory, app=stage_app)
 
@@ -566,55 +625,49 @@ async def test_recursive_play_stage_intensity(
     event = None
     trio_event = trio.Event()
     rate = stage_app.app.view_controller.frame_rate = 10
-    num_frames = rate * (10 + 5 + 10 + 5)
     initial_frames = Clock.frames_displayed
     stage_app.app.view_controller.use_software_frame_rate = False
-    stage_app.app.view_controller.flip_projector = False
+    stage_app.app.view_controller.flip_projector = flip
+    stage_app.app.view_controller.video_mode = video_mode
 
-    shape_color = [(0., 0., 0.), ] * num_frames
-    shape2_color = [(0., 0., 0.), ] * num_frames
+    n_sub_frames = 1
+    if video_mode == 'QUAD4X':
+        n_sub_frames = 4
+    elif video_mode == 'QUAD12X':
+        n_sub_frames = 12
+
+    centers = shape.center, shape2.center
+    num_frames = rate * n_sub_frames * (10 + 5 + 10 + 5)
+    shape_color = [(False, False, False, 0.), ] * num_frames
+    shape2_color = [(False, False, False, 0.), ] * num_frames
 
     for s, start, e in [(s1, 0, 5), (s4, 15, 25), (s5, 25, 30)]:
-        for i in range(start * rate, e * rate):
-            val = (i - start * rate) / rate * .1
-            shape_color[i] = (
-                int(s.color_r) * val, int(s.color_g) * val,
-                int(s.color_b) * val)
+        for i in range(start * rate * n_sub_frames, e * rate * n_sub_frames):
+            val = (i - start * rate * n_sub_frames) / (rate * n_sub_frames) * .1
+            shape_color[i] = s.color_r, s.color_g, s.color_b, val
 
     for s, start, e in [(s2, 0, 10), (s3, 10, 15), (s6, 25, 30)]:
-        for i in range(start * rate, e * rate):
-            val = (i - start * rate) / rate * .1
-            shape2_color[i] = (
-                int(s.color_r) * val, int(s.color_g) * val,
-                int(s.color_b) * val)
+        for i in range(start * rate * n_sub_frames, e * rate * n_sub_frames):
+            val = (i - start * rate * n_sub_frames) / (rate * n_sub_frames) * .1
+            shape2_color[i] = s.color_r, s.color_g, s.color_b, val
 
     def verify_intensity(*largs):
         nonlocal frame
         if Clock.frames_displayed <= initial_frames + 1:
             return
 
+        # total frames is a multiple of n_sub_frames
         if not stage_app.app.view_controller.stage_active:
+            assert frame == num_frames
             event.cancel()
             trio_event.set()
-            assert frame == num_frames
-            return
+            return num_frames
 
         assert frame < num_frames
-        points = stage_app.get_widget_pos_pixel(
-            stage_app.app.shape_factory, [shape.center, shape2.center])
-        points = [[c / 255 for c in p] for p in points]
-        (r1, g1, b1, _), (r2, g2, b2, _) = points
 
-        val = shape_color[frame]
-        assert isclose(r1, val[0], abs_tol=2 / 255) if val[0] else r1 == 0
-        assert isclose(g1, val[1], abs_tol=2 / 255) if val[1] else g1 == 0
-        assert isclose(b1, val[2], abs_tol=2 / 255) if val[2] else b1 == 0
-        val = shape2_color[frame]
-        assert isclose(r2, val[0], abs_tol=2 / 255) if val[0] else r2 == 0
-        assert isclose(g2, val[1], abs_tol=2 / 255) if val[1] else g2 == 0
-        assert isclose(b2, val[2], abs_tol=2 / 255) if val[2] else b2 == 0
-
-        frame += 1
+        frame = verify_color(
+            stage_app, shape_color, shape2_color, frame, centers, flip,
+            video_mode)
 
     event = Clock.create_trigger(verify_intensity, timeout=0, interval=True)
     event()
@@ -638,14 +691,18 @@ async def test_recursive_play_stage_intensity(
     shape2_data = np.array(f.shapes_intensity[shape2.name])
     assert len(shape_data) == num_frames
     assert len(shape2_data) == num_frames
-    for (r, g, b), (r1, g1, b1, _) in zip(shape_color, shape_data):
-        assert isclose(r, r1, abs_tol=2 / 255) if r else r1 == 0
-        assert isclose(g, g1, abs_tol=2 / 255) if g else g1 == 0
-        assert isclose(b, b1, abs_tol=2 / 255) if b else b1 == 0
-    for (r, g, b), (r1, g1, b1, _) in zip(shape2_color, shape2_data):
-        assert isclose(r, r1, abs_tol=2 / 255) if r else r1 == 0
-        assert isclose(g, g1, abs_tol=2 / 255) if g else g1 == 0
-        assert isclose(b, b1, abs_tol=2 / 255) if b else b1 == 0
+    # in QUAD12X mode, all 3 channels have same value in the data (because we
+    # show gray). But the projector outputs different values for each channel,
+    # for each sub-frame
+    gray = video_mode == 'QUAD12X'
+    for (r, g, b, val), (r1, g1, b1, _) in zip(shape_color, shape_data):
+        assert isclose(val, r1, abs_tol=2 / 255) if r or gray else r1 == 0
+        assert isclose(val, g1, abs_tol=2 / 255) if g or gray else g1 == 0
+        assert isclose(val, b1, abs_tol=2 / 255) if b or gray else b1 == 0
+    for (r, g, b, val), (r1, g1, b1, _) in zip(shape2_color, shape2_data):
+        assert isclose(val, r1, abs_tol=2 / 255) if r or gray else r1 == 0
+        assert isclose(val, g1, abs_tol=2 / 255) if g or gray else g1 == 0
+        assert isclose(val, b1, abs_tol=2 / 255) if b or gray else b1 == 0
 
     f.close_h5()
 

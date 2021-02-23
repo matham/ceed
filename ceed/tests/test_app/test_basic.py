@@ -49,10 +49,12 @@ async def test_app_save_analysis_image(ceed_app: CeedTestApp, tmp_path):
 
 async def test_app_load_h5_image(ceed_app: CeedTestApp, tmp_path):
     root = pathlib.Path(ceed.__file__).parent.joinpath('examples', 'data')
-    filename = str(root.joinpath('ceed_data.h5'))
+    filename = root.joinpath('ceed_data_v1.0.0.dev0.h5')
+    if not filename.exists():
+        pytest.skip(f'{filename} does not exist')
     image = create_test_image(250, 500)
 
     assert ceed_app.app.player.last_image is None
-    ceed_app.app.player.load_screenshot(ceed_app.app, [filename])
+    ceed_app.app.player.load_screenshot(ceed_app.app, [str(filename)])
     assert ceed_app.app.player.last_image is not None
     assert_image_same(image, ceed_app.app.player.last_image, exact=False)

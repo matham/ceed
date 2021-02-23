@@ -32,42 +32,32 @@ At time x, the slice woke up
 # integrated into the merged file. This will be appended to the notes above
 notes_filename = None
 
-# how to align the MCS to the ceed data. It could be none, in which case we'll
-# use the pattern that ceed sends on the digital channel to the MCS recording
-# system. If it's a number, we'll try to align it using the timestamps of the
-# ceed and MCS data. The number is then the estimated delay in seconds in the
-# MCS file where the ceed stage started playing
-find_by = None
 # class that actually merges the two files
-merger = CeedMCSDataMerger()
+merger = CeedMCSDataMerger(ceed_filename=ceed_file, mcs_filename=mcs_file)
 
 # read the MCS data - MCS data is one long file containing the data for all the
-# ceed stages that played. Ceed however, splits the data into stages
-merger.read_mcs_digital_data(mcs_file)
-# we only need to parse the mcs data once, after the ceed data has been parsed.
-# If we provide a direct alignment time offset, it needs to be re-parsed for
-# every experiment in the ceed file
-init = False
+# ceed experiments that played. Ceed however, splits the data into experiments
+merger.read_mcs_data()
+# read the overall data from this file, including the Ceed-MCS data link
+# configuration required to be able to align the two files
+merger.read_ceed_data()
+# this parses the Ceed-MCS data-link data adn tries to break the MCS data into
+# experiments so we can later locate individual experiments for alignment
+merger.parse_mcs_data()
 
 # this dictionary will accumulate the alignment metadata for all the
 # experiments in the data files. Each item is an experiment
 alignment = {}
 # `get_experiment_numbers` lists all the experiments in the ceed file
 # bad experiments to be ignored can be added to the `ignore_list`
-for experiment in merger.get_experiment_numbers(ceed_file, ignore_list=[]):
+for experiment in merger.get_experiment_numbers(ignore_list=[]):
     # read and parse the ceed data for this experiment
-    merger.read_ceed_digital_data(ceed_file, experiment)
-    merger.parse_ceed_digital_data()
-
-    if not init or find_by is not None:
-        # parse the mcs data - it has to happen after ceed data is parsed
-        merger.parse_mcs_digital_data(find_by=find_by)
-        init = True
+    merger.read_ceed_experiment_data(experiment)
+    merger.parse_ceed_experiment_data()
 
     try:
         # compute the alignment
-        align = alignment[experiment] = merger.get_alignment(
-            find_by=find_by)
+        align = alignment[experiment] = merger.get_alignment()
         print(
             'Aligned MCS and ceed data for experiment {} at MCS samples '
             '[{} - {}] ({} frames)'.format(
@@ -79,5 +69,4 @@ for experiment in merger.get_experiment_numbers(ceed_file, ignore_list=[]):
 
 # now actually merge the files and include the alignment metadata
 merger.merge_data(
-    output_file, ceed_file, mcs_file, alignment, notes=notes,
-    notes_filename=notes_filename)
+    output_file, alignment, notes=notes, notes_filename=notes_filename)

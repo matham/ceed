@@ -8,7 +8,7 @@ file.
 import sys
 import datetime
 from tqdm import tqdm
-import numbers
+from collections import defaultdict
 import os.path
 from math import ceil
 from typing import List, Dict, Optional
@@ -183,16 +183,17 @@ class DigitalDataStore:
     def n_bytes_per_int(self):
         return self.counter_bit_width // 8
 
-    def get_count_ints(self, contains_sub_frames, n_sub_frames):
+    def get_count_ints(self, count_data, contains_sub_frames, n_sub_frames):
         """Counter with sub-frames removed.
         """
+        # last value in count_data could be spurious (from mcs)
         n_counter_bits = len(self.count_indices)
         n_parts_per_int = self.n_parts_per_int
         # all sub frames are the same (if we have them)
         # We don't need inverted frames
-        count = self.count_data
+        count = count_data
         if contains_sub_frames:
-            count = self.count_data[::n_sub_frames]
+            count = count_data[::n_sub_frames]
 
         count_inverted_2d = count[1::2]
         count = count[::2]
@@ -228,59 +229,83 @@ class DigitalDataStore:
         return count, count_2d, count_inverted_2d
 
     def check_counter_consistency(
-            self, count_2d, count_inverted_2d, n_handshake_ints,
-            contains_sub_frames, n_sub_frames):
+            self, count_data, count_2d, count_inverted_2d, n_handshake_ints,
+            contains_sub_frames, n_sub_frames, exclude_last_value):
         if count_2d.shape[0]:
             # even if no handshake sent, the first value will be size (zero)
+            # so we always have at least one item
             assert n_handshake_ints
         count_shape = count_2d.shape
+
+        if contains_sub_frames:
+            count_data = count_data[::n_sub_frames]
+        # remove data already in count_2d
+        count_data = count_data[count_shape[0] * count_shape[1] * 2:]
+        count_end = has_trailing = len(count_data)
+        # we can't check the last item if it doesn't have inverted value
+        if count_end % 2:
+            count_end -= 1
+        elif exclude_last_value:
+            count_end -= 2
+            count_end = max(count_end, 0)
 
         # set count bits
         count_bits = 0
         for i in range(len(self.count_indices)):
             count_bits |= 1 << i
 
+        # do we have data beyond the handshake
+        has_counter = count_shape[0] > n_handshake_ints
+        # if exclude final, see if data extends past handshake
+        handshake_end = n_handshake_ints
+        if not has_trailing and not has_counter and exclude_last_value:
+            handshake_end -= 1
+
+        # if exclude final, see if data extends past counter
+        count_2d_end = count_shape[0]
+        if not has_trailing and exclude_last_value:
+            count_2d_end -= 1
+
         # config is not inverted
-        if not np.all(count_2d[:n_handshake_ints, :]
-                      == count_inverted_2d[:n_handshake_ints, :]):
-            raise ValueError('Handshake data corrupted')
+        if not np.all(count_2d[:handshake_end, :]
+                      == count_inverted_2d[:handshake_end, :]):
+            raise AlignmentException('Handshake data corrupted')
 
         # first item is not inverted
-        if not np.all(count_2d[:, 0] == count_inverted_2d[:, 0]):
-            raise ValueError('Non-inverted data group corrupted')
+        if not np.all(count_2d[:count_2d_end, 0]
+                      == count_inverted_2d[:count_2d_end, 0]):
+            raise AlignmentException('Non-inverted data group corrupted')
 
-        count_2d = count_2d[n_handshake_ints:, :]
-        count_inverted_2d = count_inverted_2d[n_handshake_ints:, :]
+        # remaining counter is inverted
         if not np.all(
-                (count_2d[:, 1:] ^ count_bits) & count_bits ==
-                count_inverted_2d[:, 1:]):
-            raise ValueError('Inverted data group corrupted')
-
-        count_data = self.count_data
-        if contains_sub_frames:
-            count_data = count_data[::n_sub_frames]
-        count_data = count_data[count_shape[0] * count_shape[1] * 2:]
-        # we can't check the last item if it doesn't have inverted value
-        if len(count_data) % 2:
-            count_data = count_data[:-1]
+                (count_2d[n_handshake_ints:count_2d_end, 1:] ^ count_bits)
+                & count_bits
+                == count_inverted_2d[n_handshake_ints:count_2d_end, 1:]):
+            raise AlignmentException('Inverted data group corrupted')
 
         # n_handshake_ints >= 1, if we have at least one full int
         if not n_handshake_ints:
             # only have partial int, handshake is not inverted
-            assert not count_2d.shape[0]
-            if not np.all(count_data[::2] == count_data[1::2]):
-                raise ValueError('Handshake length data corrupted')
-        elif count_2d.shape[0] < n_handshake_ints:
+            assert not count_shape[0]
+            if not np.all(
+                    count_data[:count_end:2] == count_data[1:count_end:2]):
+                raise AlignmentException('Handshake length data corrupted')
+        elif count_shape[0] < n_handshake_ints:
             # have handshake size and remaining is handshake item, not inverted
-            if not np.all(count_data[::2] == count_data[1::2]):
-                raise ValueError('Remaining handshake data corrupted')
+            if not np.all(
+                    count_data[:count_end:2] == count_data[1:count_end:2]):
+                raise AlignmentException('Remaining handshake data corrupted')
         else:
             # remaining is regular data, first val is not inverted, the rest is
-            if not np.all(count_data[:1] == count_data[1:2]):
-                raise ValueError('Remaining handshake data corrupted')
-            if not np.all((count_data[2::2] ^ count_bits) & count_bits
-                          == count_data[3::2]):
-                raise ValueError('Remaining inverted handshake data corrupted')
+            if count_end:
+                # have at least 2 values (count_end is multiple of 2)
+                if count_data[0] != count_data[1]:
+                    raise AlignmentException(
+                        'Remaining handshake data corrupted')
+            if not np.all((count_data[2:count_end:2] ^ count_bits) & count_bits
+                          == count_data[3:count_end:2]):
+                raise AlignmentException(
+                    'Remaining inverted handshake data corrupted')
 
     def get_handshake(
             self, count: np.ndarray, contains_sub_frames, n_sub_frames):
@@ -301,8 +326,9 @@ class DigitalDataStore:
 
         return b'', 0, 0, 0
 
-    def check_missing_frames(self, contains_sub_frames, n_sub_frames):
-        short = self.short_count_data
+    def check_missing_frames(
+            self, short_count_data, contains_sub_frames, n_sub_frames):
+        short = short_count_data
         if contains_sub_frames:
             short = short[::n_sub_frames]
         max_shot_val = 2 ** len(self.short_count_indices)
@@ -310,68 +336,40 @@ class DigitalDataStore:
         i = short[0]
         for k, val in enumerate(short):
             if i != val:
-                raise ValueError(f'Skipped a frame at frame {k}')
+                raise AlignmentException(f'Skipped a frame at frame {k}')
             i += 1
             if i == max_shot_val:
                 i = 0
 
-    def get_counter(self):
-        n_frames = len(frame_bits)
-        counter = np.zeros(n_frames, dtype=np.uint64)
-        if not n_frames:
-            return
-
-        short = self.short_count_data
-        max_shot_val = 2 ** len(self.short_count_indices)
-        # frames on which the counter starts a new value
-        counter_frames = np.zeros(n_frames, dtype=np.bool)
-        counter_frames[n_config_frames::2 * self.n_parts_per_int] = True
-        # last frame doesn't have complete value
-        remainder = n_frames % (2 * self.n_parts_per_int)
-        if remainder:
-            counter_frames[-remainder] = False
-
-        counter[counter_frames] = count[n_handshake_ints:]
-        # first number is always 1
-        last_count = counter[0] = 1
-
-        last_short = short[0]
-        for i in range(1, len(frame_bits)):
-            if not counter_frames[i]:
-                if short[i] >= last_short:
-                    counter[i] = last_count + short[i] - last_short
-                else:
-                    # it overflowed to zero
-                    counter[i] = last_count + \
-                        short[i] + max_shot_val - last_short
-
-            last_count = counter[i]
-            last_short = short[i]
-
 
 class MCSDigitalData(DigitalDataStore):
-
-    data_indices_center: np.ndarray = None
 
     data_indices_start: np.ndarray = None
 
     data_indices_end: np.ndarray = None
 
+    experiments: Dict[bytes, List[tuple]]
+
     def parse(
-            self, ceed_version, data, t_start, f, n_sub_frames,
+            self, ceed_version, data, t_start, f,
             find_start_from_ceed_time=False, estimated_start: float = 0,
             pre_estimated_start: float = 0):
         self._parse_components(data)
         self.reduce_samples(
-            t_start, f, n_sub_frames, find_start_from_ceed_time,
+            t_start, f, find_start_from_ceed_time,
             estimated_start, pre_estimated_start)
 
         if ceed_version == '1.0.0.dev0':
             return
+        self.parse_experiments()
 
     def reduce_samples(
-            self, t_start, f, n_sub_frames, find_start_from_ceed_time=False,
+            self, t_start, f, find_start_from_ceed_time=False,
             estimated_start: float = 0, pre_estimated_start: float = 0):
+        """Reduces the data from multiple samples per-frame, to one sample per
+        frame, according to the clock.
+        """
+        # data is already converted to normal lower bits
         clock_data = self.clock_data
         short_count_data = self.short_count_data
         count_data = self.count_data
@@ -381,7 +379,8 @@ class MCSDigitalData(DigitalDataStore):
             offset = (estimated_start - t_start).total_seconds() - \
                 float(pre_estimated_start)
             if offset < 0:
-                raise Exception('Ceed data is not in the mcs data')
+                raise ValueError(
+                    'Ceed data is not in the mcs data, given the offset')
 
             offset = int(offset * f)
             clock_data = clock_data[offset:]
@@ -390,7 +389,9 @@ class MCSDigitalData(DigitalDataStore):
 
         # should have at least 10 samples. At 5k sampling rate it's reasonable
         if len(clock_data) < 10:
-            raise Exception('There is not enough data in the mcs file')
+            raise TypeError(
+                'There is not enough data in the mcs file to be able to align '
+                'with Ceed')
 
         clock_change = np.argwhere(clock_data[1:] - clock_data[:-1]).squeeze()
         # indices in data where value is different from last (including 0)
@@ -401,21 +402,92 @@ class MCSDigitalData(DigitalDataStore):
             idx_start = np.concatenate((idx_start, clock_change + 1))
             idx_end = np.concatenate((clock_change, idx_end))
 
-        # center index in data of the clock  high or low region
-        indices = (idx_start + idx_end) // 2
+        # take value after clock changes
+        indices = np.minimum(idx_end - idx_start, 1) + idx_start
 
         # start at the
         s = 0 if clock_data[0] else 1
         indices = indices[s:]
+        idx_start = idx_start[s:]
+        idx_end = idx_end[s:]
 
         # indices in the original data
-        self.data_indices_start = idx_start[s:] + offset
-        self.data_indices_center = indices + offset
-        self.data_indices_end = idx_end[s:] + offset
+        self.data_indices_start = idx_start + offset
+        self.data_indices_end = idx_end + offset
         # condensed data
         self.clock_data = clock_data[indices]
         self.short_count_data = short_count_data[indices]
         self.count_data = count_data[indices]
+
+    def parse_experiments(self):
+        # assuming the experiments recorded have at least two good frames,
+        # otherwise we can't estimate expected frame size
+        if self.n_parts_per_int <= 1:
+            raise NotImplemented(
+                'Must break counter int into at least two parts so we can '
+                'locate clock inverted values')
+
+        max_shot_val = 2 ** len(self.short_count_indices)
+        count_data_full = self.count_data
+        short_count_data_full = self.short_count_data
+        clock_data_full = self.clock_data
+        start = self.data_indices_start
+        end = self.data_indices_end
+        diff = end - start
+        med = np.median(diff)
+        breaks = np.nonzero(diff >= (3 * med))[0]
+
+        experiments = self.experiments = defaultdict(list)
+        start_i = 0
+        for break_i in breaks:
+            s = start_i
+            e = break_i + 1
+            # get section of this possible experiment
+            count_data = count_data_full[s:e]
+            short_count_data = short_count_data_full[s:e]
+            clock_data = clock_data_full[s:e]
+            start_i = e
+
+            # need some data to work with
+            if len(count_data) < 4:
+                continue
+            # need to start high
+            if not clock_data[0]:
+                count_data = count_data[1:]
+                short_count_data = short_count_data[1:]
+                s += 1
+
+            try:
+                # use short counter to see if missing frames, exclude final
+                self.check_missing_frames(short_count_data[:-1], False, 1)
+
+                # we don't drop last frame, but the frame extends too long post
+                # experiment (i.e. last was clock low and it stayed clock low
+                # until next experiment). And last item may be spurious
+                end[e - 1] = start[e - 1] + med
+
+                # chop off partial ints and get full ints, it's ok if last value
+                # is spurious
+                count, count_2d, count_inverted_2d = self.get_count_ints(
+                    count_data, False, 1)
+                # get handshake from full ints. Last val could be spurious, so
+                # if it's part of the handshake, handshake is not complete
+                handshake_data, handshake_len, n_handshake_ints, \
+                    n_config_frames = self.get_handshake(count, False, 1)
+                # check that full and partial ints match
+                self.check_counter_consistency(
+                    count_data, count_2d, count_inverted_2d, n_handshake_ints,
+                    False, 1, True)
+            except AlignmentException:
+                continue
+
+            if not handshake_len:
+                continue
+
+            # the last count or handshake value could be spurious, but then it
+            # won't match, which is ok because we need the full handshake
+            experiments[handshake_data].append((
+                start[s:e], end[s:e], handshake_len, count_data, count))
 
 
 class CeedDigitalData(DigitalDataStore):
@@ -441,17 +513,18 @@ class CeedDigitalData(DigitalDataStore):
         self._parse_components(frame_bits)
 
         # use short counter to see if missing frames
-        self.check_missing_frames(contains_sub_frames, n_sub_frames)
+        self.check_missing_frames(
+            self.short_count_data, contains_sub_frames, n_sub_frames)
         # chop of partial ints and get full ints
         count, count_2d, count_inverted_2d = self.get_count_ints(
-            contains_sub_frames, n_sub_frames)
+            self.count_data, contains_sub_frames, n_sub_frames)
         # get handshake from full ints
         handshake_data, handshake_len, n_handshake_ints, n_config_frames = \
             self.get_handshake(count, contains_sub_frames, n_sub_frames)
         # check that full and partial ints match
         self.check_counter_consistency(
-            count_2d, count_inverted_2d, n_handshake_ints, contains_sub_frames,
-            n_sub_frames)
+            self.count_data, count_2d, count_inverted_2d, n_handshake_ints,
+            contains_sub_frames, n_sub_frames, False)
 
         self.handshake_data = handshake_data
         self.expected_handshake_len = handshake_len
@@ -486,7 +559,9 @@ class CeedMCSDataMerger:
 
     @property
     def n_sub_frames(self):
-        video_mode = self.ceed_global_config['view']['video_mode']
+        """Specific to each experiment and can change between them.
+        """
+        video_mode = self.ceed_config_orig['view']['video_mode']
         n_sub_frames = 1
         if video_mode == 'QUAD4X':
             n_sub_frames = 4
@@ -576,6 +651,9 @@ class CeedMCSDataMerger:
 
             for prop in config:
                 metadata[prop.name] = yaml_loads(read_nix_prop(prop))
+            self.ceed_config_orig = metadata['app_settings']
+            # ceed_config_orig must be set to read n_sub_frames
+            n_sub_frames = self.n_sub_frames
 
             if not block.data_arrays['frame_bits'].shape or \
                     not block.data_arrays['frame_bits'].shape[0]:
@@ -589,7 +667,7 @@ class CeedMCSDataMerger:
                 block.data_arrays['frame_time_counter']).squeeze()
             if not np.all(
                     rendered_counter[1:] - rendered_counter[:-1]
-                    == self.n_sub_frames):
+                    == n_sub_frames):
                 raise ValueError('Some frames were not rendered and skipped')
 
         except Exception:
@@ -601,8 +679,6 @@ class CeedMCSDataMerger:
         self.ceed_data = {
             'frame_bits': frame_bits, 'frame_counter': frame_counter,
             'start_t': start_t}
-
-        self.ceed_config_orig = metadata['app_settings']
 
     def create_or_reuse_ceed_data_container(self):
         config = self.ceed_config_orig['serializer']
@@ -662,19 +738,79 @@ class CeedMCSDataMerger:
             raise TypeError(
                 'Global ceed data not read. Please first call read_ceed_data')
 
-        n_sub_frames = self.n_sub_frames
-
         self.create_or_reuse_mcs_data_container()
         self.mcs_data_container.parse(
             self.ceed_version, self.mcs_dig_data,
             self.mcs_dig_config['t_start'], self.mcs_dig_config['f'],
-            n_sub_frames, find_start_from_ceed_time=find_start_from_ceed_time,
+            find_start_from_ceed_time=find_start_from_ceed_time,
             pre_estimated_start=pre_estimated_start,
             estimated_start=estimated_start)
 
-    def get_alignment(self, search_uuid=True):
+    def get_alignment(self):
         if self.ceed_version == '1.0.0.dev0':
-            return self._get_alignment_v1_0_0_dev0(search_uuid)
+            return self._get_alignment_v1_0_0_dev0(True)
+        return self._get_alignment(True)
+
+    def _get_alignment(self, search_uuid=True):
+        if not search_uuid:
+            raise NotImplementedError
+
+        ceed_ = self.ceed_data_container
+        mcs = self.mcs_data_container
+        handshake = ceed_.handshake_data
+        if handshake not in mcs.experiments:
+            raise AlignmentException(
+                f'Cannot find experiment in the MCS parsed data')
+
+        experiments = mcs.experiments[handshake]
+        if len(experiments) != 1:
+            raise AlignmentException(
+                'Found more than one matching experiment in MCS data, '
+                'experiment was likely stopped before the full Ceed-MCS '
+                'handshake completed')
+
+        # the last count or handshake value could be spurious, but then it
+        # won't match, which is ok because we need the full handshake
+        start, end, handshake_len, count_data, count = experiments[0]
+        # n_sub_frames can change between experiments
+        n_sub_frames = self.n_sub_frames
+        # count_data is same for all sub-frames, but counter increments
+        ceed_count_data = ceed_.count_data
+
+        # ceed counter contains an item for each frame and sub-frame
+        assert not len(ceed_count_data) % n_sub_frames
+        # mcs only sees frames, because sub-frames are all the same
+        ceed_count_data_main_frames = ceed_count_data[::n_sub_frames]
+        n_ceed = len(ceed_count_data_main_frames)
+        n_mcs = len(count_data)
+        assert n_mcs
+        if n_mcs < n_ceed - 1 or n_mcs > n_ceed:
+            raise AlignmentException(
+                'Unable to match counter data from ceed to MCS')
+
+        if n_mcs == n_ceed and \
+                ceed_count_data_main_frames[-1] != count_data[-1]:
+            # last frame could be spurious. In false case, last frame must be
+            # correct because only the last ceed frame may be skipped
+            n_mcs -= 1
+
+        ceed_count_data_main_frames = ceed_count_data_main_frames[:n_mcs]
+        if not np.all(ceed_count_data_main_frames == count_data):
+            raise AlignmentException(
+                'Counter data itemds does not match between Ceed and MCS')
+
+        start = start[:n_mcs]
+        end = end[:n_mcs]
+        if n_sub_frames == 1:
+            return start
+
+        n_frames = end - start + 1
+        n_frames = n_frames[:, np.newaxis] / n_sub_frames
+        split_frames = np.arange(n_sub_frames)[np.newaxis, :]
+        start = np.round(split_frames * n_frames + start[:, np.newaxis])
+        start = np.asarray(start, dtype=np.int64).reshape(-1)
+
+        return start
 
     def _get_alignment_v1_0_0_dev0(self, search_uuid=True):
         ceed_ = self.ceed_data_container
@@ -711,10 +847,8 @@ class CeedMCSDataMerger:
 
         raise AlignmentException('Could not align the data')
 
-    @staticmethod
     def merge_data(
-            filename, ceed_filename, mcs_filename, alignment_indices,
-            notes='', notes_filename=None):
+            self, filename, alignment_indices, notes='', notes_filename=None):
         if os.path.exists(filename):
             raise Exception('{} already exists'.format(filename))
 
@@ -726,14 +860,14 @@ class CeedMCSDataMerger:
                 notes += '\n'
             notes += lines
 
-        mcs_f = McsPy.McsData.RawData(mcs_filename)
+        mcs_f = McsPy.McsData.RawData(self.mcs_filename)
         if not len(mcs_f.recordings):
-            raise Exception('There is no data in {}'.format(mcs_filename))
+            raise Exception('There is no data in {}'.format(self.mcs_filename))
         if len(mcs_f.recordings) > 1:
             raise Exception('There is more than one recording in {}'.
-                            format(mcs_filename))
+                            format(self.mcs_filename))
 
-        copy2(ceed_filename, filename)
+        copy2(self.ceed_filename, filename)
         f = nix.File.open(filename, nix.FileMode.ReadWrite)
 
         if 'app_logs' not in f.sections:
@@ -745,8 +879,9 @@ class CeedMCSDataMerger:
         f.sections['app_logs']['notes'] += notes
 
         block = f.create_block(
-            'ceed_mcs_alignment', 'each row, r, contains the sample number '
-            'in the mcs data corresponding with row r in ceed data.')
+            'ceed_mcs_alignment', 'each row, r, contains the sample index '
+            'in the mcs data corresponding with row r in ceed data. This is '
+            'the index at which the corresponding Ceed frame was displayed')
         for exp, indices in alignment_indices.items():
             block.create_data_array(
                 'experiment_{}'.format(exp), 'experiment_{}'.format(exp),
@@ -834,5 +969,4 @@ if __name__ == '__main__':
                 "{} ({})".format(experiment, e))
 
     merger.merge_data(
-        output_file, ceed_file, mcs_file, alignment, notes=notes,
-        notes_filename=notes_filename)
+        output_file, alignment, notes=notes, notes_filename=notes_filename)

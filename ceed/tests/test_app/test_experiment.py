@@ -19,10 +19,23 @@ stored_b_values = [(.0, .2), (.1, .3)]
 stored_shape_names = CircleShapeP1.name, CircleShapeP2.name
 # r, g is active, b is inactive
 stored_colors = [((0, 1, ), (2,)), ] * 2
-filename_source = [
-    'internal', 'external', 'internal_merged', 'merged', 'unmerged']
-filename_source_merged = ['internal_merged', 'merged']
 stored_stage_name = ParaAllStage.name
+
+data_root = pathlib.Path(ceed.__file__).parent.joinpath('examples', 'data')
+existing_experiment_filename_v1_0_0_dev0 = str(
+    data_root.joinpath('ceed_data_v1.0.0.dev0.h5'))
+existing_template_filename_v1_0_0_dev0 = str(
+    data_root.joinpath('ceed_template_v1.0.0.dev0.yml'))
+existing_merged_experiment_filename_v1_0_0_dev0 = str(
+    data_root.joinpath('ceed_mcs_data_merged_v1.0.0.dev0.h5'))
+mcs_filename_v1_0_0_dev0 = str(data_root.joinpath('mcs_data_v1.0.0.dev0.h5'))
+existing_experiment_filename_v1_0_0_dev1 = str(
+    data_root.joinpath('ceed_data_v1.0.0.dev1.h5'))
+existing_template_filename_v1_0_0_dev1 = str(
+    data_root.joinpath('ceed_template_v1.0.0.dev1.yml'))
+existing_merged_experiment_filename_v1_0_0_dev1 = str(
+    data_root.joinpath('ceed_mcs_data_merged_v1.0.0.dev1.h5'))
+mcs_filename_v1_0_0_dev1 = str(data_root.joinpath('mcs_data_v1.0.0.dev1.h5'))
 
 pytestmark = pytest.mark.ceed_app
 
@@ -168,40 +181,36 @@ def external_experiment_filename(tmp_path_factory):
 
 
 @pytest.fixture(scope='module')
-def existing_experiment_filename():
-    root = pathlib.Path(ceed.__file__).parent.joinpath('examples', 'data')
-    return str(root.joinpath('ceed_data.h5'))
-
-
-@pytest.fixture(scope='module')
-def merge_experiment_filename(tmp_path_factory, existing_experiment_filename):
+def re_merge_experiment_filename_v1_0_0_0_dev0(tmp_path_factory):
     """All tests depending on this, also depend on
     test_create_merge_experiment."""
-    root = pathlib.Path(ceed.__file__).parent.joinpath('examples', 'data')
-    mcs_filename = str(root.joinpath('mcs_data.h5'))
-
     filename = str(
-        tmp_path_factory.mktemp('experiment') / 'new_experiment_merged.h5')
-    return filename, existing_experiment_filename, mcs_filename
+        tmp_path_factory.mktemp(
+            'experiment') / 'new_experiment_merged_v1_0_0_dev0.h5')
+    return filename, existing_experiment_filename_v1_0_0_dev0, \
+        mcs_filename_v1_0_0_dev0
 
 
 @pytest.fixture(scope='module')
-def existing_template_filename():
-    root = pathlib.Path(ceed.__file__).parent.joinpath('examples', 'data')
-    return str(root.joinpath('ceed_template.yml'))
+def re_merge_experiment_filename_v1_0_0_0_dev1(tmp_path_factory):
+    """All tests depending on this, also depend on
+    test_create_merge_experiment."""
+    filename = str(
+        tmp_path_factory.mktemp(
+            'experiment') / 'new_experiment_merged_v1_0_0_dev1.h5')
+    return filename, existing_experiment_filename_v1_0_0_dev1, \
+        mcs_filename_v1_0_0_dev1
 
 
-@pytest.fixture(scope='module')
-def existing_merged_experiment_filename():
-    root = pathlib.Path(ceed.__file__).parent.joinpath('examples', 'data')
-    return str(root.joinpath('ceed_mcs_data_merged.h5'))
-
-
-@pytest.fixture(params=filename_source)
-def experiment_filename(
+@pytest.fixture(params=[
+    'internal', 'external', 're_merged_v1_0_0_dev0',
+    'existing_merged_v1_0_0_dev0', 'existing_unmerged_v1_0_0_dev0',
+    're_merged_v1_0_0_dev1', 'existing_merged_v1_0_0_dev1',
+    'existing_unmerged_v1_0_0_dev1'])
+def experiment_ceed_filename(
         request, internal_experiment_filename, external_experiment_filename,
-        merge_experiment_filename, existing_experiment_filename,
-        existing_merged_experiment_filename):
+        re_merge_experiment_filename_v1_0_0_0_dev0,
+        re_merge_experiment_filename_v1_0_0_0_dev1):
     src = request.param
     if src == 'internal':
         depends(request, ['internal_experiment'])
@@ -209,32 +218,66 @@ def experiment_filename(
     if src == 'external':
         depends(request, ['external_experiment'])
         return external_experiment_filename
-    if src == 'internal_merged':
+    if src == 're_merged_v1_0_0_dev0':
         depends(request, ['merge_experiment'])
-        return merge_experiment_filename[0]
-    if src == 'merged':
-        if not pathlib.Path(existing_merged_experiment_filename).exists():
+        return re_merge_experiment_filename_v1_0_0_0_dev0[0]
+    if src == 're_merged_v1_0_0_dev1':
+        depends(request, ['merge_experiment'])
+        return re_merge_experiment_filename_v1_0_0_0_dev1[0]
+    if src == 'existing_merged_v1_0_0_dev0':
+        if not pathlib.Path(
+                existing_merged_experiment_filename_v1_0_0_dev0).exists():
             pytest.skip(
-                f'"{existing_merged_experiment_filename}" does not exist')
-        return existing_merged_experiment_filename
+                f'"{existing_merged_experiment_filename_v1_0_0_dev0}" '
+                f'does not exist')
+        return existing_merged_experiment_filename_v1_0_0_dev0
+    if src == 'existing_merged_v1_0_0_dev1':
+        if not pathlib.Path(
+                existing_merged_experiment_filename_v1_0_0_dev1).exists():
+            pytest.skip(
+                f'"{existing_merged_experiment_filename_v1_0_0_dev1}" '
+                f'does not exist')
+        return existing_merged_experiment_filename_v1_0_0_dev1
 
-    if not pathlib.Path(existing_experiment_filename).exists():
-        pytest.skip(f'"{existing_experiment_filename}" does not exist')
-    return existing_experiment_filename
+    if src == 'existing_unmerged_v1_0_0_dev0':
+        if not pathlib.Path(existing_experiment_filename_v1_0_0_dev0).exists():
+            pytest.skip(
+                f'"{existing_experiment_filename_v1_0_0_dev0}" does not exist')
+        return existing_experiment_filename_v1_0_0_dev0
+
+    if not pathlib.Path(existing_experiment_filename_v1_0_0_dev1).exists():
+        pytest.skip(
+            f'"{existing_experiment_filename_v1_0_0_dev1}" does not exist')
+    return existing_experiment_filename_v1_0_0_dev1
 
 
-@pytest.fixture(params=filename_source_merged)
+@pytest.fixture(params=[
+    're_merged_v1_0_0_dev0', 'existing_merged_v1_0_0_dev0',
+    're_merged_v1_0_0_dev1', 'existing_merged_v1_0_0_dev1'])
 def merged_filename(
-        request, merge_experiment_filename,
-        existing_merged_experiment_filename):
+        request, re_merge_experiment_filename_v1_0_0_0_dev0,
+        re_merge_experiment_filename_v1_0_0_0_dev1):
     src = request.param
-    if src == 'internal_merged':
+    if src == 're_merged_v1_0_0_dev0':
         depends(request, ['merge_experiment'])
-        return merge_experiment_filename[0]
+        return re_merge_experiment_filename_v1_0_0_0_dev0[0]
+    if src == 're_merged_v1_0_0_dev1':
+        depends(request, ['merge_experiment'])
+        return re_merge_experiment_filename_v1_0_0_0_dev1[0]
+    if src == 'existing_merged_v1_0_0_dev0':
+        if not pathlib.Path(
+                existing_merged_experiment_filename_v1_0_0_dev0).exists():
+            pytest.skip(
+                f'"{existing_merged_experiment_filename_v1_0_0_dev0}" '
+                f'does not exist')
+        return existing_merged_experiment_filename_v1_0_0_dev0
 
-    if not pathlib.Path(existing_merged_experiment_filename).exists():
-        pytest.skip(f'"{existing_merged_experiment_filename}" does not exist')
-    return existing_merged_experiment_filename
+    if not pathlib.Path(
+            existing_merged_experiment_filename_v1_0_0_dev1).exists():
+        pytest.skip(
+            f'"{existing_merged_experiment_filename_v1_0_0_dev1}" '
+            f'does not exist')
+    return existing_merged_experiment_filename_v1_0_0_dev1
 
 
 @pytest.mark.dependency(name='internal_experiment')
@@ -267,8 +310,18 @@ async def test_create_external_experiment(
 
 
 @pytest.mark.dependency(name='merge_experiment')
-def test_create_merge_experiment(merge_experiment_filename):
-    filename, ceed_filename, mcs_filename = merge_experiment_filename
+@pytest.mark.parametrize(
+    'triplet', ['re_merged_v1_0_0_dev0', 're_merged_v1_0_0_dev1'])
+def test_create_merge_experiment(
+        triplet, re_merge_experiment_filename_v1_0_0_0_dev0,
+        re_merge_experiment_filename_v1_0_0_0_dev1):
+    if triplet == 're_merged_v1_0_0_dev0':
+        filename, ceed_filename, mcs_filename = \
+            re_merge_experiment_filename_v1_0_0_0_dev0
+    else:
+        filename, ceed_filename, mcs_filename = \
+            re_merge_experiment_filename_v1_0_0_0_dev1
+
     if not pathlib.Path(ceed_filename).exists():
         pytest.skip(f'"{ceed_filename}" does not exist')
     if not pathlib.Path(mcs_filename).exists():
@@ -277,34 +330,35 @@ def test_create_merge_experiment(merge_experiment_filename):
     merger = CeedMCSDataMerger(
         ceed_filename=ceed_filename, mcs_filename=mcs_filename)
 
-    assert merger.get_experiment_numbers() == ['0', '1']
+    experiments = merger.get_experiment_numbers()
+    assert experiments == ['0', '1'] or experiments == ['0', '1', '2', '3']
 
     merger.read_mcs_data()
     merger.read_ceed_data()
     merger.parse_mcs_data()
 
     alignment = {}
-    for experiment in ('0', '1'):
+    for experiment in experiments:
         merger.read_ceed_experiment_data(experiment)
         merger.parse_ceed_experiment_data()
 
         alignment[experiment] = merger.get_alignment()
 
-    merger.merge_data(
-        filename, ceed_filename, mcs_filename, alignment,
-        notes='app notes')
+    merger.merge_data(filename, alignment, notes='app notes')
 
 
 @pytest.mark.dependency()
-def test_saved_metadata(experiment_filename):
+def test_saved_metadata(experiment_ceed_filename):
     from ceed.analysis import CeedDataReader
-    existing_exp, merged_exp = exp_source(experiment_filename)
+    existing_exp, merged_exp = exp_source(experiment_ceed_filename)
 
-    with CeedDataReader(experiment_filename) as f:
+    with CeedDataReader(experiment_ceed_filename) as f:
+        experiments = f.experiments_in_file
 
         def verify_app_props():
-            assert f.filename == experiment_filename
-            assert f.experiments_in_file == ['0', '1']
+            assert f.filename == experiment_ceed_filename
+            assert experiments == ['0', '1'] or \
+                experiments == ['0', '1', '2', '3']
             assert f.num_images_in_file == 2
             if merged_exp:
                 assert f.app_notes == 'app notes'
@@ -359,7 +413,7 @@ def test_saved_metadata(experiment_filename):
             'stage_factory', 'shape_factory']
         exp_values = [getattr(f, name) for name in exp_props]
 
-        for exp in (0, 1):
+        for exp in experiments:
             f.load_experiment(exp)
 
             verify_app_props()
@@ -393,12 +447,12 @@ def test_saved_metadata(experiment_filename):
 
 
 @pytest.mark.dependency()
-def test_saved_data(experiment_filename):
+def test_saved_data(experiment_ceed_filename):
     from ceed.analysis import CeedDataReader
-    existing_exp, merged_exp = exp_source(experiment_filename)
+    existing_exp, merged_exp = exp_source(experiment_ceed_filename)
     shape1, shape2 = stored_shape_names
 
-    with CeedDataReader(experiment_filename) as f:
+    with CeedDataReader(experiment_ceed_filename) as f:
         assert f.led_state is None
 
         for exp, image, (b1, b2) in zip((0, 1), stored_images, stored_b_values):
@@ -445,11 +499,11 @@ def test_saved_data(experiment_filename):
 
 
 @pytest.mark.dependency()
-def test_saved_image(experiment_filename):
+def test_saved_image(experiment_ceed_filename):
     from ceed.analysis import CeedDataReader
-    existing_exp, merged_exp = exp_source(experiment_filename)
+    existing_exp, merged_exp = exp_source(experiment_ceed_filename)
 
-    with CeedDataReader(experiment_filename) as f:
+    with CeedDataReader(experiment_ceed_filename) as f:
         for i in range(2):
             image, notes, _ = f.get_image_from_file(i)
             assert f'image {i}' == notes
@@ -467,7 +521,7 @@ def test_saved_image(experiment_filename):
 
 
 @pytest.mark.dependency()
-def test_replay_experiment_data(experiment_filename):
+def test_replay_experiment_data(experiment_ceed_filename):
     from ceed.analysis import CeedDataReader
     shape1, shape2 = stored_shape_names
     b1, b2 = stored_b_values[1]
@@ -488,7 +542,7 @@ def test_replay_experiment_data(experiment_filename):
                 for j in active:
                     assert isclose(float(d[i][j]), val, abs_tol=.001)
 
-    with CeedDataReader(experiment_filename) as f:
+    with CeedDataReader(experiment_ceed_filename) as f:
         values, n = get_stage_time_intensity(
             f.app_config['stage_factory'], stored_stage_name, 120)
         verify_values()
@@ -507,6 +561,7 @@ def test_mcs_data(merged_filename):
     shape1, shape2 = stored_shape_names
 
     with CeedDataReader(merged_filename) as f:
+        dev0 = 'dev0' in f.ceed_version
         f.load_mcs_data()
 
         assert f.electrodes_data
@@ -515,20 +570,52 @@ def test_mcs_data(merged_filename):
         n = len(f.electrodes_data[list(f.electrodes_data.keys())[0]])
         assert f.electrode_dig_data.shape == (n, )
 
-        for exp in (0, 1):
+        last_end_sample = 0
+        for exp in f.experiments_in_file:
+            n_sub_frames = 1
+            if exp == '2':
+                n_sub_frames = 4
+            elif exp == '3':
+                n_sub_frames = 12
+
             f.load_experiment(exp)
             assert f.electrode_intensity_alignment is not None
             n = f.shapes_intensity[shape1].shape[0]
-            shape = f.electrode_intensity_alignment.shape
-            assert shape in ((n, ), (n - 1, ))
+            assert n == 240 * n_sub_frames
+            assert f.electrode_intensity_alignment[0] > last_end_sample
+            last_end_sample = f.electrode_intensity_alignment[-1]
+
+            n_align = f.electrode_intensity_alignment.shape[0]
+            samples_per_frames = f.electrode_intensity_alignment[1:] - \
+                f.electrode_intensity_alignment[:-1]
+            n_samples_min = np.min(samples_per_frames)
+            n_samples_max = np.max(samples_per_frames)
+
+            if dev0:
+                assert n_align == 240 or n_align == 239
+                # we used 1khz, and no quad mode to generate data
+                bot = 1000 // 120
+                # in case of missed frame
+                top = ceil(2 * 1000 / 120)
+            else:
+                assert n_align == 240 * n_sub_frames
+                # sampled at 5khz
+                bot = 5000 // (120 * n_sub_frames)
+                # in case of missed frame
+                top = ceil(2 * 5000 / (120 * n_sub_frames))
+
+            print(n_samples_min, n_samples_max, np.median(samples_per_frames), bot, top, samples_per_frames)
+            assert bot <= n_samples_min <= n_samples_max <= top
 
 
-def test_create_movie(tmp_path, existing_merged_experiment_filename):
+def test_create_movie(tmp_path):
     from ceed.analysis import CeedDataReader
-    if not pathlib.Path(existing_merged_experiment_filename).exists():
-        pytest.skip(f'"{existing_merged_experiment_filename}" does not exist')
+    if not pathlib.Path(
+            existing_merged_experiment_filename_v1_0_0_dev1).exists():
+        pytest.skip(f'"{existing_merged_experiment_filename_v1_0_0_dev1}" '
+                    f'does not exist')
 
-    with CeedDataReader(existing_merged_experiment_filename) as f:
+    with CeedDataReader(existing_merged_experiment_filename_v1_0_0_dev1) as f:
         f.load_mcs_data()
         f.load_experiment(0)
 
@@ -579,6 +666,9 @@ async def test_import_yml_stages(
     verify_experiment(values, n, False)
 
 
+@pytest.mark.parametrize('existing_template_filename', [
+    existing_template_filename_v1_0_0_dev0,
+    existing_template_filename_v1_0_0_dev1])
 async def test_import_yml_existing(
         stage_app: CeedTestApp, existing_template_filename):
     if not pathlib.Path(existing_template_filename).exists():
@@ -594,17 +684,24 @@ async def test_import_yml_existing(
 
 
 @pytest.mark.parametrize('stages_only', [True, False])
-@pytest.mark.parametrize('src', ['internal', 'existing'])
+@pytest.mark.parametrize('src', [
+    'internal', 'existing_v1_0_0_dev0', 'existing_v1_0_0_dev1'])
 async def test_import_h5_stages(
         request, stage_app: CeedTestApp, internal_experiment_filename,
-        existing_experiment_filename, src, stages_only):
+        src, stages_only):
     if src == 'internal':
         depends(request, ['internal_experiment'])
         filename = internal_experiment_filename
+    elif src == 'existing_v1_0_0_dev0':
+        if not pathlib.Path(existing_experiment_filename_v1_0_0_dev0).exists():
+            pytest.skip(
+                f'"{existing_experiment_filename_v1_0_0_dev0}" does not exist')
+        filename = existing_experiment_filename_v1_0_0_dev0
     else:
-        if not pathlib.Path(existing_experiment_filename).exists():
-            pytest.skip(f'"{existing_experiment_filename}" does not exist')
-        filename = existing_experiment_filename
+        if not pathlib.Path(existing_experiment_filename_v1_0_0_dev1).exists():
+            pytest.skip(
+                f'"{existing_experiment_filename_v1_0_0_dev1}" does not exist')
+        filename = existing_experiment_filename_v1_0_0_dev1
 
     stage_app.app.ceed_data.import_file(filename, stages_only=stages_only)
     await stage_app.wait_clock_frames(2)
