@@ -141,12 +141,13 @@
     spacing: '5dp'
     ThemedSpinner:
         id: stage_spinner
-        values: sorted(app.stage_factory.stage_names.keys()) if app.stage_factory.stage_names else []
+        values: sorted((s.name for s in app.stage_factory.stages)) if app.stage_factory.stages else ['<no stage>']
         text_autoupdate: True
         on_text: app.view_controller.selected_stage_name = self.text
         size_hint_x: None
         width: self.minimum_width
     FlatImageToggleButton:
+        disabled: not app.stage_factory.stages
         source: 'flat_play.png' if self.state == 'normal' else 'flat_stop.png'
         flat_color: app.theme.accent
         on_release: app.view_controller.request_stage_start(stage_spinner.text) if self.state == 'down' else app.view_controller.request_stage_end()

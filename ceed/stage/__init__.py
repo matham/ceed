@@ -86,7 +86,7 @@ class StageFactoryBase(EventDispatcher):
         {'CeedStage': ceed.stage.CeedStage}
     '''
 
-    stages: List['CeedStage'] = []
+    stages: List['CeedStage'] = ListProperty([])
     '''The list of the currently available :class:`CeedStage` instances added
     with :meth:`add_stage`.
 
