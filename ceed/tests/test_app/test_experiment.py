@@ -604,7 +604,6 @@ def test_mcs_data(merged_filename):
                 # in case of missed frame
                 top = ceil(2 * 5000 / (120 * n_sub_frames))
 
-            print(n_samples_min, n_samples_max, np.median(samples_per_frames), bot, top, samples_per_frames)
             assert bot <= n_samples_min <= n_samples_max <= top
 
 

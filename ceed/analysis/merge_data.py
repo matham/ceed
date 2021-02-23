@@ -423,7 +423,7 @@ class MCSDigitalData(DigitalDataStore):
         # assuming the experiments recorded have at least two good frames,
         # otherwise we can't estimate expected frame size
         if self.n_parts_per_int <= 1:
-            raise NotImplemented(
+            raise NotImplementedError(
                 'Must break counter int into at least two parts so we can '
                 'locate clock inverted values')
 
@@ -760,7 +760,7 @@ class CeedMCSDataMerger:
         handshake = ceed_.handshake_data
         if handshake not in mcs.experiments:
             raise AlignmentException(
-                f'Cannot find experiment in the MCS parsed data')
+                'Cannot find experiment in the MCS parsed data')
 
         experiments = mcs.experiments[handshake]
         if len(experiments) != 1:
