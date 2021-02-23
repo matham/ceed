@@ -1,4 +1,5 @@
 import pytest
+import trio
 from math import isclose, ceil
 import numpy as np
 import pathlib
@@ -746,13 +747,15 @@ async def test_serializer_corner_pixel(
         120 * n_sub_frames
 
     frame = 0
+    event = None
+    trio_event = trio.Event()
     expected_values = list(zip(counter, short_values, clock_values))
 
     def verify_serializer(*largs):
         nonlocal frame
-
         if frame >= len(counter):
-            stage_app.app.view_controller.request_stage_end()
+            event.cancel()
+            trio_event.set()
             return
 
         (r, g, b, a), = stage_app.get_widget_pos_pixel(
@@ -771,9 +774,9 @@ async def test_serializer_corner_pixel(
     stage_app.app.view_controller.request_stage_start(
         root.name, experiment_uuid=config)
 
-    while stage_app.app.view_controller.stage_active:
-        await stage_app.wait_clock_frames(5)
-    await stage_app.wait_clock_frames(2)
+    await trio_event.wait()
+    stage_app.app.view_controller.request_stage_end()
+    event.cancel()
 
     assert frame == len(counter)
 

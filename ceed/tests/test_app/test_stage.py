@@ -661,7 +661,7 @@ async def test_recursive_play_stage_intensity(
             assert frame == num_frames
             event.cancel()
             trio_event.set()
-            return num_frames
+            return
 
         assert frame < num_frames
 

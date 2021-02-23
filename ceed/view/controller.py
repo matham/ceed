@@ -533,6 +533,8 @@ class ViewControllerBase(EventDispatcher):
                 shape_views, shape_values, proj)
             self.request_process_data('frame', (self.count, bits, values))
 
+        self.current_canvas.ask_update()
+
     def flip_callback(self, *largs):
         '''Called before every GPU frame by the graphics system.
         '''
