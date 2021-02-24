@@ -691,19 +691,6 @@ class CeedDataWriterBase(EventDispatcher):
     def collect_experiment(self, block, shapes, frame_bits, frame_counter,
                            frame_time, frame_time_counter, queue, lock,
                            led_state):
-
-        frame_count_buf = np.zeros((512, ), dtype=np.uint64)
-        bits_buf = np.zeros((512, ), dtype=np.uint32)
-        frame_i = 0  # counter
-
-        frame_vals_buf = {
-            name: np.zeros((512, 4), dtype=np.float16) for name in shapes}
-        frame_vals_i = {name: 0 for name in shapes}  # counter
-
-        flip_count_buf = np.zeros((512, ), dtype=np.uint64)
-        flip_t_buf = np.zeros((512, ), dtype=np.float64)
-        flip_i = 0  # counter
-
         while True:
             try:
                 msg, value = queue.get()
@@ -711,52 +698,27 @@ class CeedDataWriterBase(EventDispatcher):
                 continue
             eof = msg == 'eof'
 
-            assert frame_i <= 512
-            if frame_i == 512 or eof:
-                lock.acquire()
-                try:
-                    frame_counter.append(frame_count_buf[:frame_i])
-                    frame_bits.append(bits_buf[:frame_i])
-                    frame_count_buf[:] = bits_buf[:] = 0
-
-                    for name, vals in frame_vals_buf.items():
-                        shapes[name].append(vals[:frame_vals_i[name], :])
-                        frame_vals_i[name] = vals[:] = 0
-                finally:
-                    lock.release()
-
-                frame_i = 0
-
-            assert flip_i <= 512
-            if flip_i == 512 or eof:
-                lock.acquire()
-                try:
-                    frame_time_counter.append(flip_count_buf[:flip_i])
-                    frame_time.append(flip_t_buf[:flip_i])
-                    flip_count_buf[:] = flip_t_buf[:] = 0
-                finally:
-                    lock.release()
-                flip_i = 0
-
             if eof:
                 value()
                 break
             elif msg == 'frame':
-                count, bits, values = value
-                frame_count_buf[frame_i] = count
-                bits_buf[frame_i] = bits
-                frame_i += 1
+                counter_bits, shape_rgba = value
+                lock.acquire()
+                try:
+                    frame_counter.append(counter_bits['count'])
+                    frame_bits.append(counter_bits['bits'])
 
-                for name, r, g, b, a in values:
-                    if name not in shapes:
-                        continue
-                    frame_vals_buf[name][frame_vals_i[name], :] = r, g, b, a
-                    frame_vals_i[name] += 1
+                    for name, arr in shapes.items():
+                        arr.append(shape_rgba[name])
+                finally:
+                    lock.release()
             elif msg == 'frame_flip':
-                count, t = value
-                flip_count_buf[flip_i] = count
-                flip_t_buf[flip_i] = t
-                flip_i += 1
+                lock.acquire()
+                try:
+                    frame_time_counter.append(value['count'])
+                    frame_time.append(value['t'])
+                finally:
+                    lock.release()
             elif msg == 'led_state':
                 count, r, g, b = value
                 rec = np.rec.fromarrays((
@@ -765,9 +727,26 @@ class CeedDataWriterBase(EventDispatcher):
                     np.array([g], dtype=np.uint8),
                     np.array([b], dtype=np.uint8)),
                     names=('frame', 'r', 'g', 'b'))
-                led_state.append(rec)
 
-    def prepare_experiment(self, stage_name, used_shapes=None):
+                lock.acquire()
+                try:
+                    led_state.append(rec)
+                finally:
+                    lock.release()
+            elif msg == 'debug_data':
+                name, data = value
+                arr_name = f'debug_{name}'
+
+                lock.acquire()
+                try:
+                    if arr_name in block.data_arrays:
+                        block.data_arrays[arr_name].append(data)
+                    else:
+                        block.create_data_array(arr_name, 'debug', data=data)
+                finally:
+                    lock.release()
+
+    def prepare_experiment(self, stage_name, used_shapes):
         self.stop_experiment()
 
         i = len(self.get_experiment_numbers())
@@ -793,11 +772,9 @@ class CeedDataWriterBase(EventDispatcher):
             self.write_fluorescent_image(block, app.player.last_image)
 
         shapes = {}
-        for shape in App.get_running_app().shape_factory.shapes:
-            if used_shapes is not None and shape.name not in used_shapes:
-                continue
-            shapes[shape.name] = block.create_data_array(
-                'shape_{}'.format(shape.name), 'shape_data', dtype=np.float16,
+        for name in used_shapes:
+            shapes[name] = block.create_data_array(
+                'shape_{}'.format(name), 'shape_data', dtype=np.float16,
                 data=np.zeros((0, 4)))
 
         frame_bits = block.create_data_array(
@@ -847,23 +824,24 @@ class CeedDataWriterBase(EventDispatcher):
             'on_experiment_change', 'experiment_stop',
             block.name[len('experiment'):])
 
-    def add_frame(self, count, bits, values):
-        if not count:
-            return
+    def add_frame(self, data):
         if self.data_queue:
-            self.data_queue.put_nowait(('frame', (count, bits, values)))
+            self.data_queue.put_nowait(('frame', data))
             self.has_unsaved = True
 
-    def add_frame_flip(self, count, t):
-        if not count:
-            return
+    def add_frame_flip(self, data):
         if self.data_queue:
-            self.data_queue.put_nowait(('frame_flip', (count, t)))
+            self.data_queue.put_nowait(('frame_flip', data))
             self.has_unsaved = True
 
     def add_led_state(self, count, r, g, b):
         if self.data_queue:
             self.data_queue.put_nowait(('led_state', (count, r, g, b)))
+            self.has_unsaved = True
+
+    def add_debug_data(self, name, data):
+        if self.data_queue:
+            self.data_queue.put_nowait(('debug_data', (name, data)))
             self.has_unsaved = True
 
 

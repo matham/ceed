@@ -4,6 +4,7 @@
 Displays the preview or live pixel output of the experiment.
 '''
 import multiprocessing as mp
+import numpy as np
 import os
 import sys
 from fractions import Fraction
@@ -301,6 +302,16 @@ class ViewControllerBase(EventDispatcher):
 
     _scheduled_pos_restore = False
 
+    _frame_buffers = None
+
+    _frame_buffers_i = 0
+
+    _flip_frame_buffer = None
+
+    _flip_frame_buffer_i = 0
+
+    stage_shape_names: List[str] = []
+
     __events__ = ('on_changed', )
 
     def __init__(self, **kwargs):
@@ -410,6 +421,7 @@ class ViewControllerBase(EventDispatcher):
 
         stage_factory: StageFactoryBase = _get_app().stage_factory
         stage = stage_factory.stage_names[last_experiment_stage_name]
+        self.stage_shape_names = sorted(stage.get_stage_shape_names())
         stage.pad_stage_ticks = 0
 
         if self.output_count:
@@ -440,6 +452,18 @@ class ViewControllerBase(EventDispatcher):
 
         self.add_graphics(canvas)
 
+        self._frame_buffers_i = self._flip_frame_buffer_i = 0
+
+        counter_bits = np.empty(
+            512, dtype=[('count', np.uint64), ('bits', np.uint32)])
+        shape_rgba = np.empty(
+            (512, 4),
+            dtype=[(name, np.float16) for name in self.stage_shape_names])
+        self._frame_buffers = counter_bits, shape_rgba
+
+        self._flip_frame_buffer = np.empty(
+            512, dtype=[('count', np.uint64), ('t', np.float64)])
+
     def end_stage(self):
         '''Ends the stage if one is playing.
         '''
@@ -464,6 +488,18 @@ class ViewControllerBase(EventDispatcher):
 
         self.serializer_tex = None
         self.serializer = None
+
+        counter_bits, shape_rgba = self._frame_buffers
+        i = self._frame_buffers_i
+        if i:
+            self.request_process_data(
+                'frame', (counter_bits[:i], shape_rgba[:i, :]))
+        self._frame_buffers = None
+
+        i = self._flip_frame_buffer_i
+        if i:
+            self.request_process_data('frame_flip', self._flip_frame_buffer[:i])
+        self._flip_frame_buffer = None
 
     def tick_callback(self, *largs):
         '''Called before every CPU frame to handle any processing work.
@@ -531,7 +567,22 @@ class ViewControllerBase(EventDispatcher):
 
             values = _get_app().stage_factory.fill_shape_gl_color_values(
                 shape_views, shape_values, proj)
-            self.request_process_data('frame', (self.count, bits, values))
+
+            stage_shape_names = self.stage_shape_names
+            counter_bits, shape_rgba = self._frame_buffers
+            i = self._frame_buffers_i
+            counter_bits['count'][i] = self.count
+            counter_bits['bits'][i] = bits
+            for name, r, g, b, a in values:
+                if name in stage_shape_names:
+                    shape_rgba[name][i, :] = r, g, b, a
+            i += 1
+
+            if i == 512:
+                self.request_process_data('frame', (counter_bits, shape_rgba))
+                self._frame_buffers_i = 0
+            else:
+                self._frame_buffers_i = i
 
         self.current_canvas.ask_update()
 
@@ -542,8 +593,19 @@ class ViewControllerBase(EventDispatcher):
         Window.on_flip()
 
         t = clock()
-        # count of zero is discarded
-        self.request_process_data('frame_flip', (self.count, t))
+        # count of zero is discarded as it's before the tick_callback starts
+        if self.count:
+            buffer = self._flip_frame_buffer
+            i = self._flip_frame_buffer_i
+            buffer['count'][i] = self.count
+            buffer['t'][i] = t
+            i += 1
+
+            if i == 512:
+                self.request_process_data('frame_flip', buffer)
+                self._flip_frame_buffer_i = 0
+            else:
+                self._flip_frame_buffer_i = i
 
         stats = self._flip_stats
         tdiff = t - stats['last_call_t']
@@ -581,8 +643,19 @@ class ViewSideViewControllerBase(ViewControllerBase):
         return val
 
     def request_process_data(self, data_type, data):
-        self.queue_view_write.put_nowait((
-            data_type, yaml_dumps(data)))
+        if data_type == 'frame':
+            counter_bits, shape_rgba = data
+            self.queue_view_write.put_nowait(
+                (data_type, (counter_bits.tobytes(), shape_rgba.tobytes())))
+        elif data_type == 'frame_flip':
+            self.queue_view_write.put_nowait((data_type, data.tobytes()))
+        elif data_type == 'debug_data':
+            name, arr = data
+            self.queue_view_write.put_nowait(
+                (data_type, (name, arr.tobytes(), arr.dtype, arr.shape)))
+        else:
+            assert data_type in ('CPU', 'GPU')
+            self.queue_view_write.put_nowait((data_type, str(data)))
 
     def send_keyboard_down(self, key, modifiers):
         '''Gets called by the window for every keyboard key press, which it
@@ -710,10 +783,6 @@ class ControllerSideViewControllerBase(ViewControllerBase):
 
     proj_pixels = None
 
-    def add_graphics(self, canvas, black_back=True):
-        return super(ControllerSideViewControllerBase, self).add_graphics(
-            canvas, black_back=black_back)
-
     @app_error
     def request_stage_start(
             self, stage_name: str, experiment_uuid: Optional[bytes] = None
@@ -742,9 +811,9 @@ class ControllerSideViewControllerBase(ViewControllerBase):
             copy_and_resample_experiment_stage(stage_name)
         app.dump_app_settings_to_file()
         app.load_app_settings_from_file()
-        app.ceed_data.prepare_experiment(
-            stage_name,
+        self.stage_shape_names = sorted(
             app.stage_factory.stage_names[stage_name].get_stage_shape_names())
+        app.ceed_data.prepare_experiment(stage_name, self.stage_shape_names)
 
         if self.propixx_lib:
             m = self.LED_mode
@@ -817,10 +886,13 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         elif data_type == 'CPU':
             self.cpu_fps = data
         elif data_type == 'frame':
-            App.get_running_app().ceed_data.add_frame(*data)
+            App.get_running_app().ceed_data.add_frame(data)
         elif data_type == 'frame_flip':
-            if data[0]:  # counts of zero is too early
-                App.get_running_app().ceed_data.add_frame_flip(*data)
+            App.get_running_app().ceed_data.add_frame_flip(data)
+        elif data_type == 'debug_data':
+            App.get_running_app().ceed_data.add_debug_data(*data)
+        else:
+            assert False
 
     def start_process(self):
         '''Starts the process of the internal window that runs the experiment
@@ -901,9 +973,32 @@ class ControllerSideViewControllerBase(ViewControllerBase):
                     e, exec_info = yaml_loads(value)
                     App.get_running_app().handle_exception(
                         e, exc_info=exec_info)
-                elif msg in ('GPU', 'CPU', 'frame', 'frame_flip'):
-                    self.request_process_data(
-                        msg, yaml_loads(value))
+                elif msg in ('GPU', 'CPU'):
+                    self.request_process_data(msg, float(value))
+                elif msg == 'frame':
+                    counter_bits, shape_rgba = value
+
+                    counter_bits = np.frombuffer(
+                        counter_bits,
+                        dtype=[('count', np.uint64), ('bits', np.uint32)])
+                    shape_rgba = np.frombuffer(
+                        shape_rgba,
+                        dtype=[(name, np.float16)
+                               for name in self.stage_shape_names])
+                    shape_rgba = shape_rgba.reshape(-1, 4)
+
+                    self.request_process_data(msg, (counter_bits, shape_rgba))
+                elif msg == 'frame_flip':
+                    decoded = np.frombuffer(
+                        value, dtype=[('count', np.uint64), ('t', np.float64)])
+
+                    self.request_process_data(msg, decoded)
+                elif msg == 'debug_data':
+                    name, data, dtype, shape = value
+                    decoded = np.frombuffer(data, dtype=dtype)
+                    decoded = decoded.reshape(shape)
+
+                    self.request_process_data(msg, (name, decoded))
                 elif msg == 'end_stage' and msg != 'response':
                     self.stage_end_cleanup(value)
                 elif msg == 'key_down':
