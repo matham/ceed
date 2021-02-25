@@ -4,12 +4,10 @@
 Widgets used on the viewer side of the controller/viewer interface.
 These are displayed when the second process of the viewer is running.
 '''
-from math import isclose
+from time import perf_counter
 
 from kivy.uix.behaviors.focus import FocusBehavior
-from kivy.uix.stencilview import StencilView
 from kivy.uix.scatter import Scatter
-from kivy.clock import Clock
 from kivy.properties import NumericProperty, BooleanProperty
 from kivy.app import App
 from kivy.graphics.vertex_instructions import Point
@@ -29,36 +27,13 @@ class ViewRootFocusBehavior(FocusBehavior):
     controller.
     '''
 
-    _ctrl_down = False
-
     def keyboard_on_key_down(self, window, keycode, text, modifiers):
-        if keycode[1] in ('ctrl', 'lctrl', 'rctrl'):
-            self._ctrl_down = True
-        _get_app().view_controller.send_keyboard_down(keycode[1], modifiers)
+        _get_app().view_controller.send_keyboard_down(
+            keycode[1], modifiers, perf_counter())
         return True
 
     def keyboard_on_key_up(self, window, keycode):
-        if keycode[1] in ('ctrl', 'lctrl', 'rctrl'):
-            self._ctrl_down = False
-
-        if self._ctrl_down:
-            if keycode[1] == 'q':
-                _get_app().view_controller.filter_background = \
-                    not _get_app().view_controller.filter_background
-                return True
-        _get_app().view_controller.send_keyboard_up(keycode[1])
-        return True
-
-    def keyboard_on_textinput(self, window, text):
-        if not self._ctrl_down:
-            return True
-
-        if text == '+':
-            _get_app().view_controller.alpha_color = min(
-                1., _get_app().view_controller.alpha_color + .01)
-        elif text == '-':
-            _get_app().view_controller.alpha_color = max(
-                0., _get_app().view_controller.alpha_color - .01)
+        _get_app().view_controller.send_keyboard_up(keycode[1], perf_counter())
         return True
 
 

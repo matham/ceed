@@ -621,10 +621,6 @@ class ViewSideViewControllerBase(ViewControllerBase):
     '''The instance that is created on the viewer side.
     '''
 
-    alpha_color = NumericProperty(1.)
-
-    filter_background = True
-
     def start_stage(self, stage_name, canvas):
         self.prepare_view_window()
         return super(ViewSideViewControllerBase, self).start_stage(
@@ -654,19 +650,18 @@ class ViewSideViewControllerBase(ViewControllerBase):
             assert data_type in ('CPU', 'GPU')
             self.queue_view_write.put_nowait((data_type, str(data)))
 
-    def send_keyboard_down(self, key, modifiers):
+    def send_keyboard_down(self, key, modifiers, t):
         '''Gets called by the window for every keyboard key press, which it
         passes on to the main GUI process.
         '''
         self.queue_view_write.put_nowait((
-            'key_down', yaml_dumps((key, list(modifiers)))))
+            'key_down', yaml_dumps((key, t, list(modifiers)))))
 
-    def send_keyboard_up(self, key):
+    def send_keyboard_up(self, key, t):
         '''Gets called by the window for every keyboard key release, which it
         passes on to the main GUI process.
         '''
-        self.queue_view_write.put_nowait((
-            'key_up', yaml_dumps((key, ))))
+        self.queue_view_write.put_nowait(('key_up', yaml_dumps((key, t))))
 
     def handle_exception(self, exception, exc_info=None):
         '''Called by the second process upon an error which is passed on to the
@@ -779,6 +774,8 @@ class ControllerSideViewControllerBase(ViewControllerBase):
     proj_size = None
 
     proj_pixels = None
+
+    _last_ctrl_release = 0
 
     def add_graphics(self, canvas, black_back=True):
         return super().add_graphics(canvas, black_back=black_back)
@@ -937,13 +934,15 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         self.view_process = self.queue_view_read = self.queue_view_write = None
         Clock.unschedule(self.controller_read)
 
-    def handle_key_press(self, key, modifiers=[], down=True):
+    def handle_key_press(self, key, t, modifiers=[], down=True):
         '''Called by by the read queue thread when we receive a keypress
         event from the second process.
         '''
         if key in ('ctrl', 'lctrl', 'rctrl'):
             self._ctrl_down = down
-        if not self._ctrl_down or down:
+            if not down:
+                self._last_ctrl_release = t
+        if (not self._ctrl_down and t - self._last_ctrl_release > .1) or down:
             return
 
         if key == 'z':
@@ -1003,11 +1002,9 @@ class ControllerSideViewControllerBase(ViewControllerBase):
                 elif msg == 'end_stage' and msg != 'response':
                     self.stage_end_cleanup(value)
                 elif msg == 'key_down':
-                    key, modifiers = yaml_loads(value)
-                    self.handle_key_press(key, modifiers)
+                    self.handle_key_press(*yaml_loads(value))
                 elif msg == 'key_up':
-                    key, = yaml_loads(value)
-                    self.handle_key_press(key, down=False)
+                    self.handle_key_press(*yaml_loads(value), down=False)
             except Empty:
                 break
 
