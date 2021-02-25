@@ -273,9 +273,9 @@ class ViewControllerBase(EventDispatcher):
     It is read only and automatically computed.
     '''
 
-    _cpu_stats = {'last_call_t': 0, 'count': 0, 'tstart': 0}
+    _cpu_stats = {'last_call_t': 0., 'count': 0, 'tstart': 0.}
 
-    _flip_stats = {'last_call_t': 0, 'dt': []}
+    _flip_stats = {'last_call_t': 0., 'count': 0, 'tstart': 0.}
 
     flip_fps = 0
     '''The GPU fps.
@@ -448,7 +448,8 @@ class ViewControllerBase(EventDispatcher):
         next(self.tick_func)
 
         self._flip_stats['last_call_t'] = self._cpu_stats['last_call_t'] = \
-            self._cpu_stats['tstart'] = clock()
+            self._cpu_stats['tstart'] = self._flip_stats['tstart'] = clock()
+        self._flip_stats['count'] = self._cpu_stats['count'] = 0
 
         self.add_graphics(canvas)
 
@@ -483,8 +484,6 @@ class ViewControllerBase(EventDispatcher):
         self.tick_delay_event = None
         self.shape_views = []
         self.count = 0
-        self._cpu_stats['count'] = 0
-        del self._flip_stats['dt'][:]
 
         self.serializer_tex = None
         self.serializer = None
@@ -509,7 +508,6 @@ class ViewControllerBase(EventDispatcher):
         t = clock()
         stats = self._cpu_stats
         tdiff = t - stats['last_call_t']
-        rate = float(self.frame_rate)
 
         stats['count'] += 1
         if t - stats['tstart'] >= 1:
@@ -518,7 +516,7 @@ class ViewControllerBase(EventDispatcher):
             stats['tstart'] = t
             stats['count'] = 0
 
-        if self.use_software_frame_rate and tdiff < 1 / rate:
+        if self.use_software_frame_rate and tdiff < 1 / self.frame_rate:
             return
 
         stats['last_call_t'] = t
@@ -608,15 +606,14 @@ class ViewControllerBase(EventDispatcher):
                 self._flip_frame_buffer_i = i
 
         stats = self._flip_stats
-        tdiff = t - stats['last_call_t']
-        rate = float(self.frame_rate)
-
-        stats['dt'].append(tdiff)
-        stats['last_call_t'] = t
-        if len(stats['dt']) >= rate:
-            fps = self.flip_fps = len(stats['dt']) / sum(stats['dt'])
+        stats['count'] += 1
+        if t - stats['tstart'] >= 1:
+            fps = stats['count'] / (t - stats['tstart'])
             self.request_process_data('GPU', fps)
-            del stats['dt'][:]
+            stats['tstart'] = t
+            stats['count'] = 0
+
+        stats['last_call_t'] = t
         return True
 
 
