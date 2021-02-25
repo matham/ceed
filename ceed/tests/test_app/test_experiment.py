@@ -714,7 +714,10 @@ async def test_import_h5_stages(
 @pytest.mark.parametrize('video_mode', ['RGB', 'QUAD4X', 'QUAD12X'])
 @pytest.mark.parametrize('flip', [True, False])
 async def test_serializer_corner_pixel(
-        stage_app: CeedTestApp, flip, video_mode):
+        ceed_app: CeedTestApp, flip, video_mode):
+    # for can't use stage_app because that zooms out leading to pixel being too
+    # small to see, seemingly
+    stage_app = ceed_app
     from kivy.clock import Clock
     from ceed.function.plugin import ConstFunc
     from ..test_stages import create_2_shape_stage
