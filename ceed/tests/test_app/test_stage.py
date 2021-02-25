@@ -934,6 +934,10 @@ async def test_pad_stage_ticks(
 
     frame_time_counter = np.asarray(f._block.data_arrays['frame_time_counter'])
     frame_counter = np.asarray(f._block.data_arrays['frame_counter'])
+    assert len(frame_time_counter) == len(frame_counter) // sub_frames
+    assert len(rendered_indices) == len(frame_time_counter)
+
+    assert np.all(np.arange(1, n + 1) == frame_counter)
     # count recorded is last sub-frame
     assert np.all(
         frame_counter[rendered_indices + sub_frames - 1] == frame_time_counter)

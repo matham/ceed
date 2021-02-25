@@ -343,6 +343,20 @@ class ViewControllerBase(EventDispatcher):
         '''
         pass
 
+    def _process_data(self, data_type, data):
+        if data_type == 'GPU':
+            self.gpu_fps = data
+        elif data_type == 'CPU':
+            self.cpu_fps = data
+        elif data_type == 'frame':
+            App.get_running_app().ceed_data.add_frame(data)
+        elif data_type == 'frame_flip':
+            App.get_running_app().ceed_data.add_frame_flip(data)
+        elif data_type == 'debug_data':
+            App.get_running_app().ceed_data.add_debug_data(*data)
+        else:
+            assert False
+
     def add_graphics(self, canvas, black_back=False):
         '''Adds all the graphics required to visualize the shapes to the
         canvas.
@@ -878,18 +892,19 @@ class ControllerSideViewControllerBase(ViewControllerBase):
             self.queue_view_read.put_nowait(('fullscreen', state))
 
     def request_process_data(self, data_type, data):
-        if data_type == 'GPU':
-            self.gpu_fps = data
-        elif data_type == 'CPU':
-            self.cpu_fps = data
-        elif data_type == 'frame':
-            App.get_running_app().ceed_data.add_frame(data)
+        # When we're not going IPC, we need to copy the buffers
+        if data_type == 'frame':
+            counter_bits, shape_rgba = data
+            data = counter_bits.copy(), shape_rgba.copy()
         elif data_type == 'frame_flip':
-            App.get_running_app().ceed_data.add_frame_flip(data)
+            data = data.copy()
         elif data_type == 'debug_data':
-            App.get_running_app().ceed_data.add_debug_data(*data)
+            name, arr = data
+            data = name, arr.copy()
         else:
-            assert False
+            assert data_type in ('CPU', 'GPU')
+
+        self._process_data(data_type, data)
 
     def start_process(self):
         '''Starts the process of the internal window that runs the experiment
@@ -974,7 +989,7 @@ class ControllerSideViewControllerBase(ViewControllerBase):
                     App.get_running_app().handle_exception(
                         e, exc_info=exec_info)
                 elif msg in ('GPU', 'CPU'):
-                    self.request_process_data(msg, float(value))
+                    self._process_data(msg, float(value))
                 elif msg == 'frame':
                     counter_bits, shape_rgba = value
 
@@ -987,18 +1002,18 @@ class ControllerSideViewControllerBase(ViewControllerBase):
                                for name in self.stage_shape_names])
                     shape_rgba = shape_rgba.reshape(-1, 4)
 
-                    self.request_process_data(msg, (counter_bits, shape_rgba))
+                    self._process_data(msg, (counter_bits, shape_rgba))
                 elif msg == 'frame_flip':
                     decoded = np.frombuffer(
                         value, dtype=[('count', np.uint64), ('t', np.float64)])
 
-                    self.request_process_data(msg, decoded)
+                    self._process_data(msg, decoded)
                 elif msg == 'debug_data':
                     name, data, dtype, shape = value
                     decoded = np.frombuffer(data, dtype=dtype)
                     decoded = decoded.reshape(shape)
 
-                    self.request_process_data(msg, (name, decoded))
+                    self._process_data(msg, (name, decoded))
                 elif msg == 'end_stage' and msg != 'response':
                     self.stage_end_cleanup(value)
                 elif msg == 'key_down':
