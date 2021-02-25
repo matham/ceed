@@ -783,6 +783,9 @@ class ControllerSideViewControllerBase(ViewControllerBase):
 
     proj_pixels = None
 
+    def add_graphics(self, canvas, black_back=True):
+        return super().add_graphics(canvas, black_back=black_back)
+
     @app_error
     def request_stage_start(
             self, stage_name: str, experiment_uuid: Optional[bytes] = None
@@ -910,6 +913,7 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         r = self.queue_view_read = ctx.Queue()
         w = self.queue_view_write = ctx.Queue()
         os.environ['CEED_IS_VIEW'] = '1'
+        os.environ['KCFG_GRAPHICS_VSYNC'] = '1'
         self.view_process = process = ctx.Process(
             target=view_process_enter,
             args=(r, w, settings, App.get_running_app().app_settings))

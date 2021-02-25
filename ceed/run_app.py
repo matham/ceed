@@ -9,6 +9,10 @@ if __name__ == '__main__':
 
     import multiprocessing
     multiprocessing.freeze_support()
+
+    from kivy.config import Config
+    Config.set('graphics', 'vsync', '1')
+
     from ceed.main import run_app
     app = run_app()
 
