@@ -85,7 +85,7 @@ class ViewControllerBase(EventDispatcher):
         'mirror_mea', 'mea_num_rows', 'mea_num_cols',
         'mea_pitch', 'mea_diameter', 'mea_transform', 'cam_transform',
         'flip_projector', 'flip_camera', 'pad_to_stage_handshake',
-        'pre_compute_stages', 'experiment_uuid',
+        'pre_compute_stages', 'experiment_uuid', 'log_debug_timing'
     )
 
     screen_width = NumericProperty(1920)
@@ -128,6 +128,11 @@ class ViewControllerBase(EventDispatcher):
     frame rate is. If it isn't capped at some value, e.g. 120Hz, it means that
     the GPU isn't forcing it.
     '''
+
+    log_debug_timing = BooleanProperty(False)
+    """Whether to log the times that frames are drawn and rendered to a debug
+    section in the h5 file.
+    """
 
     cam_transform = ObjectProperty(Matrix().tolist())
 
@@ -310,6 +315,12 @@ class ViewControllerBase(EventDispatcher):
 
     _flip_frame_buffer_i = 0
 
+    _debug_frame_buffer = None
+
+    _debug_frame_buffer_i = 0
+
+    _debug_last_tick_times = 0, 0
+
     stage_shape_names: List[str] = []
 
     __events__ = ('on_changed', )
@@ -479,6 +490,10 @@ class ViewControllerBase(EventDispatcher):
         self._flip_frame_buffer = np.empty(
             512, dtype=[('count', np.uint64), ('t', np.float64)])
 
+        self._debug_frame_buffer_i = 0
+        self._debug_frame_buffer = np.empty((512, 5), dtype=np.float64)
+        self._debug_last_tick_times = 0, 0
+
     def end_stage(self):
         '''Ends the stage if one is playing.
         '''
@@ -502,6 +517,7 @@ class ViewControllerBase(EventDispatcher):
         self.serializer_tex = None
         self.serializer = None
 
+        # send off any unsent data
         counter_bits, shape_rgba = self._frame_buffers
         i = self._frame_buffers_i
         if i:
@@ -513,6 +529,13 @@ class ViewControllerBase(EventDispatcher):
         if i:
             self.request_process_data('frame_flip', self._flip_frame_buffer[:i])
         self._flip_frame_buffer = None
+
+        if self.log_debug_timing:
+            i = self._debug_frame_buffer_i
+            if i:
+                self.request_process_data(
+                    'debug_data', ('timing', self._debug_frame_buffer[:i, :]))
+            self._debug_frame_buffer = None
 
     def tick_callback(self, *largs):
         '''Called before every CPU frame to handle any processing work.
@@ -597,10 +620,13 @@ class ViewControllerBase(EventDispatcher):
                 self._frame_buffers_i = i
 
         self.current_canvas.ask_update()
+        if self.log_debug_timing:
+            self._debug_last_tick_times = t, clock()
 
     def flip_callback(self, *largs):
         '''Called before every GPU frame by the graphics system.
         '''
+        ts = clock()
         from kivy.core.window import Window
         Window.on_flip()
 
@@ -628,6 +654,20 @@ class ViewControllerBase(EventDispatcher):
             stats['count'] = 0
 
         stats['last_call_t'] = t
+
+        if self.log_debug_timing:
+            te = clock()
+            if self.count:
+                buffer = self._debug_frame_buffer
+                i = self._debug_frame_buffer_i
+                buffer[i, :] = self.count, *self._debug_last_tick_times, ts, te
+                i += 1
+
+                if i == 512:
+                    self.request_process_data('debug_data', ('timing', buffer))
+                    self._debug_frame_buffer_i = 0
+                else:
+                    self._debug_frame_buffer_i = i
         return True
 
 
