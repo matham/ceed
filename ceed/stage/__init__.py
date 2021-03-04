@@ -503,7 +503,7 @@ class StageFactoryBase(EventDispatcher):
         return stages, name_map
 
     def tick_stage(
-            self, t_start: NumFraction, frame_rate: float,
+            self, t_start: NumFraction, frame_rate: Fraction,
             stage_name: str = '', stage: Optional['CeedStage'] = None,
             pre_compute: bool = False
     ) -> Generator[List[Tuple[str, List[RGBA_Type]]], NumFraction, None]:
@@ -749,7 +749,7 @@ class StageFactoryBase(EventDispatcher):
             canvas.remove_group(name)
 
     def get_all_shape_values(
-            self, frame_rate: float, stage_name: str = '',
+            self, frame_rate: Fraction, stage_name: str = '',
             stage: Optional['CeedStage'] = None,
             pre_compute: bool = False
     ) -> Dict[str, List[Tuple[float, float, float, float]]]:
@@ -761,10 +761,9 @@ class StageFactoryBase(EventDispatcher):
         the rate at which we sample the functions.
         '''
         # the sampling rate at which we sample the functions
-        frame_rate = int(frame_rate)
 
         tick = self.tick_stage(
-            Fraction(1, frame_rate), frame_rate, stage_name=stage_name,
+            1 / frame_rate, frame_rate, stage_name=stage_name,
             stage=stage, pre_compute=pre_compute)
         next(tick)
 
@@ -774,7 +773,7 @@ class StageFactoryBase(EventDispatcher):
             count += 1
 
             try:
-                shape_values = tick.send(Fraction(count, frame_rate))
+                shape_values = tick.send(count / frame_rate)
             except StageDoneException:
                 break
 
@@ -1549,14 +1548,13 @@ class CeedStage(EventDispatcher):
         raise StageDoneException
 
     def pre_compute_functions(
-            self, frame_rate: float
+            self, frame_rate: Fraction
     ) -> List[Tuple[
             Optional[FuncBase], Optional[List[float]], Optional[float]]]:
         computed = []
         t = 0
         last_end_t = None
         values = []
-        frame_rate = int(frame_rate)
 
         for func in self.functions:
             # this function should have been copied when it was created for
@@ -1576,14 +1574,13 @@ class CeedStage(EventDispatcher):
 
             try:
                 func.init_func(
-                    Fraction(t, frame_rate)
-                    if last_end_t is None else last_end_t
+                    t / frame_rate if last_end_t is None else last_end_t
                 )
-                values.append(func(Fraction(t, frame_rate)))
+                values.append(func(t / frame_rate))
 
                 while True:
                     t += 1
-                    values.append(func(Fraction(t, frame_rate)))
+                    values.append(func(t / frame_rate))
             except FuncDoneException:
                 last_end_t = func.t_end
                 assert last_end_t >= 0, "Should be concrete value"
@@ -1594,9 +1591,8 @@ class CeedStage(EventDispatcher):
         return computed
 
     def pre_compute_stage(
-            self, frame_rate: float, t_start: NumFraction, shapes: Set[str]
+            self, frame_rate: Fraction, t_start: NumFraction, shapes: Set[str]
     ) -> Tuple[Dict[str, List[RGBA_Type]], int, NumFraction]:
-        frame_rate = int(frame_rate)
         stage_data = {s: [] for s in shapes}
         stage_data_temp = {s: [] for s in shapes}
 
@@ -1609,7 +1605,7 @@ class CeedStage(EventDispatcher):
 
         try:
             while True:
-                tick.send(Fraction(i, frame_rate))
+                tick.send(i / frame_rate)
 
                 for name, colors in stage_data_temp.items():
                     color = [None, None, None, None]
@@ -1703,7 +1699,7 @@ class CeedStage(EventDispatcher):
         self.runtime_stage = None
 
     def apply_pre_compute(
-            self, pre_compute: bool, frame_rate: float, t_start: NumFraction,
+            self, pre_compute: bool, frame_rate: Fraction, t_start: NumFraction,
             shapes: Set[str]
     ) -> None:
         if pre_compute:

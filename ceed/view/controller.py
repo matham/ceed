@@ -5,6 +5,7 @@ Displays the preview or live pixel output of the experiment.
 '''
 import multiprocessing as mp
 import numpy as np
+from decimal import Decimal
 import os
 import sys
 from fractions import Fraction
@@ -85,7 +86,9 @@ class ViewControllerBase(EventDispatcher):
         'mirror_mea', 'mea_num_rows', 'mea_num_cols',
         'mea_pitch', 'mea_diameter', 'mea_transform', 'cam_transform',
         'flip_projector', 'flip_camera', 'pad_to_stage_handshake',
-        'pre_compute_stages', 'experiment_uuid', 'log_debug_timing'
+        'pre_compute_stages', 'experiment_uuid', 'log_debug_timing',
+        'skip_estimated_missed_frames', 'frame_rate_numerator',
+        'frame_rate_denominator', 'skip_detection_smoothing_n_frames'
     )
 
     screen_width = NumericProperty(1920)
@@ -109,10 +112,43 @@ class ViewControllerBase(EventDispatcher):
     on the left. Then the :attr:`screen_offset_x` should be set to ``1920``.
     '''
 
-    frame_rate = NumericProperty(120.)
+    def _get_frame_rate(self):
+        return self._frame_rate_numerator / self._frame_rate_denominator
+
+    def _set_frame_rate(self, value):
+        self._frame_rate_numerator, self._frame_rate_denominator = Decimal(
+            str(value)).as_integer_ratio()
+
+    frame_rate = AliasProperty(
+        _get_frame_rate, _set_frame_rate, cache=True,
+        bind=('_frame_rate_numerator', '_frame_rate_denominator'))
     '''The frame rate at which the data is played. This should match the
     currently selected monitor's refresh rate.
     '''
+
+    def _get_frame_rate_numerator(self):
+        return self._frame_rate_numerator
+
+    def _set_frame_rate_numerator(self, value):
+        self._frame_rate_numerator = value
+
+    frame_rate_numerator: int = AliasProperty(
+        _get_frame_rate_numerator, _set_frame_rate_numerator, cache=True,
+        bind=('_frame_rate_numerator',))
+
+    def _get_frame_rate_denominator(self):
+        return self._frame_rate_denominator
+
+    def _set_frame_rate_denominator(self, value):
+        self._frame_rate_denominator = value
+
+    frame_rate_denominator: int = AliasProperty(
+        _get_frame_rate_denominator, _set_frame_rate_denominator, cache=True,
+        bind=('_frame_rate_denominator',))
+
+    _frame_rate_numerator: int = NumericProperty(2999)
+
+    _frame_rate_denominator: int = NumericProperty(25)
 
     use_software_frame_rate = BooleanProperty(False)
     '''Depending on the GPU, the software is unable to render faster than the
@@ -120,7 +156,9 @@ class ViewControllerBase(EventDispatcher):
     that the GPU is playing at and this should be False.
 
     If the GPU isn't forcing a frame rate. Then this should be True and
-    :attr:`frame_rate` should be the desired frame rate.
+    :attr:`frame_rate` should be the desired frame rate. However, this will be
+    wildly inaccurate in this mode, so we should make sure that GPU is vsync'd
+    and this mode is False.
 
     One can tell whether the GPU is forcing a frame rate by setting
     :attr:`frame_rate` to a large value and setting
@@ -132,6 +170,14 @@ class ViewControllerBase(EventDispatcher):
     log_debug_timing = BooleanProperty(False)
     """Whether to log the times that frames are drawn and rendered to a debug
     section in the h5 file.
+    """
+
+    skip_estimated_missed_frames = BooleanProperty(True)
+    """Whether to skip frames when we estimate that the last frame was
+    displayed over the duration of multiple frames. So we may want to skip
+    the frames that should have been displayed but weren't, rather than
+    displaying all the subsequent frames at a delay of the number of missed
+    frames.
     """
 
     cam_transform = ObjectProperty(Matrix().tolist())
@@ -247,11 +293,6 @@ class ViewControllerBase(EventDispatcher):
     '''The kivy clock event that updates the colors on every frame.
     '''
 
-    tick_delay_event = None
-    '''The delay event that triggers tick_event after an initial delay to
-    ensure everything is ready before we start showing actual frames.
-    '''
-
     tick_func = None
     '''The iterator that updates the colors on every frame.
     '''
@@ -263,20 +304,24 @@ class ViewControllerBase(EventDispatcher):
     experiment_uuid: bytes = b''
 
     def _get_effective_rate(self):
+        rate = Fraction(
+            self._frame_rate_numerator, self._frame_rate_denominator)
         if self.video_mode == 'QUAD4X':
-            return self.frame_rate * 4
+            return rate * 4
         elif self.video_mode == 'QUAD12X':
-            return self.frame_rate * 12
-        return self.frame_rate
+            return rate * 12
+        return rate
 
-    effective_frame_rate = AliasProperty(
+    effective_frame_rate: Fraction = AliasProperty(
         _get_effective_rate, None, cache=True,
-        bind=('video_mode', 'frame_rate'))
+        bind=('video_mode', '_frame_rate_numerator', '_frame_rate_denominator'))
     '''The actual frame rate at which the projector is updated. E.g. in
     ``'QUAD4X'`` :attr:`video_mode` it is updated at 4 * 120Hz = 480Hz.
 
     It is read only and automatically computed.
     '''
+
+    skip_detection_smoothing_n_frames: int = 3
 
     _cpu_stats = {'last_call_t': 0., 'count': 0, 'tstart': 0.}
 
@@ -320,6 +365,19 @@ class ViewControllerBase(EventDispatcher):
     _debug_frame_buffer_i = 0
 
     _debug_last_tick_times = 0, 0
+
+    _last_render_times: List[float] = []
+
+    _render_first_time: float = 0.
+    """The time that the first experiment frame was expected to be rendered,
+    given the warmup frames.
+    """
+
+    _n_missed_frames: int = 0
+    """Estimated number of frames missed during the last render.
+    """
+
+    _n_sub_frames = 1
 
     stage_shape_names: List[str] = []
 
@@ -439,9 +497,19 @@ class ViewControllerBase(EventDispatcher):
             raise TypeError('Cannot start new stage while stage is active')
 
         Clock._max_fps = 0
+        self._render_first_time = 0.
+        self._last_render_times = []
+        self._n_missed_frames = 0
+
+        self._n_sub_frames = 1
+        if self.video_mode == 'QUAD4X':
+            self._n_sub_frames = 4
+        elif self.video_mode == 'QUAD12X':
+            self._n_sub_frames = 12
+
         self.tick_event = Clock.create_trigger(
             self.tick_callback, 0, interval=True)
-        self.tick_delay_event = Clock.schedule_once(self.tick_event, .25)
+        self.tick_event()
         Window.fbind('on_flip', self.flip_callback)
 
         stage_factory: StageFactoryBase = _get_app().stage_factory
@@ -467,7 +535,7 @@ class ViewControllerBase(EventDispatcher):
 
         self.current_canvas = canvas
         self.tick_func = stage_factory.tick_stage(
-            Fraction(1, int(self.effective_frame_rate)),
+            1 / self.effective_frame_rate,
             self.effective_frame_rate, stage_name=last_experiment_stage_name,
             pre_compute=self.pre_compute_stages)
         next(self.tick_func)
@@ -502,15 +570,12 @@ class ViewControllerBase(EventDispatcher):
             return
 
         self.tick_event.cancel()
-        if self.tick_delay_event is not None:
-            self.tick_delay_event.cancel()
         Window.funbind('on_flip', self.flip_callback)
         Clock._max_fps = self._original_fps
         _get_app().stage_factory.remove_shapes_gl_color_instructions(
             self.current_canvas, self.canvas_name)
 
         self.tick_func = self.tick_event = self.current_canvas = None
-        self.tick_delay_event = None
         self.shape_views = []
         self.count = 0
 
@@ -540,8 +605,22 @@ class ViewControllerBase(EventDispatcher):
     def tick_callback(self, *largs):
         '''Called before every CPU frame to handle any processing work.
 
-        When graphics need to be updated this method will update them
+        Warmup is required to ensure projector LED had time to change to the
+        experiment value (compared to idle). In addition to allowing us to
+        estimate when frames are missed.
         '''
+        # are we still warming up? We always warm up, even if frames not used
+        if not self.count:
+            if len(self._last_render_times) < 50:
+                # make sure we flip the frame to record render time
+                self.current_canvas.ask_update()
+                return
+
+        # warmup period done, estimate params after first post-warmup frame
+        if not self.count and self.skip_estimated_missed_frames \
+                and not self.use_software_frame_rate:
+            self.estimate_render_time()
+
         t = clock()
         stats = self._cpu_stats
         tdiff = t - stats['last_call_t']
@@ -569,18 +648,54 @@ class ViewControllerBase(EventDispatcher):
         else:
             projections = [None, ]
             views = self.shape_views
-        effective_rate = int(self.effective_frame_rate)
+
+        effective_rate = self.effective_frame_rate
+        # in software mode this is always zero. For skipped frames serializer is
+        # not ticked
+        for _ in range(self._n_missed_frames):
+            for proj in projections:
+                # we cannot skip frames (i.e. we may only increment frame by
+                # one). Because stages/func can be pre-computed and it assumes
+                # a constant frame rate. If need to skip n frames, tick n times
+                # but don't draw result
+                self.count += 1
+
+                try:
+                    shape_values = tick.send(self.count / effective_rate)
+                except StageDoneException:
+                    self.end_stage()
+                    return
+                except Exception:
+                    self.end_stage()
+                    raise
+
+                values = _get_app().stage_factory.fill_shape_gl_color_values(
+                    None, shape_values, proj)
+
+                stage_shape_names = self.stage_shape_names
+                counter_bits, shape_rgba = self._frame_buffers
+                i = self._frame_buffers_i
+                counter_bits['count'][i] = self.count
+                counter_bits['bits'][i] = 0
+                for name, r, g, b, a in values:
+                    if name in stage_shape_names:
+                        shape_rgba[name][i, :] = r, g, b, a
+                i += 1
+
+                if i == 512:
+                    self.request_process_data(
+                        'frame', (counter_bits, shape_rgba))
+                    self._frame_buffers_i = 0
+                else:
+                    self._frame_buffers_i = i
 
         first_blit = True
         bits = 0
         for shape_views, proj in zip(views, projections):
-            # we cannot skip frames (i.e. we may only increment frame by one).
-            # Because stages/func can be pre-computed and it assumes a constant
-            # frame rate. If need to skip n frames, tick n times and drop result
             self.count += 1
 
             try:
-                shape_values = tick.send(Fraction(self.count, effective_rate))
+                shape_values = tick.send(self.count / effective_rate)
             except StageDoneException:
                 self.end_stage()
                 return
@@ -614,7 +729,8 @@ class ViewControllerBase(EventDispatcher):
             i += 1
 
             if i == 512:
-                self.request_process_data('frame', (counter_bits, shape_rgba))
+                self.request_process_data(
+                    'frame', (counter_bits, shape_rgba))
                 self._frame_buffers_i = 0
             else:
                 self._frame_buffers_i = i
@@ -631,19 +747,28 @@ class ViewControllerBase(EventDispatcher):
         Window.on_flip()
 
         t = clock()
-        # count of zero is discarded as it's before the tick_callback starts
-        if self.count:
-            buffer = self._flip_frame_buffer
-            i = self._flip_frame_buffer_i
-            buffer['count'][i] = self.count
-            buffer['t'][i] = t
-            i += 1
+        # count of zero is discarded as it's during warmup
+        if not self.count:
+            # but do record the render time
+            self._last_render_times.append(t)
+            return True
 
-            if i == 512:
-                self.request_process_data('frame_flip', buffer)
-                self._flip_frame_buffer_i = 0
-            else:
-                self._flip_frame_buffer_i = i
+        if self.skip_estimated_missed_frames \
+                and not self.use_software_frame_rate:
+            # doesn't make sense in software mode
+            self.estimate_missed_frames(t)
+
+        buffer = self._flip_frame_buffer
+        i = self._flip_frame_buffer_i
+        buffer['count'][i] = self.count
+        buffer['t'][i] = t
+        i += 1
+
+        if i == 512:
+            self.request_process_data('frame_flip', buffer)
+            self._flip_frame_buffer_i = 0
+        else:
+            self._flip_frame_buffer_i = i
 
         stats = self._flip_stats
         stats['count'] += 1
@@ -656,11 +781,10 @@ class ViewControllerBase(EventDispatcher):
         stats['last_call_t'] = t
 
         if self.log_debug_timing:
-            te = clock()
             if self.count:
                 buffer = self._debug_frame_buffer
                 i = self._debug_frame_buffer_i
-                buffer[i, :] = self.count, *self._debug_last_tick_times, ts, te
+                buffer[i, :] = self.count, *self._debug_last_tick_times, ts, t
                 i += 1
 
                 if i == 512:
@@ -669,6 +793,50 @@ class ViewControllerBase(EventDispatcher):
                 else:
                     self._debug_frame_buffer_i = i
         return True
+
+    def estimate_render_time(self):
+        """Called after warmup to estimate period and start time.
+        """
+        times = np.asarray(self._last_render_times)
+        frame_rate = self.frame_rate
+
+        # estimate number of frames between each render and first (expected)
+        # render
+        n_frames = np.round((times[-1] - times[:-1]) * frame_rate) + 1
+        # GPU should force us to multiples of period. Given period, each frame
+        # estimates last render time, use median as baseline
+        end_time = times[:-1] + n_frames / frame_rate
+
+        self._render_first_time = float(np.median(end_time))
+        # reset for skip detection
+        self._last_render_times = []
+
+    def estimate_missed_frames(self, render_time):
+        """Estimates number of missed frames during experiment, after warmup.
+        """
+        n = self.skip_detection_smoothing_n_frames
+        render_times = self._last_render_times
+        render_times.append(render_time)
+
+        n_ = len(render_times)
+        if n_ < n:
+            return
+        if n_ > n:
+            # remove oldest time
+            del render_times[0]
+
+        # frame number of the first frame in render_times
+        frame_n = self.count // self._n_sub_frames - n
+        start_time = self._render_first_time
+        period = 1 / self.frame_rate
+        frame_i = [(t - start_time) / period for t in render_times]
+        # number of frames above expected number of frames. Round down
+        n_skipped_frames = int(sum(frame_i) / n - frame_n - sum(range(n)) / n)
+        self._n_missed_frames = max(0, n_skipped_frames)
+
+        print(
+            self.count // self._n_sub_frames, n_skipped_frames,
+            sum(frame_i) / n, frame_n, sum(range(n)) / n), render_times
 
 
 class ViewSideViewControllerBase(ViewControllerBase):

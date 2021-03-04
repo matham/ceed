@@ -1,7 +1,7 @@
 import os
 import pytest
 from collections import defaultdict
-from typing import Type, List
+from typing import AsyncGenerator
 from pytest_trio.enable_trio_mode import \
     pytest_collection_modifyitems as trio_pytest_collection_modifyitems, \
     pytest_fixture_setup as trio_pytest_fixture_setup
@@ -83,7 +83,7 @@ def temp_file_sess(tmp_path_factory):
 @pytest.fixture
 async def ceed_app(
         request, trio_kivy_app, temp_file, tmp_path, tmp_path_factory
-) -> CeedTestApp:
+) -> AsyncGenerator[CeedTestApp, None, None]:
     kivy_app = trio_kivy_app
     params = request.param if hasattr(
         request, 'param') and request.param else {}
@@ -120,6 +120,9 @@ async def ceed_app(
         with app_context(tmp_path):
             try:
                 await kivy_app(create_app)
+                kivy_app.app.view_controller.skip_estimated_missed_frames = \
+                    False
+
                 yield kivy_app
             finally:
                 if kivy_app.app is not None:

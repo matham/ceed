@@ -128,14 +128,15 @@ def create_4_stages(stage_factory: StageFactoryBase):
 
 
 def get_stage_time_intensity(
-        stage_factory: StageFactoryBase, stage_name: str, frame_rate,
+        stage_factory: StageFactoryBase, stage_name: str, frame_rate: int,
         pre_compute: bool = False
 ) -> Tuple[Dict[str, List[Tuple[float, float, float, float]]], int]:
     """Samples the stage with the given frame rate and returns the intensity
     value for each shape for each timestamp.
     """
     obj_values = stage_factory.get_all_shape_values(
-        frame_rate, stage_name=stage_name, pre_compute=pre_compute)
+        Fraction(int(frame_rate), 1), stage_name=stage_name,
+        pre_compute=pre_compute)
 
     n = 0
     if obj_values:

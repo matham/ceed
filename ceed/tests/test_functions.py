@@ -33,7 +33,7 @@ def register_callback_distribution(
     return cls
 
 
-def get_function_values(func: FuncBase, frame_rate: float) -> List[float]:
+def get_function_values(func: FuncBase, frame_rate: int) -> List[float]:
     frame_rate = int(frame_rate)
     i = 1
 

@@ -953,10 +953,7 @@ class CeedDataReader:
             Canvas, Translate, Fbo, ClearColor, ClearBuffers, Scale)
         from kivy.core.window import Window
 
-        rate = float(self.view_controller.frame_rate)
-        rate_int = int(rate)
-        if rate != rate_int:
-            raise ValueError('Frame rate should be integer')
+        rate = self.view_controller.effective_frame_rate
         orig_w, orig_h = (
             self.view_controller.screen_width,
             self.view_controller.screen_height)
@@ -995,7 +992,7 @@ class CeedDataReader:
             'pix_fmt_in': 'rgba', 'pix_fmt_out': out_fmt,
             'width_in': w, 'height_in': h, 'width_out': w,
             'height_out': h, 'codec': codec,
-            'frame_rate': (int(speed * rate_int), 1)}
+            'frame_rate': (int(speed * rate), 1)}
         writer = MediaWriter(
             filename, [stream], fmt=video_fmt, lib_opts=lib_opts)
 
@@ -1021,8 +1018,8 @@ class CeedDataReader:
         fbo.add(Translate(-x, -y))
 
         pbar = tqdm(
-            total=(end - 1 - start) / rate, file=sys.stdout, unit='second',
-            unit_scale=1)
+            total=float((end - 1 - start) / rate),
+            file=sys.stdout, unit='second', unit_scale=1)
 
         # all shapes listed in intensities must be in shape_views. However,
         # we don't want to show shapes not given values in intensities or if
@@ -1034,7 +1031,7 @@ class CeedDataReader:
                 shape_views[name].rgba = 0, 0, 0, 0
 
         for i in range(start, end):
-            pbar.update(1 / rate)
+            pbar.update(float(1 / rate))
             for name, intensity in intensities.items():
                 r, g, b, a = intensity[i]
                 if name in unused_shapes:
@@ -1050,7 +1047,7 @@ class CeedDataReader:
 
             fbo.draw()
             img = Image(plane_buffers=[fbo.pixels], pix_fmt='rgba', size=(w, h))
-            writer.write_frame(img, (i - start + 1) / (rate * speed))
+            writer.write_frame(img, float((i - start + 1) / (rate * speed)))
         pbar.close()
 
     @staticmethod

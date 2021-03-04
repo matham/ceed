@@ -234,7 +234,7 @@
                 size: self.texture_size
                 text: 'Projector play rate'
             FlatSizedTextInput:
-                input_filter: 'int'
+                input_filter: 'float'
                 text: str(app.view_controller.frame_rate)
                 on_text_validate: app.view_controller.frame_rate = float(self.text)
             ThemedLabel:
@@ -244,7 +244,7 @@
             ThemedLabel:
                 size_hint: None, None
                 size: self.texture_size
-                text: str(app.view_controller.effective_frame_rate)
+                text: str(float(app.view_controller.effective_frame_rate))
             ThemedLabel:
                 size_hint: None, None
                 size: self.texture_size
