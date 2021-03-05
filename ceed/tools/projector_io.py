@@ -26,6 +26,7 @@ BoxLayout:
     orientation: 'vertical'
     padding: '25dp'
     bits: bits
+    spacing: '5dp'
     canvas:
         Color:
             rgba: 1, 1, 1, 1
@@ -68,6 +69,13 @@ BoxLayout:
         spacing: '5dp'
         size_hint: None, None
         size: self.minimum_size
+    ToggleButton:
+        text: 'Pixel mode: ON' if app.pixel_mode else 'Pixel mode: OFF'
+        size_hint: None, None
+        size: self.texture_size
+        on_release: app.set_pixel_mode(self.state == 'down')
+        padding: '5dp', '5dp'
+        state: 'down'
     Widget
 
 
@@ -88,12 +96,13 @@ class IOApp(App):
     led_modes = {'RGB': 0, 'GB': 1, 'RB': 2, 'B': 3, 'RG': 4, 'G': 5, 'R': 6,
                  'none': 7}
 
-    video_modes = ['RGB', 'RB3D', 'RGB240', 'RGB180', 'QUAD4X', 'QUAD12X',
-                   'GREY3X']
+    video_modes = ['RGB', 'QUAD4X', 'QUAD12X']
 
     screen_size = (1920, 1080)
 
     bits_texture = ObjectProperty(None)
+
+    pixel_mode = BooleanProperty(False)
 
     def build(self):
         tex = self.bits_texture = Texture.create(size=(1, 1))
@@ -120,6 +129,7 @@ class IOApp(App):
     def set_pixel_mode(self, state):
         if PROPixxCTRL is None:
             raise ImportError('Cannot open PROPixx library')
+        self.pixel_mode = state
 
         ctrl = PROPixxCTRL()
         if state:
@@ -136,12 +146,13 @@ class IOApp(App):
         if libdpx is None:
             raise ImportError('Cannot open PROPixx library')
 
-        self.led_mode = mode
         libdpx.DPxOpen()
         libdpx.DPxSelectDevice('PROPixx')
         libdpx.DPxSetPPxLedMask(self.led_modes[mode])
         libdpx.DPxUpdateRegCache()
         libdpx.DPxClose()
+
+        self.led_mode = mode
 
     def set_video_mode(self, mode):
         '''Sets the projector's video mode. ``mode`` can be one of
@@ -150,9 +161,11 @@ class IOApp(App):
         if PROPixx is None:
             raise ImportError('Cannot open PROPixx library')
 
+        modes = {'RGB': 'RGB 120Hz', 'QUAD4X': 'RGB Quad 480Hz',
+                 'QUAD12X': 'GREY Quad 1440Hz'}
         self.video_mode = mode
         dev = PROPixx()
-        dev.setDlpSequencerProgram(mode)
+        dev.setDlpSequencerProgram(modes[mode])
         dev.updateRegisterCache()
         dev.close()
 

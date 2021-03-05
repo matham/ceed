@@ -1035,6 +1035,7 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         app.ceed_data.prepare_experiment(stage_name, self.stage_shape_names)
 
         if self.propixx_lib:
+            self.set_video_mode(self.video_mode)
             m = self.LED_mode
             self.set_led_mode(m)
             app.ceed_data.add_led_state(
@@ -1272,7 +1273,9 @@ class ControllerSideViewControllerBase(ViewControllerBase):
                 return
             raise ImportError('Cannot open PROPixx library')
 
+        modes = {'RGB': 'RGB 120Hz', 'QUAD4X': 'RGB Quad 480Hz',
++                 'QUAD12X': 'GREY Quad 1440Hz'}
         dev = PROPixx()
-        dev.setDlpSequencerProgram(mode)
+        dev.setDlpSequencerProgram(modes[mode])
         dev.updateRegisterCache()
         dev.close()
