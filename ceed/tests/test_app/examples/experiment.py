@@ -1,4 +1,5 @@
 from itertools import cycle, chain
+from time import perf_counter
 
 from ceed.storage.controller import DataSerializerBase
 from ceed.analysis import CeedDataReader
@@ -186,3 +187,50 @@ def set_serializer_even_count_bits(
 
     return bytes(serializer_config_bytes), num_handshake_ticks, counter, \
         short_values, clock_values
+
+
+async def wait_stage_experiment_started(stage_app: CeedTestApp, timeout=50):
+    ts = perf_counter()
+    while not stage_app.app.view_controller.count:
+        if perf_counter() - ts >= timeout:
+            raise TimeoutError
+
+        await stage_app.wait_clock_frames(2)
+
+    await stage_app.wait_clock_frames(2)
+
+
+async def wait_experiment_done(stage_app: CeedTestApp, timeout=50):
+    ts = perf_counter()
+    while stage_app.app.view_controller.stage_active:
+        if perf_counter() - ts >= timeout:
+            raise TimeoutError
+
+        await stage_app.wait_clock_frames(2)
+
+    await stage_app.wait_clock_frames(2)
+
+
+async def measure_fps(stage_app: CeedTestApp, max_fps=120.) -> int:
+    from kivy.clock import Clock
+    original_fps = Clock._max_fps
+    Clock._max_fps = 0
+    times = []
+
+    def callback(*args):
+        times.append(perf_counter())
+        stage_app.app.root.canvas.ask_update()
+
+    try:
+        event = Clock.create_trigger(callback, timeout=0, interval=True)
+        event()
+
+        await stage_app.wait_clock_frames(40)
+        event.cancel()
+    finally:
+        Clock._max_fps = original_fps
+
+    assert len(times) > 30
+    diff = sorted([t2 - t1 for t1, t2 in zip(times[:-1], times[1:])])
+    fps = max(diff[len(diff) // 2], 1 / max_fps)
+    return int(round(1 / fps))

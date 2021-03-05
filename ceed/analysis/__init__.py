@@ -134,24 +134,9 @@ class CeedDataReader:
     :attr:`electrode_intensity_alignment`.
     """
 
-    rendered_frame_time: np.ndarray = None
-    """Once set in :meth:`load_experiment` it is a 1D array containing the
-    ceed computer's estimated time just before the shapes were actually
-    rendered.
+    shapes_intensity_rendered: Dict[str, np.ndarray] = {}
 
-    Each array item has a corresponding index value in
-    :attr:`rendered_time_index`. This value is the index in the values of
-    :attr:`shapes_intensity`, indicating the time of the corresponding frame.
-    When e.g. the video mode is QUAD4X, only every forth frame has a timestamp,
-    so :attr:`rendered_time_index` provides those timestamped indices.
-
-    If :attr:`electrode_intensity_alignment` hasn't been set (e.g. if the file
-    hasn't been merged), it's possible some frames have not been rendered
-    (which is normally verified during the alignment step), in which case it
-    may have discontinuities.
-    """
-
-    rendered_time_index: np.ndarray = None
+    rendered_frames: np.ndarray = None
     """Once set in :meth:`load_experiment` it is a 1D array containing the
     indices in :attr:`shapes_intensity` that correspond to the time points in
     :attr:`rendered_frame_time`.
@@ -491,23 +476,35 @@ class CeedDataReader:
             if name in config_data['app_settings']:
                 apply_config(obj, config_data['app_settings'][name])
         self.populate_config(config_data, shape, func, stage)
+        n_sub_frames = 1
+        if view.video_mode == 'QUAD4X':
+            n_sub_frames = 4
+        elif view.video_mode == 'QUAD12X':
+            n_sub_frames = 12
 
         self.experiment_cam_image = self.read_image_from_block(
             self._block)
 
+        rendered_counter = np.asarray(block.data_arrays['frame_time_counter'])
+        frame_counter_n = block.data_arrays['frame_counter'].shape[0]
+
+        count_indices = np.arange(1, 1 + frame_counter_n)
+        found = rendered_counter[:, np.newaxis] - \
+            np.arange(n_sub_frames)[np.newaxis, :]
+        found = found.reshape(-1)
+        rendered_frames = np.isin(count_indices, found)
+        self.rendered_frames = rendered_frames
+
         data = self.shapes_intensity = {}
+        data_rendered = self.shapes_intensity_rendered = {}
         for item in block.data_arrays:
             if not item.name.startswith('shape_'):
                 continue
-            data[item.name[6:]] = np.asarray(item)
+            name = item.name[6:]
+            values = data[name] = np.asarray(item)
+            data_rendered[name] = values[rendered_frames, :]
 
         self.led_state = np.asarray(block.data_arrays['led_state'])
-
-        self.rendered_frame_time = np.asarray(block.data_arrays['frame_time'])
-        self.rendered_time_index = np.asarray(
-            block.data_arrays['frame_time_counter'])
-        if len(self.rendered_time_index):
-            self.rendered_time_index -= self.rendered_time_index[0]
 
         if ('ceed_mcs_alignment' in self._nix_file.blocks and
                 'experiment_{}'.format(experiment) in

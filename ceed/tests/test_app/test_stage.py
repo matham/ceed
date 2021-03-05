@@ -1,4 +1,3 @@
-import trio
 import sys
 from contextlib import contextmanager
 from math import isclose
@@ -17,6 +16,8 @@ from ceed.shape import CeedShape, CeedShapeGroup
 from .examples.shapes import assert_add_three_groups
 from .examples.funcs import create_funcs, GroupFunction
 from .examples.stages import fake_plugin_stage
+from .examples.experiment import wait_stage_experiment_started, \
+    wait_experiment_done, measure_fps
 from .test_func import assert_func_params_in_gui, \
     replace_last_ref_with_original_func, assert_funcs_same
 
@@ -589,9 +590,13 @@ def verify_color(
 
 
 @pytest.mark.parametrize('video_mode', ['RGB', 'QUAD4X', 'QUAD12X'])
-@pytest.mark.parametrize('flip', [True, False])
+@pytest.mark.parametrize(
+    'flip,skip', [(True, False), (False, True), (False, False)])
 async def test_recursive_play_stage_intensity(
-        stage_app: CeedTestApp, tmp_path, flip, video_mode):
+        stage_app: CeedTestApp, tmp_path, flip, skip, video_mode):
+    """Checks that proper frame rendering happens in all these modes.
+    In skip mode, some frames are skipped if GPU/CPU is too slow.
+    """
     from ..test_stages import create_recursive_stages
     from .examples.shapes import CircleShapeP1, CircleShapeP2
     from kivy.clock import Clock
@@ -603,8 +608,8 @@ async def test_recursive_play_stage_intensity(
     from ceed.function.plugin import LinearFunc
     for i, stage in enumerate((s1, s2, s3, s4, s5, s6)):
         stage.stage.add_func(LinearFunc(
-            function_factory=stage_app.app.function_factory, b=0, m=.1,
-            duration=(i % 2 + 1) * 5))
+            function_factory=stage_app.app.function_factory, b=0, m=.5,
+            duration=(i % 2 + 1) * 1))
 
     shape = CircleShapeP1(
         app=None, painter=stage_app.app.shape_factory, show_in_gui=True)
@@ -623,11 +628,12 @@ async def test_recursive_play_stage_intensity(
 
     frame = 0
     event = None
-    trio_event = trio.Event()
-    rate = stage_app.app.view_controller.frame_rate = 10
-    initial_frames = Clock.frames_displayed
+    # make GPU too slow to force skipping frames, when enabled
+    fps = await measure_fps(stage_app) + 10
+    rate = stage_app.app.view_controller.frame_rate = fps
     stage_app.app.view_controller.use_software_frame_rate = False
     stage_app.app.view_controller.flip_projector = flip
+    stage_app.app.view_controller.skip_estimated_missed_frames = skip
     stage_app.app.view_controller.video_mode = video_mode
 
     n_sub_frames = 1
@@ -637,46 +643,60 @@ async def test_recursive_play_stage_intensity(
         n_sub_frames = 12
 
     centers = shape.center, shape2.center
-    num_frames = rate * n_sub_frames * (10 + 5 + 10 + 5)
+    num_frames = rate * n_sub_frames * (2 + 1 + 2 + 1)
     shape_color = [(False, False, False, 0.), ] * num_frames
     shape2_color = [(False, False, False, 0.), ] * num_frames
+    skipped_frame_indices = set()
+    n_missed_frames = 0
 
-    for s, start, e in [(s1, 0, 5), (s4, 15, 25), (s5, 25, 30)]:
+    for s, start, e in [(s1, 0, 1), (s4, 3, 5), (s5, 5, 6)]:
         for i in range(start * rate * n_sub_frames, e * rate * n_sub_frames):
-            val = (i - start * rate * n_sub_frames) / (rate * n_sub_frames) * .1
+            val = (i - start * rate * n_sub_frames) / (rate * n_sub_frames) * .5
             shape_color[i] = s.color_r, s.color_g, s.color_b, val
 
-    for s, start, e in [(s2, 0, 10), (s3, 10, 15), (s6, 25, 30)]:
+    for s, start, e in [(s2, 0, 2), (s3, 2, 3), (s6, 5, 6)]:
         for i in range(start * rate * n_sub_frames, e * rate * n_sub_frames):
-            val = (i - start * rate * n_sub_frames) / (rate * n_sub_frames) * .1
+            val = (i - start * rate * n_sub_frames) / (rate * n_sub_frames) * .5
             shape2_color[i] = s.color_r, s.color_g, s.color_b, val
 
     def verify_intensity(*largs):
-        nonlocal frame
-        if Clock.frames_displayed <= initial_frames + 1:
-            return
-
+        nonlocal frame, n_missed_frames
         # total frames is a multiple of n_sub_frames
         if not stage_app.app.view_controller.stage_active:
-            assert frame == num_frames
+            assert stage_app.app.view_controller.count - 1 == num_frames
+            if not skip:
+                assert frame == num_frames
             event.cancel()
-            trio_event.set()
+            return
+        # not yet started
+        if not stage_app.app.view_controller.count:
             return
 
+        # some frame may have been skipped, but num_frames is max frames
+        # This callback happens after frame callback and after the frame flip.
+        # This also means we record even the last skipped frames (if skipped)
         assert frame < num_frames
 
         frame = verify_color(
             stage_app, shape_color, shape2_color, frame, centers, flip,
             video_mode)
+        assert stage_app.app.view_controller.count == frame
+
+        if skip:
+            # some frames may have been dropped for next frame
+            n_missed_frames = stage_app.app.view_controller._n_missed_frames
+            for k in range(n_missed_frames * n_sub_frames):
+                # frame is next frame index, next frame is skipped
+                skipped_frame_indices.add(frame)
+                frame += 1
+        else:
+            assert not stage_app.app.view_controller._n_missed_frames
 
     event = Clock.create_trigger(verify_intensity, timeout=0, interval=True)
     event()
     stage_app.app.view_controller.request_stage_start(root.name)
 
-    await trio_event.wait()
-
-    stage_app.app.view_controller.request_stage_end()
-    event.cancel()
+    await wait_experiment_done(stage_app, timeout=num_frames / rate * 50)
 
     filename = str(tmp_path / 'recursive_play_stage_intensity.h5')
     stage_app.app.ceed_data.save(filename=filename)
@@ -687,22 +707,80 @@ async def test_recursive_play_stage_intensity(
     assert not f.num_images_in_file
     f.load_experiment(0)
 
-    shape_data = np.array(f.shapes_intensity[shape.name])
-    shape2_data = np.array(f.shapes_intensity[shape2.name])
-    assert len(shape_data) == num_frames
-    assert len(shape2_data) == num_frames
+    shape_data = f.shapes_intensity[shape.name]
+    shape_data_rendered = f.shapes_intensity_rendered[shape.name]
+    shape2_data = f.shapes_intensity[shape2.name]
+    shape2_data_rendered = f.shapes_intensity_rendered[shape2.name]
+    recorded_rendered_frames = f.rendered_frames
+
+    # even when skipping, skipped frames are still logged but they are removed
+    # in xxx_rendered arrays
+    if skip:
+        # because frame rate is high, we'll definitely drop frames
+        assert skipped_frame_indices
+    else:
+        assert not skipped_frame_indices
+
+    assert shape_data.shape[0] == num_frames
+    assert shape2_data.shape[0] == num_frames
+
+    n_skipped = len(skipped_frame_indices)
+    if skip:
+        # last frame may be recorded as skipped, but if stage is done frame is
+        # not real. n_missed_frames is the n_missed_frames from last frame
+        assert num_frames - n_skipped <= shape_data_rendered.shape[0] \
+            <= num_frames - n_skipped + n_sub_frames * n_missed_frames
+        assert num_frames - n_skipped <= shape2_data_rendered.shape[0] \
+            <= num_frames - n_skipped + n_sub_frames * n_missed_frames
+    else:
+        assert shape_data_rendered.shape[0] == num_frames
+        assert shape2_data_rendered.shape[0] == num_frames
+
     # in QUAD12X mode, all 3 channels have same value in the data (because we
     # show gray). But the projector outputs different values for each channel,
     # for each sub-frame
     gray = video_mode == 'QUAD12X'
+    i = 0
+    k = 0
     for (r, g, b, val), (r1, g1, b1, _) in zip(shape_color, shape_data):
         assert isclose(val, r1, abs_tol=2 / 255) if r or gray else r1 == 0
         assert isclose(val, g1, abs_tol=2 / 255) if g or gray else g1 == 0
         assert isclose(val, b1, abs_tol=2 / 255) if b or gray else b1 == 0
+
+        if skip:
+            assert recorded_rendered_frames[k] \
+                == (k not in skipped_frame_indices)
+        else:
+            assert recorded_rendered_frames[k]
+
+        if k not in skipped_frame_indices:
+            r1, g1, b1, _ = shape_data_rendered[i, :]
+            assert isclose(val, r1, abs_tol=2 / 255) if r or gray else r1 == 0
+            assert isclose(val, g1, abs_tol=2 / 255) if g or gray else g1 == 0
+            assert isclose(val, b1, abs_tol=2 / 255) if b or gray else b1 == 0
+            i += 1
+        k += 1
+
+    i = 0
+    k = 0
     for (r, g, b, val), (r1, g1, b1, _) in zip(shape2_color, shape2_data):
         assert isclose(val, r1, abs_tol=2 / 255) if r or gray else r1 == 0
         assert isclose(val, g1, abs_tol=2 / 255) if g or gray else g1 == 0
         assert isclose(val, b1, abs_tol=2 / 255) if b or gray else b1 == 0
+
+        if skip:
+            assert recorded_rendered_frames[k] \
+                == (k not in skipped_frame_indices)
+        else:
+            assert recorded_rendered_frames[k]
+
+        if k not in skipped_frame_indices:
+            r1, g1, b1, _ = shape2_data_rendered[i, :]
+            assert isclose(val, r1, abs_tol=2 / 255) if r or gray else r1 == 0
+            assert isclose(val, g1, abs_tol=2 / 255) if g or gray else g1 == 0
+            assert isclose(val, b1, abs_tol=2 / 255) if b or gray else b1 == 0
+            i += 1
+        k += 1
 
     f.close_h5()
 
@@ -745,7 +823,7 @@ async def test_moat_stage_shapes(stage_app: CeedTestApp, tmp_path):
     stage_app.app.view_controller.flip_projector = False
 
     stage_app.app.view_controller.request_stage_start(root.name)
-    await stage_app.wait_clock_frames(5)
+    await wait_stage_experiment_started(stage_app)
     assert stage_app.app.view_controller.stage_active
 
     points = stage_app.get_widget_pos_pixel(
@@ -768,7 +846,7 @@ async def test_moat_stage_shapes(stage_app: CeedTestApp, tmp_path):
     await stage_app.wait_clock_frames(2)
 
     stage_app.app.view_controller.request_stage_start(root.name)
-    await stage_app.wait_clock_frames(5)
+    await wait_stage_experiment_started(stage_app)
     assert stage_app.app.view_controller.stage_active
 
     points = stage_app.get_widget_pos_pixel(
@@ -837,7 +915,7 @@ async def test_moat_single_stage_shapes(stage_app: CeedTestApp, tmp_path):
     stage_app.app.view_controller.flip_projector = False
 
     stage_app.app.view_controller.request_stage_start(root.name)
-    await stage_app.wait_clock_frames(5)
+    await wait_stage_experiment_started(stage_app)
     assert stage_app.app.view_controller.stage_active
 
     points = stage_app.get_widget_pos_pixel(
@@ -872,8 +950,9 @@ async def test_moat_single_stage_shapes(stage_app: CeedTestApp, tmp_path):
 
 @pytest.mark.parametrize(
     'quad,sub_frames', [('RGB', 1), ('QUAD4X', 4), ('QUAD12X', 12)])
+@pytest.mark.parametrize('skip', [False, True])
 async def test_pad_stage_ticks(
-        stage_app: CeedTestApp, tmp_path, quad, sub_frames):
+        stage_app: CeedTestApp, tmp_path, quad, sub_frames, skip):
     from ..test_stages import create_recursive_stages
     from .examples.shapes import CircleShapeP1
     from ceed.analysis import CeedDataReader
@@ -888,21 +967,19 @@ async def test_pad_stage_ticks(
     root.show_in_gui()
     await stage_app.wait_clock_frames(2)
 
-    stage_app.app.view_controller.frame_rate = 10
+    # use a larger frame rate so we have to drop frames
+    stage_app.app.view_controller.frame_rate = await measure_fps(stage_app) + 10
+    stage_app.app.view_controller.skip_estimated_missed_frames = skip
     stage_app.app.view_controller.use_software_frame_rate = False
     stage_app.app.view_controller.video_mode = quad
 
     stage_app.app.view_controller.pad_to_stage_handshake = False
     stage_app.app.view_controller.request_stage_start(root.name)
-    while stage_app.app.view_controller.stage_active:
-        await stage_app.wait_clock_frames(5)
-    await stage_app.wait_clock_frames(2)
+    await wait_experiment_done(stage_app)
 
     stage_app.app.view_controller.pad_to_stage_handshake = True
     stage_app.app.view_controller.request_stage_start(root.name)
-    while stage_app.app.view_controller.stage_active:
-        await stage_app.wait_clock_frames(5)
-    await stage_app.wait_clock_frames(2)
+    await wait_experiment_done(stage_app)
 
     filename = str(tmp_path / 'pad_stage_ticks.h5')
     stage_app.app.ceed_data.save(filename=filename)
@@ -917,30 +994,51 @@ async def test_pad_stage_ticks(
 
     f.load_experiment('1')
     # sub_frames scales up the handshake since IO is same for each sub-frame
+    # Even skipped frames are logged so size matches
     assert f.shapes_intensity[shape.name].shape == (
         stage_app.app.data_serializer.num_ticks_handshake(16, sub_frames), 4)
     assert f.shapes_intensity[shape.name].shape == (
         stage_app.app.data_serializer.num_ticks_handshake(16, 1) * sub_frames,
         4)
 
-    n = f.shapes_intensity[shape.name].shape[0]
-    assert len(f.rendered_time_index) == len(f.rendered_frame_time)
-    assert sub_frames * len(f.rendered_time_index) == n
-
-    # we didn't stop early so all frames are rendered. Also,
-    # rendered_time_index is zero-based
-    rendered_indices = np.arange(0, n, sub_frames)
-    assert np.all(f.rendered_time_index == rendered_indices)
-
     frame_time_counter = np.asarray(f._block.data_arrays['frame_time_counter'])
+    frame_time = np.asarray(f._block.data_arrays['frame_time'])
+    rendered_frames_bool = f.rendered_frames
+    assert len(frame_time_counter) == len(frame_time)
+    assert np.sum(rendered_frames_bool) == len(frame_time_counter) * sub_frames
+
     frame_counter = np.asarray(f._block.data_arrays['frame_counter'])
-    assert len(frame_time_counter) == len(frame_counter) // sub_frames
-    assert len(rendered_indices) == len(frame_time_counter)
+    n = f.shapes_intensity[shape.name].shape[0]
+    # some frames will have been skipped because of higher frame rate than GPU
+    if skip:
+        assert sub_frames * len(frame_time_counter) < n
+    else:
+        assert sub_frames * len(frame_time_counter) == n
+
+    # we didn't stop early so all frames are rendered
+    rendered_indices = np.arange(0, n, sub_frames)
+    if skip:
+        assert len(frame_time_counter) < len(frame_counter) // sub_frames
+        assert len(rendered_indices) > len(frame_time_counter)
+    else:
+        assert len(frame_time_counter) == len(frame_counter) // sub_frames
+        assert len(rendered_indices) == len(frame_time_counter)
 
     assert np.all(np.arange(1, n + 1) == frame_counter)
     # count recorded is last sub-frame
-    assert np.all(
-        frame_counter[rendered_indices + sub_frames - 1] == frame_time_counter)
+    if skip:
+        assert np.all(
+            np.isin(frame_time_counter, rendered_indices + sub_frames))
+        assert np.all(frame_time_counter[1:] - frame_time_counter[:-1] > 0)
+
+        assert np.all(np.isin(
+            frame_time_counter,
+            frame_counter[rendered_indices + sub_frames - 1]))
+    else:
+        assert np.all(frame_time_counter == rendered_indices + sub_frames)
+        assert np.all(
+            frame_counter[rendered_indices + sub_frames - 1]
+            == frame_time_counter)
 
     f.close_h5()
 

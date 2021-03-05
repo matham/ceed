@@ -496,6 +496,7 @@ class ViewControllerBase(EventDispatcher):
         if self.tick_event:
             raise TypeError('Cannot start new stage while stage is active')
 
+        self.count = 0
         Clock._max_fps = 0
         self._render_first_time = 0.
         self._last_render_times = []
@@ -577,7 +578,6 @@ class ViewControllerBase(EventDispatcher):
 
         self.tick_func = self.tick_event = self.current_canvas = None
         self.shape_views = []
-        self.count = 0
 
         self.serializer_tex = None
         self.serializer = None
@@ -836,7 +836,7 @@ class ViewControllerBase(EventDispatcher):
 
         print(
             self.count // self._n_sub_frames, n_skipped_frames,
-            sum(frame_i) / n, frame_n, sum(range(n)) / n), render_times
+            sum(frame_i) / n, frame_n, sum(range(n)) / n, render_times, start_time)
 
 
 class ViewSideViewControllerBase(ViewControllerBase):

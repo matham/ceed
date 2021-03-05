@@ -107,6 +107,8 @@ class DigitalDataStore:
     data: np.ndarray = None
     '''raw data.
 
+    Only includes rendered frame data. Skipped frames are not included.
+
     maps the values from data at indices_center using the maps at xxx_map
     for each array item and saves it into xxx_data. xxx_map is formed from
     xxx_indices.
@@ -313,6 +315,11 @@ class DigitalDataStore:
         """
         if len(count):
             n_config = int(count[0])
+            # sanity check
+            if n_config > 50:
+                raise AlignmentException(
+                    f'Got too many ({n_config}) handshake numbers')
+
             # it's in little endian so it doesn't need anything special
             # but we need to remove extra bytes given we use 64 bit (the max)
             config = b''.join(
@@ -435,7 +442,9 @@ class MCSDigitalData(DigitalDataStore):
         end = self.data_indices_end
         diff = end - start
         med = np.median(diff)
-        breaks = np.nonzero(diff >= (3 * med))[0]
+        # each experiment is proceeded by 30-50 blank frames, so 10 is safe.
+        # And we should never skip 10+ frames sequentially in a stable system
+        breaks = np.nonzero(diff >= (10 * med))[0]
 
         experiments = self.experiments = defaultdict(list)
         start_i = 0
@@ -494,28 +503,32 @@ class CeedDigitalData(DigitalDataStore):
 
     def parse(
             self, ceed_version, frame_bits: np.ndarray,
-            frame_counter: np.ndarray, start_t: np.ndarray, n_sub_frames: int
+            frame_counter: np.ndarray, start_t: np.ndarray, n_sub_frames: int,
+            rendered_frames: np.ndarray
     ) -> None:
         if ceed_version == '1.0.0.dev0':
             self.parse_data_v1_0_0_dev0(frame_bits)
         else:
-            self.parse_data(frame_bits, frame_counter, start_t, n_sub_frames)
+            self.parse_data(
+                frame_bits, frame_counter, start_t, n_sub_frames,
+                rendered_frames)
 
     def parse_data_v1_0_0_dev0(self, data: np.ndarray) -> None:
         self._parse_components(data)
 
     def parse_data(
             self, frame_bits: np.ndarray, frame_counter: np.ndarray,
-            start_t: np.ndarray, n_sub_frames: int) -> None:
+            start_t: np.ndarray, n_sub_frames: int, rendered_frames: np.ndarray
+    ) -> None:
         # the last frame(s) may or may not have been rendered (e.g. with
         # sub-frames, all the sub-frames may not have been rendered)
         contains_sub_frames = True
-        self._parse_components(frame_bits)
+        self._parse_components(frame_bits[rendered_frames])
 
         # use short counter to see if missing frames
         self.check_missing_frames(
             self.short_count_data, contains_sub_frames, n_sub_frames)
-        # chop of partial ints and get full ints
+        # chop off partial ints and get full ints
         count, count_2d, count_inverted_2d = self.get_count_ints(
             self.count_data, contains_sub_frames, n_sub_frames)
         # get handshake from full ints
@@ -528,7 +541,7 @@ class CeedDigitalData(DigitalDataStore):
 
         self.handshake_data = handshake_data
         self.expected_handshake_len = handshake_len
-        self.counter = frame_counter.copy()
+        self.counter = frame_counter[rendered_frames].copy()
 
 
 class CeedMCSDataMerger:
@@ -644,16 +657,18 @@ class CeedMCSDataMerger:
         try:
             try:
                 config = section.sections['app_config']
-            except KeyError:
-                raise Exception(
+            except KeyError as exc:
+                raise KeyError(
                     'Did not find config in experiment info for experiment {}'.
-                    format(experiment))
+                    format(experiment)) from exc
 
             for prop in config:
                 metadata[prop.name] = yaml_loads(read_nix_prop(prop))
             self.ceed_config_orig = metadata['app_settings']
             # ceed_config_orig must be set to read n_sub_frames
             n_sub_frames = self.n_sub_frames
+            skip = self.ceed_config_orig['view'].get(
+                'skip_estimated_missed_frames', False)
 
             if not block.data_arrays['frame_bits'].shape or \
                     not block.data_arrays['frame_bits'].shape[0]:
@@ -663,12 +678,25 @@ class CeedMCSDataMerger:
             frame_counter = np.asarray(
                 block.data_arrays['frame_counter']).squeeze()
 
+            # rendered_counter is multiples of n_sub_frames, starting from
+            # n_sub_frames. Missed frames don't have number in rendered_counter
             rendered_counter = np.asarray(
                 block.data_arrays['frame_time_counter']).squeeze()
-            if not np.all(
-                    rendered_counter[1:] - rendered_counter[:-1]
-                    == n_sub_frames):
-                raise ValueError('Some frames were not rendered and skipped')
+            if skip:
+                count_indices = np.arange(1, 1 + len(frame_counter))
+                found = rendered_counter[:, np.newaxis] - \
+                    np.arange(n_sub_frames)[np.newaxis, :]
+                found = found.reshape(-1)
+                rendered_frames = np.isin(count_indices, found)
+            else:
+                if not np.all(
+                        rendered_counter == np.arange(
+                            n_sub_frames, len(frame_counter) + 1, n_sub_frames)
+                ):
+                    raise ValueError(
+                        'Some frames were not rendered and skipped')
+
+                rendered_frames = np.ones(len(frame_counter), dtype=np.bool)
 
         except Exception:
             f.close()
@@ -678,7 +706,7 @@ class CeedMCSDataMerger:
 
         self.ceed_data = {
             'frame_bits': frame_bits, 'frame_counter': frame_counter,
-            'start_t': start_t}
+            'start_t': start_t, 'rendered_frames': rendered_frames}
 
     def create_or_reuse_ceed_data_container(self):
         config = self.ceed_config_orig['serializer']
@@ -758,9 +786,21 @@ class CeedMCSDataMerger:
         ceed_ = self.ceed_data_container
         mcs = self.mcs_data_container
         handshake = ceed_.handshake_data
-        if handshake not in mcs.experiments:
+        if not handshake:
             raise AlignmentException(
-                'Cannot find experiment in the MCS parsed data')
+                'Cannot find experiment - no Ceed experiment ID parsed')
+
+        if handshake not in mcs.experiments:
+            if not mcs.experiments:
+                raise AlignmentException(
+                    'Cannot find any experiment in the MCS parsed data')
+
+            while handshake and handshake not in mcs.experiments:
+                handshake = handshake[:-1]
+
+            if not handshake:
+                raise AlignmentException(
+                    'Cannot find experiment in the MCS parsed data')
 
         experiments = mcs.experiments[handshake]
         if len(experiments) != 1:

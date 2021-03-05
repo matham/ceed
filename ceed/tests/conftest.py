@@ -9,6 +9,7 @@ from pytest_trio.enable_trio_mode import \
 pytest.register_assert_rewrite('ceed.tests.test_app.examples')
 
 from kivy.config import Config
+Config.set('graphics', 'vsync', '1')
 Config.set('modules', 'touchring', '')
 
 from ceed.function import FunctionFactoryBase
@@ -83,7 +84,7 @@ def temp_file_sess(tmp_path_factory):
 @pytest.fixture
 async def ceed_app(
         request, trio_kivy_app, temp_file, tmp_path, tmp_path_factory
-) -> AsyncGenerator[CeedTestApp, None, None]:
+) -> AsyncGenerator[CeedTestApp, None]:
     kivy_app = trio_kivy_app
     params = request.param if hasattr(
         request, 'param') and request.param else {}
@@ -120,9 +121,6 @@ async def ceed_app(
         with app_context(tmp_path):
             try:
                 await kivy_app(create_app)
-                kivy_app.app.view_controller.skip_estimated_missed_frames = \
-                    False
-
                 yield kivy_app
             finally:
                 if kivy_app.app is not None:
@@ -217,6 +215,7 @@ async def stage_app(paint_app: CeedTestApp):
     await paint_app.wait_clock_frames(2)
 
     await zoom_screen_out(paint_app)
+    paint_app.app.view_controller.skip_estimated_missed_frames = False
 
     yield paint_app
 

@@ -1,5 +1,4 @@
 import pytest
-import trio
 from math import isclose, ceil
 import numpy as np
 import pathlib
@@ -9,7 +8,7 @@ import ceed
 from .examples.shapes import CircleShapeP1, CircleShapeP2
 from .examples import assert_image_same, create_test_image
 from .examples.experiment import create_basic_experiment, run_experiment, \
-    set_serializer_even_count_bits
+    set_serializer_even_count_bits, wait_experiment_done, measure_fps
 from ceed.tests.ceed_app import CeedTestApp
 from ceed.tests.test_stages import get_stage_time_intensity
 from ceed.analysis.merge_data import CeedMCSDataMerger
@@ -114,9 +113,7 @@ async def run_data_experiment(stage_app: CeedTestApp):
         await stage_app.wait_clock_frames(2)
 
         stage_app.app.view_controller.request_stage_start(root.name)
-        while stage_app.app.view_controller.stage_active:
-            await stage_app.wait_clock_frames(5)
-        await stage_app.wait_clock_frames(2)
+        await wait_experiment_done(stage_app)
 
     for i, image in enumerate(stored_images[2:]):
         stage_app.app.ceed_data.add_image_to_file(image, f'image {i}')
@@ -463,7 +460,8 @@ def test_saved_data(experiment_ceed_filename):
 
             assert d1.shape == (240, 4)
             assert d2.shape == (240, 4)
-            assert len(f.rendered_frame_time) == 240
+            assert len(
+                np.asarray(f._block.data_arrays['frame_time_counter'])) == 240
 
             assert len(np.asarray(f._block.data_arrays['frame_bits'])) == 240
             counter = np.asarray(f._block.data_arrays['frame_counter'])
@@ -712,12 +710,12 @@ async def test_import_h5_stages(
 
 
 @pytest.mark.parametrize('video_mode', ['RGB', 'QUAD4X', 'QUAD12X'])
-@pytest.mark.parametrize('flip', [True, False])
+@pytest.mark.parametrize(
+    'flip,skip', [(True, False), (False, True), (False, False)])
 async def test_serializer_corner_pixel(
-        ceed_app: CeedTestApp, flip, video_mode):
+        stage_app: CeedTestApp, flip, skip, video_mode):
     # for can't use stage_app because that zooms out leading to pixel being too
     # small to see, seemingly
-    stage_app = ceed_app
     from kivy.clock import Clock
     from ceed.function.plugin import ConstFunc
     from ..test_stages import create_2_shape_stage
@@ -739,37 +737,50 @@ async def test_serializer_corner_pixel(
         function_factory=stage_app.app.function_factory, duration=20))
     await stage_app.wait_clock_frames(2)
 
-    stage_app.app.view_controller.frame_rate = 120
+    fps = await measure_fps(stage_app) + 10
+    stage_app.app.view_controller.frame_rate = fps
     stage_app.app.view_controller.use_software_frame_rate = False
+    stage_app.app.view_controller.skip_estimated_missed_frames = skip
     stage_app.app.view_controller.pad_to_stage_handshake = True
     stage_app.app.view_controller.flip_projector = flip
     stage_app.app.view_controller.output_count = True
     stage_app.app.view_controller.video_mode = video_mode
     assert stage_app.app.view_controller.do_quad_mode == (video_mode != 'RGB')
     assert stage_app.app.view_controller.effective_frame_rate == \
-        120 * n_sub_frames
+        fps * n_sub_frames
 
     frame = 0
-    event = None
-    trio_event = trio.Event()
     expected_values = list(zip(counter, short_values, clock_values))
+    clock_or_short = 1 << stage_app.app.data_serializer.clock_idx
+    for i in stage_app.app.data_serializer.short_count_indices:
+        clock_or_short |= 1 << i
 
     def verify_serializer(*largs):
         nonlocal frame
+        # wait to start
+        if not stage_app.app.view_controller.count:
+            return
+
+        # stop when we exhausted predicted frames
         if frame >= len(counter):
-            event.cancel()
-            trio_event.set()
+            stage_app.app.view_controller.request_stage_end()
             return
 
         (r, g, b, a), = stage_app.get_widget_pos_pixel(
             stage_app.app.shape_factory, [(0, 1079)])
         value = r | g << 8 | b << 16
-        if not value and not frame:
-            return
 
         count, short, clock = expected_values[frame]
         print(frame, f'{value:010b}, {count:010b}, {short:010b}, {clock:08b}')
-        assert value == count | short | clock
+
+        if skip:
+            # only count may be different if frames are skipped. Short and clock
+            # are the same even if frames are dropped because corner pixel
+            # values are not skipped
+            assert value & clock_or_short == short | clock
+        else:
+            assert value == count | short | clock
+            assert not stage_app.app.view_controller._n_missed_frames
         frame += 1
 
     event = Clock.create_trigger(verify_serializer, timeout=0, interval=True)
@@ -777,16 +788,16 @@ async def test_serializer_corner_pixel(
     stage_app.app.view_controller.request_stage_start(
         root.name, experiment_uuid=config)
 
-    await trio_event.wait()
-    stage_app.app.view_controller.request_stage_end()
-    event.cancel()
+    await wait_experiment_done(stage_app)
 
     assert frame == len(counter)
 
 
 @pytest.mark.parametrize('video_mode', ['RGB', 'QUAD4X', 'QUAD12X'])
+@pytest.mark.parametrize('skip', [True, False])
 async def test_serializer_saved_data(
-        stage_app: CeedTestApp, tmp_path, video_mode):
+        stage_app: CeedTestApp, tmp_path, video_mode, skip):
+    from kivy.clock import Clock
     from ceed.function.plugin import ConstFunc
     from ..test_stages import create_2_shape_stage
 
@@ -806,21 +817,36 @@ async def test_serializer_saved_data(
     root, s1, s2, shape1, shape2 = create_2_shape_stage(
         stage_app.app.stage_factory, show_in_gui=True, app=stage_app)
     s1.stage.add_func(ConstFunc(
-        function_factory=stage_app.app.function_factory, duration=2))
+        function_factory=stage_app.app.function_factory, duration=4))
     await stage_app.wait_clock_frames(2)
 
-    stage_app.app.view_controller.frame_rate = 120
+    fps = await measure_fps(stage_app) + 10
+    stage_app.app.view_controller.frame_rate = fps
+    stage_app.app.view_controller.skip_estimated_missed_frames = skip
     stage_app.app.view_controller.use_software_frame_rate = False
     stage_app.app.view_controller.pad_to_stage_handshake = True
     stage_app.app.view_controller.output_count = True
     stage_app.app.view_controller.video_mode = video_mode
 
+    flip_counter = []
+    skip_counter = []
+
+    def verify_serializer(*largs):
+        count_val = stage_app.app.view_controller.count
+        if not count_val or not stage_app.app.view_controller.stage_active:
+            return
+
+        for i in range(n_sub_frames - 1, -1, -1):
+            flip_counter.append(count_val - i)
+        skip_counter.append(stage_app.app.view_controller._n_missed_frames)
+
+    event = Clock.create_trigger(verify_serializer, timeout=0, interval=True)
+    event()
     stage_app.app.view_controller.request_stage_start(
         root.name, experiment_uuid=config)
 
-    while stage_app.app.view_controller.stage_active:
-        await stage_app.wait_clock_frames(5)
-    await stage_app.wait_clock_frames(2)
+    await wait_experiment_done(stage_app)
+    event.cancel()
 
     filename = str(tmp_path / 'serializer_data.h5')
     stage_app.app.ceed_data.save(filename=filename)
@@ -832,11 +858,16 @@ async def test_serializer_saved_data(
     merger.parse_ceed_experiment_data()
 
     # logged data is one per frame (where e.g. in 12x each is still a frame)
+    # when skipping, this data doesn't include skipped frames so we don't have
+    # to filter them out here
     raw_data = merger.ceed_data_container.data
     clock_data = merger.ceed_data_container.clock_data
     short_count_data = merger.ceed_data_container.short_count_data
     short_count_max = 2 ** len(
         stage_app.app.data_serializer.short_count_indices)
+    clock_or_short = 1 << stage_app.app.data_serializer.clock_idx
+    for i in stage_app.app.data_serializer.short_count_indices:
+        clock_or_short |= 1 << i
 
     # clock and short count are one-per group of n_sub_frames
     for i, (raw_s, short_s, clock_s) in enumerate(
@@ -845,7 +876,11 @@ async def test_serializer_saved_data(
 
         if root_frame_i < len(expected_values):
             count, short, clock = expected_values[root_frame_i]
-            assert raw_s == count | short | clock
+            if skip:
+                # count may be different if frames are skipped
+                assert raw_s & clock_or_short == short | clock
+            else:
+                assert raw_s == count | short | clock
 
         if root_frame_i % 2:
             assert not clock_s
@@ -855,9 +890,23 @@ async def test_serializer_saved_data(
         assert short_s == root_frame_i % short_count_max
 
     # counter is one per frame, including sub frames
-    assert np.all(merger.ceed_data_container.counter == np.arange(
-        1, 1 + len(raw_data)))
+    n_skipped = sum(skip_counter) * n_sub_frames
+    frame_counter = merger.ceed_data['frame_counter']
+    if skip:
+        assert len(frame_counter) > len(merger.ceed_data_container.counter)
+        # last frame could have been indicted to be skipped, but stage ended
+        assert len(flip_counter) + n_skipped \
+            >= len(merger.ceed_data_container.counter)
+    else:
+        assert len(frame_counter) == len(merger.ceed_data_container.counter)
+        assert np.all(merger.ceed_data_container.counter == np.arange(
+            1, 1 + len(raw_data)))
+        assert not n_skipped
+    assert np.all(
+        merger.ceed_data_container.counter == np.asarray(flip_counter))
 
+    # even when skipping frames, we should have sent enough frames not not cut
+    # off handshake (ideally)
     n_bytes_per_int = stage_app.app.data_serializer.counter_bit_width // 8
     config += b'\0' * (n_bytes_per_int - len(config) % n_bytes_per_int)
     assert merger.ceed_data_container.expected_handshake_len == len(config)
