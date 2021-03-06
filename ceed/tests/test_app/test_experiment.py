@@ -113,7 +113,7 @@ async def run_data_experiment(stage_app: CeedTestApp):
         await stage_app.wait_clock_frames(2)
 
         stage_app.app.view_controller.request_stage_start(root.name)
-        await wait_experiment_done(stage_app)
+        await wait_experiment_done(stage_app, timeout=10 * 60)
 
     for i, image in enumerate(stored_images[2:]):
         stage_app.app.ceed_data.add_image_to_file(image, f'image {i}')
@@ -783,10 +783,10 @@ async def test_serializer_corner_pixel(
             assert not stage_app.app.view_controller._n_missed_frames
         frame += 1
 
-    event = Clock.create_trigger(verify_serializer, timeout=0, interval=True)
-    event()
     stage_app.app.view_controller.request_stage_start(
         root.name, experiment_uuid=config)
+    event = Clock.create_trigger(verify_serializer, timeout=0, interval=True)
+    event()
 
     await wait_experiment_done(stage_app)
 

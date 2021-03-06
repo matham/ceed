@@ -836,7 +836,8 @@ class ViewControllerBase(EventDispatcher):
 
         print(
             self.count // self._n_sub_frames, n_skipped_frames,
-            sum(frame_i) / n, frame_n, sum(range(n)) / n, render_times, start_time)
+            sum(frame_i) / n, frame_n, sum(range(n)) / n, render_times,
+            start_time)
 
 
 class ViewSideViewControllerBase(ViewControllerBase):
