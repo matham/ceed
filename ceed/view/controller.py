@@ -8,6 +8,7 @@ import numpy as np
 from decimal import Decimal
 import os
 import sys
+from heapq import heapify, heappop, heappush, heapreplace
 from fractions import Fraction
 import traceback
 from queue import Empty
@@ -381,6 +382,14 @@ class ViewControllerBase(EventDispatcher):
 
     stage_shape_names: List[str] = []
 
+    _flip_min_heap: List = []
+
+    _flip_max_heap: List = []
+
+    _flip_heap_history: List = []
+
+    _flip_heap_count: int = 0
+
     __events__ = ('on_changed', )
 
     def __init__(self, **kwargs):
@@ -501,6 +510,10 @@ class ViewControllerBase(EventDispatcher):
         self._render_first_time = 0.
         self._last_render_times = []
         self._n_missed_frames = 0
+        self._flip_min_heap = []
+        self._flip_max_heap = []
+        self._flip_heap_history = []
+        self._flip_heap_count = 0
 
         self._n_sub_frames = 1
         if self.video_mode == 'QUAD4X':
@@ -794,6 +807,72 @@ class ViewControllerBase(EventDispatcher):
                     self._debug_frame_buffer_i = i
         return True
 
+    def update_first_render_time(self, render_time):
+        history = self._flip_heap_history
+        frame_rate = self.frame_rate
+        max_heap = self._flip_max_heap
+        min_heap = self._flip_min_heap
+
+        n_frames = round((render_time - self._render_first_time) * frame_rate)
+        new_first_render = render_time - n_frames / frame_rate
+
+        # build up heaps to total 100 items (so it's even)
+        if len(history) < 100:
+            history.append(new_first_render)
+            self._flip_heap_count = (self._flip_heap_count + 1) % 100
+
+            # they can only be one item different
+            if len(max_heap) < len(min_heap):
+                if new_first_render <= min_heap[0]:
+                    heappush(max_heap, -new_first_render)
+                else:
+                    heappush(max_heap, -heapreplace(min_heap, new_first_render))
+                med = (-max_heap[0] + min_heap[0]) / 2
+            elif len(max_heap) == len(min_heap):
+                if new_first_render <= min_heap[0]:
+                    heappush(max_heap, -new_first_render)
+                    med = -max_heap[0]
+                else:
+                    heappush(min_heap, new_first_render)
+                    med = min_heap[0]
+            else:
+                if new_first_render >= -max_heap[0]:
+                    heappush(min_heap, new_first_render)
+                else:
+                    heappush(
+                        min_heap, -heapreplace(max_heap, -new_first_render))
+                med = (-max_heap[0] + min_heap[0]) / 2
+        else:
+            # same # items on each heap
+            med = (-max_heap[0] + min_heap[0]) / 2
+
+            oldest_val = history[self._flip_heap_count]
+            history[self._flip_heap_count] = new_first_render
+            self._flip_heap_count = (self._flip_heap_count + 1) % 100
+
+            if oldest_val < min_heap[0]:
+                i = max_heap.index(-oldest_val)
+                if new_first_render <= min_heap[0]:
+                    # replace oldest value with new value
+                    max_heap[i] = -new_first_render
+                else:
+                    # remove oldest from max, replace with min
+                    max_heap[i] = -heapreplace(min_heap, new_first_render)
+                heapify(max_heap)
+            else:
+                i = min_heap.index(oldest_val)
+                if new_first_render >= -max_heap[0]:
+                    # replace oldest value with new value
+                    min_heap[i] = new_first_render
+                else:
+                    # remove oldest from min, replace with max
+                    min_heap[i] = -heapreplace(max_heap, -new_first_render)
+                heapify(min_heap)
+
+            assert len(min_heap) == len(max_heap)
+
+        self._render_first_time = med
+
     def estimate_render_time(self):
         """Called after warmup to estimate period and start time.
         """
@@ -811,15 +890,29 @@ class ViewControllerBase(EventDispatcher):
         # reset for skip detection
         self._last_render_times = []
 
+        end_times = np.sort(end_time).tolist()
+        max_heap = [-v for v in end_times[:len(end_times) // 2]]
+        min_heap = end_times[len(end_times) // 2:]
+        heapify(max_heap)
+        heapify(min_heap)
+
+        self._flip_max_heap = max_heap
+        self._flip_min_heap = min_heap
+        self._flip_heap_history = end_time.tolist()
+        self._flip_heap_count = len(self._flip_heap_history)
+
     def estimate_missed_frames(self, render_time):
         """Estimates number of missed frames during experiment, after warmup.
         """
+        self.update_first_render_time(render_time)
+
         n = self.skip_detection_smoothing_n_frames
         render_times = self._last_render_times
         render_times.append(render_time)
 
         n_ = len(render_times)
         if n_ < n:
+            # make sure we have enough frame history times
             return
         if n_ > n:
             # remove oldest time
@@ -834,10 +927,11 @@ class ViewControllerBase(EventDispatcher):
         n_skipped_frames = int(sum(frame_i) / n - frame_n - sum(range(n)) / n)
         self._n_missed_frames = max(0, n_skipped_frames)
 
-        print(
-            self.count // self._n_sub_frames, n_skipped_frames,
-            sum(frame_i) / n, frame_n, sum(range(n)) / n, render_times,
-            start_time)
+        if n_skipped_frames:
+            print(
+                self.count // self._n_sub_frames, n_skipped_frames,
+                sum(frame_i) / n, frame_n, sum(range(n)) / n, render_times,
+                start_time)
 
 
 class ViewSideViewControllerBase(ViewControllerBase):
