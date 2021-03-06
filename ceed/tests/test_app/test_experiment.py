@@ -709,6 +709,7 @@ async def test_import_h5_stages(
     verify_experiment(values, n, False)
 
 
+@pytest.mark.ceed_single_pixel
 @pytest.mark.parametrize('video_mode', ['RGB', 'QUAD4X', 'QUAD12X'])
 @pytest.mark.parametrize(
     'flip,skip', [(True, False), (False, True), (False, False)])

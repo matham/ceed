@@ -129,7 +129,7 @@ jobs:
       with:
         files: packaging/dist/*
     - name: Test with pytest
-      run: python -m pytest --cov=ceed --cov-report term --cov-branch ceed/tests
+      run: python -m pytest --cov=ceed --cov-report term --cov-branch --ceed-no-single-pixel ceed/tests
 
   docs:
     runs-on: ubuntu-18.04

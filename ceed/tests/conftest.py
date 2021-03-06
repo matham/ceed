@@ -28,23 +28,38 @@ def pytest_addoption(parser):
         default=False,
         help='Whether to skip tests that test the GUI app.',
     )
+    parser.addoption(
+        "--ceed-no-single-pixel",
+        action="store_true",
+        default=False,
+        help='Whether to skip tests that require GL backend that can render '
+             'single pixel accurately.',
+    )
 
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "ceed_app: mark test requires gui app")
+    config.addinivalue_line(
+        "markers", "ceed_single_pixel: mark test requires GL backend that "
+                   "accurately renders single pixels")
 
 
 def pytest_collection_modifyitems(config, items):
     trio_pytest_collection_modifyitems(items)
 
-    if not config.getoption("--ceed-skip-app"):
-        # --ceed-skip-app not given in cli: don't skip gui app tests
-        return
+    if config.getoption("--ceed-skip-app"):
+        # --ceed-skip-app given in cli: skip gui app tests
+        skip_ceed_app = pytest.mark.skip(reason="provided --ceed-skip-app")
+        for item in items:
+            if "ceed_app" in item.keywords:
+                item.add_marker(skip_ceed_app)
 
-    skip_ceed_app = pytest.mark.skip(reason="provided --ceed-skip-app")
-    for item in items:
-        if "ceed_app" in item.keywords:
-            item.add_marker(skip_ceed_app)
+    if config.getoption("--ceed-no-single-pixel"):
+        # --ceed-no-single-pixel in cli: skip single pixel tests
+        pixel = pytest.mark.skip(reason="provided --ceed-no-single-pixel")
+        for item in items:
+            if "ceed_single_pixel" in item.keywords:
+                item.add_marker(pixel)
 
 
 def pytest_fixture_setup(fixturedef, request):
