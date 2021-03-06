@@ -369,6 +369,10 @@ class ViewControllerBase(EventDispatcher):
 
     _last_render_times: List[float] = []
 
+    _last_render_times_i: int = 0
+
+    _smoothing_frame_growth: float = 0.
+
     _render_first_time: float = 0.
     """The time that the first experiment frame was expected to be rendered,
     given the warmup frames.
@@ -509,11 +513,13 @@ class ViewControllerBase(EventDispatcher):
         Clock._max_fps = 0
         self._render_first_time = 0.
         self._last_render_times = []
+        self._last_render_times_i = 0
         self._n_missed_frames = 0
         self._flip_min_heap = []
         self._flip_max_heap = []
         self._flip_heap_history = []
         self._flip_heap_count = 0
+        self._smoothing_frame_growth = 0
 
         self._n_sub_frames = 1
         if self.video_mode == 'QUAD4X':
@@ -889,6 +895,7 @@ class ViewControllerBase(EventDispatcher):
         self._render_first_time = float(np.median(end_time))
         # reset for skip detection
         self._last_render_times = []
+        self._last_render_times_i = 0
 
         end_times = np.sort(end_time).tolist()
         max_heap = [-v for v in end_times[:len(end_times) // 2]]
@@ -901,6 +908,12 @@ class ViewControllerBase(EventDispatcher):
         self._flip_heap_history = end_time.tolist()
         self._flip_heap_count = len(self._flip_heap_history)
 
+        n = self.skip_detection_smoothing_n_frames
+        if n:
+            self._smoothing_frame_growth = sum(range(n)) / n
+        else:
+            self._smoothing_frame_growth = 0
+
     def estimate_missed_frames(self, render_time):
         """Estimates number of missed frames during experiment, after warmup.
         """
@@ -908,15 +921,14 @@ class ViewControllerBase(EventDispatcher):
 
         n = self.skip_detection_smoothing_n_frames
         render_times = self._last_render_times
-        render_times.append(render_time)
 
         n_ = len(render_times)
         if n_ < n:
             # make sure we have enough frame history times
+            render_times.append(render_time)
             return
-        if n_ > n:
-            # remove oldest time
-            del render_times[0]
+        render_times[self._last_render_times_i] = render_time
+        self._last_render_times_i = (self._last_render_times_i + 1) % n
 
         # frame number of the first frame in render_times
         frame_n = self.count // self._n_sub_frames - n
@@ -924,7 +936,8 @@ class ViewControllerBase(EventDispatcher):
         period = 1 / self.frame_rate
         frame_i = [(t - start_time) / period for t in render_times]
         # number of frames above expected number of frames. Round down
-        n_skipped_frames = int(sum(frame_i) / n - frame_n - sum(range(n)) / n)
+        n_skipped_frames = int(
+            sum(frame_i) / n - frame_n - self._smoothing_frame_growth)
         self._n_missed_frames = max(0, n_skipped_frames)
 
         if n_skipped_frames:

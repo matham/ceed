@@ -664,7 +664,10 @@ async def test_recursive_play_stage_intensity(
         # total frames is a multiple of n_sub_frames
         if not stage_app.app.view_controller.stage_active:
             assert stage_app.app.view_controller.count - 1 == num_frames
-            if not skip:
+            if skip:
+                # last frame could be passed actual frames
+                assert frame - n_missed_frames * n_sub_frames <= num_frames
+            else:
                 assert frame == num_frames
             event.cancel()
             return

@@ -910,5 +910,13 @@ async def test_serializer_saved_data(
     # off handshake (ideally)
     n_bytes_per_int = stage_app.app.data_serializer.counter_bit_width // 8
     config += b'\0' * (n_bytes_per_int - len(config) % n_bytes_per_int)
-    assert merger.ceed_data_container.expected_handshake_len == len(config)
-    assert merger.ceed_data_container.handshake_data == config
+    if skip:
+        # can't assume message was sent full in case of dropped frames
+        if merger.ceed_data_container.handshake_data:
+            assert merger.ceed_data_container.expected_handshake_len \
+                == len(config)
+        assert 0 <= merger.ceed_data_container.expected_handshake_len <= 50
+        assert config.startswith(merger.ceed_data_container.handshake_data)
+    else:
+        assert merger.ceed_data_container.expected_handshake_len == len(config)
+        assert merger.ceed_data_container.handshake_data == config
