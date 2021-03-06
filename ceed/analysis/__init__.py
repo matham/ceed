@@ -137,9 +137,17 @@ class CeedDataReader:
     shapes_intensity_rendered: Dict[str, np.ndarray] = {}
 
     rendered_frames: np.ndarray = None
-    """Once set in :meth:`load_experiment` it is a 1D array containing the
-    indices in :attr:`shapes_intensity` that correspond to the time points in
-    :attr:`rendered_frame_time`.
+    """Once set in :meth:`load_experiment` it is a 1D mask array for
+    :attr:`shapes_intensity` indicating which frames were rendered.
+    """
+
+    rendered_frames_long: Optional[np.ndarray] = None
+    """Once set in :meth:`load_experiment` it is a 1D mask array for
+    :attr:`shapes_intensity_rendered` indicating which of the rendered frames
+    took longer than one frame.
+
+    It's None when :attr:`electrode_intensity_alignment` is None. If there are
+    too many long frames it may not be accurate.
     """
 
     led_state: np.ndarray = None
@@ -509,12 +517,22 @@ class CeedDataReader:
         if ('ceed_mcs_alignment' in self._nix_file.blocks and
                 'experiment_{}'.format(experiment) in
                 self._nix_file.blocks['ceed_mcs_alignment'].data_arrays):
-            self.electrode_intensity_alignment = np.asarray(
+            alignment = self.electrode_intensity_alignment = np.asarray(
                 self._nix_file.blocks[
                     'ceed_mcs_alignment'].data_arrays[
                     'experiment_{}'.format(experiment)])
+            long_frames = self.rendered_frames_long = np.empty(
+                len(alignment), dtype=np.bool)
+
+            if len(alignment) >= 2:
+                diff = alignment[1:] - alignment[:-1]
+                long_frames[:-1] = diff >= 1.5 * np.median(diff)
+                long_frames[-1] = 0
+            else:
+                long_frames[:] = 0
         else:
             self.electrode_intensity_alignment = None
+            self.rendered_frames_long = None
 
     def load_mcs_data(self):
         if self.electrodes_data:  # already loaded
