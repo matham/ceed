@@ -122,15 +122,21 @@ def get_plugin_modules(
         directory_mod = '.'.join((base_package,) + relative_dir.parts)
         for item in directory.iterdir():
             if item.is_dir():
-                fifo.append(item)
+                if not item.name == '__pycache__':
+                    fifo.append(item)
                 continue
 
-            if not item.is_file() or not item.name.endswith('.py'):
+            if not item.is_file() or not item.name.endswith(('.py', '.pyo')):
+                continue
+
+            # only pick one of pyo/py
+            if item.suffix == '.pyo' and item.with_suffix('.py').exists():
                 continue
 
             files.append(
                 (relative_dir.parts + (item.name, ), item.read_bytes()))
-            if item.name.startswith('_') and item.name != '__init__.py':
+            if item.name.startswith('_') and item.name != '__init__.py' \
+                    and item.name != '__init__.pyo':
                 continue
 
             name = item.name[:-3]
