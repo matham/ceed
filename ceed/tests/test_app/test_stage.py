@@ -635,6 +635,7 @@ async def test_recursive_play_stage_intensity(
     stage_app.app.view_controller.flip_projector = flip
     stage_app.app.view_controller.skip_estimated_missed_frames = skip
     stage_app.app.view_controller.video_mode = video_mode
+    stage_app.app.view_controller.pad_to_stage_handshake = False
 
     n_sub_frames = 1
     if video_mode == 'QUAD4X':
