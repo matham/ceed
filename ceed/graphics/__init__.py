@@ -72,7 +72,7 @@ class ShowMoreBehavior(object):
         self._show_more()
 
     def _show_more(self, *largs):
-        if not self.more:
+        if self.more is None:
             return
 
         if self.show_more and self.more not in self.children:

@@ -86,7 +86,7 @@
     height: self.minimum_height
     size_hint_min_x: self.minimum_width
     is_visible: self.parent is not None and self.parent.is_visible
-    more: more
+    more: more.__self__
     show_more: expand.is_open
     expand_widget: expand
     BoxSelector:
