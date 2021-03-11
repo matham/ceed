@@ -18,8 +18,6 @@ import McsPy.McsData
 import numpy as np
 import nixio as nix
 from more_kivy_app.utils import yaml_dumps, yaml_loads
-from ceed.storage.controller import num_ticks_handshake, \
-    num_ticks_handshake_1_0_0_dev0
 
 __all__ = ('CeedMCSDataMerger', 'DigitalDataStore', 'MCSDigitalData',
            'CeedDigitalData', 'AlignmentException')
@@ -450,6 +448,10 @@ class MCSDigitalData(DigitalDataStore):
         start_i = 0
         for break_i in breaks:
             s = start_i
+            # the long frame is included in last experiment. If long frame is
+            # clock low, first frame of next exp is high. If it's high, clock
+            # goes low for some frames and then high, so high frame will be
+            # first short frame
             e = break_i + 1
             # get section of this possible experiment
             count_data = count_data_full[s:e]
@@ -494,7 +496,9 @@ class MCSDigitalData(DigitalDataStore):
                 continue
 
             # the last count or handshake value could be spurious, but then it
-            # won't match, which is ok because we need the full handshake
+            # won't match, which is ok because we need the full handshake and
+            # when searching for handshake we anyway chop of end until empty
+            # or found
             experiments[handshake_data].append((
                 start[s:e], end[s:e], handshake_len, count_data, count))
 
@@ -824,17 +828,19 @@ class CeedMCSDataMerger:
         n_ceed = len(ceed_count_data_main_frames)
         n_mcs = len(count_data)
         assert n_mcs
-        if n_mcs < n_ceed - 1 or n_mcs > n_ceed:
-            raise AlignmentException(
-                'Unable to match counter data from ceed to MCS')
 
-        if n_mcs == n_ceed and \
-                ceed_count_data_main_frames[-1] != count_data[-1]:
-            # last frame could be spurious. In false case, last frame must be
-            # correct because only the last ceed frame may be skipped
+        if n_mcs < n_ceed:
+            raise AlignmentException(
+                'MCS missed some ceed frames, cannot align')
+        if n_mcs > n_ceed + 1:
+            raise AlignmentException(
+                'MCS read frames that ceed did not send, cannot align')
+
+        if n_mcs != n_ceed:
+            # last frame could be spurious on the mcs side
             n_mcs -= 1
 
-        ceed_count_data_main_frames = ceed_count_data_main_frames[:n_mcs]
+        count_data = count_data[:n_mcs]
         if not np.all(ceed_count_data_main_frames == count_data):
             raise AlignmentException(
                 'Counter data itemds does not match between Ceed and MCS')
@@ -886,6 +892,12 @@ class CeedMCSDataMerger:
             return mcs_indices
 
         raise AlignmentException('Could not align the data')
+
+    def estimate_skipped_frames(self, ceed_mcs_alignment):
+        from ceed.analysis import CeedDataReader
+        return CeedDataReader.compute_long_and_skipped_frames(
+            self.n_sub_frames, self.ceed_data['rendered_frames'],
+            ceed_mcs_alignment)
 
     def merge_data(
             self, filename, alignment_indices, notes='', notes_filename=None):
@@ -999,10 +1011,16 @@ if __name__ == '__main__':
 
         try:
             align = alignment[experiment] = merger.get_alignment()
+            mcs_long_frames, mcs_frame_len, ceed_skipped, ceed_skipped_main = \
+                merger.estimate_skipped_frames(align)
+            main_skipped = len(ceed_skipped_main)
+            skipped = len(ceed_skipped)
+
             print(
-                'Aligned MCS and ceed data for experiment {} at MCS samples '
-                '[{} - {}] ({} frames)'.format(
-                    experiment, align[0], align[-1], len(align)))
+                f'Aligned MCS and ceed data for experiment {experiment: >2} at '
+                f'MCS samples [{align[0]: 10} - {align[-1]: 10}] '
+                f'({len(align): 7} frames). {skipped: 3} ({main_skipped: 2}) '
+                f'frames skipped')
         except Exception as e:
             print(
                 "Couldn't align MCS and ceed data for experiment "

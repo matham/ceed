@@ -583,6 +583,36 @@ class CeedDataReader:
             float(metadata['ConversionFactor']) *
             10. ** float(metadata['Exponent']))
 
+    def estimate_skipped_frames(self):
+        n_sub_frames = 1
+        if self.view_controller.video_mode == 'QUAD4X':
+            n_sub_frames = 4
+        elif self.view_controller.video_mode == 'QUAD12X':
+            n_sub_frames = 12
+        return self.compute_long_and_skipped_frames(
+            n_sub_frames, self.rendered_frames,
+            self.electrode_intensity_alignment)
+
+    @staticmethod
+    def compute_long_and_skipped_frames(
+            n_sub_frames, rendered_frames, ceed_mcs_alignment):
+        ceed_frames = np.logical_not(rendered_frames)
+        ceed_skipped = np.arange(len(ceed_frames))[ceed_frames]
+
+        ceed_frames = ceed_frames[::n_sub_frames]
+        indices = np.arange(len(ceed_frames))
+        ceed_skipped_main = indices[ceed_frames]
+
+        alignment = ceed_mcs_alignment[::n_sub_frames]
+        diff = alignment[1:] - alignment[:-1]
+        mcs_frame_len = np.round(diff / np.median(diff))
+        long_frames = mcs_frame_len > 1
+        mcs_long_frames = indices[
+            np.logical_not(ceed_frames)][:-1][long_frames]
+        mcs_frame_len = mcs_frame_len[long_frames]
+
+        return mcs_long_frames, mcs_frame_len, ceed_skipped, ceed_skipped_main
+
     @staticmethod
     def _show_image(
             config, img, scale=None, translation=None,
@@ -1162,26 +1192,24 @@ class CeedDataReader:
 
 
 if __name__ == '__main__':
-    f = CeedDataReader(r'e:\ceed_merged.h5')
-    f.open_h5()
-    f.load_mcs_data()
+    with CeedDataReader('/home/cpl/Desktop/ceed_mcs_merged.h5') as f:
+        f.load_mcs_data()
 
-    print('Found experiments: {}. Number of saved images are: {}'.format(
-        f.experiments_in_file, f.num_images_in_file))
+        print('Found experiments: {}. Number of saved images are: {}'.format(
+            f.experiments_in_file, f.num_images_in_file))
 
-    f.load_experiment(2)
-    # f.save_image(
-    #     r'/home/cpl/Desktop/test_out.bmp', f.experiment_cam_image)
+        f.load_experiment(0)
+        # f.save_image(
+        #     r'/home/cpl/Desktop/test_out.bmp', f.experiment_cam_image)
 
-    f.generate_movie(
-        r'E:\est_merged_electrodes2.mp4', lum=3, canvas_size_hint=(2, 1),
-        speed=1., end=1,
-        paint_funcs=[
-            f.paint_background_image(
-                f.experiment_cam_image,
-                transform_matrix=f.view_controller.cam_transform),
-            f.show_mea_outline(f.view_controller.mea_transform),
-            f.paint_electrodes_data_callbacks(
-                f.get_electrode_names(), draw_pos_hint=(1, 0), volt_axis=50)]
-    )
-    f.close_h5()
+        f.generate_movie(
+            '/home/cpl/Desktop/test_out.mp4', lum=3, canvas_size_hint=(2, 1),
+            speed=1., end=1,
+            paint_funcs=[
+                f.paint_background_image(
+                    f.experiment_cam_image,
+                    transform_matrix=f.view_controller.cam_transform),
+                f.show_mea_outline(f.view_controller.mea_transform),
+                f.paint_electrodes_data_callbacks(
+                    f.get_electrode_names(), draw_pos_hint=(1, 0), volt_axis=50)]
+        )
