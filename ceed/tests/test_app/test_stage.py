@@ -983,7 +983,7 @@ async def test_pad_stage_ticks(
 
     stage_app.app.view_controller.pad_to_stage_handshake = True
     stage_app.app.view_controller.request_stage_start(root.name)
-    await wait_experiment_done(stage_app)
+    await wait_experiment_done(stage_app, 300)
 
     filename = str(tmp_path / 'pad_stage_ticks.h5')
     stage_app.app.ceed_data.save(filename=filename)

@@ -227,7 +227,7 @@ view:
   screen_height: 1080
   screen_offset_x: 0
   screen_width: 1920
-  skip_detection_smoothing_n_frames: 3
+  skip_detection_smoothing_n_frames: 4
   skip_estimated_missed_frames: true
   use_software_frame_rate: false
   video_mode: RGB

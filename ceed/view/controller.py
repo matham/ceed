@@ -480,7 +480,7 @@ class ViewControllerBase(EventDispatcher):
     It is read only and automatically computed.
     '''
 
-    skip_detection_smoothing_n_frames: int = 3
+    skip_detection_smoothing_n_frames: int = 4
 
     _cpu_stats = {'last_call_t': 0., 'count': 0, 'tstart': 0.}
 

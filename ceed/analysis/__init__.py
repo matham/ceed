@@ -1211,5 +1211,6 @@ if __name__ == '__main__':
                     transform_matrix=f.view_controller.cam_transform),
                 f.show_mea_outline(f.view_controller.mea_transform),
                 f.paint_electrodes_data_callbacks(
-                    f.get_electrode_names(), draw_pos_hint=(1, 0), volt_axis=50)]
+                    f.get_electrode_names(), draw_pos_hint=(1, 0),
+                    volt_axis=50)]
         )
