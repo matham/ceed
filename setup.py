@@ -26,7 +26,8 @@ setup(
         'psutil', 'nixio==1.4.9', 'tqdm', 'scipy', 'kivy_garden.graph~=0.4.0',
         'kivy_garden.collider~=0.1.0',
         'McsPyDataTools', 'kivy_garden.drag_n_drop~=0.1.0',
-        'kivy_garden.painter~=0.2.0', 'trio', 'cpl_media', 'tree-config'],
+        'kivy_garden.painter~=0.2.0', 'trio', 'cpl_media', 'tree-config',
+        'pyusb'],
     extras_require={
         'dev': ['pytest>=3.6', 'pytest-cov', 'flake8', 'sphinx-rtd-theme',
                 'coveralls', 'trio', 'pytest-trio', 'pyinstaller',

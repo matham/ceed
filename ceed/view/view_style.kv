@@ -305,3 +305,11 @@
                 text: 'true' if app.view_controller.pre_compute_stages else 'false'
                 state: 'down' if app.view_controller.pre_compute_stages else 'normal'
                 on_state: app.view_controller.pre_compute_stages = self.state == 'down'
+            ThemedLabel:
+                size_hint: None, None
+                size: self.texture_size
+                text: 'Use Teensy'
+            LightThemedToggleButton:
+                text: 'true' if app.view_controller.teensy_frame_estimation.use_teensy else 'false'
+                state: 'down' if app.view_controller.teensy_frame_estimation.use_teensy else 'normal'
+                on_state: app.view_controller.teensy_frame_estimation.use_teensy = self.state == 'down'

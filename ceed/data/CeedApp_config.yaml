@@ -194,6 +194,8 @@ view:
   experiment_uuid: !!binary ""
   flip_camera: false
   flip_projector: true
+  frame_estimation:
+    skip_detection_smoothing_n_frames: 4
   frame_rate: 119.96
   frame_rate_denominator: 25
   frame_rate_numerator: 2999
@@ -227,7 +229,10 @@ view:
   screen_height: 1080
   screen_offset_x: 0
   screen_width: 1920
-  skip_detection_smoothing_n_frames: 4
   skip_estimated_missed_frames: true
+  teensy_frame_estimation:
+    usb_product_id: 1158
+    usb_vendor_id: 5824
+    use_teensy: true
   use_software_frame_rate: false
   video_mode: RGB

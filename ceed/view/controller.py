@@ -14,7 +14,11 @@ import traceback
 from queue import Empty
 import uuid
 from typing import Optional, Dict, List
+from threading import Thread
 from tree_config import get_config_children_names
+import usb.core
+import usb.util
+from usb.core import Device as USBDevice, Endpoint
 
 from kivy.event import EventDispatcher
 from kivy.properties import NumericProperty, StringProperty, BooleanProperty, \
@@ -42,13 +46,17 @@ except ImportError:
     libdpx = PROPixx = PROPixxCTRL = None
 
 __all__ = (
-    'FrameEstimation', 'ViewControllerBase', 'ViewSideViewControllerBase',
-    'view_process_enter', 'ControllerSideViewControllerBase')
+    'FrameEstimation', 'TeensyFrameEstimation', 'ViewControllerBase',
+    'ViewSideViewControllerBase', 'view_process_enter',
+    'ControllerSideViewControllerBase'
+)
 
 _get_app = App.get_running_app
 
 
 class FrameEstimation:
+
+    _config_props_ = ('skip_detection_smoothing_n_frames', )
 
     min_heap: List = []
 
@@ -64,9 +72,7 @@ class FrameEstimation:
 
     render_times: List[float] = []
 
-    render_times_i: int = 0
-
-    skip_detection_smoothing_n_frames: int = 0
+    skip_detection_smoothing_n_frames: int = 4
 
     smoothing_frame_growth: float = 0.
 
@@ -75,10 +81,9 @@ class FrameEstimation:
     given the warmup frames.
     """
 
-    def __init__(
-            self, frame_rate: float, skip_detection_smoothing_n_frames: int,
-            render_times: List[float]):
+    def reset(self, frame_rate: float, render_times: List[float]):
         self.frame_rate = frame_rate
+        n = self.skip_detection_smoothing_n_frames
         times = np.asarray(render_times)
 
         # estimate number of frames between each render and first (expected)
@@ -89,9 +94,9 @@ class FrameEstimation:
         end_time = times[:-1] + n_frames / frame_rate
 
         self.first_frame_time = float(np.median(end_time))
-        # reset for skip detection
-        self.render_times = []
-        self.last_render_times_i = 0
+        # reset for skip detection. Last item will be first real frame
+        self.render_times = render_times[-n + 1:] + [-1, ]
+        self.last_render_times_i = n - 1
 
         end_times = np.sort(end_time).tolist()
         max_heap = [-v for v in end_times[:len(end_times) // 2]]
@@ -104,8 +109,6 @@ class FrameEstimation:
         self.history = end_time.tolist()
         self.count = len(self.history)
 
-        n = skip_detection_smoothing_n_frames
-        self.skip_detection_smoothing_n_frames = n
         if n:
             self.smoothing_frame_growth = sum(range(n)) / n
         else:
@@ -185,11 +188,6 @@ class FrameEstimation:
         n = self.skip_detection_smoothing_n_frames
         render_times = self.render_times
 
-        n_ = len(render_times)
-        if n_ < n:
-            # make sure we have enough frame history times
-            render_times.append(render_time)
-            return 0
         render_times[self.last_render_times_i] = render_time
         self.last_render_times_i = (self.last_render_times_i + 1) % n
 
@@ -204,6 +202,133 @@ class FrameEstimation:
         n_missed_frames = max(0, n_skipped_frames)
 
         return n_missed_frames
+
+
+class TeensyFrameEstimation(EventDispatcher):
+
+    _config_props_ = ('usb_vendor_id', 'usb_product_id', 'use_teensy')
+
+    usb_vendor_id: int = 0x16C0
+
+    usb_product_id: int = 0x0486
+
+    use_teensy = BooleanProperty(True)
+
+    is_available = False
+
+    _magic_header = b'\xAB\xBC\xCD\xDF'
+
+    _start_exp_msg = _magic_header + b'\x01' + b'\x00' * 59
+
+    _end_exp_msg = _magic_header + b'\x02' + b'\x00' * 59
+
+    usb_device: Optional[USBDevice] = None
+
+    endpoint_out: Optional[Endpoint] = None
+
+    endpoint_in: Optional[Endpoint] = None
+
+    _stop_thread = False
+
+    _thread: Optional[Thread] = None
+
+    total_skipped_frames: int = 0
+
+    def _endpoint_filter(self, endpoint_type):
+        def filt(endpoint):
+            return usb.util.endpoint_direction(endpoint.bEndpointAddress) == \
+                endpoint_type
+
+        return filt
+
+    @app_error
+    def configure_device(self):
+        """This is only called on the viewer side, not in the main app.
+        """
+        self.is_available = False
+        if not self.use_teensy:
+            return
+
+        self.usb_device = dev = usb.core.find(
+            idVendor=self.usb_vendor_id, idProduct=self.usb_product_id)
+        if dev is None:
+            raise ValueError(
+                'Teensy USB device not found, falling back to time based '
+                'missed frame detection')
+
+        # use default/first config
+        dev.set_configuration()
+        configuration = dev.get_active_configuration()
+        interface = configuration[(0, 0)]
+
+        # match the first OUT endpoint
+        self.endpoint_out = endpoint_out = usb.util.find_descriptor(
+            interface,
+            custom_match=self._endpoint_filter(usb.util.ENDPOINT_OUT))
+
+        # match the first IN endpoint
+        self.endpoint_in = usb.util.find_descriptor(
+            interface, custom_match=self._endpoint_filter(usb.util.ENDPOINT_IN))
+
+        endpoint_out.write(self._end_exp_msg)
+        self.is_available = True
+
+    def release_device(self):
+        if self.usb_device is not None:
+            usb.util.dispose_resources(self.usb_device)
+            self.usb_device = None
+            self.endpoint_in = self.endpoint_out = None
+
+    def start_estimation(self, frame_rate):
+        if frame_rate != 119.96:
+            raise ValueError(
+                f'Tried to start teensy with a screen frame rate of '
+                f'{frame_rate}, but teensy assumes a frame rate of 119.96 Hz')
+
+        if self._thread is not None:
+            raise TypeError('Cannot start while already running')
+
+        self._stop_thread = False
+        self.total_skipped_frames = 0
+        self._thread = Thread(target=self._thread_run)
+
+        # reset teensy and start
+        endpoint_out = self.endpoint_out
+        endpoint_out.write(self._end_exp_msg)
+        endpoint_out.write(self._start_exp_msg)
+
+        self._thread.start()
+
+    @app_error
+    def _thread_run(self):
+        endpoint_in = self.endpoint_in
+        m1, m2, m3, m4 = self._magic_header
+
+        while not self._stop_thread:
+            arr = endpoint_in.read(64)
+            h1, h2, h3, h4, flag, value, b, c, d = arr[:9]
+
+            if h1 != m1 or h2 != m2 or h3 != m3 or h4 != m4:
+                raise ValueError('USB packet magic number corrupted')
+            if flag != 0x02:
+                # not a counter packet
+                continue
+
+            value |= b << 8
+            value |= c << 16
+            value |= d << 24
+            self.total_skipped_frames = value
+
+        # stop teensy sending packets
+        self.endpoint_out.write(self._end_exp_msg)
+
+    def stop_estimation(self):
+        if self._thread is None:
+            return
+
+        self._stop_thread = True
+        self._thread.join()
+        self._thread = None
 
 
 class ViewControllerBase(EventDispatcher):
@@ -247,8 +372,13 @@ class ViewControllerBase(EventDispatcher):
         'flip_projector', 'flip_camera', 'pad_to_stage_handshake',
         'pre_compute_stages', 'experiment_uuid', 'log_debug_timing',
         'skip_estimated_missed_frames', 'frame_rate_numerator',
-        'frame_rate_denominator', 'skip_detection_smoothing_n_frames'
+        'frame_rate_denominator',
     )
+
+    _config_children_ = {
+        'frame_estimation': 'frame_estimation',
+        'teensy_frame_estimation': 'teensy_frame_estimation',
+    }
 
     screen_width = NumericProperty(1920)
     '''The screen width on which the data is played. This is the full-screen
@@ -480,8 +610,6 @@ class ViewControllerBase(EventDispatcher):
     It is read only and automatically computed.
     '''
 
-    skip_detection_smoothing_n_frames: int = 4
-
     _cpu_stats = {'last_call_t': 0., 'count': 0, 'tstart': 0.}
 
     _flip_stats = {'last_call_t': 0., 'count': 0, 'tstart': 0.}
@@ -529,11 +657,15 @@ class ViewControllerBase(EventDispatcher):
     """Estimated number of frames missed during the last render.
     """
 
+    _total_missed_frames: int = 0
+
     _n_sub_frames = 1
 
     stage_shape_names: List[str] = []
 
-    frame_estimation: Optional[FrameEstimation] = None
+    frame_estimation: FrameEstimation = None
+
+    teensy_frame_estimation: TeensyFrameEstimation = None
 
     _warmup_render_times: List[float] = []
 
@@ -545,6 +677,8 @@ class ViewControllerBase(EventDispatcher):
             self.fbind(name, self.dispatch, 'on_changed')
         self.propixx_lib = libdpx is not None
         self.shape_views = []
+        self.frame_estimation = FrameEstimation()
+        self.teensy_frame_estimation = TeensyFrameEstimation()
 
     def _restore_cam_pos(self):
         if self._scheduled_pos_restore:
@@ -654,9 +788,9 @@ class ViewControllerBase(EventDispatcher):
 
         self.count = 0
         Clock._max_fps = 0
-        self.frame_estimation = None
         self._warmup_render_times = []
         self._n_missed_frames = 0
+        self._total_missed_frames = 0
 
         self._n_sub_frames = 1
         if self.video_mode == 'QUAD4X':
@@ -775,10 +909,8 @@ class ViewControllerBase(EventDispatcher):
         # warmup period done, estimate params after first post-warmup frame
         if not self.count and self.skip_estimated_missed_frames \
                 and not self.use_software_frame_rate:
-            n = self.skip_detection_smoothing_n_frames
-            self.frame_estimation = FrameEstimation(
+            self.frame_estimation.reset(
                 frame_rate=self.frame_rate,
-                skip_detection_smoothing_n_frames=n,
                 render_times=self._warmup_render_times)
 
         t = clock()
@@ -916,8 +1048,16 @@ class ViewControllerBase(EventDispatcher):
         if self.skip_estimated_missed_frames \
                 and not self.use_software_frame_rate:
             # doesn't make sense in software mode
-            self._n_missed_frames = self.frame_estimation.add_frame(
-                t, self.count, self._n_sub_frames)
+            teensy = self.teensy_frame_estimation
+            if teensy.is_available:
+                skipped = teensy.total_skipped_frames
+                self._n_missed_frames = max(
+                    0, skipped - self._total_missed_frames)
+                self._total_missed_frames = skipped
+            else:
+                n = self._n_missed_frames = self.frame_estimation.add_frame(
+                    t, self.count, self._n_sub_frames)
+                self._total_missed_frames += n
 
         buffer = self._flip_frame_buffer
         i = self._flip_frame_buffer_i
@@ -961,8 +1101,11 @@ class ViewSideViewControllerBase(ViewControllerBase):
     '''
 
     def start_stage(self, stage_name, canvas):
+        if self.teensy_frame_estimation.is_available:
+            self.teensy_frame_estimation.start_estimation(self.frame_rate)
+
         self.prepare_view_window()
-        return super(ViewSideViewControllerBase, self).start_stage(
+        super(ViewSideViewControllerBase, self).start_stage(
             stage_name, canvas)
 
     def end_stage(self):
@@ -970,9 +1113,11 @@ class ViewSideViewControllerBase(ViewControllerBase):
         d['pixels'], d['proj_size'] = App.get_running_app().get_root_pixels()
         d['proj_size'] = tuple(d['proj_size'])
 
-        val = super(ViewSideViewControllerBase, self).end_stage()
+        super(ViewSideViewControllerBase, self).end_stage()
         self.queue_view_write.put_nowait(('end_stage', d))
-        return val
+
+        if self.teensy_frame_estimation.is_available:
+            self.teensy_frame_estimation.stop_estimation()
 
     def request_process_data(self, data_type, data):
         if data_type == 'frame':
@@ -1006,7 +1151,7 @@ class ViewSideViewControllerBase(ViewControllerBase):
         '''Called by the second process upon an error which is passed on to the
         main process.
         '''
-        if exc_info is not None:
+        if exc_info is not None and not isinstance(exc_info, str):
             exc_info = ''.join(traceback.format_exception(*exc_info))
         self.queue_view_write.put_nowait(
             ('exception', yaml_dumps((str(exception), exc_info))))
@@ -1207,7 +1352,6 @@ class ControllerSideViewControllerBase(ViewControllerBase):
     def end_stage(self):
         val = super(ControllerSideViewControllerBase, self).end_stage()
         self.stage_end_cleanup()
-        return val
 
     def request_fullscreen(self, state):
         '''Sets the fullscreen state to full or not of the second internal
