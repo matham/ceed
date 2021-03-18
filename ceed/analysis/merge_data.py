@@ -899,6 +899,20 @@ class CeedMCSDataMerger:
             self.n_sub_frames, self.ceed_data['rendered_frames'],
             ceed_mcs_alignment)
 
+    def get_skipped_frames_summary(self, ceed_mcs_alignment, experiment_num):
+        mcs_long_frames, mcs_frame_len, ceed_skipped, ceed_skipped_main = \
+            self.estimate_skipped_frames(ceed_mcs_alignment)
+        num_long = sum(i - 1 for i in mcs_frame_len)
+        main_skipped = len(ceed_skipped_main)
+        skipped = len(ceed_skipped)
+
+        return (
+            f'Aligned experiment {experiment_num: >2}. '
+            f'MCS: [{ceed_mcs_alignment[0]: 10} - '
+            f'{ceed_mcs_alignment[-1]: 10}] '
+            f'({len(ceed_mcs_alignment): 7} frames). {num_long: 3} slow, '
+            f'{skipped: 3} ({main_skipped: 2}) dropped ')
+
     def merge_data(
             self, filename, alignment_indices, notes='', notes_filename=None):
         if os.path.exists(filename):
@@ -1011,17 +1025,7 @@ if __name__ == '__main__':
 
         try:
             align = alignment[experiment] = merger.get_alignment()
-            mcs_long_frames, mcs_frame_len, ceed_skipped, ceed_skipped_main = \
-                merger.estimate_skipped_frames(align)
-            num_long = sum(i - 1 for i in mcs_frame_len)
-            main_skipped = len(ceed_skipped_main)
-            skipped = len(ceed_skipped)
-
-            print(
-                f'Aligned experiment {experiment: >2}. '
-                f'MCS: [{align[0]: 10} - {align[-1]: 10}] '
-                f'({len(align): 7} frames). {num_long: 3} slow, {skipped: 3} '
-                f'({main_skipped: 2}) dropped ')
+            print(merger.get_skipped_frames_summary(align, experiment))
         except Exception as e:
             print(
                 "Couldn't align MCS and ceed data for experiment "
