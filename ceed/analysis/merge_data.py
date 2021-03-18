@@ -1013,14 +1013,15 @@ if __name__ == '__main__':
             align = alignment[experiment] = merger.get_alignment()
             mcs_long_frames, mcs_frame_len, ceed_skipped, ceed_skipped_main = \
                 merger.estimate_skipped_frames(align)
+            num_long = sum(i - 1 for i in mcs_frame_len)
             main_skipped = len(ceed_skipped_main)
             skipped = len(ceed_skipped)
 
             print(
-                f'Aligned MCS and ceed data for experiment {experiment: >2} at '
-                f'MCS samples [{align[0]: 10} - {align[-1]: 10}] '
-                f'({len(align): 7} frames). {skipped: 3} ({main_skipped: 2}) '
-                f'frames skipped')
+                f'Aligned experiment {experiment: >2}. '
+                f'MCS: [{align[0]: 10} - {align[-1]: 10}] '
+                f'({len(align): 7} frames). {num_long: 3} slow, {skipped: 3} '
+                f'({main_skipped: 2}) dropped ')
         except Exception as e:
             print(
                 "Couldn't align MCS and ceed data for experiment "

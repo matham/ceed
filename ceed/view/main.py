@@ -142,8 +142,6 @@ class CeedViewApp(BaseKivyApp):
         return pixels, widget.size
 
     def on_start(self):
-        self.view_controller.teensy_frame_estimation.configure_device()
-
         glDisable(GL_DITHER)
         Window.clearcolor = (0, 0, 0, 1)
         # Window.minimize()
@@ -195,12 +193,6 @@ class CeedViewApp(BaseKivyApp):
 
     def get_logger(self):
         return Logger
-
-    def clean_up(self):
-        super().clean_up()
-
-        if self.view_controller is not None:
-            self.view_controller.teensy_frame_estimation.release_device()
 
 
 run_app = partial(run_cpl_app, CeedViewApp)

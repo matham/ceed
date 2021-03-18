@@ -19,6 +19,7 @@ from tree_config import get_config_children_names
 import usb.core
 import usb.util
 from usb.core import Device as USBDevice, Endpoint
+import logging
 
 from kivy.event import EventDispatcher
 from kivy.properties import NumericProperty, StringProperty, BooleanProperty, \
@@ -232,7 +233,9 @@ class TeensyFrameEstimation(EventDispatcher):
 
     _thread: Optional[Thread] = None
 
-    total_skipped_frames: int = 0
+    _reattach_device = False
+
+    shared_value: mp.Value = None
 
     def _endpoint_filter(self, endpoint_type):
         def filt(endpoint):
@@ -241,11 +244,11 @@ class TeensyFrameEstimation(EventDispatcher):
 
         return filt
 
-    @app_error
     def configure_device(self):
         """This is only called on the viewer side, not in the main app.
         """
         self.is_available = False
+        self._reattach_device = False
         if not self.use_teensy:
             return
 
@@ -256,8 +259,11 @@ class TeensyFrameEstimation(EventDispatcher):
                 'Teensy USB device not found, falling back to time based '
                 'missed frame detection')
 
+        if dev.is_kernel_driver_active(0):
+            self._reattach_device = True
+            dev.detach_kernel_driver(0)
+
         # use default/first config
-        dev.set_configuration()
         configuration = dev.get_active_configuration()
         interface = configuration[(0, 0)]
 
@@ -276,6 +282,8 @@ class TeensyFrameEstimation(EventDispatcher):
     def release_device(self):
         if self.usb_device is not None:
             usb.util.dispose_resources(self.usb_device)
+            if self._reattach_device:
+                self.usb_device.attach_kernel_driver(0)
             self.usb_device = None
             self.endpoint_in = self.endpoint_out = None
 
@@ -289,14 +297,32 @@ class TeensyFrameEstimation(EventDispatcher):
             raise TypeError('Cannot start while already running')
 
         self._stop_thread = False
-        self.total_skipped_frames = 0
-        self._thread = Thread(target=self._thread_run)
+        self.shared_value.value = 0
 
-        # reset teensy and start
+        # reset teensy for sure and then start
         endpoint_out = self.endpoint_out
         endpoint_out.write(self._end_exp_msg)
         endpoint_out.write(self._start_exp_msg)
 
+        endpoint_in = self.endpoint_in
+        m1, m2, m3, m4 = self._magic_header
+
+        # make sure to flush packets from before. Device queues
+        # up to 1 frame. We should get frames immediately
+        flag = 0
+        for _ in range(5):
+            arr = endpoint_in.read(64)
+            h1, h2, h3, h4, flag = arr[:5]
+            if h1 != m1 or h2 != m2 or h3 != m3 or h4 != m4:
+                raise ValueError('USB packet magic number corrupted')
+            # got packet from current (waiting) state
+            if flag == 0x01:
+                break
+
+        if flag != 0x01:
+            raise TypeError('Cannot set Teensy to experiment mode')
+
+        self._thread = Thread(target=self._thread_run)
         self._thread.start()
 
     @app_error
@@ -304,23 +330,30 @@ class TeensyFrameEstimation(EventDispatcher):
         endpoint_in = self.endpoint_in
         m1, m2, m3, m4 = self._magic_header
 
-        while not self._stop_thread:
-            arr = endpoint_in.read(64)
-            h1, h2, h3, h4, flag, value, b, c, d = arr[:9]
+        try:
+            while not self._stop_thread:
+                arr = endpoint_in.read(64)
+                h1, h2, h3, h4, flag, a, b, c, value = arr[:9]
 
-            if h1 != m1 or h2 != m2 or h3 != m3 or h4 != m4:
-                raise ValueError('USB packet magic number corrupted')
-            if flag != 0x02:
-                # not a counter packet
-                continue
+                if h1 != m1 or h2 != m2 or h3 != m3 or h4 != m4:
+                    raise ValueError('USB packet magic number corrupted')
+                if flag != 0x02:
+                    continue
+                # teensy may know when experiment ended before we are asked to
+                # stop so we can't raise error for 0x03 as it may have ended
+                # already but we just didn't get the message yet from process
 
-            value |= b << 8
-            value |= c << 16
-            value |= d << 24
-            self.total_skipped_frames = value
+                value <<= 8
+                value |= c
+                value <<= 8
+                value |= b
+                value <<= 8
+                value |= a
 
-        # stop teensy sending packets
-        self.endpoint_out.write(self._end_exp_msg)
+                self.shared_value.value = value
+        finally:
+            # go back to waiting
+            self.endpoint_out.write(self._end_exp_msg)
 
     def stop_estimation(self):
         if self._thread is None:
@@ -542,7 +575,7 @@ class ViewControllerBase(EventDispatcher):
     Its value is from the :attr:`led_modes`.
     '''
 
-    LED_mode_idle = StringProperty('RGB')
+    LED_mode_idle = StringProperty('none')
     '''The LED mode the projector is set to before/after the experiment.
     Its value is from the :attr:`led_modes`.
     '''
@@ -1048,16 +1081,19 @@ class ViewControllerBase(EventDispatcher):
         if self.skip_estimated_missed_frames \
                 and not self.use_software_frame_rate:
             # doesn't make sense in software mode
+
             teensy = self.teensy_frame_estimation
-            if teensy.is_available:
-                skipped = teensy.total_skipped_frames
-                self._n_missed_frames = max(
-                    0, skipped - self._total_missed_frames)
-                self._total_missed_frames = skipped
+            if teensy.use_teensy:
+                if teensy.shared_value is not None:
+                    skipped = teensy.shared_value.value
+                    self._n_missed_frames = max(
+                        0, skipped - self._total_missed_frames)
+                    self._total_missed_frames = skipped
             else:
-                n = self._n_missed_frames = self.frame_estimation.add_frame(
+                time_based_n = self.frame_estimation.add_frame(
                     t, self.count, self._n_sub_frames)
-                self._total_missed_frames += n
+                self._n_missed_frames = time_based_n
+                self._total_missed_frames += time_based_n
 
         buffer = self._flip_frame_buffer
         i = self._flip_frame_buffer_i
@@ -1101,9 +1137,6 @@ class ViewSideViewControllerBase(ViewControllerBase):
     '''
 
     def start_stage(self, stage_name, canvas):
-        if self.teensy_frame_estimation.is_available:
-            self.teensy_frame_estimation.start_estimation(self.frame_rate)
-
         self.prepare_view_window()
         super(ViewSideViewControllerBase, self).start_stage(
             stage_name, canvas)
@@ -1115,9 +1148,6 @@ class ViewSideViewControllerBase(ViewControllerBase):
 
         super(ViewSideViewControllerBase, self).end_stage()
         self.queue_view_write.put_nowait(('end_stage', d))
-
-        if self.teensy_frame_estimation.is_available:
-            self.teensy_frame_estimation.stop_estimation()
 
     def request_process_data(self, data_type, data):
         if data_type == 'frame':
@@ -1198,7 +1228,7 @@ class ViewSideViewControllerBase(ViewControllerBase):
         Window.fullscreen = self.fullscreen
 
 
-def view_process_enter(read, write, settings, app_settings):
+def view_process_enter(read, write, settings, app_settings, shared_value):
     '''Called by the second internal view process when it is created.
     This calls :meth:`ViewSideViewControllerBase.view_process_enter`.
     '''
@@ -1216,6 +1246,7 @@ def view_process_enter(read, write, settings, app_settings):
         viewer = app.view_controller
         for k, v in settings.items():
             setattr(viewer, k, v)
+        viewer.teensy_frame_estimation.shared_value = shared_value
 
         viewer.queue_view_read = read
         viewer.queue_view_write = write
@@ -1309,6 +1340,11 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         if self.view_process is None:
             self.start_stage(stage_name, app.shape_factory.canvas)
         elif self.queue_view_read is not None:
+            # we only do teensy estimation on the second process
+            self.teensy_frame_estimation.shared_value.value = 0
+            if self.teensy_frame_estimation.is_available:
+                self.teensy_frame_estimation.start_estimation(self.frame_rate)
+
             self.initial_cam_image = app.player.last_image
             self.queue_view_read.put_nowait(
                 ('config', yaml_dumps(app.ceed_data.gather_config_data_dict())))
@@ -1331,6 +1367,10 @@ class ControllerSideViewControllerBase(ViewControllerBase):
             self.queue_view_read.put_nowait(('end_stage', None))
 
     def stage_end_cleanup(self, state=None):
+        # we only do teensy estimation on the second process
+        if self.teensy_frame_estimation.is_available:
+            self.teensy_frame_estimation.stop_estimation()
+
         ceed_data = App.get_running_app().ceed_data
         if ceed_data is not None:
             ceed_data.stop_experiment()
@@ -1345,8 +1385,8 @@ class ControllerSideViewControllerBase(ViewControllerBase):
                 self.proj_pixels = state['pixels']
 
         if self.propixx_lib:
-            self.set_pixel_mode(False)
-            self.set_led_mode(self.LED_mode_idle)
+            self.set_pixel_mode(False, ignore_exception=True)
+            self.set_led_mode(self.LED_mode_idle, ignore_exception=True)
 
     @app_error
     def end_stage(self):
@@ -1376,6 +1416,7 @@ class ControllerSideViewControllerBase(ViewControllerBase):
 
         self._process_data(data_type, data)
 
+    @app_error
     def start_process(self):
         '''Starts the process of the internal window that runs the experiment
         through a :class:`ViewSideViewControllerBase`.
@@ -1383,19 +1424,25 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         if self.view_process:
             return
 
+        self.teensy_frame_estimation.shared_value = None
+        self.teensy_frame_estimation.configure_device()
+
         App.get_running_app().dump_app_settings_to_file()
         App.get_running_app().load_app_settings_from_file()
         settings = {name: getattr(self, name)
                     for name in ViewControllerBase._config_props_}
 
         ctx = mp.get_context('spawn') if not PY2 else mp
+        shared_value = self.teensy_frame_estimation.shared_value = ctx.Value(
+            'i', 0)
         r = self.queue_view_read = ctx.Queue()
         w = self.queue_view_write = ctx.Queue()
         os.environ['CEED_IS_VIEW'] = '1'
         os.environ['KCFG_GRAPHICS_VSYNC'] = '1'
         self.view_process = process = ctx.Process(
             target=view_process_enter,
-            args=(r, w, settings, App.get_running_app().app_settings))
+            args=(r, w, settings, App.get_running_app().app_settings,
+                  shared_value))
         process.start()
         del os.environ['CEED_IS_VIEW']
         Clock.schedule_interval(self.controller_read, .25)
@@ -1408,6 +1455,7 @@ class ControllerSideViewControllerBase(ViewControllerBase):
             self.queue_view_read.put_nowait(('eof', None))
             self.queue_view_read = None
 
+    @app_error
     def finish_stop_process(self):
         '''Called by by the read queue thread when we receive the message that
         the second process received an EOF and that it stopped.
@@ -1418,6 +1466,9 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         self.view_process.join()
         self.view_process = self.queue_view_read = self.queue_view_write = None
         Clock.unschedule(self.controller_read)
+
+        self.teensy_frame_estimation.shared_value = None
+        self.teensy_frame_estimation.release_device()
 
     def handle_key_press(self, key, t, modifiers=[], down=True):
         '''Called by by the read queue thread when we receive a keypress
@@ -1494,13 +1545,21 @@ class ControllerSideViewControllerBase(ViewControllerBase):
                 break
 
     @app_error
-    def set_pixel_mode(self, state):
+    def set_pixel_mode(self, state, ignore_exception=False):
         if PROPixxCTRL is None:
             if ignore_vpixx_import_error:
                 return
             raise ImportError('Cannot open PROPixx library')
 
-        ctrl = PROPixxCTRL()
+        try:
+            ctrl = PROPixxCTRL()
+        except Exception as e:
+            if not ignore_exception:
+                raise
+            else:
+                logging.error(e)
+                return
+
         if state:
             ctrl.dout.enablePixelMode()
         else:
@@ -1509,7 +1568,7 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         ctrl.close()
 
     @app_error
-    def set_led_mode(self, mode):
+    def set_led_mode(self, mode, ignore_exception=False):
         '''Sets the projector's LED mode. ``mode`` can be one of
         :attr:`ViewControllerBase.led_modes`.
         '''
@@ -1519,13 +1578,16 @@ class ControllerSideViewControllerBase(ViewControllerBase):
             raise ImportError('Cannot open PROPixx library')
 
         libdpx.DPxOpen()
-        libdpx.DPxSelectDevice('PROPixx')
+        if not libdpx.DPxSelectDevice('PROPixx'):
+            if ignore_exception:
+                return
+            raise TypeError('Cannot set projector LED mode. Is it ON?')
         libdpx.DPxSetPPxLedMask(self.led_modes[mode])
         libdpx.DPxUpdateRegCache()
         libdpx.DPxClose()
 
     @app_error
-    def set_video_mode(self, mode):
+    def set_video_mode(self, mode, ignore_exception=False):
         '''Sets the projector's video mode. ``mode`` can be one of
         :attr:`ViewControllerBase.video_modes`.
         '''
@@ -1535,8 +1597,16 @@ class ControllerSideViewControllerBase(ViewControllerBase):
             raise ImportError('Cannot open PROPixx library')
 
         modes = {'RGB': 'RGB 120Hz', 'QUAD4X': 'RGB Quad 480Hz',
-+                 'QUAD12X': 'GREY Quad 1440Hz'}
-        dev = PROPixx()
+                 'QUAD12X': 'GREY Quad 1440Hz'}
+        try:
+            dev = PROPixx()
+        except Exception as e:
+            if not ignore_exception:
+                raise
+            else:
+                logging.error(e)
+                return
+
         dev.setDlpSequencerProgram(modes[mode])
         dev.updateRegisterCache()
         dev.close()

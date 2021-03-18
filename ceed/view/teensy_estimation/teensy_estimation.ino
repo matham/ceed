@@ -16,7 +16,7 @@ const int ledPeriodMsInactive = 2500;
 // the number of ms in each LED cycle waiting for exp to start
 const int ledPeriodMsWaiting= 800;
 // the number of ms in each LED cycle during experiment
-const int ledPeriodMsActive = 250;
+const int ledPeriodMsActive = 150;
 // how many ms have elapsed since start of current cycle
 volatile int ledElapsed = 0;
 // the number of ms in each LED cycle for current state
@@ -30,7 +30,7 @@ volatile byte skippedFramesCurrent = 0;
 int skippedFrames = 0;
 // if skipped more than maxSkippedFrames, we end exp
 const byte maxSkippedFrames = 20;
-elapsedMillis elapsedPacketMs;
+elapsedMicros elapsedPacketUs;
 
 // buffer header magic number
 const byte magicHeader[4] = {0xAB, 0xBC, 0xCD, 0xDF};
@@ -41,12 +41,15 @@ const byte expStartPacketFlag = 0x01;
 const byte expEndPacketFlag = 0x02;
 
 // RawHID packets are always 64 bytes
-byte sendBuffer[64] = {0xAB, 0xBC, 0xCD, 0xDF};
 const byte pingPacketFlag = 0x01;
+// waiting for packet telling us exp is starting
+const byte pingSpinningPacketFlag = 0x03;
 const byte countPacketFlag = 0x02;
+byte sendBuffer[64] = {0xAB, 0xBC, 0xCD, 0xDF, pingSpinningPacketFlag};
 
 
 void setup() {
+  elapsedPacketUs = 0;
   pinMode(clockPin, INPUT);
   attachInterrupt(digitalPinToInterrupt(clockPin), clockChange, CHANGE);
   
@@ -83,7 +86,7 @@ void clockChange(){
 
 void blinkLed(){
   ledElapsed++;
-  if (ledElapsed == 1){
+  if (ledElapsed == 2){
     // it has been ON for 1ms
     digitalWrite(ledPin, LOW);
   } else if (ledElapsed == ledPeriodMs) {
@@ -112,6 +115,12 @@ inline bool matchMagicHeader(){
 void waitForExpStart() {
   // wait until we get message that experiment started, then go into waiting
   int n;
+  // send ping
+  if (elapsedPacketUs >= 500){
+    elapsedPacketUs -= 500;
+    RawHID.send(sendBuffer, 0);
+  }
+
   // 0 timeout = do not wait in case of no message
   n = RawHID.recv(readBuffer, 0);
   if (n <= 0)
@@ -124,8 +133,6 @@ void waitForExpStart() {
     return;
 
   state = waitingFirstClock;
-  // reset
-  elapsedPacketMs = 0;
   sendBuffer[4] = pingPacketFlag;
 }
 
@@ -139,6 +146,7 @@ void waitFirstClock() {
   if (value == HIGH){
     if (!resetTimer(ledPeriodMsActive)){
       state = waitingForExpStart;
+      sendBuffer[4] = pingSpinningPacketFlag;
     } else {
       state = experimentActive;
       skippedFrames = 0;
@@ -148,8 +156,8 @@ void waitFirstClock() {
   }
 
   // send ping
-  if (elapsedPacketMs >= 1){
-    elapsedPacketMs -= 1;
+  if (elapsedPacketUs >= 500){
+    elapsedPacketUs -= 500;
     RawHID.send(sendBuffer, 0);
   }
 
@@ -164,6 +172,7 @@ void waitFirstClock() {
 
   resetTimer(ledPeriodMsInactive);
   state = waitingForExpStart;
+  sendBuffer[4] = pingSpinningPacketFlag;
 }
 
 
@@ -188,15 +197,19 @@ void doExperimentActive() {
   if (numCurrentSkipped >= maxSkippedFrames){
     resetTimer(ledPeriodMsInactive);
     state = waitingForExpStart;
+    sendBuffer[4] = pingSpinningPacketFlag;
     return;
   }
 
   // send skipped count
-  if (elapsedPacketMs >= 1 || skipped){
-    if (elapsedPacketMs >= 1)
-      elapsedPacketMs -= 1;
+  if (elapsedPacketUs >= 500 || skipped){
+    if (elapsedPacketUs >= 500)
+      elapsedPacketUs -= 500;
 
-    *(int *)(&sendBuffer[5]) = skippedFrames;
+    sendBuffer[5] = skippedFrames & 0xFF;
+    sendBuffer[6] = (skippedFrames << 8) & 0xFF;
+    sendBuffer[7] = (skippedFrames << 16) & 0xFF;
+    sendBuffer[8] = (skippedFrames << 24) & 0xFF;
     RawHID.send(sendBuffer, 0);
   }
 
@@ -211,4 +224,5 @@ void doExperimentActive() {
 
   resetTimer(ledPeriodMsInactive);
   state = waitingForExpStart;
+  sendBuffer[4] = pingSpinningPacketFlag;
 }

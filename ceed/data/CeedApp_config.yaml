@@ -173,7 +173,7 @@ serializer:
   - 18
 view:
   LED_mode: RGB
-  LED_mode_idle: RGB
+  LED_mode_idle: none
   cam_transform:
   - - 1.0
     - 0.0

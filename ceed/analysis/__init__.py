@@ -610,6 +610,7 @@ class CeedDataReader:
         mcs_long_frames = indices[
             np.logical_not(ceed_frames)][:-1][long_frames]
         mcs_frame_len = mcs_frame_len[long_frames]
+        mcs_frame_len = mcs_frame_len.astype(np.int32)
 
         return mcs_long_frames, mcs_frame_len, ceed_skipped, ceed_skipped_main
 

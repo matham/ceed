@@ -277,6 +277,7 @@ class CeedApp(BaseKivyApp):
         if self.view_controller is not None:
             self.view_controller.stop_process()
             self.view_controller.finish_stop_process()
+
         if self.ceed_data is not None:
             self.ceed_data.stop_experiment()
             self.ceed_data.funbind('filename', self.set_tittle)
