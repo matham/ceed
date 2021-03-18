@@ -355,6 +355,7 @@ async def test_shape_area(
     shape1.check_resize_by_area(0.5)
 
 
+@pytest.mark.ceed_single_pixel
 @pytest.mark.parametrize("shape_classes", paired_tests)
 async def test_multiple_shapes_draw(
         paint_app: CeedTestApp, shape_classes: List[Type[Shape]]):
