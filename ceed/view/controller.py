@@ -672,6 +672,8 @@ class ViewControllerBase(EventDispatcher):
 
     _scheduled_pos_restore = False
 
+    _stage_ended_last_frame = False
+
     _frame_buffers = None
 
     _frame_buffers_i = 0
@@ -820,6 +822,7 @@ class ViewControllerBase(EventDispatcher):
             raise TypeError('Cannot start new stage while stage is active')
 
         self.count = 0
+        self._stage_ended_last_frame = False
         Clock._max_fps = 0
         self._warmup_render_times = []
         self._n_missed_frames = 0
@@ -932,6 +935,14 @@ class ViewControllerBase(EventDispatcher):
         experiment value (compared to idle). In addition to allowing us to
         estimate when frames are missed.
         '''
+        # are we finishing up in quad mode after there were some partial frame
+        # at the end of last iteration so we couldn't finish then?
+        if self._stage_ended_last_frame:
+            self._stage_ended_last_frame = False
+            self.count += 1
+            self.end_stage()
+            return
+
         # are we still warming up? We always warm up, even if frames not used
         if not self.count:
             if len(self._warmup_render_times) < 50:
@@ -1016,12 +1027,29 @@ class ViewControllerBase(EventDispatcher):
 
         first_blit = True
         bits = 0
-        for shape_views, proj in zip(views, projections):
+        for k, (shape_views, proj) in enumerate(zip(views, projections)):
             self.count += 1
 
             try:
                 shape_values = tick.send(self.count / effective_rate)
             except StageDoneException:
+                # we're on the last and it's a partial frame (some sub-frames
+                # were rendered), set remaining shapes of frame to black
+                if k:
+                    # we'll increment it again at next frame
+                    self.count -= 1
+                    self._stage_ended_last_frame = True
+                    for colors, rem_proj in zip(views[k:], projections[k:]):
+                        if rem_proj is None:
+                            # in quad4 we just set rgba to zero
+                            for color in colors.values():
+                                color.rgba = 0, 0, 0, 0
+                        else:
+                            # in quad12 we only set the unused color channels
+                            for color in colors.values():
+                                setattr(color, rem_proj, 0)
+                    break
+
                 self.end_stage()
                 return
             except Exception:

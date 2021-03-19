@@ -231,6 +231,7 @@ async def stage_app(paint_app: CeedTestApp):
 
     await zoom_screen_out(paint_app)
     paint_app.app.view_controller.skip_estimated_missed_frames = False
+    paint_app.app.view_controller.teensy_frame_estimation.use_teensy = False
 
     yield paint_app
 

@@ -1024,7 +1024,12 @@ class FuncBase(EventDispatcher):
 
     duration: FloatOrInt = NumericProperty(0.)
     '''How long after the start of the function until the function is complete
-    and continues to the next :attr:`loop` or is done.
+    and the stage continues on to the next :attr:`loop` or the function is
+    completely done.
+
+    The loop iteration is done when the function reaches :attr:`duration` after
+    the function :attr:`t_start`. So, if it starts at 0 seconds and
+    :attr:`duration` is 1 second, it is done at exactly 1 second.
 
     -1 means go on forever and it never finishes (except if manually finished).
     This could be used e.g. if waiting for some external interrupt - set

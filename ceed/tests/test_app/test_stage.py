@@ -1,4 +1,5 @@
 import sys
+import math
 from contextlib import contextmanager
 from math import isclose
 import numpy as np
@@ -13,9 +14,9 @@ from ceed.tests.test_app import replace_text, touch_widget, escape
 from ceed.stage import CeedStage, CeedStageRef
 from ceed.function import CeedFuncRef, FuncBase, FuncGroup
 from ceed.shape import CeedShape, CeedShapeGroup
-from .examples.shapes import assert_add_three_groups
+from .examples.shapes import assert_add_three_groups, CircleShapeP1
 from .examples.funcs import create_funcs, GroupFunction
-from .examples.stages import fake_plugin_stage
+from .examples.stages import fake_plugin_stage, SerialAllStage
 from .examples.experiment import wait_stage_experiment_started, \
     wait_experiment_done, measure_fps
 from .test_func import assert_func_params_in_gui, \
@@ -957,17 +958,15 @@ async def test_moat_single_stage_shapes(stage_app: CeedTestApp, tmp_path):
 @pytest.mark.parametrize('skip', [False, True])
 async def test_pad_stage_ticks(
         stage_app: CeedTestApp, tmp_path, quad, sub_frames, skip):
-    from ..test_stages import create_recursive_stages
-    from .examples.shapes import CircleShapeP1
     from ceed.analysis import CeedDataReader
 
-    root, g1, g2, s1, s2, s3, s4, s5, s6 = create_recursive_stages(
-        stage_app.app.stage_factory, app=stage_app)
+    root = SerialAllStage(
+        stage_factory=stage_app.app.stage_factory, show_in_gui=False,
+        app=stage_app, create_add_to_parent=True)
 
     shape = CircleShapeP1(
         app=None, painter=stage_app.app.shape_factory, show_in_gui=True)
     root.stage.add_shape(shape.shape)
-
     root.show_in_gui()
     await stage_app.wait_clock_frames(2)
 
@@ -1071,3 +1070,127 @@ async def test_external_plugin_named_package(stage_app: CeedTestApp, tmp_path):
     stage_factory = stage_app.app.stage_factory
 
     assert 'FakeStage' in stage_factory.stages_cls
+
+
+@pytest.mark.parametrize(
+    'quad,sub_frames', [('RGB', 1), ('QUAD4X', 4), ('QUAD12X', 12)])
+@pytest.mark.parametrize('main_frames', [1, 1.5, 2])
+async def test_short_stage(
+        stage_app: CeedTestApp, tmp_path, quad, sub_frames, main_frames):
+    from ceed.analysis import CeedDataReader
+    from ceed.function.plugin import LinearFunc
+    from kivy.clock import Clock
+
+    num_frames = int(math.ceil(main_frames * sub_frames))
+    rate = main_frames
+
+    root = SerialAllStage(
+        stage_factory=stage_app.app.stage_factory, show_in_gui=False,
+        app=stage_app, create_add_to_parent=True)
+    shape = CircleShapeP1(
+        app=None, painter=stage_app.app.shape_factory, show_in_gui=True)
+    root.stage.add_shape(shape.shape)
+    root.stage.add_func(LinearFunc(
+        function_factory=stage_app.app.function_factory, b=0, m=1,
+        duration=1))
+    root.show_in_gui()
+    await stage_app.wait_clock_frames(2)
+
+    # use a larger frame rate so we have to drop frames
+    stage_app.app.view_controller.frame_rate = rate
+    stage_app.app.view_controller.use_software_frame_rate = False
+    stage_app.app.view_controller.video_mode = quad
+    stage_app.app.view_controller.pad_to_stage_handshake = False
+    stage_app.app.view_controller.flip_projector = False
+
+    frame = 0
+    event = None
+    cx, cy = shape.shape.centroid
+    if sub_frames == 1:
+        centers = [(cx, cy)]
+    else:
+        cx1, cy1 = cx // 2, cy // 2
+        corners = ((0, 540), (960, 540), (0, 0), (960, 0))
+        centers = [(cx1 + x, cy1 + y) for x, y in corners]
+    intensity = []
+    total_rounded_frames = math.ceil(main_frames) * sub_frames
+
+    def verify_intensity(*largs):
+        nonlocal frame
+        if not stage_app.app.view_controller.stage_active:
+            event.cancel()
+            return
+        # not yet started
+        if not stage_app.app.view_controller.count:
+            return
+
+        assert frame < num_frames
+
+        rgb = stage_app.get_widget_pos_pixel(
+            stage_app.app.shape_factory, centers)
+        rgb = [[c / 255 for c in p] for p in rgb]
+        if sub_frames == 12:
+            for plane in range(3):
+                for point in rgb:
+                    value = point[plane]
+                    intensity.append((value, value, value, 1))
+        else:
+            intensity.extend(rgb)
+        frame += sub_frames
+
+        assert frame in (
+            stage_app.app.view_controller.count, total_rounded_frames)
+        assert not stage_app.app.view_controller._n_missed_frames
+
+    event = Clock.create_trigger(verify_intensity, timeout=0, interval=True)
+    event()
+    stage_app.app.view_controller.request_stage_start(root.name)
+
+    await wait_experiment_done(stage_app, timeout=50)
+
+    assert stage_app.app.view_controller.count == num_frames + 1
+    # only counts whole frames
+    assert frame == total_rounded_frames
+    # have data for blank frames at end
+    assert len(intensity) == total_rounded_frames
+    assert total_rounded_frames >= num_frames
+
+    filename = str(tmp_path / 'short_stage.h5')
+    stage_app.app.ceed_data.save(filename=filename)
+    with CeedDataReader(filename) as f:
+        f.load_experiment(0)
+
+        shape_data = f.shapes_intensity[shape.name]
+        shape_data_rendered = f.shapes_intensity_rendered[shape.name]
+        recorded_rendered_frames = f.rendered_frames
+
+        assert shape_data.shape[0] == num_frames
+        assert shape_data_rendered.shape[0] == num_frames
+        assert len(recorded_rendered_frames) == num_frames
+
+        # for each sub-frame
+        gray = quad == 'QUAD12X'
+        r, g, b = root.color_r, root.color_g, root.color_b
+        for i, ((v1, v2, v3, _), (r1, g1, b1, _)) in enumerate(
+                zip(intensity[:num_frames], shape_data)):
+            # we saw the intensity we expect
+            val = i / (main_frames * sub_frames)
+            assert isclose(val, v1, abs_tol=2 / 255) if r or gray else v1 == 0
+            assert isclose(val, v2, abs_tol=2 / 255) if g or gray else v2 == 0
+            assert isclose(val, v3, abs_tol=2 / 255) if b or gray else v3 == 0
+
+            # what we saw is what is recorded
+            assert isclose(v1, r1, abs_tol=2 / 255)
+            assert isclose(v2, g1, abs_tol=2 / 255)
+            assert isclose(v3, b1, abs_tol=2 / 255)
+
+            assert recorded_rendered_frames[i]
+            assert shape_data_rendered[i, 0] == r1
+            assert shape_data_rendered[i, 1] == g1
+            assert shape_data_rendered[i, 2] == b1
+
+        # remaining frames are blank in quad mode
+        for r, g, b, _ in intensity[num_frames:]:
+            assert not r
+            assert not g
+            assert not b
