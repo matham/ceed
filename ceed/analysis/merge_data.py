@@ -900,8 +900,8 @@ class CeedMCSDataMerger:
             ceed_mcs_alignment)
 
     def get_skipped_frames_summary(self, ceed_mcs_alignment, experiment_num):
-        mcs_long_frames, mcs_frame_len, ceed_skipped, ceed_skipped_main = \
-            self.estimate_skipped_frames(ceed_mcs_alignment)
+        mcs_long_frames, mcs_frame_len, ceed_skipped, ceed_skipped_main, \
+            largest_bad = self.estimate_skipped_frames(ceed_mcs_alignment)
         num_long = sum(i - 1 for i in mcs_frame_len)
         main_skipped = len(ceed_skipped_main)
         skipped = len(ceed_skipped)
@@ -911,7 +911,7 @@ class CeedMCSDataMerger:
             f'MCS: [{ceed_mcs_alignment[0]: 10} - '
             f'{ceed_mcs_alignment[-1]: 10}] '
             f'({len(ceed_mcs_alignment): 7} frames). {num_long: 3} slow, '
-            f'{skipped: 3} ({main_skipped: 2}) dropped ')
+            f'{skipped: 3} ({main_skipped: 2}) dropped. Max {largest_bad} bad')
 
     def merge_data(
             self, filename, alignment_indices, notes='', notes_filename=None):

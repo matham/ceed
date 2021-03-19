@@ -612,7 +612,23 @@ class CeedDataReader:
         mcs_frame_len = mcs_frame_len[long_frames]
         mcs_frame_len = mcs_frame_len.astype(np.int32)
 
-        return mcs_long_frames, mcs_frame_len, ceed_skipped, ceed_skipped_main
+        num_long = sum(i - 1 for i in mcs_frame_len)
+
+        if num_long and num_long == len(ceed_skipped_main):
+            flat_mcs_long = [
+                f + k for f, duration in zip(mcs_long_frames, mcs_frame_len)
+                for k, i in enumerate(range(duration - 1))
+            ]
+            largest_bad = max(
+                c - m for m, c in zip(flat_mcs_long, ceed_skipped_main))
+        elif num_long:
+            largest_bad = 'unmatched'
+        else:
+            largest_bad = 0
+
+        return (
+            mcs_long_frames, mcs_frame_len, ceed_skipped, ceed_skipped_main,
+            largest_bad)
 
     @staticmethod
     def _show_image(
