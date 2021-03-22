@@ -39,14 +39,8 @@ jobs:
         sudo apt -y install wget unzip
         /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1280x720x24 -ac +extension GLX
 
-        python3 -m pip install --upgrade pip virtualenv wheel setuptools
-        python3 -m pip install coveralls
-        python3 -m pip install kivy[base,dev]
-        python3 -m pip install https://github.com/matham/pytest-kivy/archive/master.zip
-        python3 -m pip install https://github.com/matham/more-kivy-app/archive/master.zip
-        python3 -m pip install https://github.com/matham/base_kivy_app/archive/master.zip
-        python3 -m pip install https://github.com/matham/cpl_media/archive/master.zip
-        python3 -m pip install -e .[dev] --extra-index-url https://kivy-garden.github.io/simple/
+        python3 -m pip install --upgrade pip virtualenv wheel setuptools coveralls
+        python3 -m pip install -e .[dev]
         python3 -m pip uninstall pytest-asyncio -y
 
         wget https://github.com/matham/ceed/releases/download/v1.0.0.dev0/ceed_data_v1.0.0.dev0.zip
@@ -95,15 +89,9 @@ jobs:
         python-version: 3.7
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip virtualenv wheel setuptools
-        python -m pip install pyinstaller
+        python -m pip install --upgrade pip virtualenv wheel setuptools pyinstaller
         python -c "import os, PyInstaller; os.remove(os.path.join(os.path.dirname(PyInstaller.__file__), 'hooks', 'hook-kivy.py'))"
-        python -m pip install kivy[base,dev]
-        python -m pip install https://github.com/matham/pytest-kivy/archive/master.zip
-        python -m pip install https://github.com/matham/more-kivy-app/archive/master.zip
-        python -m pip install https://github.com/matham/base_kivy_app/archive/master.zip
-        python -m pip install https://github.com/matham/cpl_media/archive/master.zip
-        python -m pip install -e .[dev] --extra-index-url https://kivy-garden.github.io/simple/
+        python -m pip install -e .[dev]
         python -m pip uninstall pytest-asyncio -y
 
         Invoke-WebRequest "https://github.com/matham/ceed/releases/download/v1.0.0.dev0/ceed_data_v1.0.0.dev0.zip" -OutFile "ceed_data_v1.0.0.dev0.zip"
@@ -145,14 +133,7 @@ jobs:
           KIVY_DOC: 1
       run: |
         python3 -m pip install --upgrade pip virtualenv wheel setuptools sphinx
-        python3 -m pip install kivy[base,dev]
-        python3 -m pip install https://github.com/matham/pytest-kivy/archive/master.zip
-        python3 -m pip install https://github.com/matham/tree-config/archive/master.zip
-        python3 -m pip install https://github.com/matham/more-kivy-app/archive/master.zip
-        python3 -m pip install https://github.com/matham/base_kivy_app/archive/master.zip
-        python3 -m pip install https://github.com/matham/cpl_media/archive/master.zip
-
-        python3 -m pip install -e .[dev] --extra-index-url https://kivy-garden.github.io/simple/
+        python3 -m pip install -e .[dev]
     - name: Generate docs
       env:
         TREE_CONFIG_DOC_YAML_PATH: config_prop_docs.yaml
