@@ -8,18 +8,19 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
+   getting_started.rst
    blueprint.rst
    installation.rst
-   getting_started.rst
+   guide.rst
 
-   apps/apps.rst
    config.rst
 
-   optics/optics.rst
+   example_code/example_code.rst
 
+   apps/apps.rst
    api/api.rst
 
-   example_code/example_code.rst
+   optics/optics.rst
 
 
 * :ref:`genindex`

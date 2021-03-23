@@ -36,6 +36,7 @@ extensions = [
     'sphinx.ext.coverage',
     'sphinx.ext.intersphinx',
     "sphinx_rtd_theme",
+    "sphinx.ext.autosectionlabel",
 ]
 
 intersphinx_mapping = {
