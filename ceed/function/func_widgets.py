@@ -853,8 +853,15 @@ class FuncNoiseDropDown(Factory.FlatDropDown):
             if value is True or value is False:
                 widget = FuncPropBoolWidget()
             else:
+                input_filter = None
+                if isinstance(value, float):
+                    input_filter = 'float'
+                elif isinstance(value, int):
+                    input_filter = 'int'
+
                 widget = FuncPropTextWidget(
-                    input_filter='float', size_hint_min_x='40dp')
+                    input_filter=input_filter, size_hint_min_x='40dp')
+
             widget.func = noise_param
             widget.prop_name = prop
             widget.apply_binding()

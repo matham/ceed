@@ -489,9 +489,13 @@ class DiscreteListNoise(NoiseBase):
     @property
     def parsed_csv_list(self) -> List[float]:
         if self._csv_list != self.csv_list:
+            try:
+                self._parsed_csv_list = list(
+                    map(float,
+                        (s for s in self.csv_list.split(',') if s.strip())))
+            except ValueError as e:
+                raise ValueError(f'Unable to parse "{self.csv_list}"') from e
             self._csv_list = self.csv_list
-            self._parsed_csv_list = list(
-                map(float, (s for s in self.csv_list.split(',') if s.strip())))
 
         return self._parsed_csv_list
 
