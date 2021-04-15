@@ -51,6 +51,8 @@ Static Optical Analysis
 Following is the optical details of all the optical components in the
 path.
 
+.. _static-l1:
+
 L1
 ""
 
@@ -70,6 +72,8 @@ The output is the estimated image position (on the other side of the
 lens, if positive relative to the lens), the magnification, and the
 relative distance between the lens and the image.
 
+.. _static-l2:
+
 L2
 ""
 
@@ -80,6 +84,8 @@ the projected image.
 |image3|
 
 Figure 2 The characteristics of L2.
+
+.. _static-l3:
 
 L3
 ""
@@ -93,6 +99,8 @@ interfering reflections around the tissue.
 |image4|
 
 Figure 3 The characteristics of L3.
+
+.. _static-l4:
 
 L4
 ""
@@ -118,6 +126,8 @@ projected pattern and its magnification. In all of this, we were looking
 for an ideal magnification around 0.4% and the minimal image
 displacement as a function of lens position for the zoom lens (L2).
 
+.. _dynamic-projector:
+
 Projector
 """""""""
 
@@ -127,6 +137,8 @@ This figure shows how the mag and position would change as we move the
 projector left 20cm, or upto 5cm to the right. The largest effect is on
 the mag, which varies between 0.38% - 0.5%. Moving to the left increases
 mag.
+
+.. _dynamic-l1:
 
 L1
 ""
@@ -150,6 +162,8 @@ the lens is moved +/- 7.5 cm. It does change the mag between 0.36% and
 because the projector would also need to be moved as the lens is right
 next to the projector. In addition, this does not take into account the
 effect of moving the projector, as that will also affect the variables.
+
+.. _dynamic-l2:
 
 L2
 ""
@@ -182,6 +196,8 @@ lens.
 
 As well as when using a 15mm lens. 10mm seems pretty optimal.
 
+.. _dynamic-l3:
+
 L3
 ""
 
@@ -209,6 +225,8 @@ This figure similarly shows how the position and mag changes using a
 Placing it right next to the cage, as required anyway to reduce
 reflections seems optimal.
 
+.. _dynamic-l4:
+
 L4
 ""
 
@@ -231,6 +249,8 @@ Static Optical Analysis
 Following is the optical details of all the optical components in the
 path.
 
+.. _static-cam-l4:
+
 L4
 ""
 
@@ -244,6 +264,8 @@ location for this light path.
 
 |image17|
 
+.. _static-cam-l5:
+
 L5
 ""
 
@@ -252,12 +274,16 @@ dichroic cube cage as possible.
 
 |image18|
 
+.. _static-cam-l6:
+
 L6
 ""
 
 L6 is our zoom lens, that we move up and down to zoom the camera image.
 
 |image19|
+
+.. _static-cam-l7:
 
 L7
 ""
@@ -286,6 +312,8 @@ position of the objective (L4) because that’s predetermined by the
 projector to tissue light path. Similarly, the minimum final lens to
 camera distance reduces the options significantly.
 
+.. _dynamic-cam-l4:
+
 L4
 ""
 
@@ -300,6 +328,8 @@ project the tissue image by about the same amount further. Therefore, if
 both the objective and the tissue are moved by the same amount, neither
 the projector nor the camera positions and lensing would need to be
 adjusted (perhaps by tiny amounts).
+
+.. _dynamic-cam-l5:
 
 L5
 ""
@@ -319,6 +349,8 @@ below the minimum final lens – camera distance. However, the mag
 increases. We placed it at 4.5cm, which the closest to the dichroic cube
 we could place it so that the final image will be as far from the final
 lens as possible.
+
+.. _dynamic-cam-l6:
 
 L6
 ""
@@ -370,6 +402,8 @@ that increasing L5’s position will not change the mag range for L6 by
 much. It mostly serves to accentuate the change in the image position
 (left figure) as L5 is increased. But that can be traded against a mag
 increase if that’s desired.
+
+.. _dynamic-cam-l7:
 
 L7
 ""

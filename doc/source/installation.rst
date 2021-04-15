@@ -48,6 +48,8 @@ Then verify by starting nvidia-server and inspect that the frame-rate of the GPU
 
 Also, turn OFF the screensaver and set notifications to OFF to prevent any interruptions during the experiment.
 
+.. _install-venv-linux:
+
 Make a virtual env for the project
 **********************************
 
@@ -57,6 +59,8 @@ We'll make the virtual env in home. This will self-contain all the packages need
 * ``cd ~``.
 * Make the virtualenv ``python3 -m virtualenv venv_ceed``.
 * Activate it ``source venv_ceed/bin/activate``. You'll have to do this every time you start a new terminal.
+
+.. _install-dep-linux:
 
 Install manual python dependencies
 **********************************
@@ -79,9 +83,12 @@ Install manual python dependencies
   * Install it with ``sudo apt install ./vpixx-software-tools.deb`` from the download directory.
   * To install ``pypixxlib`` you'll need to locate ``pypixxlib-xxx.tar.gz``, likely under ``/usr/share/VPixx Software Tools/Software Tools/pypixxlib``
     and install it with e.g. ``pip install "/usr/share/VPixx Software Tools/Software Tools/pypixxlib/pypixxlib-3.8.9279.tar.gz" ``.
+
   * To test if it is installed successfully, run ``python3 -c "from pypixxlib import _libdpx as libdpx"``.
   * Using the vputil program installed with the vpixx package, from the command line update the projector and controller
     firmware (they are named ppx and ppc).
+
+.. _install-ceed-linux:
 
 Install Ceed
 ************
@@ -164,6 +171,8 @@ for testing if desired. However, the Filers and MCS step are necessary to be abl
 
 First ensure that power mode is set to never put the computer to sleep and that the screensaver is OFF.
 
+.. _install-venv-win:
+
 Make a virtual env for the project
 **********************************
 
@@ -173,6 +182,8 @@ in the home directory. The terminal should be in the home directory
 * Install update pip/virtualenv ``python -m pip install --upgrade pip virtualenv``.
 * Make the virtualenv ``python -m virtualenv ceed_venv``.
 * Activate it ``ceed_venv\Scripts\activate``. You'll have to do this every time you start a new terminal.
+
+.. _install-dep-win:
 
 Install manual python dependencies
 **********************************
@@ -191,6 +202,8 @@ Install manual python dependencies
   * To install ``pypixxlib`` you'll need to locate ``pypixxlib-xxx.tar.gz``, likely under ``C:\Program Files\VPixx Technologies\Software Tools\pypixxlib``
     and install it with e.g. ``pip install "C:\Program Files\VPixx Technologies\Software Tools\pypixxlib\pypixxlib-3.5.5428.tar.gz"``.
   * To test if it is installed successfully, run ``python -c "from pypixxlib import _libdpx as libdpx"``.
+
+.. _install-ceed-win:
 
 Install Ceed
 ************

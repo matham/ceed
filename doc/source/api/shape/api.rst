@@ -1,3 +1,6 @@
+Shape
+=====
+
 .. toctree::
    :maxdepth: 2
 

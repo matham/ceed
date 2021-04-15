@@ -1,3 +1,6 @@
+Function
+========
+
 .. toctree::
    :maxdepth: 2
 

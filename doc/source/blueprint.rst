@@ -15,6 +15,8 @@ The overall system looks as follows
 
 .. image:: media/physical_drawing.svg
 
+.. _blueprint-ceed:
+
 Ceed
 ----
 

@@ -1,3 +1,6 @@
+Storage
+=======
+
 .. toctree::
    :maxdepth: 2
 
