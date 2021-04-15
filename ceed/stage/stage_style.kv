@@ -318,6 +318,20 @@
                         size_hint_min_x: self.texture_size[0]
                         state: 'down' if not root.stage_widget.stage.disable_pre_compute else 'normal'
                         on_state: root.stage_widget.stage.disable_pre_compute = self.state == 'normal'
+                FlatLabel:
+                    size_hint: (None, None)
+                    text: '# Loops'
+                    size: self.texture_size
+                    flat_color: app.theme.text_primary
+                FlatSizedTextInput:
+                    size_hint_y: None
+                    height: self.minimum_height
+                    size_hint_min_x: '50dp'
+                    background_color: root.flat_color
+                    input_filter: 'int'
+                    on_text: root.stage_widget.stage.loop = max(int(self.text or 1), 1)
+                    on_text_validate: self.text = str(root.stage_widget.stage.loop)
+                    text: str(root.stage_widget.stage.loop)
 
 
 <StageShapeDisplayStyle@object>:
