@@ -426,7 +426,8 @@ name='line')
 
 If you notice, ``name`` was not restored to the new function. That's because
 ``name`` is only restored if we pass ``clone=True`` as name is considered an
-internal property and not always user-customizable. E.g. with clone::
+internal property and not always user-customizable. Because we ensure
+each function's name in the GUI is unique. E.g. with clone::
 
     >>> f3 = function_factory.make_func(state, clone=True)
     >>> f3.get_state()
@@ -457,11 +458,11 @@ Instead of copying a function, just get a reference to it with
 :meth:`FunctionFactoryBase.get_func_ref` and add it to the function group.
 
 When destroyed, such function references must be explicitly released with
-:meth:`FunctionFactoryBase.release_func_ref`, otherwise the original function
+:meth:`FunctionFactoryBase.return_func_ref`, otherwise the original function
 cannot be deleted in the GUI.
 
 Methods that accept functions (such as :meth:`FuncGroup.add_func`) should also
-accept :class:`CeedFuncRef` functions.
+typically accept :class:`CeedFuncRef` functions.
 
 :class:`CeedFuncRef` cannot be used directly, unlike normal function.
 Therefore, they or any functions that contain them must first copy them and
@@ -492,7 +493,8 @@ instead of copying the :class:`CeedFuncRef`, will replace any
 :class:`CeedFuncRef` with copies of the class it refers to.
 
 Functions can be manually copied with :meth:`FuncBase.get_state` and
-:meth:`FuncBase.set_state`.
+:meth:`FuncBase.set_state` (although :meth:`FunctionFactoryBase.make_func` is
+more appropriate for end-user creation).
 
 Customizing function in the GUI
 -------------------------------
@@ -1787,6 +1789,8 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
 class CeedFuncRef:
     """A function that refers to another function.
 
+    This is never manually created, but rather returned by
+    :meth:`FunctionFactoryBase.get_func_ref`.
     See :meth:`FunctionFactoryBase.get_func_ref` and :mod:`ceed.function` for
     details.
     """

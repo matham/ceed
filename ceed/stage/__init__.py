@@ -2,13 +2,513 @@
 =================
 
 A :class:`CeedStage` combines :mod:`ceed.shapes` on the screen with a
-:mod:`ceed.function` which determines the intensity of the shape as time
-progresses. This module defines the classes used to compute the
-intensity values for the shapes during an experimental stage.
+:class:`~ceed.function.FuncBase` or sequence of
+:class:`~ceed.function.FuncBase` which determines the intensity of the shapes as
+time progresses in the experiment. This module defines the :class:`CeedStage`
+and associated classes used to store and compute the intensity values during
+the experiment.
 
-See :class:`StageFactoryBase` and :class:`CeedStage` for details.
+Stage factory and plugins
+-------------------------
 
-remove_shapes_upon_deletion must be bound
+The :class:`StageFactoryBase` is a store of the defined :class:`CeedStage`
+sub-classes and customized stage instances. Stage classes/instances
+registered with the :class:`StageFactoryBase` instance used by the
+the GUI are available to the user in the GUI. During analysis, stages are
+similarly registered with the :class:`StageFactoryBase` instance used in the
+analysis and can then be used to get these stages. E.g.::
+
+    >>> # get a function and shape factory
+    >>> function_factory = FunctionFactoryBase(...)
+    >>> shape_factory = CeedPaintCanvasBehavior(...)
+    >>> # create the stage store, linking to the other factories
+    >>> stage_factory = StageFactoryBase(
+            function_factory=function_factory, shape_factory=shape_factory)
+    >>> register_all_stages(stage_factory)  # register plugins
+    >>> StageCls = stage_factory.get('CeedStage')  # get the class
+    >>> StageCls
+    <class 'ceed.stage.CeedStage'>
+
+Classes can be registered manually with
+:meth:`StageFactoryBase.register` or they can be registered automatically
+with :func:`register_all_stages` if they are an internal plugin or
+:func:`register_external_stages` for an external plugin. The GUI calls
+:func:`register_all_stages` when started as well as
+:func:`register_external_stages` if the
+:attr:`~ceed.main.CeedApp.external_stage_plugin_package` configuration
+variable contains a package name.
+
+See :mod:`ceed.stage.plugin` for details on writing plugins.
+
+To get a stage class registered with :class:`StageFactoryBase`, e.g. the
+connonical :class:`CeedStage` base class::
+
+    >>> StageCls = stage_factory.get('CeedStage')  # get the class
+    >>> StageCls
+    <class 'ceed.stage.CeedStage'>
+
+Stage basics
+------------
+
+All stages are instances of :class:`CeedStage` or any plugin-defined
+sub-classes.
+
+A stage is composed of one or more :attr:`CeedStage.shapes`, a
+series of :class:`ceed.function.FuncBase` :attr:`functions` that
+govern the intensity these shapes take across time, and
+sub-:attr:`CeedStage.stages`, that are simultanously evaluated during this
+stage.
+
+All stages have a :attr:`CeedStage.name`, and stages that are available globally
+through the :class:`StageFactoryBase` and shown as root stages in the GUI have
+unique names. To run an experiment you select a named stage to run.
+
+Stage duration
+^^^^^^^^^^^^^^
+
+Ignoring sub-stages, a stage will sample trhough its :attr:`CeedStage.functions`
+sequentally until they are all done, :attr:`CeedStage.loop` times. After
+:attr:`CeedStage.loop` times, the stage is done. For example, a stage with
+function ``f1`` and ``f2`` that :attr:`CeedStage.loop`s 3 times, will tick
+through the functions as follows: ``f1, f2, f1, f2, f1, f2``. At each sample,
+all the :attr:`CeedStage.shapes` of the stage (and possibly sub-stages) are
+set to the value  in the ``[0, 1]`` range returned by the functions for that
+time step.
+
+If there are child :attr:`CeedStage.stages` that have their own
+:attr:`CeedStage.shapes`, we also sample these stages simultanously during each
+root stage loop iteration. That means that while shapes associated with the root
+stage are updated from the root stage's functions, the shapes of the sub-stages
+currently active are updated from their functions.
+
+E.g. if we have a root stage which contains 4 children :attr:`CeedStage.stages`
+A, B, C, D::
+
+    root
+        A
+        B
+        C
+        D
+
+If root's :attr:`CeedStage.order` is ``'serial'``, then for each root
+:attr:`CeedStage.loop` iteration, each sub-stage A - D is evaluated sequentially
+after the previous sub-stage has finished in the order A -> B -> C -> D.
+If it's ``'parallel'``, then each sub-stage is evaluated simultaneously
+rather than sequentially.
+
+While the sub-stages are executed in parallel or serially, the root's
+:attr:`CeedStage.functions` are evaluated and the root's shapes set to those
+values.
+
+If :attr:`CeedStage.complete_on` is ``'any'`` then a loop iteration for the
+root stage will be considered completed after all the root's
+:attr:`CeedStage.functions` are done **and** any of the
+:attr:`CeedStage.stages` have completed. The sub-stages that have
+not yet completed will just end early.
+
+Otherwise, :attr:`CeedStage.complete_on` is ``'all'`` and a loop iteration for
+the root will complete after all the root's :attr:`CeedStage.functions` **and**
+all the :attr:`CeedStage.stages` have completed.
+
+In all cases, shapes that are not associated with a stage that is
+currently being evaluated will be set to transparent. E.g. in the serial
+case, shapes that are associated with stage C will be transparent in all
+other stages, except if they also appear in those stages.
+
+If a shape occurs in multiple stages (e.g. in both the root and A), then
+if the root and A set different color channels (e.g. root sets blue, A sets
+green), the shape will will set each channel from each active stage
+simultaneously because they don't conflict. If they do set the same channel,
+the sub-stages win over parent stages in the stage tree.
+
+Color channels
+^^^^^^^^^^^^^^
+
+Each stage contains :attr:`CeedStage.shapes` that are all set to the value
+returned by the currently active function in :attr:`CeedStage.functions`
+for the current time step. That is the function yields a single floating point
+value between 0-1, inclusive and all the shapes get set to that value for that
+timestep.
+
+However, there are 3 channels to be set; red, green, and blue. You can select
+which of these channels the stage sets using :attr:`CeedStage.color_r`,
+:attr:`CeedStage.color_g`, and :attr:`CeedStage.color_b` and those channels are
+set to the same function value. The remaining channels are not set by this stage
+and default to zero if no other parent or sub-stage sets them.
+
+Shapes belonging to sub-stages are not controlled by parent stages, only by the
+direct stage(s) that contains them.
+
+If the projector :attr:`~ceed.view.controller.ViewControllerBase.video_mode` is
+set to ``"QUAD12X"``, then the function value is used for all three channels
+so it's grayscale. E.g. even if only :attr:`CeedStage.color_r` and
+:attr:`CeedStage.color_b` are true, all three red, green, and blue channels
+will be set to the same value . If the channels are set to different values
+in parallel stages, the channels are first averaged.
+
+Running a stage
+---------------
+
+Once we have a stage, shapes, and a function, the stage is ready to be run with
+:meth:`StageFactoryBase.`
+
+The following is a worked through example showing
+the steps the Ceed GUI goes through automatically to run a stage and what you
+should do to manually run a stage for testing purposes.
+
+First create the stage, shape, and function:
+
+.. code-block:: python
+
+    from ceed.stage import CeedStage, StageFactoryBase, register_all_stages, \\
+        StageDoneException
+    from ceed.function import FunctionFactoryBase, register_all_functions
+    from ceed.shape import CeedPaintCanvasBehavior
+    from fractions import Fraction
+
+    # create function/shape/stage factories to house functions/shapes/stages
+    function_factory = FunctionFactoryBase()
+    # register built-in plugins
+    register_all_functions(function_factory)
+    shape_factory = CeedPaintCanvasBehavior()
+    stage_factory = StageFactoryBase(
+        function_factory=function_factory, shape_factory=shape_factory)
+    # register built-in plugins
+    register_all_stages(stage_factory)
+
+    # create a 3 second duration function, that loops twice
+    LinearFuncCls = function_factory.get('LinearFunc')
+    function = LinearFuncCls(
+        function_factory=function_factory, m=.33, b=0, duration=3, loop=2)
+    print(f'Function name: "{function.name}"')
+    # and a circle shape
+    circle = shape_factory.create_shape('circle', center=(100, 100))
+    # and add it
+    shape_factory.add_shape(circle)
+    print(f'Shape name: "{circle.name}"')
+    # and finally the stage
+    stage = CeedStage(
+        stage_factory=stage_factory, function_factory=function_factory,
+        shape_factory=shape_factory)
+    # and add it to factory
+    stage_factory.add_stage(stage)
+    print(f'Stage name: "{stage.name}"')
+
+    # now add the function and shape to stage
+    stage.add_func(function)
+    stage.add_shape(circle)
+    # stage will only set red and blue channels
+    stage.color_r = stage.color_b = True
+    stage.color_g = False
+
+Once ready, we can run through the stage manually like Ceed does during an
+experiment:
+
+.. code-block:: python
+
+    # now create the generator that will iterate through all the stage shape
+    # values at a frame rate of 2Hz
+    tick = stage_factory.tick_stage(
+        t_start=0, frame_rate=Fraction(2, 1), stage_name=stage.name)
+    # start it
+    next(tick)
+    # start with time zero, the same as t_start
+    i = 0
+
+    while True:
+        # send the next global time value as multiples of the period (1 / 2)
+        t = Fraction(i, 2)
+        try:
+            # this gets the raw intensity values
+            shapes_intensity_raw = tick.send(t)
+        except StageDoneException:
+            # when the stage is done, it raises this exception
+            break
+
+        # convert raw intensity to final color intensity. This function can
+        # also e.g. convert the colors for quad mode where it's gray-scale
+        shapes_intensity = stage_factory.fill_shape_gl_color_values(
+            shape_views=None, shape_values=shapes_intensity_raw)
+        print(f'time={t}s,\tintensity="{shapes_intensity}"')
+
+        i += 1
+
+The above will print the following when run::
+
+    Function name: "Linear"
+    Shape name: "Shape"
+    Stage name: "Stage-2"
+    time=0s,	intensity="[('Shape', 0, 0, 0, 1)]"
+    time=1/2s,	intensity="[('Shape', 0.165, 0, 0.165, 1)]"
+    time=1s,	intensity="[('Shape', 0.33, 0, 0.33, 1)]"
+    time=3/2s,	intensity="[('Shape', 0.495, 0, 0.495, 1)]"
+    time=2s,	intensity="[('Shape', 0.66, 0, 0.66, 1)]"
+    time=5/2s,	intensity="[('Shape', 0.825, 0, 0.825, 1)]"
+    time=3s,	intensity="[('Shape', 0, 0, 0, 1)]"
+    time=7/2s,	intensity="[('Shape', 0.165, 0, 0.165, 1)]"
+    time=4s,	intensity="[('Shape', 0.33, 0, 0.33, 1)]"
+    time=9/2s,	intensity="[('Shape', 0.495, 0, 0.495, 1)]"
+    time=5s,	intensity="[('Shape', 0.66, 0, 0.66, 1)]"
+    time=11/2s,	intensity="[('Shape', 0.825, 0, 0.825, 1)]"
+
+Some important points to notice above: The global clock is run with multiples
+of the period. This period is the projector frame rate, and when ticking we must
+only increment the time by single period increments. This is required for
+stage pre-computing to work because once pre-computed, we have a list of
+intensity values with the expectation that each value corresponds to single
+period increment because that's how they are pre-computed.
+
+To skip a frame, you must still tick that frame time, but you can discard the
+yielded value. This is how Ceed drops frames when the GPU takes too long to
+render a frame and we must compensate by dropping a frame.
+
+One can also use the stage factory to compute all the intensity values without
+having to iterate as follows. Once we have the stage ready:
+
+.. code-block:: python
+
+    from pprint import pprint
+    # now create the generator that will iterate through all the stage shape
+    # values at a frame rate of 2Hz
+    intensity = stage_factory.get_all_shape_values(
+        frame_rate=Fraction(2, 1), stage_name=stage.name)
+    pprint(intensity)
+
+This prints::
+
+    defaultdict(<class 'list'>,
+                {'Shape': [(0, 0, 0, 1),
+                           (0.165, 0, 0.165, 1),
+                           (0.33, 0, 0.33, 1),
+                           (0.495, 0, 0.495, 1),
+                           (0.66, 0, 0.66, 1),
+                           (0.825, 0, 0.825, 1),
+                           (0, 0, 0, 1),
+                           (0.165, 0, 0.165, 1),
+                           (0.33, 0, 0.33, 1),
+                           (0.495, 0, 0.495, 1),
+                           (0.66, 0, 0.66, 1),
+                           (0.825, 0, 0.825, 1)]})
+
+Pre-computing
+-------------
+
+By default, during an experiment as the global clock ticks in multiple of the
+period, the root stage is given the current time and it compute the intensity
+values for all the shapes from its :attr:`CeedStage.functions` and
+sub-:attr:`CeedStage.stages`. If the intensity computation is slow, the CPU
+may miss updating the GPU with a new frame before the next frame deadline
+and consequently we will need to drop a frame.
+
+Ceed can pre-compute the intensity values for all the shapes for all time
+points by virtually running through the whole experiment and recording the
+intensities yielded by the stage into a flat list. Then during the real
+experiment it simply looks up the intensity from the list by sequentially
+iterating through the list.
+
+This works because the global time is sequential consecutive multiples of the
+period both during the virtual computation and during the replay, so we can
+simply count frames to locate the desired intensity.
+
+Pre-computing can be enabled in the GUI through the
+`:attr:`~ceed.view.controller.ViewControllerBase.pre_compute_stages`` property.
+
+Not all stages can be pre-computed. A stage could have functions that are
+infinite in duration (i.e. negarive :attr:`~ceed.function.FuncBase.duration`,
+e.g. when it's waiting for a switch to go ON) or a stage can be manually
+opted out from pre-computing by setting :attr:`CeedStage.disable_pre_compute`
+to True. In that case, all other functions and stages that are not infinite
+and not opted would will still be pre-computed as much as possible.
+
+See :attr:`CeedStage.disable_pre_compute`, :attr:`CeedStage.runtime_functions`,
+:attr:`CeedStage.runtime_stage`, and :attr:`CeedStage.can_pre_compute` for
+more details.
+
+Saving and restoring stages
+---------------------------
+
+Functions can be saved as a data dictionary and later restored into a function
+instance. E.g.::
+
+    >>> function = LinearFunc(
+    ...     function_factory=function_factory, m=.33, b=0, duration=3, loop=2)
+    >>> circle = shape_factory.create_shape('circle', center=(100, 100))
+    >>> shape_factory.add_shape(circle)
+    >>> stage = CeedStage(
+    ...     stage_factory=stage_factory, function_factory=function_factory,
+    ...     shape_factory=shape_factory)
+    >>> stage.add_func(function)
+    >>> stage.add_shape(circle)
+    >>> stage_factory.add_stage(stage)
+    >>> state = stage.get_state()
+    >>> state
+    {'cls': 'CeedStage',
+     'color_b': True,
+     'color_g': False,
+     'color_r': False,
+     'complete_on': 'all',
+     'disable_pre_compute': False,
+     'functions': [{'b': 0.0,
+                    'cls': 'LinearFunc',
+                    'duration': 3,
+                    'loop': 2,
+                    'm': 0.33,
+                    'name': 'Linear',
+                    'noisy_parameter_samples': {},
+                    'noisy_parameters': {},
+                    't_offset': 0.0,
+                    'timebase_denominator': 1,
+                    'timebase_numerator': 0}],
+     'name': 'Stage-2',
+     'order': 'serial',
+     'shapes': [{'keep_dark': False, 'name': 'Shape'}],
+     'stages': []}
+    >>> # this is how we create a stage from state
+    >>> new_stage = stage_factory.make_stage(state)
+    >>> new_stage
+    <ceed.stage.CeedStage: "Stage" children=(1, 0), at 0x22c2f3b7898>
+    >>> new_stage.get_state()
+    {'cls': 'CeedStage',
+     'color_b': True,
+     'color_g': False,
+     'color_r': False,
+     ...
+     'name': 'Stage',
+     'order': 'serial',
+     'shapes': [{'keep_dark': False, 'name': 'Shape'}],
+     'stages': []}
+
+If you notice, ``name`` was not restored to the new stage. That's because
+``name`` is only restored if we pass ``clone=True`` as name is considered an
+internal property and not always user-customizable. Because we ensure
+each stage's name in the GUI is unique. E.g. with clone::
+
+    >>> new_stage = stage_factory.make_stage(state, clone=True)
+    >>> new_stage.get_state()
+    {'cls': 'CeedStage',
+     ...
+     'name': 'Stage-2',
+     'stages': []}
+
+A fundumental part of Ceed is copying and reconstructing stage objects.
+E.g. this is required to recover functions from a template file, from old data,
+or even to be able to run the experiment because it is run from a second
+process. Consequently, anything required for the stage to be reconstructed
+must be returned by :meth:`CeedStage.get_state`.
+
+Reference stages
+----------------
+
+Stages can contain other :attr:`CeedStage.stages` as children. Instead of
+copying stages around we want to be able to reference another stage and add
+that reference as a child of a stage. This is useful so that these sub-stages
+update when the original stage's parameters are updated. This is mostly meant
+to be used from the GUI, although work fine otherwise.
+
+:class:`CeedStageRef` allows one to reference stages in such a manner.
+Instead of copying a stage, just get a reference to it with
+:meth:`StageFactoryBase.get_stage_ref` and add it to another stage.
+
+When removed and destroyed, such stage references must be explicitly released
+with :meth:`StageFactoryBase.return_stage_ref`, otherwise the original stage
+cannot be deleted in the GUI.
+
+Methods that accept stages (such as :meth:`CeedStage.add_stage`) should also
+typically accept :class:`CeedStageRef` stages.
+
+:class:`CeedStageRef` cannot be used directly during an experiment, unlike
+normal stages. Therefore, they or any stages that contain them must first copy
+them and expand them to refer to the orignal stages being referenced before
+using them, with :meth:`CeedStage.copy_expand_ref` or
+:meth:`CeedStageRef.copy_expand_ref`.
+
+E.g. ::
+
+    >>> stage = CeedStage(...)
+    >>> stage
+    <ceed.stage.CeedStage: "Stage-2" children=(1, 0), at 0x258b6de3c18>
+    >>> ref_stage = stage_factory.get_stage_ref(stage=stage)
+    >>> ref_stage
+    <ceed.stage.CeedStageRef object at 0x00000258B6DE8128>
+    >>> ref_stage.stage
+    <ceed.stage.CeedStage: "Stage-2" children=(1, 0), at 0x258b6de3c18>
+    >>> stage_factory.return_stage_ref(ref_stage)
+
+Before an experiment using a stage is run, the stage and all its sub-stages and
+stage functions that are such references are expanded and copied.
+
+Copying stages
+--------------
+
+Stages can be copied automatically using ``deepcopy`` or
+:meth:`CeedStage.copy_expand_ref`. The former makes a full copy of all the
+stages, but any :class:`CeedStageRef` stages will only copy the
+:class:`CeedStageRef`, not the original stage being refered to. The latter,
+instead of copying the :class:`CeedStageRef`, will replace any
+:class:`CeedStageRef` with copies of the class it refers to.
+
+Stages can be manually copied with :meth:`CeedStage.get_state` and
+:meth:`CeedStage.set_state` (although :meth:`StageFactoryBase.make_stage` is
+more appropriate for end-user creation).
+
+Custom plugin stage
+-------------------
+
+As explain above, plugins can register customized :class:`CeedStage`
+sub-classes to be included in the GUI. Following is an overview of the
+appropriate methods that can be overwritten in a plugin.
+
+As explained below, :meth:`CeedStage.evaluate_stage` is a generator that
+yields the values for the stage. By default, it cycles through
+:attr:`CeedStage.loop` times and for each loop iteration it ticks through all
+the stage's :attr:`CeedStage.functions`, setting the stage's shapes to their
+values in addition to ticking through the sub-stages simultaniously.
+
+:meth:`CeedStage.evaluate_stage` can be safely overwritten to yield directly
+whatever values you wish ignoring any functions or sub-stages.
+
+E.g. if you have a shape in the stage named ``"circle"`` (in the GUI this shape
+will have to be added to the stage) and you want its RGB value to to be
+(0.5, 0, 0) for 2 frames, (0, 0.6, 0) for 3 frames, and finally (0, 0.2, 0.1)
+for 4 frames for a total experiment duration of 9 frames you would write the
+following sub-class in the stage plugin:
+
+.. code-block:: python
+
+    class SlowStage(CeedStage):
+
+        def evaluate_stage(self, shapes, last_end_t):
+            # always get the first time
+            t = yield
+            for _ in range(2):
+                # r, g, b, a values. a (alpha) should be None
+                shapes['circle'].append((0.5, 0, 0, None))
+                # this yields so GUI can use the change shape colors
+                t = yield
+            for _ in range(3):
+                shapes['circle'].append((0, 0.6, 0, None))
+                t = yield
+            for _ in range(4):
+                shapes['circle'].append((0, 0.2, 0.1, None))
+                t = yield
+
+            # this time value was not used and this effectively makes the
+            # stage 9 samples long, and it ends on the last sample so
+            # that last time will be used as start of next stage
+            self.t_end = t
+            # raising this exception is how we indicate we're done
+            raise StageDoneException
+
+The above class will behave correctly whether the stage is pre-computed or not
+because either way it's called to get the values.
+
+See :meth:`CeedStage.evaluate_stage` for further details.
+Other methods could potentially also be overwritten to hook into the stage
+lifecycle, but they generally require more care. See all :class:`CeedStage`
+methods and below for further details.
+
+Experiment stages
+-----------------
 """
 import importlib
 from copy import deepcopy
@@ -67,8 +567,12 @@ class StageDoneException(Exception):
 
 
 class StageFactoryBase(EventDispatcher):
-    """A global store of the defined :class:`CeedStage`
-    customized function instances.
+    """A global store of the defined :class:`CeedStage` classes and
+    customized stage instances.
+
+    Stages in the factory are displayed to the user in the GUI. Similarly,
+    when a user creates a custom stage in the GUI, it's added here
+    automatically.
 
     See :mod:`ceed.stage` for details.
 
@@ -404,15 +908,18 @@ class StageFactoryBase(EventDispatcher):
 
     def find_shape_in_all_stages(
             self, _, shape, process_shape_callback) -> None:
-        '''Removes the :class:`ceed.shape.CeedShape` instance from all the
-        :class:`CeedStage` instances that it is a associated with.
+        '''Searches for the :class:`ceed.shape.CeedShape` instance in all the
+        known stages and calls ``process_shape_callback`` on each found.
 
         :Params:
 
             `_`: anything
                 This parameter is ignored and can be anything.
             `shape`: :class:`ceed.shape.CeedShape`
-                The shape to remove from all stages.
+                The shape to search in all stages.
+            `process_shape_callback`: callback function
+                It is called with two parameters; the :class:`CeedStage`
+                and :class:`ceed.shape.CeedShape` instance for each found.
         '''
         for stage in self.stages:
             for sub_stage in stage.get_stages():
@@ -507,38 +1014,34 @@ class StageFactoryBase(EventDispatcher):
             stage_name: str = '', stage: Optional['CeedStage'] = None,
             pre_compute: bool = False
     ) -> Generator[List[Tuple[str, List[RGBA_Type]]], NumFraction, None]:
-        '''An iterator which starts a :class:`CeedStage` and ticks the time for
-        every call.
+        '''A generator which starts a :class:`CeedStage` and can be time-ticked
+        to generate the shape intensity values for each time point in the
+        experiment.
 
         A :class:`CeedStage` represents a collection of shapes with functions
         applied to them. Each of these shapes has a defined intensity for
-        every time point. This iterator walks through time denoting the
-        intensity for each shape for every time point.
+        every time point. This generator walks through time computing the
+        intensity for each shape for every time point and yielding it.
 
-        E.g. to get the shape values for time 0, .1, .2, ..., 1.0 for the
-        stage named ``'my_stage'``::
+        See :meth:`get_all_shape_values` for example usage. Ceed GUI uses this
+        to generate the shape intensity values shown during an experiment.
 
-            >>> tick = stage_factory.tick_stage('my_stage')  # get iterator
-            >>> for t in [0, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1.]:
-            >>>     try:
-            >>>         tick.next()
-            >>>         shape_values = tick.send(t)
-            >>>         print(shape_values)
-            >>>     except StageDoneException:
-            >>>         # if we're here the stage has completed
-            >>>         break
-
-        To use it, create the iterator, then for every time point call `next()`
-        on the iterator and then send the monotonically increasing time to
-        the function using `send()` and in return the iterator will yield
-        the associated intensity values for each shape for that time point.
+        See the example in :mod:`~ceed.stage` showing how to run a stage with
+        this method.
 
         :Params:
 
+            `t_start`: a number
+                The global time at which the stage starts.
+            `frame_rate`: fraction
+                The frame rate to sample at, as a fraction.
             `stage_name`: str
                 The :attr:`CeedStage.name` of the stage to start.
             `stage`: str
                 The :attr:`CeedStage` to start.
+            `pre_compute`: bool
+                Whether to pre-compute the stages, for those stages that support
+                it.
 
         :yields:
 
@@ -549,14 +1052,17 @@ class StageFactoryBase(EventDispatcher):
             and is listed only once in the list.
             ``values`` is a list of color values and each item in that list is
             a 4-tuple of ``(r, g, b, a)``. Any of these values can be None, in
-            which case that color remains the same. This way a shape can be
+            which case that color remains the same (see
+            :meth:`fill_shape_gl_color_values`). This way a shape can be
             updated from multiple sub-stages, where only e.g. the ``r`` value
             is changed.
 
         :raises:
 
             `StageDoneException`:
-                When done with the stage (time is out of bounds).
+                When done with the stage (time is out of bounds). The time
+                at which this is raised was not used by the stage so there's
+                no shape values for that last time point.
         '''
         if stage is None:
             stage = self.stage_names[stage_name]
@@ -619,17 +1125,26 @@ class StageFactoryBase(EventDispatcher):
             shape_values: List[Tuple[str, List[RGBA_Type]]],
             grayscale: str = None
     ) -> List[Tuple[str, float, float, float, float]]:
-        '''Takes the dict of the Colors instance that control the color of
-        each shape as well as the list of the color values for a time point
-        and sets the shape colors to those values.
+        '''Takes the dict of the Color instances that control the color of
+        each shape as well as the list of the color values for the current time
+        point for each shape and sets the shape's color to those values.
+
+        The shape color values is a list of 4-tuples, each a ``r, g, b, a``
+        value. In each tuple, any of them can be None, in which case that color
+        channel is skipped for that tuple. The list is flattened and the last
+        value for each channel across all tuples is used (after being forced to
+        the ``[0, 1]`` range). If any are None across all tuples, it's left
+        unchanged and not set. If all r, g, b, and a is None, that shape
+        becomes transparent.
 
         :Params:
 
             `shape_views`: dict
                 The dict of shape names and shapes colors as returned by
-                :meth:`get_shapes_gl_color_instructions`. If it is None,
-                the color will not be updated but the return result will be
-                identical to when not None.
+                :meth:`get_shapes_gl_color_instructions`.
+
+                If it is None, the color will not be updated but the return
+                result will be identical to when not None.
             `shape_values`: list
                 The list of color intensity values to use for each shape as
                 yielded by :meth:`tick_stage`.
@@ -646,7 +1161,7 @@ class StageFactoryBase(EventDispatcher):
                 provides no value for it). The b channel is not set so it's
                 left unchanged (i.e. it'll keep the last value).
                 It's how we turn the color into a gray-scale value when e.g. in
-                ``GREY3X`` mode.
+                ``QUAD12X`` mode.
 
         :returns:
 
@@ -655,31 +1170,31 @@ class StageFactoryBase(EventDispatcher):
             ``r``, ``g``, ``b``, ``a`` is the color value it was set to.
             Each ``name`` occurs at most once in the list.
 
+        E.g. from the worked example in :mod:`~ceed.stage`, by default
+        we called :meth:`fill_shape_gl_color_values` with no grayscale parameter
+        value, which printed::
 
+            time=0s,	intensity="[('Shape', 0, 0, 0, 1)]"
+            time=1/2s,	intensity="[('Shape', 0.165, 0, 0.165, 1)]"
+            time=1s,	intensity="[('Shape', 0.33, 0, 0.33, 1)]"
+            ...
 
-        E.g. to display the shape intensities for time 0, .1, .2, ..., 1.0 for
-        the stage named ``'my_stage'`` in real time::
+        If we provide ``"r"`` for grayscale, it prints::
 
-            >>> import time
-            >>> tick = stage_factory.tick_stage('my_stage')  # get iterator
-            >>> # get the color objects
-            >>> colors = stage_factory.get_shapes_gl_color_instructions(
-            >>>     widget_canvas, 'my_canvas_instructs')
-            >>> for t in [0, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1.]:
-            >>>     try:
-            >>>         tick.next()
-            >>>         shape_values = tick.send(t)  # current color values
-            >>>         # update the colors and print it
-            >>>         values = stage_factory.fill_shape_gl_color_values(
-            >>>>            colors, shape_values)
-            >>>         print(values)
-            >>>         time.sleep(0.1)  # wait until next time
-            >>>     except StageDoneException:
-            >>>         # if we're here the stage has completed
-            >>>         break
-            >>> # now remove the shapes
-            >>> stage_factory.remove_shapes_gl_color_instructions(
-            >>>     widget_canvas, 'my_canvas_instructs')
+            time=0s,	intensity="[('Shape', 0.0, 0.0, 0.0, 1)]"
+            time=1/2s,	intensity="[('Shape', 0.165, 0.165, 0.165, 1)]"
+            time=1s,	intensity="[('Shape', 0.33, 0.33, 0.33, 1)]"
+            ...
+
+        That is the stage only sets red and blue, so it averages those two
+        values, which happen to be the same because there's only one stage
+        setting the color value for both red/blue channels. This mean value
+        is assigned to r, g, and b in the result. However, if ``shape_views``
+        was provided to the function, only the red channel's color would be
+        set to this value because grayscale was ``"r"``. If it was ``"rg"``,
+        the printed value would be the same, but only red and green of the Color
+        graphics instructions would be set to the mean value and the others
+        (green/blue or blue, respectively) remain unchanged.
         '''
         result = []
 
@@ -753,9 +1268,10 @@ class StageFactoryBase(EventDispatcher):
             stage: Optional['CeedStage'] = None,
             pre_compute: bool = False
     ) -> Dict[str, List[Tuple[float, float, float, float]]]:
-        '''For every shape in the stage ``stage_name`` it samples the shape
-        at the frame rate and returns a list of intensity values for the shape
-        for each frame.
+        '''Uses :meth:`tick_stage` for every shape in the stage ``stage_name``
+        or given ``stage``, it samples all the shape intensity values at the
+        given frame rate for the full stage duration and returns a list of
+        intensity values for each shape corresponding to each time point.
 
         frame_rate is not :attr:`frame_rate` (although it can be) bur rather
         the rate at which we sample the functions.
@@ -787,34 +1303,7 @@ class StageFactoryBase(EventDispatcher):
 class CeedStage(EventDispatcher):
     '''The stage that controls a time period of an experiment.
 
-    A stage is composed of multiple shape objects, :attr:`shapes`, a series
-    of :class:`ceed.function.FuncBase` functions, :attr:`functions`, that
-    describe the intensity values these shapes take across time, and
-    sub-stages, :attr:`stages`, that are similarly evaluated during this stage.
-
-    During a :class:`CeedStage`, if there are child :attr:`stages` that have
-    their own shapes we also tick through these stages while the root stage is
-    evaluated. That means the shapes associated with the root stage intensity
-    values is updated as are the the intensity values of the shapes from the
-    sub-stage.
-
-    E.g. if we have a root stage (blue) which contains 4 children
-    :attr:`stages` A, B, C, D (purple to orange) as in the image.
-    If :attr:`order` is ``'serial'`` as in the lower part, then each sub-stage
-    is evaluated sequentially after the previous sub-stage has finished.
-
-    If it's ``'parallel'``, the upper part, then each sub-stage is evaluated
-    simultaneously with the root stage.
-
-    If :attr:`complete_on` is ``'any'`` then the root stage will complete after
-    stage ``A`` completes because it completes first in each case. If it is
-    ``'all'`` then it will complete after the root stage is completed because
-    that is the longest.
-
-    In all cases, shapes that are not associated with a stage that is
-    currently being evaluated will be set to transparent. E.g. in the serial
-    case, shapes that are associated with stage C will be transparent in all
-    other stages, except if they also appear in those stages.
+    See :mod:`ceed.stage` for details.
 
     :Events:
 
@@ -829,27 +1318,38 @@ class CeedStage(EventDispatcher):
 
     order: str = OptionProperty('serial', options=['serial', 'parallel'])
     '''The order in which the sub-stages, :attr:`stages`, are evaluated.
-    Can be one of ``'serial'``, ``'parallel'``.
+    Can be one of ``'serial'`` (one after the other), ``'parallel'`` (all in
+    parallel).
 
     See :class:`CeedStage` description for details.
     '''
 
     complete_on: str = OptionProperty('all', options=['all', 'any'])
-    '''When to consider the stage's children stages to be complete we contain
+    '''When to consider the stage's children stages to be complete if we contain
     sub-stages - :attr:`stages`. Can be one of ``'all'``, ``'any'``.
 
     If ``'any'``, this stage is done when **any** of the children stages is
     done, and when all of this stage's functions are done. If ``'all'``, this
-    stage is done when **any** children stages are done, and when all of this
+    stage is done when **all** children stages are done, and when all of this
     stage's functions are done.
 
     See :class:`CeedStage` description for details.
     '''
 
     disable_pre_compute: bool = BooleanProperty(False)
-    """Whether to disable pre-computing this stage and its :attr:`functions`
-    when :attr:`~ceed.view.controller.ViewControllerBase.pre_compute_stages` is
-    True.
+    """Whether to disable pre-computing for this stage.
+
+    When pre-computing, either the stage is completely pre-computed from its
+    functions and all sub-stages and then the stage's intensity values for all
+    time-points becomes essentially a flat list stored in
+    :attr:`runtime_stage`. Or, if e.g. some of the sub-stages or functions
+    cannot be pre-computed, then only the stage's functions (or those among the
+    functions that can be pre-computed) are pre-computed and all are stored in
+    :attr:`runtime_functions`.
+
+    When :attr:`disable_pre_compute` is True, neither is pre-computed, even if
+    the overall
+    :attr:`~ceed.view.controller.ViewControllerBase.pre_compute_stages` is True.
     """
 
     loop: int = NumericProperty(1)
@@ -872,35 +1372,37 @@ class CeedStage(EventDispatcher):
     '''
 
     has_ref: bool = BooleanProperty(False)
-    """Whether there's a CeedFuncRef pointing to this function.
+    """Whether there's a CeedStageRef pointing to this stage.
     """
 
     functions: List[CeedFuncOrRefInstance] = []
-    '''A list of :class:`ceed.function.FuncBase` instances through which the
-    stage iterates through sequentially and updates the intensity of the
-    :attr:`shapes` to the function value at each time point.
+    '''A list of :class:`ceed.function.FuncBase` instances which the
+    stage iterates through sequentially to compute the intensity of all the
+    :attr:`shapes` at each time point.
     '''
 
     shapes: List['StageShape'] = []
     '''The list of :class:`StageShape` instances that are associated
-    with this stage. All the shapes are set to the same intensity value at
+    with this stage.
+
+    All the shapes are set to the same intensity value at
     every time point according to the :attr:`functions` value at that
     time point.
     '''
 
     color_r: bool = BooleanProperty(False)
     '''Whether the :attr:`shapes` red channel should be set to the
-    :attr:`functions` value or if it should remain at zero intensity.
+    :attr:`functions` value or if it should remain at zero intensity (False).
     '''
 
     color_g: bool = BooleanProperty(False)
     '''Whether the :attr:`shapes` green channel should be set to the
-    :attr:`functions` value or if it should remain at zero intensity.
+    :attr:`functions` value or if it should remain at zero intensity (False).
     '''
 
     color_b: bool = BooleanProperty(True)
     '''Whether the :attr:`shapes` blue channel should be set to the
-    :attr:`functions` value or if it should remain at zero intensity.
+    :attr:`functions` value or if it should remain at zero intensity (False).
     '''
 
     color_a: bool = NumericProperty(None, allownone=True)
@@ -909,56 +1411,138 @@ class CeedStage(EventDispatcher):
     '''
 
     stage_factory: StageFactoryBase = None
+    """The :class:`StageFactoryBase` this stage is associated with.
+    """
 
     function_factory: FunctionFactoryBase = None
+    """The :class:`~ceed.function.FunctionFactoryBase` the :attr:`functions`
+    are associated with.
+    """
 
     shape_factory: CeedPaintCanvasBehavior = None
+    """The :class:`~ceed.shape.CeedPaintCanvasBehavior` the :attr:`shapes`
+    are associated with.
+    """
 
     display = None
+    """A widget used by the GUI to display the stage.
+    """
 
     pad_stage_ticks: int = 0
-    """If the number of clock cycles of the stage is less than
-    :attr:`pad_stage_ticks`, the stage will be padded with
+    """If the number of clock tick cycles of the stage is less than
+    :attr:`pad_stage_ticks`, the stage will be padded to
     :attr:`pad_stage_ticks` clock cycles at the end.
 
     During those cycles, the shapes will be unchanged by this stage (i.e. if
-    another stage set it that value will be used, otherwise it'll be
-    transparent), except for the shapes with :attr:`StageShape.keep_dark` that
-    will be set to black.
+    another stage is active and set their values, that value will be used,
+    otherwise it'll be transparent), except for the shapes with
+    :attr:`StageShape.keep_dark` that will be set to black.
 
     See :attr:`~ceed.view.controller.ViewControllerBase.pad_to_stage_handshake`
     for usage details.
 
     .. warning::
 
-        This is primarily for internal use and is not saved with the stage
-        state.
+        This is for internal use and is not saved with the stage state.
     """
 
     t_end: NumFraction = 0
     """The time at which the loop or stage ended in global timebase.
 
-    Set by the function after each loop is done (i.e.
-    :meth:`CeedFunc.is_loop_done` returned True) and is typically the second
-    value from :meth:`get_domain`, or the current time value if that is
-    negative.
+    Set by the stage after each loop is done and is only valid once loop/stage
+    is done. It is used by the next stage in :attr:`stages` after this stage to
+    know when to start, or for this stage to know when the the next loop
+    started.
 
-    Is only valid once loop/stage is done.
+    If overwriting :meth:`evaluate_stage`, this must be set with the
+    last time value passed in that was *not* used, indicating the time the
+    stage ended (i.e. the stage spanned from the stage start time until
+    :attr:`t_end`, not including the end). The next stage in the sequence would
+    start from this time. Similarly, if manually setting :attr:`runtime_stage`,
+    the total stage duration is included and this value is automatically set
+    from it in :meth:`evaluate_pre_computed_stage`.
     """
 
     runtime_functions: List[
         Tuple[Optional[FuncBase], Optional[List[float]], Optional[float]]] = []
+    """Stores the pre-computed function values for those can be pre-computed
+    and the original function for the rest.
+
+    Similar to :attr:`runtime_stage`, but if :attr:`can_pre_compute` is False
+    yet :attr:`disable_pre_compute` is also False, then we pre-compute all
+    the functions who are not infinite in duration (
+    :attr:`~ceed.function.FuncBase.duration` is non-negative) and store them
+    here interleaved with those that are infinite.
+
+    It is a list of 3-tuples of the same length as :attr:`functions`. Each item
+    is ``(function, intensity, duration)``. It is generated by
+    :meth:`pre_compute_functions`.
+
+    If the corresponding function is
+    pre-computable, the ``function`` is None and intensity and duration
+    is similar to :attr:`runtime_stage` with the same constraints about each
+    intensity value corresponds to a time point the function is sampled and the
+    ending time-point must be larger or equal to duration, relative to the
+    function start time.
+
+    If the function is not pre-computable, the ``function`` is the original
+    function and ``intensity`` and ``duration`` are None.
+
+    If set manually, ensure that :meth:`apply_pre_compute` is overwritten to do
+    nothing, otherwise it may overwrite your value. Similarly,
+    :attr:`runtime_stage` must be None, otherwise that will be used instead.
+    """
 
     runtime_stage: Optional[
         Tuple[Dict[str, List[RGBA_Type]], int, NumFraction]] = None
+    """A 2-tuple of stage ``(intensity, duration)``.
+
+    If :attr:`can_pre_compute`, then this stage's intensity values are
+    pre-computed into a list for each shape and stored here. Otherwise, if
+    it's not pre-computed it is None. ``intensity`` is a dict whose keys
+    are shape names and values are a list of r, g, b, a values, one for each
+    time point indicating the r,g,b,a value for that shape for that time point.
+
+    Each time-point value corresponds exactly to the time passed to
+    the stage that generated the value. E.g. with a linear function, the stage
+    may be called with times (relative to the stage start time) such as
+    0 / rate, 1 / rate, ... n / rate and the values correspond to the function
+    values at those times. Then during the experiment, as we get time values,
+    we instead count the number of tick stage calls and that number is the
+    index into the values list that we return for all the shapes.
+
+    After the last value in the list is used, the next time point past will
+    raise a :class:`StageDoneException` indicating the stage is done and the
+    time value will have to be larger or equal to :attr:`t_end`, which is the
+    same saying the time relative to the stage start time must be larger or
+    equal to the ``duration`` of the tuple.
+
+    By default it is generated by :meth:`pre_compute_stage`.
+    If set manually by the user, the above constraints must be followed and
+    additionally, :meth:`apply_pre_compute` should be overwritten to do
+    nothing, otherwise it may overwrite your value.
+    """
 
     can_pre_compute: bool = False
-    """Whether we can pre-compute the full stage. This means that all the
-    :attr:`functions` have finite duration (i.e. non-negative), all
-    :attr:`stages` :attr:`can_pre_compute` is True, and
-    :attr:`disable_pre_compute` is False.
+    """Whether we can pre-compute the full stage.
 
-    If False, the
+    It is read only and is automatically computed during
+    :meth:`init_stage_tree`.
+
+    If True it means that all the :attr:`functions` have finite duration
+    (i.e. non-negative), for all :attr:`stages` their :attr:`can_pre_compute`
+    is True, and :attr:`disable_pre_compute` is False.
+
+    :meth:`apply_pre_compute` does the pre-computation. If
+    :attr:`can_pre_compute` is True, then it precomputes the stage's intensity
+    values for all time-points that the stage is active from its
+    functions and all sub-stages and then essentially stores it as a flat list
+    in :attr:`runtime_stage`.
+
+    If it is False, then if :attr:`disable_pre_compute` is also False, then
+    all the functions that can be pre-computed are pre-computed, otherwise
+    nothing is pre-computed. In both case we still call
+    :meth:`apply_pre_compute` on all sub-stages.
     """
 
     _clone_props: Set[str] = {'cls', 'name'}
@@ -1044,8 +1628,9 @@ class CeedStage(EventDispatcher):
             otherwise, all properties from state are
             applied to the stage. Clone is meant to be a complete
             re-instantiation of stage function.
-        :param func_name_map:
-        :param old_name_to_shape_map:
+        :param func_name_map: a mapping that maps old function names to
+            their new names, in case they were re-named when imported.
+        :param old_name_to_shape_map: Mapping from shape names to the shapes.
         """
         p = self._clone_props
         stages = state.pop('stages', [])
@@ -1099,6 +1684,9 @@ class CeedStage(EventDispatcher):
         return obj
 
     def copy_expand_ref(self) -> 'CeedStage':
+        """Returns a copy of the stage. Any sub-stages, recursively, that are
+        ref-stages are expanded to normal stages.
+        """
         obj = self.__class__(
             stage_factory=self.stage_factory,
             function_factory=self.function_factory,
@@ -1108,6 +1696,9 @@ class CeedStage(EventDispatcher):
 
     def replace_ref_stage_with_source(
             self, stage_ref: 'CeedStageRef') -> Tuple['CeedStage', int]:
+        """Replaces the stage ref in :attr:`stages` with a copy of the
+        referenced stage.
+        """
         if not isinstance(stage_ref, CeedStageRef):
             raise ValueError('Stage must be a CeedStageRef')
 
@@ -1119,6 +1710,9 @@ class CeedStage(EventDispatcher):
 
     def replace_ref_func_with_source(
             self, func_ref: CeedFuncRef) -> Tuple[FuncBase, int]:
+        """Replaces the func ref in :attr:`functions` with a copy of the
+        referenced function.
+        """
         if not isinstance(func_ref, CeedFuncRef):
             raise ValueError('Function must be a CeedFuncRef')
 
@@ -1130,7 +1724,10 @@ class CeedStage(EventDispatcher):
 
     def can_other_stage_be_added(
             self, other_stage: CeedStageOrRefInstance) -> bool:
-        '''Checks whether the other stagetion may be added to us.
+        '''Checks whether the other stage may be added to us.
+
+        If the stage is already a child of this stage or sub-stages, it
+        returns False to prevent recursion loops.
         '''
         if isinstance(other_stage, CeedStageRef):
             other_stage = other_stage.stage
@@ -1146,6 +1743,12 @@ class CeedStage(EventDispatcher):
             after: Optional[CeedStageOrRefInstance] = None,
             index: Optional[int] = None) -> None:
         '''Adds a sub-stage instance :class:`CeedStage` to :attr:`stages`.
+
+        :param stage: The :class:`CeedStage` or ref to add.
+        :param after: The :class:`CeedStage` in :attr:`stages`
+            after which to add this stage, if not None, the default.
+        :param index: The index in :attr:`stages`
+            at which to add this stage, if not None, the default.
         '''
         stage.parent_stage = self
 
@@ -1176,13 +1779,11 @@ class CeedStage(EventDispatcher):
         '''Adds the function instance :class:`ceed.function.FuncBase` to
         :attr:`functions`.
 
-        :params:
-
-            `func`: :class:`ceed.function.FuncBase`
-                The function to add.
-            `after`: :class:`ceed.function.FuncBase`
-                The function in :attr:`functions` after which to add this
-                function, if not None, the default.
+        :param func: The :class:`ceed.function.FuncBase` to add.
+        :param after: The :class:`ceed.function.FuncBase` in :attr:`functions`
+            after which to add this function, if not None, the default.
+        :param index: The index in :attr:`functions`
+            at which to add this function, if not None, the default.
         '''
 
         if after is None and index is None:
@@ -1204,8 +1805,9 @@ class CeedStage(EventDispatcher):
         return True
 
     def add_shape(
-            self, shape: Union[CeedShapeGroup, CeedShape]) -> 'StageShape':
-        '''Adds a :class:`StageShape` instance wrapping the
+            self, shape: Union[CeedShapeGroup, CeedShape]
+    ) -> Optional['StageShape']:
+        '''Creates and adds a :class:`StageShape` instance wrapping the
         :class:`ceed.shape.CeedShape` ``shape`` to the :attr:`shapes`. If
         the ``shape`` was already added it doesn't add it again.
 
@@ -1238,7 +1840,7 @@ class CeedStage(EventDispatcher):
     def get_stages(
             self, step_into_ref: bool = True
     ) -> Generator[CeedStageOrRefInstance, None, None]:
-        '''Iterator that iterates depth-first through all the stages
+        '''Generator that iterates depth-first through all the stages
         and children :attr:`stages and yields these stages.`
         '''
         yield self
@@ -1274,16 +1876,18 @@ class CeedStage(EventDispatcher):
             self, shapes: Dict[str, List[RGBA_Type]], last_end_t: NumFraction
     ) -> Generator[None, NumFraction, None]:
         '''Similar to :meth:`StageFactoryBase.tick_stage` but for this stage.
-        This calls internally either :meth:`evaluate_pre_computed_stage` or
-        :meth:`evaluate_pre_computed_stage`evaluate_stage`.
+        This calls internally either :meth:`evaluate_pre_computed_stage` if the
+        stage was pre-computed (:attr:`runtime_stage` is not None) or
+        :meth:`evaluate_pre_computed_stage`evaluate_stage` when it is not
+        pre-computed.
 
-        It is an iterator that iterates through time and updates the
+        It is an generator that ticks through time and updates the
         intensity values for the shapes associated with this stage and its
         sub-stages.
 
-        Specifically, at every iteration a time value is sent to the iterator
-        which then updates the ``shapes`` dict with the intensity values of the
-        shape for this time-point.
+        Specifically, at every iteration, a time value is sent to the iterator
+        by Ceed which then updates the ``shapes`` dict with the intensity
+        values of the shape for the that time-point.
 
         :param shapes: A dict whose keys is the name of all the shapes of this
             stage and its sub-stages. The corresponding values are empty lists.
@@ -1296,27 +1900,6 @@ class CeedStage(EventDispatcher):
             `StageDoneException`:
                 When done with the stage (time is out of bounds). The time
                 value that raised this was not used.
-
-        E.g. to get the shape values for time 0, .1, .2, ..., 1.0 for this
-        stage::
-
-            >>> # get dict of shapes using the painter controller
-            >>> shapes = {s.name: [] for s in shape_factory.shapes}
-            >>> tick_stage = stage.tick_stage(shapes, 0)  # create iterator
-            >>> next(tick_stage)
-            >>> for t in [0, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1.]:
-            >>>     try:
-            >>>         tick_stage.send(t)  # update
-            >>>     except StageDoneException:
-            >>>         break  # if we're here the stage has completed
-            >>>
-            >>>     for name, colors in shapes.items():
-            >>>         print(name, colors)
-            >>>         del colors[:]  # clear for next iteration
-
-        In the example above. ``colors`` for each shape is a list of
-        4-tuple r, g, b, a values, each of which can be None similarly to what
-        is described at :meth:`StageFactoryBase.tick_stage`.
         '''
         # quick path is stage was pre-computed
         if self.runtime_stage is not None:
@@ -1327,6 +1910,7 @@ class CeedStage(EventDispatcher):
 
         t = yield
         while True:
+            # a StageDoneException is raised when tick is done
             tick.send(t)
             t = yield
 
@@ -1336,12 +1920,15 @@ class CeedStage(EventDispatcher):
         """Generator called by :meth:`tick_stage` if the stage was
         pre-computed. See that method for details.
 
-        This should not be overwritten, rather
-        can be set to desired values and this method will iterate through it.
+        This should not be overwritten, rather one can set
+        :attr:`runtime_stage` to desired values and this method will iterate
+        through it.
+
         If setting :attr:`runtime_stage` manually, :meth:`apply_pre_compute`
         should be overwritten, otherwise it may overwrite
-        :attr:`runtime_stage`. But it's generally safer to customize
-        :meth:`evaluate_stage` instead.
+        :attr:`runtime_stage` as it attempts to pre-compute again. But it's
+        generally safer and simpler to customize :meth:`evaluate_stage` instead
+        and have Ceed generated the pre-compute values from it.
         """
         # next t to use. On the last t not used raises StageDoneException
         t = yield
@@ -1369,28 +1956,33 @@ class CeedStage(EventDispatcher):
             self, shapes: Dict[str, List[RGBA_Type]], last_end_t: NumFraction
     ) -> Generator[None, NumFraction, None]:
         """Generator called by :meth:`tick_stage` if the stage won't be
-        pre-computed or to pre-compute the stage. See that method for details.
+        pre-computed or when we're pre-computing the stage.
+        See that method for details.
 
-        This method can safely be overwritten to set exact stage values. And
-        if the stage will be pre-computed, this method will internally be
+        This method can safely be overwritten to set stage-shape values. And
+        if the stage will be pre-computed, this method will still be internally
         called to get the shape values so pre-computing does not have to be
         considered at all when overwriting this method.
 
-        However, :attr:`t_end` must be set with the final stage time, otherwise
-        it'll break. E.g. is an appropriate customization (assuming those
-        shapes exist)::
+        However, :attr:`t_end` must be set with the final stage time before the
+        method ends, otherwise it'll break. E.g. is an appropriate
+        customization (assuming those shapes exist)::
 
             def evaluate_stage(self, shapes, last_end_t):
                 # always get the first time
                 t = yield
+                # we ignore any looping and just use 10 time points.
                 for i in range(10):
                     # r, g, b, a values
-                    shapes['my shape'].append((.1, .2,  (i % 2) * .3, None))
+                    shapes['my shape'].append(
+                        (float(.1 * (t - last_end_t)), .2,  (i % 2) * .3, None))
                     shapes['other shape'].append((.1, .2,  (i % 2) * .5, None))
+                    # this yields so GUI can use the change shape colors
                     t = yield
 
                 # this time value was not used and this effectively makes the
-                # stage 11 samples long
+                # stage 10 samples long, and it ends on the last sample so
+                # that last time will be used as start of next stage
                 self.t_end = t
                 raise StageDoneException
         """
@@ -1433,6 +2025,9 @@ class CeedStage(EventDispatcher):
     def tick_stage_loop(
             self, shapes: Dict[str, List[RGBA_Type]], last_end_t: NumFraction
     ) -> Generator[None, NumFraction, None]:
+        """If the stage was not pre-computed, ticks through one loop iteration
+        of the stage yielding the shape values for each time-point.
+        """
         names, keep_dark = self._get_shape_names()
         stages = self.stages[:]
         serial = self.order == 'serial'
@@ -1551,6 +2146,16 @@ class CeedStage(EventDispatcher):
             self, frame_rate: Fraction
     ) -> List[Tuple[
             Optional[FuncBase], Optional[List[float]], Optional[float]]]:
+        """Goes through all the stage's functions and pre-computes those
+        that are finite and can be pre-computed.
+
+        Returns a list of pre-computed values/original functions, one for each
+        function of the stage. Each item is a 3-tuple of either
+        ``(func, None, None)`` when the function is not finite, otherwise
+        ``(None, pre_computed_values, end_time)``.
+
+        This allows only some functions to be pre-computed.
+        """
         computed = []
         t = 0
         last_end_t = None
@@ -1593,6 +2198,14 @@ class CeedStage(EventDispatcher):
     def pre_compute_stage(
             self, frame_rate: Fraction, t_start: NumFraction, shapes: Set[str]
     ) -> Tuple[Dict[str, List[RGBA_Type]], int, NumFraction]:
+        """If the stage is to be pre-computed, :meth:`apply_pre_compute`
+        uses this to pre-compute the stage intensity values for all the
+        shapes for all time points when the stage would be active.
+
+        It returns the shape intensity values for all time points as well as
+        the end time when the stage ended relative to zero time (not
+        ``t_start``).
+        """
         stage_data = {s: [] for s in shapes}
         stage_data_temp = {s: [] for s in shapes}
 
@@ -1627,19 +2240,12 @@ class CeedStage(EventDispatcher):
             self, last_end_t: NumFraction
     ) -> Generator[Optional[float], NumFraction, None]:
         '''Iterates through the :attr:`functions` of this stage sequentially
-        and returns the function's value associated with that time.
+        and returns the function's value associated with the given time passed
+        in for each tick.
 
-        E.g. to get the function value for time 0, .1, .2, ..., 1.0 for this
-        stage::
-
-            >>> func = self.tick_funcs()
-            >>> for t in [0, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1.]:
-            >>>     try:
-            >>>         next(funcs)
-            >>>         val = funcs.send(t)
-            >>>         print(val)
-            >>>     except FuncDoneException:
-            >>>         break  # function is done
+        If the functions were pre-computed, it goes through the pre-computed
+        values, assuming the passed in time is exactly those values used
+        when pre-computing relative to ``last_end_t``.
         '''
         # always get a time stamp
         t = yield
@@ -1680,7 +2286,8 @@ class CeedStage(EventDispatcher):
         raise FuncDoneException
 
     def init_stage_tree(self, root: Optional['CeedStage'] = None) -> None:
-        """
+        """Before the stage is :meth:`apply_pre_compute` and started, the stage
+        and all sub-stages are recursively initialized.
         """
         for func in self.functions:
             func.init_func_tree()
@@ -1702,6 +2309,14 @@ class CeedStage(EventDispatcher):
             self, pre_compute: bool, frame_rate: Fraction, t_start: NumFraction,
             shapes: Set[str]
     ) -> None:
+        """Pre-computes the intensity values for all the shapes of this stage
+        and/or sub-stages, if enabled.
+
+        Depending on ``pre_compute``, :attr:`can_pre_compute`, and
+        :attr:`disable_pre_compute`, it pre-computes the full stage and
+        sub-stages, just the stage's functions or only the sub-stages
+        recursively.
+        """
         if pre_compute:
             if self.can_pre_compute:
                 self.runtime_stage = self.pre_compute_stage(
@@ -1723,7 +2338,8 @@ class CeedStage(EventDispatcher):
         """Resamples all parameters of all functions of the stage that have
         randomness associated with it.
 
-        ``parent_tree`` is not inclusive.
+        ``parent_tree`` is not inclusive. It is a list of stages starting from
+        the root stage leading up to this stage in the stage tree.
 
         See :meth:`FuncBase.resample_parameters` and :meth:`copy_and_resample`
         for the meaning of ``is_forked``.
@@ -1786,20 +2402,37 @@ class CeedStage(EventDispatcher):
 
 
 class CeedStageRef:
-    """The function it refers to must be in the factory.
+    """A stage that refers to another stage.
+
+    This is never manually created, but rather returned by
+    :meth:`StageFactoryBase.get_stage_ref`.
+    See :meth:`StageFactoryBase.get_stage_ref` and :mod:`ceed.stage` for
+    details.
     """
 
     stage: CeedStage = None
+    """The reffered to stage.
+    """
 
     display = None
+    """Same as :attr:`CeedStage.display`.
+    """
 
     parent_stage: CeedStage = None
+    """Same as :attr:`CeedStage.parent_stage`.
+    """
 
     stage_factory: StageFactoryBase = None
+    """Same as :attr:`CeedStage.stage_factory`.
+    """
 
     function_factory: FunctionFactoryBase = None
+    """Same as :attr:`CeedStage.function_factory`.
+    """
 
     shape_factory: CeedPaintCanvasBehavior = None
+    """Same as :attr:`CeedStage.shape_factory`.
+    """
 
     def __init__(
             self, stage_factory: StageFactoryBase,
