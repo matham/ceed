@@ -30,14 +30,14 @@ After it's installed, you can run it by running the ``run_app`` file, or by ente
     ceed
 
 A compiled executable can be downloaded from the
-`release page <https://github.com/matham/ceed/releases>`_ for Windows. This can be run
+`release page <https://github.com/matham/ceed/releases>`__ for Windows. This can be run
 as a demo, without installation.
 
 Configuration
 -------------
 
 Ceed can be fully configured through a
-`yaml file <https://github.com/matham/ceed/blob/master/ceed/data/CeedApp_config.yaml>`_.
+`yaml file <https://github.com/matham/ceed/blob/master/ceed/data/CeedApp_config.yaml>`__.
 This file is normally in the data directory under ceed, where ceed is installed.
 Documentation for all the configuration options is listed in the `CEED Config
-section <#CEED Config>`_.
+section <#CEED Config>`__.

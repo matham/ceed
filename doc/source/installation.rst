@@ -3,7 +3,7 @@
 Installation
 ============
 
-`Ceed <https://github.com/matham/ceed>`_ requires Python 3.7+.
+`Ceed <https://github.com/matham/ceed>`__ requires Python 3.7+.
 
 Demo install
 ------------
@@ -66,16 +66,16 @@ Install manual python dependencies
   * Install kivy: ``python3 -m pip install kivy[full]==2.0.0 --no-binary kivy`` - it'll take a couple of minutes.
 * If using a **PointGray camera**, on linux we must manually install its libraries
 
-  * Get it from `here <https://www.flir.com/products/flycapture-sdk>`_, extract it and install by running ``install_flycapture.sh``.
+  * Get it from `here <https://www.flir.com/products/flycapture-sdk>`__, extract it and install by running ``install_flycapture.sh``.
   * Figure out your python version, find the appropriate linux wheel of the last release
-    `here <https://github.com/matham/pyflycap2/releases>`_ and install e.g. with
+    `here <https://github.com/matham/pyflycap2/releases>`__ and install e.g. with
     ``pip install https://github.com/matham/pyflycap2/releases/download/v0.3.0/pyflycap2-0.3.0-cp36-cp36m-linux_x86_64.whl``.
   * If successful, you should be able to run
     ``python3 -c 'from pyflycap2.interface import CameraContext; cc = CameraContext(); cc.rescan_bus(); print(cc.get_gige_cams())'``
     and it'll print a list of the serial numbers of all the connected cameras.
 * Install **VPixx** control software as well as ``pypixxlib``
 
-  * Go to their `site <https://vpixx.com/>`_ and download the vpixx debian package for ubuntu named e.g. ``vpixx-software-tools.deb``.
+  * Go to their `site <https://vpixx.com/>`__ and download the vpixx debian package for ubuntu named e.g. ``vpixx-software-tools.deb``.
   * Install it with ``sudo apt install ./vpixx-software-tools.deb`` from the download directory.
   * To install ``pypixxlib`` you'll need to locate ``pypixxlib-xxx.tar.gz``, likely under ``/usr/share/VPixx Software Tools/Software Tools/pypixxlib``
     and install it with e.g. ``pip install "/usr/share/VPixx Software Tools/Software Tools/pypixxlib/pypixxlib-3.8.9279.tar.gz" ``.
@@ -119,7 +119,7 @@ Do the following::
     sudo adduser $USER plugdev
 
 To program the Teensy if it's a new device, please follow the `instructions in the repo
-<https://github.com/matham/ceed/blob/master/ceed/view/teensy_estimation/readme.md>`_.
+<https://github.com/matham/ceed/blob/master/ceed/view/teensy_estimation/readme.md>`__.
 
 Network setup
 *************
@@ -186,7 +186,7 @@ Install manual python dependencies
 * Install **VPixx** control software as well as ``pypixxlib``. Although we're not typically running ceed on this computer,
   it can be tested here.
 
-  * Go to their `site <https://vpixx.com/>`_ and download the vpixx Windows executable for Windows named e.g.
+  * Go to their `site <https://vpixx.com/>`__ and download the vpixx Windows executable for Windows named e.g.
     ``setup.exe`` and install it.
   * To install ``pypixxlib`` you'll need to locate ``pypixxlib-xxx.tar.gz``, likely under ``C:\Program Files\VPixx Technologies\Software Tools\pypixxlib``
     and install it with e.g. ``pip install "C:\Program Files\VPixx Technologies\Software Tools\pypixxlib\pypixxlib-3.5.5428.tar.gz"``.
@@ -209,10 +209,10 @@ Thor/Filers
 ***********
 
 To be able to play the images from the Thor camera, first download and `install the Thor drivers
-<https://www.thorlabs.com/software_pages/ViewSoftwarePage.cfm?Code=ThorCam>`_. Then power the
+<https://www.thorlabs.com/software_pages/ViewSoftwarePage.cfm?Code=ThorCam>`__. Then power the
 camera and ensure it works in the Thor camera software.
 
-Next, download the `Filers <https://github.com/matham/filers2/releases>`_ exe, run and pin to taskbar.
+Next, download the `Filers <https://github.com/matham/filers2/releases>`__ exe, run and pin to taskbar.
 Within filers, with the camera powered, select the thor as the player and Network as the recorder.
 In the recorder settings enter the ip address of the Windows computer and use 10000 for the port.
 To test start playing, start the server and press the record button to stream to the network.

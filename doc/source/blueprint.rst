@@ -33,7 +33,7 @@ ceed.
 VPixx
 -----
 
-To stimulate the tissue, we use a `VPixx projector <https://vpixx.com/>`_ that can output
+To stimulate the tissue, we use a `VPixx projector <https://vpixx.com/>`__ that can output
 frames upto 1440 Hz in greyscale or 500 Hz in RGB. Ceed generates the frames, which is sent
 to the projector, and then through the lenses until it reaches the tissue.
 
@@ -45,7 +45,7 @@ temporally align the two systems.
 Multichannel Systems (MCS)
 --------------------------
 
-The `MCS system <https://www.multichannelsystems.com/>`_ is the electrode recording system
+The `MCS system <https://www.multichannelsystems.com/>`__ is the electrode recording system
 and is responsible for recording any brain activity in the tissue. This is a dense electrode
 array, recording from many cells simultaneously.
 
@@ -55,7 +55,7 @@ and records the electrode data to ultimately HDF5 files.
 Camera
 ------
 
-We use a `Thor camera <https://www.thorlabs.com>`_ to capture light emitted by the tissue.
+We use a `Thor camera <https://www.thorlabs.com>`__ to capture light emitted by the tissue.
 In a typical experiment, first we broadly stimulate the tissue with light to see where
 the cells are present as captured by the camera. Then, we design stimulus in Ceed to
 stimulate the desired cells and observe the resulting electrical activity with MCS.
@@ -92,7 +92,7 @@ displaying the next frame. This effectively shifts all subsequent frames forward
 potentially disrupting the stimulated circuitry temporal patterns.
 
 We can recognize such long frames based on internal timing with high confidence, but
-only after a few frames have passed. The `Teensy <https://www.pjrc.com/teensy/>`_,
+only after a few frames have passed. The `Teensy <https://www.pjrc.com/teensy/>`__,
 running in USB-interrupt mode at 8+ kHz, reduces the number of bad frames (typically to 2,
 the number of frames buffered) by giving Ceed quick feedback when it drops a frame. It
 notices the dropped frames by monitoring the above-mentioned VPixx 24-bits.
