@@ -1,5 +1,5 @@
-"""Stages
-=================
+"""Stage
+==========
 
 A :class:`CeedStage` combines :mod:`ceed.shapes` on the screen with a
 :class:`~ceed.function.FuncBase` or sequence of
@@ -38,7 +38,9 @@ with :func:`register_all_stages` if they are an internal plugin or
 :attr:`~ceed.main.CeedApp.external_stage_plugin_package` configuration
 variable contains a package name.
 
-See :mod:`ceed.stage.plugin` for details on writing plugins.
+See :mod:`ceed.stage.plugin` for details on writing plugins. For details on
+how to customize stages, see below for important steps and methods during a
+stage's lifecycle.
 
 To get a stage class registered with :class:`StageFactoryBase`, e.g. the
 connonical :class:`CeedStage` base class::
@@ -146,11 +148,72 @@ so it's grayscale. E.g. even if only :attr:`CeedStage.color_r` and
 will be set to the same value . If the channels are set to different values
 in parallel stages, the channels are first averaged.
 
+Stage lifecycle
+^^^^^^^^^^^^^^^
+
+The ultimate use of a stage is to sample it for all timepoints that the stage is
+active. Before the stage is ready, however, it needs to be initialized. Folowing
+are the overall steps performed by :meth:`StageFactoryBase.tick_stage` that
+initialize a stage before running it as an experiment.
+
+Starting with a stage, first the stage is coped and all
+:attr:`CeedStage.functions` resampled using
+:meth:`CeedStage.copy_and_resample`. Then the stage is renamed to
+:attr:`last_experiment_stage_name`. This displays the copied stage to be run in
+the GUI under the name :attr:`last_experiment_stage_name`.
+
+Next, we call :meth:`CeedStage.init_stage_tree` on the root stage. This
+calls :meth:`~ceed.function.FuncBase.init_func_tree` on all the stage's
+:attr:`CeedStage.functions` and recursively calls
+:meth:`CeedStage.init_stage_tree` on all the sub-:attr:`CeedStage.stages`
+as well as some initialization.
+
+Next, using :meth:`CeedStage.apply_pre_compute` it pre-computes all the stages
+and functions for which it is enabled. See below for details. Finally, the
+stage is sampled, a sample at a time using the :meth:`CeedStage.tick_stage`
+generator. This generator either returns the pre-comuted values, if enabled, or
+it computes the sample values and yields them until the root stage is done.
+
+Customizing stages
+^^^^^^^^^^^^^^^^^^
+
+A :class:`CeedStage` has multiple methods that can be overwritten by a plugin.
+Following are some relevant methods - see their docs for more details.
+
+* If the stage generates the samples directly without using the function
+  classes, :meth:`CeedStage.resample_func_parameters` needs to be augmented if
+  the stage has any randomness.
+* :meth:`CeedStage.init_stage_tree` may be augmented if the stage requires
+  additional initialization.
+* :meth:`CeedStage.evaluate_stage` is the most approperiate method to overwrite
+  to have the stage directly compute values for the shapes. By default it
+  goes through all the loops and for each loop it goes through all the functions
+  and sub-stages. It can be overwritten instead to just yield any specific
+  desired values.
+* :meth:`CeedStage.tick_stage` can be overwritten, but it requires more care.
+  Since this yields the values directly and is called directly by the higher
+  level code, if :meth:`CeedStage.tick_stage` is overwritten it won't
+  participate in pre-computing or any other stage behaviors, so pre-computing
+  should be disabled by setting :attr:`CeedStage.disable_pre_compute` to True.
+  See the method for other requirements.
+
+  Additionally, if it's a root stage, it should pad the stage runtime to
+  :attr:`CeedStage.pad_stage_ticks`, if nonzero.
+* :meth:`CeedStage.apply_pre_compute`, :attr:`CeedStage.runtime_functions`, and
+  :attr:`CeedStage.runtime_stage` can be overwritten/manually set, but great
+  care must be taken. See their docs and the pre-computing section below.
+* See the stage's properties for additional customizations.
+
+In all cases, :meth:`CeedStage.get_state` may also need to
+be augmented to return any parameters that are part of the instance, otherwise
+they won't be copied when the stage is internally copied and the stage will use
+incorrect values when run e.g. in the second process that runs the experiment.
+
 Running a stage
 ---------------
 
 Once we have a stage, shapes, and a function, the stage is ready to be run with
-:meth:`StageFactoryBase.`
+:meth:`StageFactoryBase.tick_stage`
 
 The following is a worked through example showing
 the steps the Ceed GUI goes through automatically to run a stage and what you
@@ -451,18 +514,18 @@ Stages can be manually copied with :meth:`CeedStage.get_state` and
 :meth:`CeedStage.set_state` (although :meth:`StageFactoryBase.make_stage` is
 more appropriate for end-user creation).
 
-Custom plugin stage
--------------------
+Custom plugin stage example
+---------------------------
 
-As explain above, plugins can register customized :class:`CeedStage`
-sub-classes to be included in the GUI. Following is an overview of the
-appropriate methods that can be overwritten in a plugin.
+As explained above, plugins can register customized :class:`CeedStage`
+sub-classes to be included in the GUI. Following is an example of how
+:meth:`CeedStage.evaluate_stage` can be overwritten.
 
-As explained below, :meth:`CeedStage.evaluate_stage` is a generator that
-yields the values for the stage. By default, it cycles through
+By default the :meth:`CeedStage.evaluate_stage` generator cycles through
 :attr:`CeedStage.loop` times and for each loop iteration it ticks through all
 the stage's :attr:`CeedStage.functions`, setting the stage's shapes to their
-values in addition to ticking through the sub-stages simultaniously.
+values in addition to ticking through the sub-stages simultaniously and then
+yielding.
 
 :meth:`CeedStage.evaluate_stage` can be safely overwritten to yield directly
 whatever values you wish ignoring any functions or sub-stages.
@@ -506,9 +569,6 @@ See :meth:`CeedStage.evaluate_stage` for further details.
 Other methods could potentially also be overwritten to hook into the stage
 lifecycle, but they generally require more care. See all :class:`CeedStage`
 methods and below for further details.
-
-Experiment stages
------------------
 """
 import importlib
 from copy import deepcopy
@@ -615,7 +675,6 @@ class StageFactoryBase(EventDispatcher):
     stage_names: Dict[str, 'CeedStage'] = DictProperty({})
     '''A dict of all the stages whose keys are the stage :attr:`CeedStage.name`
     and whose values are the corresponding :class:`CeedStage` instances.
-
 
     Contains stages added with :meth:`add_stage` as well as those
     automatically created and added when :meth:`register` is called on a class.
@@ -1275,6 +1334,10 @@ class StageFactoryBase(EventDispatcher):
 
         frame_rate is not :attr:`frame_rate` (although it can be) bur rather
         the rate at which we sample the functions.
+
+        TODO: skip functions that are infinite duration. Add option to indicate
+          stage is also infinite. Currently it would just hang for infinite
+          stage.
         '''
         # the sampling rate at which we sample the functions
 
@@ -1429,14 +1492,14 @@ class CeedStage(EventDispatcher):
     """
 
     pad_stage_ticks: int = 0
-    """If the number of clock tick cycles of the stage is less than
-    :attr:`pad_stage_ticks`, the stage will be padded to
+    """If the duration of the stage as represented by the number of clock tick
+    is less than :attr:`pad_stage_ticks`, the stage will be padded to
     :attr:`pad_stage_ticks` clock cycles at the end.
 
-    During those cycles, the shapes will be unchanged by this stage (i.e. if
-    another stage is active and set their values, that value will be used,
-    otherwise it'll be transparent), except for the shapes with
-    :attr:`StageShape.keep_dark` that will be set to black.
+    During those cycles, the stage's shapes will be unchanged by this stage
+    (i.e. if another stage is simultaneously active and set their values, that
+    value will be used, otherwise it'll be transparent), except for the shapes
+    with :attr:`StageShape.keep_dark` that will still be kept black.
 
     See :attr:`~ceed.view.controller.ViewControllerBase.pad_to_stage_handshake`
     for usage details.
@@ -1889,6 +1952,11 @@ class CeedStage(EventDispatcher):
         by Ceed which then updates the ``shapes`` dict with the intensity
         values of the shape for the that time-point.
 
+        The method is sent time step values and it yields at every time step
+        after the shapes dict is updated. The final time that was sent on
+        which it raises :class:`StageDoneException` means that the given time
+        was not used and the stage is done for that time value.
+
         :param shapes: A dict whose keys is the name of all the shapes of this
             stage and its sub-stages. The corresponding values are empty lists.
             At every iteration the list should be filled in with the desired
@@ -1955,9 +2023,9 @@ class CeedStage(EventDispatcher):
     def evaluate_stage(
             self, shapes: Dict[str, List[RGBA_Type]], last_end_t: NumFraction
     ) -> Generator[None, NumFraction, None]:
-        """Generator called by :meth:`tick_stage` if the stage won't be
-        pre-computed or when we're pre-computing the stage.
-        See that method for details.
+        """Generator called by :meth:`tick_stage` in real-time if the stage
+        won't be pre-computed or before the stage is run if we're
+        pre-computing the stage. See that method for details.
 
         This method can safely be overwritten to set stage-shape values. And
         if the stage will be pre-computed, this method will still be internally
@@ -1965,8 +2033,9 @@ class CeedStage(EventDispatcher):
         considered at all when overwriting this method.
 
         However, :attr:`t_end` must be set with the final stage time before the
-        method ends, otherwise it'll break. E.g. is an appropriate
-        customization (assuming those shapes exist)::
+        method ends, otherwise it'll break the timing. Following is an
+        appropriate customization (assuming those named shapes exist in the
+        GUI)::
 
             def evaluate_stage(self, shapes, last_end_t):
                 # always get the first time
@@ -2375,10 +2444,10 @@ class CeedStage(EventDispatcher):
         marked as
         :attr:`~ceed.function.param_noise.NoiseBase.lock_after_forked`. Those
         will maintain their original re-sampled values so that all the expanded
-        copies have the same random values.
+        copies of reference functions have the same random values.
 
-        See :resample_func_parameters: and :meth:`FuncBase.resample_parameters`
-        as well.
+        See :meth:`resample_func_parameters` and
+        :meth:`FuncBase.resample_parameters` as well.
         """
         self.resample_func_parameters(is_forked=False)
         stage = self.copy_expand_ref()

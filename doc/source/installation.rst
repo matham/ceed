@@ -82,8 +82,7 @@ Install manual python dependencies
   * Go to their `site <https://vpixx.com/>`__ and download the vpixx debian package for ubuntu named e.g. ``vpixx-software-tools.deb``.
   * Install it with ``sudo apt install ./vpixx-software-tools.deb`` from the download directory.
   * To install ``pypixxlib`` you'll need to locate ``pypixxlib-xxx.tar.gz``, likely under ``/usr/share/VPixx Software Tools/Software Tools/pypixxlib``
-    and install it with e.g. ``pip install "/usr/share/VPixx Software Tools/Software Tools/pypixxlib/pypixxlib-3.8.9279.tar.gz" ``.
-
+    and install it with e.g. ``pip install "/usr/share/VPixx Software Tools/Software Tools/pypixxlib/pypixxlib-3.8.9279.tar.gz"``.
   * To test if it is installed successfully, run ``python3 -c "from pypixxlib import _libdpx as libdpx"``.
   * Using the vputil program installed with the vpixx package, from the command line update the projector and controller
     firmware (they are named ppx and ppc).

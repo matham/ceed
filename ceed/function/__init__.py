@@ -1,7 +1,7 @@
-"""Function Interface
-=========================
+"""Function
+===========
 
-Defines the functions used with :mod:`ceed.shape` to create time-varying
+Defines the functions used along with :mod:`ceed.shape` to create time-varying
 intensities for the shapes during an experiment. :class:`~ceed.stage.CeedStage`
 combines functions with shapes and displays them during an experiment according
 to the stage's function.
@@ -39,7 +39,9 @@ with :func:`register_all_functions` if they are an internal plugin or
 :attr:`~ceed.main.CeedApp.external_function_plugin_package` configuration
 variable contains a package name.
 
-See :mod:`ceed.function.plugin` for details on writing plugins.
+See :mod:`ceed.function.plugin` for details on writing plugins. For details on
+how to customize functions, see below for important steps and methods during a
+function's lifecycle.
 
 To get a function class registered with :class:`FunctionFactoryBase`, e.g.
 :class:`ceed.function.plugin.CosFunc`::
@@ -51,10 +53,11 @@ To get a function class registered with :class:`FunctionFactoryBase`, e.g.
 Default function instances
 --------------------------
 
-When a function class is registered, we create a default instance of the class,
+When a function class (e.g. a linear function or a cosine function) is
+registered, we create a default instance of the class,
 and that instance is accessible at :attr:`FunctionFactoryBase.funcs_inst`
-and from the GUI where a list of function names listed in
-:attr:`FunctionFactoryBase.funcs_inst` is shown.::
+as well as from the GUI. The GUI makes available function names listed in
+:attr:`FunctionFactoryBase.funcs_inst`::
 
     >>> function_factory.funcs_inst
     {'Group': <ceed.function.FuncGroup at 0x2a351743c88>,
@@ -65,7 +68,7 @@ and from the GUI where a list of function names listed in
 
 We can also add customized function instances to be available to the user
 with :meth:`FunctionFactoryBase.add_func`.
-They need to have unique names, by which we access them from the GUI or from
+They have unique names, by which we access them from the GUI or from
 :attr:`FunctionFactoryBase.funcs_inst`. E.g.::
 
     >>> f = LinearFunc(function_factory=function_factory, duration=2, m=2, \
@@ -99,15 +102,15 @@ used. e.g.::
 Function basics
 ---------------
 
-A function inherits from :class:`FuncBase`. It defines the interface that
-returns a (stateful) number when called with a time argument.
+All functions inherit from :class:`FuncBase`. :class:`FuncBase` defines the
+(stateful) interface that returns a number when called with a time argument.
 
 Ceed functions are not like typical functions that can be called with any
 value, rather, they keep some internal state, which determines what its
 current domain is. Specifically, functions may only be called with
 monotonically increasing time values, like we do in an experiment where time
-always monotonically increases. Here's some example basic function
-usage::
+always monotonically increases in multiples of the frame rate period. Here's
+some example basic function usage::
 
     >>> # function factory stores all the available function types (classes)
     >>> function_factory = FunctionFactoryBase()
@@ -119,9 +122,9 @@ usage::
     >>> f = CosFunc(function_factory=function_factory, duration=10, A=10, f=1)
     >>> f
     <ceed.function.plugin.CosFunc at 0x4eadba8>
-    >>> # we must specify the time axis. All subsequent times passed to the
-    >>> # function will be relative to the time given here (3 seconds).
+    >>> # we must initialize the function tree before use
     >>> f.init_func_tree()
+    >>> # then we initialize specifically this function
     >>> # initialize function base time at 3. I.e. 3 will be subtracted from
     >>> # future times to convert from global to function-local time
     >>> f.init_func(3)
@@ -139,6 +142,9 @@ __call__
         raise FuncDoneException
     ceed.function.FuncDoneException
 
+Initialization
+^^^^^^^^^^^^^^
+
 Before a function can be used, it must be initialized with
 :meth:`FuncBase.init_func_tree` and :meth:`FuncBase.init_func`.
 :meth:`FuncBase.init_func_tree` intializes all functions and sub-functions in
@@ -151,13 +157,13 @@ it'll actually always be internally computed as
 ``f(t) = m * (t - t_start) + b``, where :attr:`FuncBase.t_start` is the value
 passed to :meth:`FuncBase.init_func` (and :meth:`FuncBase.init_loop_iteration`
 at each loop iteration, but :meth:`FuncBase.init_loop_iteration` is called
-internally, not by user code).
+internally, not by external code).
 
 To evaluate the function, just call it with a time value as in the example
 above.
 
-Function domain and monotonicity
---------------------------------
+Domain and monotonicity
+^^^^^^^^^^^^^^^^^^^^^^^
 
 Functions have a domain, as determined by :meth:`FuncBase.get_domain`.
 By default the domain for a just initialized function is
@@ -279,8 +285,8 @@ loop. E.g.::
 1341, in __call__
     ceed.function.FuncDoneException
 
-Function timebase
------------------
+Timebase
+^^^^^^^^
 
 As alluded to above, functions have a optional timebase to help be more
 precise with the function duration. Normally, the :attr:`FuncBase.duration`
@@ -388,6 +394,102 @@ The downside to setting a timebase is that it's specific to that timebase, so
 to have a function in different timebases, it would need to be replicated
 for each timebase.
 
+GUI customization
+^^^^^^^^^^^^^^^^^
+
+Function properties are customizable in the GUI by the user according to the
+values returned by :meth:`FuncBase.get_gui_props`,
+:meth:`FuncBase.get_prop_pretty_name`, and :meth:`FuncBase.get_gui_elements`.
+
+These methods control what properties are editable by the user and the values
+they may potentially take.
+
+Randomizing parameters
+^^^^^^^^^^^^^^^^^^^^^^
+
+A :class:`FuncBase` subclass typically contains parameters. E.g.
+:class:`ceed.function.plugin.LinearFunc` has a offset and slope (
+:attr:`ceed.function.plugin.LinearFunc.b` and
+:attr:`ceed.function.plugin.LinearFunc.m`). Sometimes it is desireable for the
+parameters to be randomly re-sampled before each experiment, or even for each
+loop iteration (:attr:`FuncBase.loop_tree_count`).
+
+All parameters that support randomization must be returned by
+:meth:`FuncBase.get_noise_supported_parameters` and the specific distribution
+used to randomize each parameter is stored in
+:attr:`FuncBase.noisy_parameters`. The GUI manages
+:attr:`FuncBase.noisy_parameters` from user configuration based on
+:meth:`FuncBase.get_noise_supported_parameters`.
+
+Then, when the function is prepared by Ceed it calls
+:meth:`FuncBase.resample_parameters` that re-samples all the randomized
+parameters. Parameters that are randomized once for the function lifetime
+(:attr:`~ceed.function.param_noise.NoiseBase.sample_each_loop` is False)
+are sampled once and the parameter is set to that value. Parameters that are
+randomized once for each loop iteration (see the docs for
+:attr:`~ceed.function.param_noise.NoiseBase.sample_each_loop`) are sampled for
+as many iterations they'll experience and the samples are stored in
+:attr:`FuncBase.noisy_parameter_samples`. Then, the parameter is set to the
+corresponding value for each iteration at the start in
+:meth:`FuncBase.init_func` and :meth:`FuncBase.init_loop_iteration`.
+
+Possible noise distributions are listed in the
+:class:`ceed.function.param_noise.ParameterNoiseFactory` stored in
+:attr:`FunctionFactoryBase.param_noise_factory`. See
+:mod:`ceed.function.plugin` for how to add distributions.
+
+lifecycle
+^^^^^^^^^
+
+The ultimate use of a function is to sample it for all timepoints that the
+function is active. Before the function is ready, however, it needs to be
+initialized, as well as for each loop iteration. Folowing
+are the overall steps performed by stages before using it in an experiment.
+
+Starting with a stage, first the stage and all its functions are copied and
+resampled using :meth:`~ceed.stage.CeedStage.copy_and_resample`. This calls
+:meth:`FuncBase.resample_parameters` as described there.
+
+Next, we call :meth:`FuncBase.init_func_tree` on each root function in the
+stage. This calls :meth:`FuncBase.init_func_tree` recursively on
+all the functions's children (for group functions), if any.
+
+Next, when the stage reaches this function as it ticks though all its
+functions, it calls :meth:`FuncBase.init_func` to initialize this function run.
+This will be called each time the stage or the function's parent loops around
+and restarts the function. It passes the current global time value to be used
+by the function to convert subsequent timestemps from global to local
+function values (relative to the start).
+
+Then as the stage gets sequential timestamps to sample, it calls
+:meth:`CeedFunc.__call__` with the time value uses the return value for its
+shapes intensity. :meth:`CeedFunc.__call__` will call
+:meth:`FuncBase.init_loop_iteration` as the timestemps reach the end of its
+domain and it loops around (if any). When done with the loops, it'll
+raise a :class:`FuncDoneException` to indicate the function is done.
+
+Customizing functions
+^^^^^^^^^^^^^^^^^^^^^
+
+A :class:`FuncBase` has multiple methods that can be overwritten by a plugin.
+Following are some relevant methods - see their docs for more details.
+
+* If the function generates the samples directly without using the public
+  interfaces classes, :meth:`FuncBase.resample_parameters` needs to be
+  augmented if the function has any randomness.
+* :meth:`FuncBase.init_func_tree`, :meth:`FuncBase.init_func`, and
+  :meth:`FuncBase.init_loop_iteration` may be augmented if any of these function
+  lifecycle events requires additional initialization.
+* :meth:`CeedFunc.__call__` is the method to inherit from and augment
+  to return custom values from your function. See the built-in plugins, such as
+  :class:`ceed.function.plugin.LinearFunc` for examples, or below.
+* See the function's properties for additional customizations.
+
+In all cases, :meth:`FuncBase.get_state` may also need to
+be augmented to return any parameters that are part of the instance, otherwise
+they won't be copied when the function is copied and the function will use
+incorrect values during an actual experiment when all functions are copied.
+
 Saving and restoring functions
 ------------------------------
 
@@ -443,7 +545,6 @@ or even to be able to run the experiment because it is run from a second
 process. Consequently, anything required for the function to be reconstructed
 must be returned by :meth:`FuncBase.get_state`.
 
-
 Reference functions
 -------------------
 
@@ -496,54 +597,32 @@ Functions can be manually copied with :meth:`FuncBase.get_state` and
 :meth:`FuncBase.set_state` (although :meth:`FunctionFactoryBase.make_func` is
 more appropriate for end-user creation).
 
-Customizing function in the GUI
--------------------------------
+Custom plugin function example
+------------------------------
 
-Function properties are customizable in the GUI by the user according to the
-values returned by :meth:`FuncBase.get_gui_props`,
-:meth:`FuncBase.get_prop_pretty_name`, and :meth:`FuncBase.get_gui_elements`.
-
-These methods control what properties are editable by the user and the values
-they may potentially take.
-
-Randomizing function parameters
--------------------------------
-
-A :class:`FuncBase` subclass typically contains parameters. E.g.
-:class:`ceed.function.plugin.LinearFunc` has a offset and slope (
-:attr:`ceed.function.plugin.LinearFunc.b` and
-:attr:`ceed.function.plugin.LinearFunc.m`). Sometimes it is desireable for the
-parameters to be randomly re-sampled before each experiment, or even for each
-loop iteration (:attr:`FuncBase.loop_tree_count`).
-
-All parameters that support randomization must be returned by
-:meth:`FuncBase.get_noise_supported_parameters` and the specific distribution
-used to randomize each parameter is stored in
-:attr:`FuncBase.noisy_parameters`. The GUI manages
-:attr:`FuncBase.noisy_parameters` from user configuration based on
-:meth:`FuncBase.get_noise_supported_parameters`.
-
-Then, when the function is prepared by Ceed it calls
-:meth:`FuncBase.resample_parameters` that re-samples all the randomized
-parameters. Parameters that are randomized once for the function lifetime
-(:attr:`~ceed.function.param_noise.NoiseBase.sample_each_loop` is False)
-are sampled once and the parameter is set to that value. Parameters that are
-randomized once for each loop iteration (see the docs for
-:attr:`~ceed.function.param_noise.NoiseBase.sample_each_loop`) are sampled for
-as many iterations they'll experience and the samples are stored in
-:attr:`FuncBase.noisy_parameter_samples`. Then, the parameter is set to the
-corresponding value for each iteration at the start in
-:meth:`FuncBase.init_func` and :meth:`FuncBase.init_loop_iteration`.
-
-Possible noise distributions are listed in the
-:class:`ceed.function.param_noise.ParameterNoiseFactory` stored in
-:attr:`FunctionFactoryBase.param_noise_factory`. See
-:mod:`ceed.function.plugin` for how to add distributions.
-
-Running a function
-------------------
+As explained above, plugins can register customized :class:`FuncBase`
+sub-classes to be included in the GUI. Following is an example of how
+:meth:`CeedFunc.__call__` can be overwritten in a plugin. See also
+:mod:`ceed.function.plugin` for complete examples::
 
 
+class MyFunc(CeedFunc):
+
+    def __init__(
+            self, name='MyFunc', description='y(t) = random() * t', **kwargs):
+        # this sets the default name of the class and description, but allows
+        # it to be overwritten when specified
+        super().__init__(name=name, description=description, **kwargs)
+
+    def __call__(self, t: Union[int, float, Fraction]) -> float:
+        # alwasy call super first, this handles loop iteration and checking
+        # whether the function is done and raises FuncDoneException
+        super().__call__(t)
+        # return the value
+        return random() * self.get_relative_time(t)
+
+If properly registered from the plugin, this function type will be available
+in the Ceed GUI.
 """
 from typing import Type, List, Tuple, Dict, Optional, Set, TypeVar, \
     Generator, Union
