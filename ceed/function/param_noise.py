@@ -3,10 +3,14 @@
 
 Provides the optional randomization for the parameters of a
 :class:`~ceed.function.FuncBase`. Each parameter of the function may be
-randomized according to :attr:`~ceed.function.FuncBase.noisy_parameters`.
+randomized according to :attr:`~ceed.function.FuncBase.noisy_parameters`, that
+attaches a distribution to the parameter.
 
-This module provides a :class:`ParameterNoiseFactory` used to register noise
-type classes and some built in noise types.
+This module provides a :class:`ParameterNoiseFactory` used to register
+random distribution classes and it provides some built in distributions.
+
+Distributions can also be extended using the :mod:`~ceed.function.plugin`
+interface.
 """
 from typing import Dict, Type, TypeVar, List
 
@@ -22,7 +26,7 @@ NoiseType = TypeVar('NoiseType', bound='NoiseBase')
 
 
 class ParameterNoiseFactory(EventDispatcher):
-    """Factory where noise classes are registered and accessed by name.
+    """Factory where distributions are registered and accessed by name.
     """
 
     noise_classes: Dict[str, Type[NoiseType]] = {}
@@ -45,9 +49,9 @@ class ParameterNoiseFactory(EventDispatcher):
         return self.noise_classes[name]
 
     def make_instance(self, config: dict) -> 'NoiseBase':
-        """Takes a noise instance's config, as returned by
-        :meth:`NoiseBase.get_config`, and creates a noise instance of that
-        class and config, and returns it.
+        """Takes a noise distribution instance's config, as returned by
+        :meth:`NoiseBase.get_config`, and creates a noise distribution instance
+        of that class and config, and returns it.
         """
         cls = self.get_cls(config['cls'])
         instance = cls(**{k: v for k, v in config.items() if k != 'cls'})

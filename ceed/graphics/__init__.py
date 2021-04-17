@@ -1,7 +1,7 @@
-'''Graphcs
+'''Graphics
 ==================
 
-Collection of widgets for displaying common things.
+Collection of widgets used by the Ceed GUI.
 '''
 from itertools import chain, islice
 

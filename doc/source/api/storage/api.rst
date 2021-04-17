@@ -6,3 +6,4 @@ Storage
 
    storage.rst
    controller.rst
+   storage_widgets.rst

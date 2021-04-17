@@ -1,7 +1,7 @@
 """Storage widgets
 ==================
 
-Kivy widgets visualizing the data storage.
+Widgets visualizing data storage.
 
 """
 
@@ -20,26 +20,51 @@ __all__ = (
 
 
 class ExperimentLogWidget(BoxLayout):
+    """Displays data associated with all the experiments.
+    """
 
     data_storage: CeedDataWriterBase = None
+    """The :class:`~ceed.storage.controller.CeedDataWriterBase` used by Ceed.
+    """
 
     num_experiments = NumericProperty(0)
 
     num_images = NumericProperty(0)
+    """The number of images recorded to the file.
+    """
 
     log_text = StringProperty('')
+    """The text logged to the file.
+    """
 
     log_container = None
+    """Widget that displays the logs.
+    """
 
     config_str = StringProperty('')
+    """The yaml encoded string containing the current app Ceed config data.
+    """
 
     mea_config = StringProperty('')
+    """String representation of the mea configuration matrix
+    :attr:`~ceed.view.controller.ViewControllerBase.mea_transform`.
+    """
 
     experiment_names = ListProperty([])
+    """List of all the names of the experiments run so far. The names are how
+    they are stored in the file.
+    """
 
     selected_config_str = StringProperty('')
+    """The yaml encoded string containing the Ceed config data of the experiment
+    or app selected in the GUI.
+    """
 
     selected_mea_config_str = StringProperty('')
+    """String representation of the mea configuration matrix
+    :attr:`~ceed.view.controller.ViewControllerBase.mea_transform` of the
+    experiment or app selected in the GUI.
+    """
 
     _bound_config = None, None, None
 
@@ -62,6 +87,9 @@ class ExperimentLogWidget(BoxLayout):
         self._bound_config = self, config_uid, mea_config_uid
 
     def bind_to_current_config_selection(self, name):
+        """Binds and tracks the config of the given experiment or app and shows
+        it in the GUI.
+        """
         obj, uid, mea_uid = self._bound_config
         obj.unbind_uid('config_str', uid)
         obj.unbind_uid('mea_config', mea_uid)
@@ -90,6 +118,10 @@ class ExperimentLogWidget(BoxLayout):
         self._bound_config = obj, config_uid, mea_config_uid
 
     def experiment_change_callback(self, instance, name, value):
+        """Called in response to any data related changes (experiment
+        started/finished, image saved, etc.) and updates the GUI to show the
+        new data.
+        """
         if name == 'open':
             self.handle_open_file()
         elif name == 'close':
@@ -147,6 +179,8 @@ class ExperimentLogWidget(BoxLayout):
             assert False
 
     def handle_open_file(self):
+        """Updates GUI when a new data file is opened.
+        """
         data_storage = self.data_storage
         self.log_text = data_storage.get_log_data()
 
@@ -171,6 +205,11 @@ class ExperimentLogWidget(BoxLayout):
         self.mark_experiments_with_changed_config()
 
     def mark_experiments_with_changed_config(self):
+        """Visually points out in the data log any experiment whose mea-related
+        config is different than the previous experiment. This helps the user
+        know if they need to backport mea config changes that happened during
+        an experiment to the experiment after it is done.
+        """
         widgets = [
             w for w in reversed(self.log_container.children)
             if isinstance(w, StageLogWidget)]
@@ -185,6 +224,9 @@ class ExperimentLogWidget(BoxLayout):
             widgets[-1].mea_config != self.mea_config
 
     def format_config(self, config):
+        """Converts the config into a yaml-encoded string and the mea config
+        to a string showing the matrix.
+        """
         s = ''
         for key, value in config.items():
             key = str(key)
@@ -196,6 +238,8 @@ class ExperimentLogWidget(BoxLayout):
         self.mea_config = self.data_storage.get_config_mea_matrix_string()
 
     def copy_mea_config_to_exp(self, source, target):
+        """Copies the mea config values from one experiment to another.
+        """
         if source == target:
             return
 
@@ -215,17 +259,29 @@ class ExperimentLogWidget(BoxLayout):
         self.mark_experiments_with_changed_config()
 
 
-class LogWidgetBase(object):
+class LogWidgetBase:
+    """Base class for log items displayed in the GUI.
+    """
 
     data_storage = None
+    """The :class:`~ceed.storage.controller.CeedDataWriterBase` used by Ceed.
+    """
 
     image_widget = None
+    """Widget that shows an image.
+    """
 
     save_time = NumericProperty(0)
+    """The time the item was saved.
+    """
 
     notes = StringProperty('')
+    """Any notes associated with the item.
+    """
 
     image = ObjectProperty(None)
+    """The image object recorded in the log item, if any.
+    """
 
     def __init__(self, data_storage=None, **kwargs):
         super(LogWidgetBase, self).__init__(**kwargs)
@@ -234,33 +290,60 @@ class LogWidgetBase(object):
         self.show_image()
 
     def show_image(self, *largs):
+        """Displays the :attr:`image` in the log item.
+        """
         self.image_widget.update_img(self.image)
 
 
 class StageLogWidget(LogWidgetBase, ShowMoreBehavior, BoxLayout):
+    """Log item representing a recorded experiment."""
 
     experiment_number = StringProperty('')
+    """The experiment number as saved in the file.
+    """
 
     stage = StringProperty('')
+    """The name of the stage used in the experiment.
+    """
 
     duration_frames = NumericProperty(0)
+    """The number of frames in the experiment.
+    """
 
     duration_sec = NumericProperty(0)
+    """The duration of the experiment.
+    """
 
     config = ObjectProperty({})
+    """The app config used for the experiment.
+    """
 
     config_str = StringProperty('')
+    """String representation of the config.
+    """
 
     mea_config = StringProperty('')
+    """String representation of
+    :attr:`~ceed.view.controller.ViewControllerBase.mea_transform` used in the
+    experiment.
+    """
 
     mea_config_different = BooleanProperty(False)
+    """Whether the
+    :attr:`~ceed.view.controller.ViewControllerBase.mea_transform` used in this
+    experiment is different from the next experiment, or app if it's the last.
+    """
 
     def refresh_metadata(self):
+        """Updates the instance properties from the saved data.
+        """
         data = self.data_storage.get_experiment_metadata(self.experiment_number)
         for key, value in data.items():
             setattr(self, key, value)
 
     def update_text(self, text):
+        """Updates the notes from the GUI.
+        """
         if text == self.notes:
             return
         self.data_storage.set_experiment_notes(self.experiment_number, text)
@@ -276,5 +359,8 @@ class StageLogWidget(LogWidgetBase, ShowMoreBehavior, BoxLayout):
 
 
 class ImageLogWidget(LogWidgetBase, ShowMoreBehavior, BoxLayout):
+    """Log item representing a recorded image from the player."""
 
     image_num = NumericProperty(0)
+    """The number of the image as saved in the file.
+    """

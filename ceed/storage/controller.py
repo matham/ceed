@@ -42,36 +42,78 @@ class CeedDataWriterBase(EventDispatcher):
     _config_props_ = ('root_path', 'backup_interval', 'compression')
 
     root_path = StringProperty('')
+    """The directory part of the path where the data is saved.
+    """
 
     backup_interval = NumericProperty(5.)
+    """How frequently the backup file is flushed to disk.
+
+    The backup file is the one into which all new data is written to
+    until saved explicitly in the GUI to the current data file. Until that
+    happens, we write date to the backup file.
+    """
 
     filename = StringProperty('')
+    """The full filename of the h5 data file.
+    """
 
     read_only_file = BooleanProperty(False)
+    """Whether the data file was opened in readonly mode.
+    """
 
     backup_filename = ''
+    """The filename of the backup file where live data file is written to.
+    """
 
     nix_file = None
+    """The nix file object to the open :attr:`backup_filename`.
+    """
 
     compression = StringProperty('Auto')
+    """Whether to compress the h5 data file as data is written to it.
+
+    It can make the file smaller. Valid values are ``"ZIP"``, ``"None"``, or
+    ``"Auto"``.
+    """
 
     has_unsaved = BooleanProperty(False)
+    """Indicates whether the file changed and needs to be saved or
+    discarded by user before exiting.
+    """
 
     config_changed = BooleanProperty(False)
+    """Indicates whether the app config changed and needs to be written again to
+    the data file.
+    """
 
     data_queue = None
+    """Queue of incoming data to be saved by the data thread into the file.
+    """
 
     data_thread = None
+    """Second thread that is used to write live streamed experiment data to
+    prevent main thread blocking.
+    """
 
     data_lock = None
+    """Lock used to safely write data to the file and to prevent the main
+    thread from discarding file with second thread writes to it..
+    """
 
     func_display_callback = None
+    """Callback called when functions are loaded from a config file.
+    """
 
     stage_display_callback = None
+    """Callback called when stages are loaded from a config file.
+    """
 
     shape_display_callback = None
 
     clear_all_callback = None
+    """Callback called when all the functions/stages/shapes are cleared
+    due to re-loading the config.
+    """
 
     _experiment_pat = re.compile('^experiment([0-9]+)$')
 
@@ -79,6 +121,9 @@ class CeedDataWriterBase(EventDispatcher):
         '.+(mea_transform:[ \n\\-\\[\\],0-9.]+\\]?\\n).+', flags=re.DOTALL)
 
     backup_event = None
+    """Clock trigger event that controls the periodic callback to
+    :meth:`write_changes` due to :attr:`backup_interval`.
+    """
 
     __events__ = ('on_experiment_change', )
 
@@ -92,6 +137,9 @@ class CeedDataWriterBase(EventDispatcher):
 
     @property
     def nix_compression(self):
+        """Gets the nix enum value that corresponds to the user selected
+        :attr:`compression`.
+        """
         if self.compression == 'ZIP':
             return nix.Compression.DeflateNormal
         elif self.compression == 'None':
@@ -99,14 +147,27 @@ class CeedDataWriterBase(EventDispatcher):
         return nix.Compression.Auto
 
     def get_function_plugin_contents(self):
+        """Returns :attr:`~ceed.function.FunctionFactoryBase.plugin_sources`
+        from the app's :class:`~ceed.function.FunctionFactoryBase`
+        """
         app = App.get_running_app()
         return app.function_factory.plugin_sources
 
     def get_stage_plugin_contents(self):
+        """Returns :attr:`~ceed.stage.StageFactoryBase.plugin_sources`
+        from the app's :class:`~ceed.stage.StageFactoryBase`
+        """
         app = App.get_running_app()
         return app.stage_factory.plugin_sources
 
     def gather_config_data_dict(self, stages_only=False):
+        """Accumulates all the configuration data from all the classes into
+        a single dict and returns it.
+
+        If ``stages_only``, it only returns the data required to be able to
+        load the stages/functions/shapes from the dict, but not e.g. player
+        config etc.
+        """
         app = App.get_running_app()
         data = {}
         data['shape'] = app.shape_factory.get_state()
@@ -121,6 +182,9 @@ class CeedDataWriterBase(EventDispatcher):
         return data
 
     def clear_existing_config_data(self):
+        """Clears and resets all the user added data such as stages, functions,
+        and shapes.
+        """
         if self.clear_all_callback is not None:
             self.clear_all_callback()
 
@@ -132,6 +196,13 @@ class CeedDataWriterBase(EventDispatcher):
 
     def apply_config_data_dict(
             self, data, stages_only=False, requires_app_settings=True):
+        """Applies the data from a config dict generated with
+        :meth:`gather_config_data_dict`.
+
+        If ``stages_only``, it'll only import the data required to recreates the
+        stages/functions/shapes. If ``requires_app_settings``, but the dict
+        only contains stage config, it raises an exception.
+        """
         app = App.get_running_app()
 
         if not stages_only and (
@@ -164,6 +235,8 @@ class CeedDataWriterBase(EventDispatcher):
 
     def get_filebrowser_callback(
             self, func, clear_data=False, ext=None, **kwargs):
+        """Called by the GUI when user browses for a file.
+        """
 
         def callback(paths):
             if not paths:
@@ -193,8 +266,9 @@ class CeedDataWriterBase(EventDispatcher):
         return callback
 
     def ui_close(self, app_close=False):
-        '''The UI asked for to close a file. We create a new one if the app
-        doesn't close.
+        '''Called when the UI asked to close a file.
+
+        We create a new backup file immediately if the app doesn't close.
 
         If unsaved, will prompt if want to save
         '''
@@ -222,6 +296,8 @@ class CeedDataWriterBase(EventDispatcher):
             return True
 
     def create_file(self, filename, overwrite=False):
+        """Creates a new h5 data file and initializes it.
+        """
         if exists(filename) and not overwrite:
             raise ValueError('{} already exists'.format(filename))
         self.close_file()
@@ -272,6 +348,11 @@ class CeedDataWriterBase(EventDispatcher):
 
     @staticmethod
     def upgrade_file(nix_file):
+        """Given an existing h5 data file, it'll add any missing sections
+        that have been added by newer Ceed versions since the file was created.
+
+        They are added with default values.
+        """
         import ceed
         version = yaml_dumps(ceed.__version__)
 
@@ -314,7 +395,8 @@ class CeedDataWriterBase(EventDispatcher):
             nix_file.sections['app_config']['ceed_version'] = version
 
     def open_file(self, filename, read_only=False):
-        '''Loads the file's config and opens the file for usage. '''
+        """Loads the file's config and opens the file for usage.
+        """
         self.close_file()
 
         self.filename = filename
@@ -345,9 +427,10 @@ class CeedDataWriterBase(EventDispatcher):
         self.dispatch('on_experiment_change', 'open', None)
 
     def close_file(self, force_remove_autosave=False):
-        '''Closes without saving the data. But if data was unsaved, it leaves
-        the backup file unchanged.
-        '''
+        """Closes the backup file without saving the data to the main file. But
+        if data was unsaved it leaves the backup file, otherwise it removes
+        it. If ``force_remove_autosave``, it always removes it.
+        """
         if self.data_thread:
             raise TypeError("Cannot close data during an experiment")
         if self.nix_file:
@@ -368,7 +451,8 @@ class CeedDataWriterBase(EventDispatcher):
         self.dispatch('on_experiment_change', 'close', None)
 
     def import_file(self, filename, stages_only=False):
-        '''Loads the file's config data. '''
+        """Imports the file's config data.
+        """
         from ceed.analysis import read_nix_prop
         Logger.debug(
             'Ceed Controller (storage): Importing "{}"'.format(self.filename))
@@ -384,7 +468,10 @@ class CeedDataWriterBase(EventDispatcher):
         self.apply_config_data_dict(data, stages_only=stages_only)
         self.config_changed = True
 
-    def discard_file(self,):
+    def discard_file(self):
+        """Closes and discards the backup file and re-opens the data file
+        and creates a backup file from it.
+        """
         if not self.has_unsaved and not self.config_changed:
             return
 
@@ -397,6 +484,8 @@ class CeedDataWriterBase(EventDispatcher):
             self.create_file('')
 
     def save_as(self, filename, overwrite=False):
+        """Saves the data to a new h5 file and opens that file.
+        """
         if exists(filename) and not overwrite:
             raise ValueError('{} already exists'.format(filename))
         self.save(filename, True)
@@ -404,9 +493,9 @@ class CeedDataWriterBase(EventDispatcher):
         self.save()
 
     def save(self, filename=None, force=False):
-        '''Saves the changes to the autosave and also saves the changes to
-        the file in filename (if None saves to the current filename).
-        '''
+        """Saves the changes to the backup file and also saves the changes to
+        the file in filename (if None, saves to the current :attr:`filename`).
+        """
         if self.read_only_file and not force:
             raise TypeError('Cannot save because file was opened as read only. '
                             'Try saving as a new file')
@@ -430,7 +519,9 @@ class CeedDataWriterBase(EventDispatcher):
             self.config_changed = self.has_unsaved = False
 
     def write_changes(self, *largs, scheduled=False):
-        '''Writes unsaved changes to the current (autosave) file. '''
+        """Writes all unsaved changes to the current (backup) file and flushes
+        it.
+        """
         if not self.nix_file or scheduled and self.read_only_file:
             return
 
@@ -447,6 +538,8 @@ class CeedDataWriterBase(EventDispatcher):
                 self.data_lock.release()
 
     def write_yaml_config(self, filename, overwrite=False, stages_only=False):
+        """Saves the config data to a yaml file.
+        """
         if exists(filename) and not overwrite:
             raise ValueError('{} already exists'.format(filename))
 
@@ -456,6 +549,8 @@ class CeedDataWriterBase(EventDispatcher):
 
     def read_yaml_config(
             self, filename, stages_only=False, requires_app_settings=True):
+        """Imports and applies the config data from a yaml file.
+        """
         with open(filename, 'r') as fh:
             data = fh.read()
         data = yaml_loads(data)
@@ -465,6 +560,9 @@ class CeedDataWriterBase(EventDispatcher):
         self.config_changed = True
 
     def write_config(self, config_section=None):
+        """Writes the app config data and stages to the appropriate section
+        in the h5 data file.
+        """
         import ceed
         config = config_section if config_section is not None else \
             self.nix_file.sections['app_config']
@@ -475,7 +573,10 @@ class CeedDataWriterBase(EventDispatcher):
         config['ceed_version'] = yaml_dumps(ceed.__version__)
         self.has_unsaved = True
 
-    def read_config(self, config_section=None):
+    def read_config(self, config_section=None) -> dict:
+        """Reads the app config data and stages from the appropriate section
+        in the h5 data file.
+        """
         from ceed.analysis import read_nix_prop
         config = config_section if config_section is not None else \
             self.nix_file.sections['app_config']
@@ -486,6 +587,8 @@ class CeedDataWriterBase(EventDispatcher):
         return data
 
     def add_log_item(self, text):
+        """Adds the text to the saved experiment log data.
+        """
         section = self.nix_file.sections['app_logs']
         t = time.time()
         section['log_data'] += '\n{}: {}'.format(t, text)
@@ -493,6 +596,8 @@ class CeedDataWriterBase(EventDispatcher):
         self.dispatch('on_experiment_change', 'app_log', None)
 
     def add_app_log(self, text):
+        """Adds the text to the app log.
+        """
         app = App.get_running_app()
         if app is None:
             return
@@ -500,9 +605,13 @@ class CeedDataWriterBase(EventDispatcher):
         app.error_indicator.add_item(text, 'user')
 
     def get_log_data(self):
+        """Gets the experiment log data from the data file.
+        """
         return self.nix_file.sections['app_logs']['log_data']
 
     def load_last_fluorescent_image(self, filename):
+        """Returns the last saved image from the data file.
+        """
         from ceed.analysis import CeedDataReader
         f = nix.File.open(filename, nix.FileMode.ReadOnly)
         Logger.debug(
@@ -529,6 +638,8 @@ class CeedDataWriterBase(EventDispatcher):
             f.close()
 
     def add_image_to_file(self, img, notes=''):
+        """Stores the images in the data file, with the optional notes.
+        """
         block = self.nix_file.blocks['fluorescent_images']
         n = len(block.groups)
         group = self.write_fluorescent_image(block, img, '_{}'.format(n))
@@ -540,6 +651,9 @@ class CeedDataWriterBase(EventDispatcher):
         self.dispatch('on_experiment_change', 'image_add', n)
 
     def write_fluorescent_image(self, block, img, postfix=''):
+        """Writes the given image to the given experiment or image block in the
+        data file.
+        """
         group = block.create_group(
             'fluorescent_image{}'.format(postfix), 'image')
 
@@ -559,25 +673,41 @@ class CeedDataWriterBase(EventDispatcher):
         return group
 
     def get_num_fluorescent_images(self):
+        """Same as :meth:`get_file_num_fluorescent_images`, but for the
+        currently open file.
+        """
         return self.get_file_num_fluorescent_images(self.nix_file)
 
     @staticmethod
     def get_file_num_fluorescent_images(nix_file):
+        """Returns the total number of images saved to the file (not
+        including images stored in each experiment).
+        """
         try:
             return len(nix_file.blocks['fluorescent_images'].groups)
         except KeyError:
             return 0
 
-    def get_experiment_numbers(self):
+    def get_experiment_numbers(self) -> List[str]:
+        """Returns list of experiments in the current file.
+
+        They are each a number.
+        """
         return self.get_blocks_experiment_numbers(self.nix_file.blocks)
 
     def get_experiment_notes(self, experiment_block_number):
+        """Gets the experiment notes from the given experiment number stored
+        in the current file.
+        """
         name = self.get_experiment_block_name(experiment_block_number)
         if 'notes' in self.nix_file.blocks[name].metadata:
             return self.nix_file.blocks[name].metadata['notes']
         return ''
 
     def set_experiment_notes(self, experiment_block_number, text):
+        """Sets the experiment notes for the given experiment number stored
+        in the current file.
+        """
         name = self.get_experiment_block_name(experiment_block_number)
         block = self.nix_file.blocks[name]
         block.metadata['notes'] = text
@@ -586,12 +716,21 @@ class CeedDataWriterBase(EventDispatcher):
         self.dispatch(
             'on_experiment_change', 'experiment_notes', experiment_block_number)
 
-    def get_experiment_config(self, experiment_block_number):
+    def get_experiment_config(self, experiment_block_number) -> dict:
+        """Gets the app config dict from the given experiment number stored
+        in the current file.
+        """
         name = self.get_experiment_block_name(experiment_block_number)
         config = self.nix_file.blocks[name].metadata.sections['app_config']
         return self.read_config(config)
 
     def get_config_mea_matrix_string(self, experiment_block_number=None):
+        """Gets the yaml-string encoded
+        :attr:`~ceed.view.controller.ViewControllerBase.mea_transform` from the
+        given experiment number stored in the current file.
+
+        If no experiment is provided, it gets it from the current app config.
+        """
         from ceed.analysis import read_nix_prop
         if experiment_block_number is not None:
             name = self.get_experiment_block_name(experiment_block_number)
@@ -608,6 +747,10 @@ class CeedDataWriterBase(EventDispatcher):
 
     def set_config_mea_matrix_string(
             self, experiment_block_number, config_string, new_config_string):
+        """Sets the yaml-string encoded
+        :attr:`~ceed.view.controller.ViewControllerBase.mea_transform` for the
+        given experiment number stored in the current file.
+        """
         from ceed.analysis import read_nix_prop
         if config_string == new_config_string:
             raise ValueError('New and old MEA transform are identical')
@@ -626,6 +769,9 @@ class CeedDataWriterBase(EventDispatcher):
             experiment_block_number)
 
     def get_experiment_metadata(self, experiment_block_number):
+        """Reads the experiment metadata (notes, time, etc.) from the given
+        experiment in the current file.
+        """
         from ceed.analysis import CeedDataReader
         name = self.get_experiment_block_name(experiment_block_number)
         block = self.nix_file.blocks[name]
@@ -652,7 +798,10 @@ class CeedDataWriterBase(EventDispatcher):
         }
         return metadata
 
-    def get_saved_image(self, image_num):
+    def get_saved_image(self, image_num) -> dict:
+        """Reads and returns the requested image and its metadata from the
+        file.
+        """
         from ceed.analysis import CeedDataReader
         block = self.nix_file.blocks['fluorescent_images']
         group = block.groups['fluorescent_image_{}'.format(image_num)]
@@ -666,7 +815,11 @@ class CeedDataWriterBase(EventDispatcher):
         return data
 
     @staticmethod
-    def get_blocks_experiment_numbers(blocks, ignore_list=None):
+    def get_blocks_experiment_numbers(blocks, ignore_list=None) -> List[str]:
+        """Returns list of experiments in the given nix blocks.
+
+        They are each a number.
+        """
         experiments = []
         ignore_list = set(map(str, ignore_list or []))
 
@@ -679,6 +832,9 @@ class CeedDataWriterBase(EventDispatcher):
 
     @staticmethod
     def get_experiment_block_name(experiment_num):
+        """Converts the experiment number to the full name used to name the
+        block that stores the experiment data.
+        """
         return 'experiment{}'.format(experiment_num)
 
     def ensure_array_size(self, used, allocated, added=1):
@@ -691,6 +847,10 @@ class CeedDataWriterBase(EventDispatcher):
     def collect_experiment(self, block, shapes, frame_bits, frame_counter,
                            frame_time, frame_time_counter, queue, lock,
                            led_state):
+        """Method that runs in its own thread, for each experiment, that gets
+        incoming experiment data over the :attr:`data_queue` and saves it to
+        the file.
+        """
         while True:
             try:
                 msg, value = queue.get()
@@ -747,6 +907,9 @@ class CeedDataWriterBase(EventDispatcher):
                     lock.release()
 
     def prepare_experiment(self, stage_name, used_shapes):
+        """Initializes the file with the config and prepares to accept
+        experiment data for a new experiment using the given stage.
+        """
         self.stop_experiment()
 
         i = len(self.get_experiment_numbers())
@@ -805,6 +968,9 @@ class CeedDataWriterBase(EventDispatcher):
         t.start()
 
     def stop_experiment(self):
+        """Stops the experiment data streams opened with
+        :meth:`prepare_experiment` and cleans up after the experiment.
+        """
         if not self.data_thread:
             return
 
@@ -825,21 +991,32 @@ class CeedDataWriterBase(EventDispatcher):
             block.name[len('experiment'):])
 
     def add_frame(self, data):
+        """Adds experiment data for a frame displayed on screen to the
+        :attr:`data_queue`.
+        """
         if self.data_queue:
             self.data_queue.put_nowait(('frame', data))
             self.has_unsaved = True
 
     def add_frame_flip(self, data):
+        """Adds experiment data for a frame sent to GPU to the
+        :attr:`data_queue`.
+        """
         if self.data_queue:
             self.data_queue.put_nowait(('frame_flip', data))
             self.has_unsaved = True
 
     def add_led_state(self, count, r, g, b):
+        """Adds experiment data about the projector LED state to the
+        :attr:`data_queue`.
+        """
         if self.data_queue:
             self.data_queue.put_nowait(('led_state', (count, r, g, b)))
             self.has_unsaved = True
 
     def add_debug_data(self, name, data):
+        """Adds experiment debug data to the :attr:`data_queue`.
+        """
         if self.data_queue:
             self.data_queue.put_nowait(('debug_data', (name, data)))
             self.has_unsaved = True

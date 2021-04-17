@@ -1,7 +1,7 @@
 """Video Player
 ================
 
-Plays and records media from e.g. a camera.
+Plays and records media from e.g. a camera or the network.
 """
 
 from os.path import abspath, isdir, dirname, join, exists
@@ -29,6 +29,12 @@ __all__ = ('CeedPlayer', )
 
 
 class CeedPlayer(EventDispatcher):
+    """Player and recorder that supports playing and recording from multiple
+    player and recorder sources made available through :mod:`cpl_media`.
+
+    Through the GUI which of the players is the current :attr:`player`
+    and similarly for the :attr:`recorder`.
+    """
 
     _config_props_ = ('player_name', )
 
@@ -40,57 +46,120 @@ class CeedPlayer(EventDispatcher):
     }
 
     ffmpeg_player: FFmpegPlayer = None
+    """Player that can playback a video file.
+    """
 
     ffmpeg_settings = None
+    """The settings widget used in the GUI to configure the
+    :attr:`ffmpeg_player`.
+    """
 
     ptgray_player: PTGrayPlayer = None
+    """Player that can play a PointGray camera.
+    """
 
     ptgray_settings = None
+    """The settings widget used in the GUI to configure the
+    :attr:`ptgray_player`.
+    """
 
     thor_player: ThorCamPlayer = None
+    """Player that can play a Thor camera.
+    """
 
     thor_settings = None
+    """The settings widget used in the GUI to configure the
+    :attr:`thor_player`.
+    """
 
     client_player: RemoteVideoPlayer = None
+    """Player that can play a video from a network stream.
+    """
 
     client_settings = None
+    """The settings widget used in the GUI to configure the
+    :attr:`client_player`.
+    """
 
     player: BasePlayer = ObjectProperty(None, rebind=True)
+    """Currently selected player. It is one of :attr:`ffmpeg_player`,
+    :attr:`ptgray_player`, :attr:`thor_player`, or :attr:`client_player`.
+    """
 
     player_settings = ObjectProperty(None)
+    """The settings widget used in the GUI to configure the currently selected
+    player. It is one of :attr:`ffmpeg_settings`,
+    :attr:`ptgray_settings`, :attr:`thor_settings`, or :attr:`client_settings`.
+    """
 
     player_name = StringProperty('ffmpeg')
+    """The name of the currently selected video player. It is one of "ffmpeg",
+    "thor", "ptgray", or "client".
+    """
 
     player_to_raw_name_map = {
         'Webcam/File': 'ffmpeg', 'Network': 'client', 'Thor': 'thor',
         'PointGray': 'ptgray'
     }
+    """Maps a user friendly player-type name to the name used with
+    :attr:`player_name`.
+    """
 
     player_to_nice_name_map = {v: k for k, v in player_to_raw_name_map.items()}
+    """Maps :attr:`player_name` to a user friendly name.
+    """
 
     image_file_recorder: ImageFileRecorder = None
+    """Recorder that can record the :attr:`player` video to a image file series.
+    """
 
     image_file_recorder_settings = None
+    """The settings widget used in the GUI to configure the
+    :attr:`image_file_recorder`.
+    """
 
     video_recorder: VideoRecorder = None
+    """Recorder that can record the :attr:`player` video to a video file.
+    """
 
     video_recorder_settings = None
+    """The settings widget used in the GUI to configure the
+    :attr:`video_recorder`.
+    """
 
     recorder: BaseRecorder = ObjectProperty(None, rebind=True)
+    """Currently selected recorder. It is one of :attr:`image_file_recorder` or
+    :attr:`video_recorder`.
+    """
 
     recorder_settings = ObjectProperty(None)
+    """The settings widget used in the GUI to configure the currently selected
+    recorder. It is one of :attr:`image_file_recorder_settings` or
+    :attr:`video_recorder_settings`.
+    """
 
     recorder_name = StringProperty('video')
+    """The name of the currently selected video recorder. It is one of
+    "image_file" or "video".
+    """
 
     recorder_to_raw_name_map = {'Images': 'image_file', 'Video': 'video'}
+    """Maps a user friendly recorder-type name to the name used with
+    :attr:`recorder_name`.
+    """
 
     recorder_to_nice_name_map = {
         v: k for k, v in recorder_to_raw_name_map.items()}
+    """Maps :attr:`recorder_name` to a user friendly name.
+    """
 
     last_image = None
+    """The last :attr:`player` image displayed in the GUI.
+    """
 
     disk_used_percent = NumericProperty(0)
-    '''Percent of disk usage space.
+    '''Percent of disk usage space in the :attr:`video_recorder` recorder
+    directory.
     '''
 
     def __init__(self, open_player_thread=True, **kwargs):
@@ -128,6 +197,8 @@ class CeedPlayer(EventDispatcher):
             self, '{}_recorder_settings'.format(self.recorder_name))
 
     def create_widgets(self):
+        """Creates all the widgets required to show player/recorder.
+        """
         self.ffmpeg_settings = FFmpegSettingsWidget(player=self.ffmpeg_player)
         self.ptgray_settings = PTGraySettingsWidget(player=self.ptgray_player)
         self.thor_settings = ThorCamSettingsWidget(player=self.thor_player)
@@ -140,7 +211,7 @@ class CeedPlayer(EventDispatcher):
             recorder=self.video_recorder)
 
     def display_frame(self, image, metadata=None):
-        """The displays the new image to the user.
+        """The displays the image to the user and adds it to :attr:`last_image`.
         """
         app = App.get_running_app()
         widget = app.central_display
@@ -149,7 +220,7 @@ class CeedPlayer(EventDispatcher):
             self.last_image = image
 
     def update_disk_usage(self, *largs):
-        """Runs periodically to update the disk usage.
+        """Runs periodically to update :attr:`disk_used_percent`.
         """
         p = self.video_recorder.record_directory
         p = 'C:\\' if not exists(p) else (p if isdir(p) else dirname(p))
@@ -158,8 +229,7 @@ class CeedPlayer(EventDispatcher):
         self.disk_used_percent = round(psutil.disk_usage(p).percent) / 100.
 
     def load_screenshot(self, app, paths):
-        """Loads a previously saved screenshot of the camera as a background
-        image.
+        """Loads a previously saved screenshot image file and displayes it.
         """
         if not paths:
             return
@@ -179,7 +249,7 @@ class CeedPlayer(EventDispatcher):
         self.display_frame(img, None)
 
     def save_screenshot(self, img, app, paths):
-        """Saves the image acquired to a file.
+        """Saves the currently displayed image to a file.
         """
         if not paths:
             return
@@ -187,6 +257,8 @@ class CeedPlayer(EventDispatcher):
         BaseRecorder.save_image(paths[0], img)
 
     def stop(self):
+        """Stops all the players and recorders from playing/recording.
+        """
         for player in (
                 self.ffmpeg_player, self.thor_player, self.client_player,
                 self.image_file_recorder, self.video_recorder,
@@ -195,6 +267,8 @@ class CeedPlayer(EventDispatcher):
                 player.stop()
 
     def clean_up(self):
+        """Stops all the players and recorders and cleans up their resources.
+        """
         for player in (
                 self.ffmpeg_player, self.thor_player, self.client_player,
                 self.image_file_recorder, self.video_recorder,

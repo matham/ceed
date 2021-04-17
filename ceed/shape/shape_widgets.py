@@ -156,7 +156,8 @@ class CeedPainter(CeedPaintCanvasBehavior, Widget):
 
 
 class ShapeGroupDraggableLayoutBehavior(DraggableLayoutBehavior):
-    """The container widget of a group that displays the shapes of the group.
+    """The container widget of a shape group that displays the shapes in the
+    group.
     """
 
     group_widget: 'WidgetShapeGroup' = ObjectProperty(None)
@@ -249,7 +250,7 @@ class WidgetShapeGroup(ShowMoreBehavior, BoxLayout):
         self.more.add_widget(ShapeGroupItem(shape=shape, group=self))
 
     def remove_shape(self, shape):
-        """Hides the :class:`ShapeGroupItem` associated with the
+        """Removes the :class:`ShapeGroupItem` associated with the
         :class:`ceed.shape.CeedShape` from this group's widget.
         """
         for widget in self.shape_widgets:
@@ -259,8 +260,8 @@ class WidgetShapeGroup(ShowMoreBehavior, BoxLayout):
 
 
 class ShapeGroupItem(BoxLayout):
-    """The shape's widget displayed in the :class:`WidgetShapeGroup` widget
-    tree for a shape from that group.
+    """The shape's widget, displayed in the :class:`WidgetShapeGroup` widget
+    tree, for a shape from that group.
     """
 
     shape: CeedShape = ObjectProperty(None, rebind=True)
@@ -318,7 +319,7 @@ class WidgetShape(ShowMoreBehavior, BoxLayout):
 
     label = None
     '''The label widget that displays the name of the shape in the center
-    of the shape, in the drawing area when enabled.
+    of the shape, in the drawing area, when enabled.
     '''
 
     show_label = BooleanProperty(False)
@@ -334,7 +335,7 @@ class WidgetShape(ShowMoreBehavior, BoxLayout):
     '''
 
     area = NumericProperty(0)
-    '''The area in the shape (e.g. the area of the polygon).
+    '''The enclosed area of the shape (e.g. the area of the polygon).
     '''
 
     selected = BooleanProperty(False)

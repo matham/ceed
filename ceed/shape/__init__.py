@@ -6,8 +6,8 @@ with time-varying intensity during an experiment :mod:`ceed.stage`.
 
 :class:`~kivy_garden.painter.PaintCanvasBehavior` provides the widget
 functionality such that when a user draws on the screen,
-:class:`~kivy_garden.painter.PaintShape` instances are created and added to the
-widget.
+:class:`~kivy_garden.painter.PaintShape` instances are created and added to
+it.
 
 :class:`CeedPaintCanvasBehavior` provides a more specialized painter canvas.
 Specifically, in addition to being able to draw shapes, it adds the ability
@@ -36,12 +36,12 @@ __all__ = (
 class CeedPaintCanvasBehavior(PaintCanvasBehavior):
     """Controller base class for drawing and managing the shapes.
 
-    A shape is drawn by the user in the GUI and added by
+    A shape is drawn by the user in the GUI and automatically added by
     :class:`kivy_garden.painter.PaintCanvasBehavior` to its
     :attr:`kivy_garden.painter.PaintCanvasBehavior.shapes` list. This class
     manages all that without any of the associated GUI components that
     is shown to the user (e.g. the ability name shapes etc.). The GUI
-    components is added by the :class:`ceed.shape.shape_widgets.CeedPainter`.
+    components is added by the :class:`~ceed.shape.shape_widgets.CeedPainter`.
 
     So when run from the GUI, an instance of
     :class:`ceed.shape.shape_widgets.CeedPainter` is the class used to manage
@@ -68,7 +68,7 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
     """
 
     groups: List['CeedShapeGroup'] = ListProperty([])
-    '''List of :class:`CeedShapeGroup` instances.
+    '''List of :class:`CeedShapeGroup` instances created in Ceed.
     '''
 
     shape_names: Dict[str, 'CeedShape'] = DictProperty({})
@@ -329,9 +329,9 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
         self.dispatch('on_changed')
 
 
-class CeedShape(object):
+class CeedShape:
     """A co-base class used with :class:`kivy_garden.painter.PaintShape`
-    derived classes to add ceed specific functionality to the
+    derived classes to add Ceed specific functionality to the
     :class:`kivy_garden.painter.PaintShape` classes.
     """
 
@@ -472,7 +472,7 @@ class CeedShapeGroup(EventDispatcher):
     '''
 
     name: str = StringProperty('Group')
-    '''The name of the group. Similar to :attr:`CeedShape.name`.
+    '''The unique name of the group. Similar to :attr:`CeedShape.name`.
     '''
 
     shapes: List[CeedShape] = []
@@ -569,7 +569,7 @@ class CeedPaintPolygon(CeedShape, PaintPolygon):
 
 
 class CeedPaintFreeformPolygon(CeedShape, PaintFreeformPolygon):
-    """A polygonal shape.
+    """A polygonal shape drawn using freeform points.
     """
 
     def _get_collider(self, size):

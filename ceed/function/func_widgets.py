@@ -292,6 +292,8 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
         return FuncWidget
 
     def add_func_noise_param(self, func: FuncBase, key: str, entry_widget):
+        """Attaches a noise distribution to the function.
+        """
         def track_noise_param(*largs):
             entry_widget.disabled = func.noisy_parameters.get(key) is not None
 
@@ -646,6 +648,8 @@ class TrackOptionsSpinner(Factory.SizedCeedFlatSpinner):
     """Similar to :class:`FuncPropTextWidget`, except this class
     allows customizing in the GUI a :attr:`func` property that can be on of a
     given list of options.
+
+    TODO: finish implementing this widget.
     """
 
     func = None
@@ -661,12 +665,23 @@ class TrackOptionsSpinner(Factory.SizedCeedFlatSpinner):
     """
 
     track_obj = None
+    """If not :attr:`update_items_on_press`, this we bind to this object's
+    :attr:`track_prop` and when that property changes, that's when we update
+    from the spinners value. E.g. we could track the object's "text" property.
+    """
 
     track_prop = ''
+    """See :attr:`track_obj`.
+    """
 
     values_getter = lambda x: x
+    """Function that can be called to get the spinner values.
+    """
 
     update_items_on_press = BooleanProperty(False)
+    """Whether to update the values when the spinner button on_press is
+    dispatched.
+    """
 
     _value_trigger = None
 
@@ -782,18 +797,31 @@ class FuncSettingsDropDown(Factory.FlatDropDown):
 
 class FuncNoiseDropDown(Factory.FlatDropDown):
     """Widget for displaying options to add randomness to the functions.
-
     """
 
     noise_param: NoiseBase = ObjectProperty(None, allownone=True, rebind=True)
+    """The optional :class:`ceed.function.param_noise.NoiseBase` instance to
+    use for the parameter.
+    """
 
     noise_factory: ParameterNoiseFactory = ObjectProperty(None, rebind=True)
+    """The :class:`ceed.function.param_noise.ParameterNoiseFactory` to use
+    to get the noise distribution from.
+    """
 
     func: FuncBase = None
+    """The function to which this is attached.
+    """
 
     prop_name = ''
+    """The property of the function for which this widget selects the
+    (optional) distribution.
+    """
 
     param_container = None
+    """The grid widget that displays all user configurable distribution
+    parameters.
+    """
 
     def __init__(self, func, prop_name, **kwargs):
         self.func = func
@@ -810,11 +838,16 @@ class FuncNoiseDropDown(Factory.FlatDropDown):
             self.show_noise_params(self.noise_param)
 
     def clear_noise_param(self):
+        """Unbinds and clears the widgets that track the distributions
+        parameters.
+        """
         for widget in self.param_container.children[::2]:
             widget.unbind_tracking()
         self.param_container.clear_widgets()
 
     def set_noise_instance(self, cls_name):
+        """Selects the distribution class to use, by name.
+        """
         # during initial setup, the following would be the case - so return
         if self.noise_param is not None and \
                 self.prop_name in self.func.noisy_parameters and \
@@ -835,6 +868,9 @@ class FuncNoiseDropDown(Factory.FlatDropDown):
         self.show_noise_params(noise_param)
 
     def show_noise_params(self, noise_param):
+        """Displays the configurable parameters for the selected noise
+        distribution.
+        """
         label = Factory.FlatXSizedLabel
         color = App.get_running_app().theme.text_primary
         grid = self.param_container
