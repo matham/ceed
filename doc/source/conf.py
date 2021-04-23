@@ -46,7 +46,8 @@ intersphinx_mapping = {
         ('https://kivy-garden.github.io/drag_n_drop/', None),
     'kivy_garden.painter': ('https://kivy-garden.github.io/painter/', None),
     'base_kivy_app': ('https://matham.github.io/base_kivy_app/', None),
-    'cpl_media': ('https://matham.github.io/cpl_media/', None)
+    'cpl_media': ('https://matham.github.io/cpl_media/', None),
+    'nix': ('https://nixpy.readthedocs.io/en/latest/', None)
 }
 
 # Add any paths that contain templates here, relative to this directory.

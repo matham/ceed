@@ -1,9 +1,44 @@
 """Optics App
 ==============
 
-App to help designs the a lens system, such as used by the Ceed projector
-to project onto the tissue.
+App used to help design the lens system used in the microscope. See
+:ref:`microscope-optics` for the full details of how the app is used to design
+and select all the lenses in the system.
 
+There are three model sections in the app:
+
+Focal length / mag from position
+--------------------------------
+
+This section models how the focal length and mag changes given the positions
+of the lens, the object seen by the lens, and the image of the object
+on the other side of the lens.
+
+You can also add graphs to this section to visualize in 2D and 3D the effect of
+changing these parameters.
+
+Image/lens pos and mag from lens/object pos and focal length
+-------------------------------------------------------------
+
+This section models how the image and les pos need to be given a desired
+lens and object position and focal length.
+
+You can also add graphs to this section to visualize in 2D and 3D the effect of
+changing these parameters.
+
+4-lens system
+-------------
+
+This section lets you chain upto 4 lenses in a system and for each lens it lets
+you change its focal length, its position, and the object position and it
+estimates the image position and the mag for that and all subsequent lenses
+based on the previous lenses in the chain.
+
+The object position can only be given for the first lens, the others are
+computed from the previous lenses.
+
+For each lens in the chain you can also add 2D and 3D graphs that lets you
+explore how the output parameters may change, given input parameters.
 """
 from kivy.event import EventDispatcher
 from kivy_garden.graph import MeshLinePlot, Graph, LinePlot, ContourPlot, \
@@ -25,6 +60,7 @@ import base_kivy_app.app
 
 import itertools
 import sys
+from typing import List, Dict, Tuple, Optional
 import numpy as np
 from os.path import dirname, join, isdir
 from collections import deque
@@ -41,8 +77,12 @@ resource_add_path(
 
 
 class FormulaGraph(Graph):
+    """The graph on which the 2D/3D plots are drawn.
+    """
 
-    plot_widget = ObjectProperty(None)
+    plot_widget: 'PlotWidget' = ObjectProperty(None)
+    """The :class:`PlotWidget` that contains this graph.
+    """
 
     def __init__(self, **kwargs):
         self._with_stencilbuffer = False
@@ -119,40 +159,90 @@ class FormulaGraph(Graph):
 
 
 class FormulaPlot(EventDispatcher):
+    """Given a :class:`CeedFormula`, it uses that to compute the the 2D/3D
+    formula output, given the range of input values.
 
-    graph = ObjectProperty(None, rebind=True)
+    It supports updating the plot from a formula whose input is the output of
+    another formula in a chain. In which case it starts with the input to root
+    formula and evaluates all the formula in the chain until the last one. Then
+    uses that to evaluate the final formula on a range of values that is then
+    displayed in the graph.
+    """
+
+    graph: 'FormulaGraph' = ObjectProperty(None, rebind=True)
+    """The graph in which to display the formula outputs.
+    """
 
     plot = ObjectProperty()
+    """The specific 2D/3D plot in the graph.
+    """
 
     start = NumericProperty(0)
+    """The horizontal axis start value from which to evaluate.
+    """
 
     end = NumericProperty(100)
+    """The horizontal axis end value until which to evaluate.
+    """
 
     x2_start = NumericProperty(0)
+    """The vertical axis start value from which to evaluate/display.
+    """
 
     x2_end = NumericProperty(100)
+    """The vertical axis end value until which to evaluate/display.
+    """
 
     y_start = NumericProperty(0)
+    """The depth (z) axis start value from which to display, if 3D.
+    """
 
     y_end = NumericProperty(100)
+    """The depth (z) axis end value until which to display, if 3D.
+    """
 
     num_points = NumericProperty(100)
+    """The number of horizontal/vertical points at which to evaluate the
+    formula.
+    """
 
-    formula = ObjectProperty(None, rebind=True)
+    formula: 'CeedFormula' = ObjectProperty(None, rebind=True)
+    """The :class:`CeedFormula` that takes the x (and x2 if 3D) input values and
+    computes the output values.
+    """
 
     x_variable = StringProperty('')
+    """Name of the horizontal input variable.
+    """
 
     x2_variable = StringProperty('')
+    """Name of the vertical input variable, if any (3D).
+    """
 
-    x_variable_formula = ObjectProperty(None)
+    x_variable_formula: 'CeedFormula' = ObjectProperty(None)
+    """The formula used to generate the horizontal input variable, if it is
+    part of a lens chain and the variable is the result of a previous
+    formula in the chain.
+    """
 
-    x2_variable_formula = ObjectProperty(None)
+    x2_variable_formula: 'CeedFormula' = ObjectProperty(None)
+    """The formula used to generate the vertical input variable, if it is
+    part of a lens chain and the variable is the result of a previous
+    formula in the chain.
+    """
 
     y_variable = StringProperty('')
+    """The name of the output (y) variable computed.
+    """
 
     num_contours = NumericProperty(5)
+    """The number of equal value contours to display for 3D plots.
+    """
 
     track_ylim = BooleanProperty(False)
+    """For 3D plots, whether to update the plot outout range as the output (y)
+    range changes or if the leave it unchanged.
+    """
 
     _last_values = {}
 
@@ -166,6 +256,8 @@ class FormulaPlot(EventDispatcher):
 
     colors = itertools.cycle([
         rgb('7dac9f'), rgb('dc7062'), rgb('66a8d4'), rgb('e5b060')])
+    """Plot colors to use.
+    """
 
     def __init__(self, **kwargs):
         super(FormulaPlot, self).__init__(**kwargs)
@@ -204,6 +296,8 @@ class FormulaPlot(EventDispatcher):
             graph.y_ticks_major = abs(graph.ymax - graph.ymin) / 4
 
     def compute_contours(self):
+        """Computes the equal value contours for 3D plots.
+        """
         graph = self.graph
         if graph is None or not self.x2_variable:
             return
@@ -231,6 +325,8 @@ class FormulaPlot(EventDispatcher):
                 plot.points = contour
 
     def create_plot(self):
+        """Creates and displays the plot for this formula/graph.
+        """
         x2 = self.x2_variable
         plot = self.plot
         if plot is not None:
@@ -281,6 +377,8 @@ class FormulaPlot(EventDispatcher):
         graph.add_plot(self._value_plot)
 
     def refresh_plot(self, from_variables=True):
+        """Updates plot when any of the variables or parameters change.
+        """
         if self.graph is None or not self.x_variable or not self.y_variable:
             return
         self.create_plot()
@@ -406,6 +504,8 @@ class FormulaPlot(EventDispatcher):
                 getattr(formula, self.y_variable))]
 
     def reset_y_axis(self):
+        """Resets the y (output)-axis to the previous value.
+        """
         if not self.graph or not self.plot or self._y_range is None:
             return
 
@@ -413,24 +513,75 @@ class FormulaPlot(EventDispatcher):
 
 
 class CeedFormula(EventDispatcher):
+    """A formula that computes a output value(s), given some input value
+    or input value range.
 
-    x_variables = ListProperty([])
+    The input value(s) can be formula themselves so that we can have a formula
+    DAG, with some formula leaves. This allows the output of a leaf to be
+    re-computed when any of the inputs or its parents change in the graph.
 
-    y_variables = ListProperty([])
+    The formula is computed from properties that are input parameters and it
+    generates one or more output values that are also stored as properties.
+
+    The input properties (e.g. ``lens_pos``) can have a second, corresponding
+    property with the ``_src`` suffix (e.g. ``lens_pos_src``), which if set to
+    a tuple of (:class:`CeedFormula`, property_name), the given property of the
+    formula will be used for the input value (``lens_pos_src``) instead of the
+    property of this instance (``lens_pos``). This allows chaining.
+
+    Additionally, each output property must have a corresponding method with
+    a ``compute_`` prefix that when called returns the output given the
+    inputs stored in the class properties. It can be given a set of
+    :class:`CeedFormula` that is used to look up values for any of the input
+    properties, instead of using the value currently stored in the instance
+    property for that input.
+    """
+
+    x_variables: List[str] = ListProperty([])
+    """List of properties of this class (by name) whose values are used as
+    inputs to the formula's function.
+
+    There must be a corresponding method with a ``compute_`` prefix for each
+    variable.
+
+    There may also be a corresponding property with a `_src`` suffix that
+    contains a formula to use to look up the property value as the output of
+    that formula, instead of using this property value directly.
+    """
+
+    y_variables: List[str] = ListProperty([])
+    """List of properties of this class (by name) whose values are outputs of
+    the formula's function.
+
+    Items in :attr:`y_variables` may depend on other items in
+    :attr:`y_variables` as input to their calculation. See
+    :attr:`y_dependency_ordered`.
+    """
 
     plots = ListProperty([])
+    """All the plots that use this formula and need to be updated when the
+    inputs change.
+    """
 
     widget = ObjectProperty(None)
 
-    variable_descriptions = DictProperty({})
+    variable_descriptions: Dict[str, str] = DictProperty({})
+    """A mapping that gets a nicer description for each variable.
+    """
 
-    dependency_graph = {}
-    '''Only y variables are listed here. '''
+    dependency_graph: Dict[str, List[str]] = {}
+    '''Mapping that maps each y-variable to a list of all the y and x variables
+    it depends on.
+    '''
 
-    y_dependency_ordered = []
-    '''y variables ordered from leaf to dependant variables, such that
+    y_dependency_ordered: List[str] = []
+    '''As mentioned, y (output) variables may depend on other output variables.
+    This orders y variables from leaf to dependant variables, such that
     any variable is only dependant on other y variables that are listed
-    previously in `y_dependency_ordered`. '''
+    previously in :attr:`y_dependency_ordered`.
+
+    It is automatically computed.
+    '''
 
     def __init__(self, **kwargs):
         super(CeedFormula, self).__init__(**kwargs)
@@ -468,6 +619,10 @@ class CeedFormula(EventDispatcher):
                 for var, dep_vars in deps.items() if var != found}
 
     def bind_variable_to_src(self, variable, variable_src):
+        """For each x-variable, if there's a corresponding ``_src`` suffixed
+        variable that is set, this method will track that formula and update the
+        our property when the source changes.
+        """
         uid = [None, None, None]
 
         def watch_variable_src(*largs):
@@ -492,6 +647,9 @@ class CeedFormula(EventDispatcher):
         watch_variable_src()
 
     def update_result(self, variable, *largs):
+        """Called automatically when a x-variable changes and it recomputes
+        all the y-variables.
+        """
         for var in self.y_dependency_ordered:
             func = 'compute_{}'.format(var)
             setattr(self, var, getattr(self, func)())
@@ -504,7 +662,13 @@ class CeedFormula(EventDispatcher):
         return getattr(self, src, None)
 
     def variables_in_subtree(self, variable, in_subtree, input_variables):
-        '''We also check if the variable itself is a input variable. '''
+        '''Checks whether the variable or its dependencies is a input variable.
+        If so it'll need to be computed over the range that the input is
+        sampled on. If not, it's a constant value that we can just get from
+        the formula properties.
+
+        We also check if the variable itself is a input variable.
+        '''
         key = (self, variable)
         if key in in_subtree:
             return in_subtree[key]
@@ -532,17 +696,21 @@ class CeedFormula(EventDispatcher):
 
     def infer_variable_value(
             self, variable, variables, in_subtree, input_variables):
-        '''Variables accumulates the values of veriables.
+        '''Computes the value of variable for the range of values of the
+        input variables.
+
+        Variables accumulates the values of variables as they are computed in
+        the graph, starting from the root.
+
         in_subtree stores whether a variable contains any of the
-        input_vars in it's dependency tree.'''
+        input_variables in it's dependency tree (it depends on it).
+        '''
         key = (self, variable)
         if key in variables:
-            # print('cached', id(self), variable, np.mean(variables[key]))
             return variables[key]
 
         if not self.variables_in_subtree(variable, in_subtree, input_variables):
             variables[key] = getattr(self, variable)
-            # print('const', id(self), variable, np.mean(variables[key]))
             return variables[key]
 
         if variable in self.x_variables:
@@ -550,7 +718,6 @@ class CeedFormula(EventDispatcher):
             formula, prop = self._get_src(variable)
             variables[key] = formula.infer_variable_value(
                 prop, variables, in_subtree, input_variables)
-            # print('x_var', id(self), variable, np.mean(variables[key]))
             return variables[key]
 
         assert variable in self.y_variables
@@ -559,10 +726,16 @@ class CeedFormula(EventDispatcher):
                 var, variables, in_subtree, input_variables)
         yfunc = getattr(self, 'compute_{}'.format(variable))
         variables[key] = yfunc(variables)
-        # print('y_var', id(self), variable, np.mean(variables[key]))
         return variables[key]
 
     def get_variable_dep_leaves(self, variable):
+        """Gets set of all the (formula, variable) tuples that this variable
+        depends on upto the root, but only those that are roots in the sense
+        that the variables don't depend on other variable themselves.
+
+        This will let us start from them and compute the full graph until
+        reaching the the variable.
+        """
         deps_graph = self.dependency_graph
         yvars = self.y_variables
         xvars = self.x_variables
@@ -593,28 +766,57 @@ class CeedFormula(EventDispatcher):
 
 
 class LensFixedObjectFormula(CeedFormula):
+    """Computes the properties of a lens, where the object (input distance)
+    is fixed.
+    """
 
-    lens_pos_src = ObjectProperty(None)
+    lens_pos_src: Optional[CeedFormula] = ObjectProperty(None)
+    """The previous formula in the chain, if any, that computes this input
+    variable as its output.
+    """
 
-    focal_length_src = ObjectProperty(None)
+    focal_length_src: Optional[CeedFormula] = ObjectProperty(None)
+    """The previous formula in the chain, if any, that computes this input
+    variable as its output.
+    """
 
-    object_pos_src = ObjectProperty(None)
+    object_pos_src: Optional[CeedFormula] = ObjectProperty(None)
+    """The previous formula in the chain, if any, that computes this input
+    variable as its output.
+    """
 
-    base_magnification_src = ObjectProperty(None)
+    base_magnification_src: Optional[CeedFormula] = ObjectProperty(None)
+    """The previous formula in the chain, if any, that computes this input
+    variable as its output.
+    """
 
     lens_pos = NumericProperty(0)
+    """The value of the input variable (automatically set from ``_src`` if set).
+    """
 
     focal_length = NumericProperty(0)
+    """The value of the input variable (automatically set from ``_src`` if set).
+    """
 
     object_pos = NumericProperty(0)
+    """The value of the input variable (automatically set from ``_src`` if set).
+    """
 
     base_magnification = NumericProperty(1)
+    """The value of the input variable (automatically set from ``_src`` if set).
+    """
 
     image_pos = NumericProperty(0)
+    """The computed output variable value.
+    """
 
     img_lens_pos = NumericProperty(0)
+    """The computed output variable value.
+    """
 
     magnification = NumericProperty(0)
+    """The computed output variable value.
+    """
 
     def __init__(self, **kwargs):
         self.x_variables.extend(
@@ -629,6 +831,13 @@ class LensFixedObjectFormula(CeedFormula):
         super(LensFixedObjectFormula, self).__init__(**kwargs)
 
     def compute_image_pos(self, variables={}):
+        """Computes and returns this output variable.
+
+        If the ``variables`` dict contains a formula for a input variable, that
+        variable value is gotten from from ``variables``. Otherwise it gets it
+        from the variable property. THis allows us to support computing
+        whole ranges for the input variables as their values can be an array.
+        """
         lens_pos = variables.get((self, 'lens_pos'), self.lens_pos)
         object_pos = variables.get((self, 'object_pos'), self.object_pos)
         focal_length = variables.get((self, 'focal_length'), self.focal_length)
@@ -642,6 +851,8 @@ class LensFixedObjectFormula(CeedFormula):
         return res
 
     def compute_magnification(self, variables={}):
+        """Similar to :meth:`compute_image_pos`.
+        """
         lens_pos = variables.get((self, 'lens_pos'), self.lens_pos)
         object_pos = variables.get((self, 'object_pos'), self.object_pos)
         image_pos = variables.get((self, 'image_pos'), self.image_pos)
@@ -657,6 +868,8 @@ class LensFixedObjectFormula(CeedFormula):
         return res
 
     def compute_img_lens_pos(self, variables={}):
+        """Similar to :meth:`compute_image_pos`.
+        """
         image_pos = variables.get((self, 'image_pos'), self.image_pos)
         lens_pos = variables.get((self, 'lens_pos'), self.lens_pos)
         return image_pos - lens_pos
@@ -666,21 +879,40 @@ class LensFocalLengthFormula(CeedFormula):
     '''Only valid when not a virtual image.
     '''
 
-    lens_pos_src = ObjectProperty(None)
+    lens_pos_src: Optional[CeedFormula] = ObjectProperty(None)
+    """The previous formula in the chain, if any, that computes this input
+    variable as its output.
+    """
 
-    image_pos_src = ObjectProperty(None)
+    image_pos_src: Optional[CeedFormula] = ObjectProperty(None)
+    """The previous formula in the chain, if any, that computes this input
+    variable as its output.
+    """
 
-    object_pos_src = ObjectProperty(None)
+    object_pos_src: Optional[CeedFormula] = ObjectProperty(None)
+    """The previous formula in the chain, if any, that computes this input
+    variable as its output.
+    """
 
     lens_pos = NumericProperty(0)
+    """The value of the input variable (automatically set from ``_src`` if set).
+    """
 
     image_pos = NumericProperty(0)
+    """The value of the input variable (automatically set from ``_src`` if set).
+    """
 
     object_pos = NumericProperty(0)
+    """The value of the input variable (automatically set from ``_src`` if set).
+    """
 
     focal_length = NumericProperty(0)
+    """The computed output variable value.
+    """
 
     magnification = NumericProperty(0)
+    """The computed output variable value.
+    """
 
     def __init__(self, **kwargs):
         self.x_variables.extend(['image_pos', 'object_pos', 'lens_pos'])
@@ -692,6 +924,8 @@ class LensFocalLengthFormula(CeedFormula):
         super(LensFocalLengthFormula, self).__init__(**kwargs)
 
     def compute_focal_length(self, variables={}):
+        """Similar to :meth:`LensFixedObjectFormula.compute_image_pos`.
+        """
         lens_pos = variables.get((self, 'lens_pos'), self.lens_pos)
         object_pos = variables.get((self, 'object_pos'), self.object_pos)
         image_pos = variables.get((self, 'image_pos'), self.image_pos)
@@ -705,6 +939,8 @@ class LensFocalLengthFormula(CeedFormula):
         return res
 
     def compute_magnification(self, variables={}):
+        """Similar to :meth:`LensFixedObjectFormula.compute_image_pos`.
+        """
         lens_pos = variables.get((self, 'lens_pos'), self.lens_pos)
         object_pos = variables.get((self, 'object_pos'), self.object_pos)
         image_pos = variables.get((self, 'image_pos'), self.image_pos)
@@ -718,22 +954,40 @@ class LensFocalLengthFormula(CeedFormula):
 
 
 class FormulaWidget(BoxLayout):
+    """Widget that displays a formula, its inputs, outputs and graphs.
+    """
 
-    formula = ObjectProperty(None)
+    formula: CeedFormula = ObjectProperty(None)
+    """The formula visulized by the widget.
+    """
 
     props_container_x = ObjectProperty(None)
+    """Widget container for all the input values.
+    """
 
     props_container_y = ObjectProperty(None)
+    """Widget container for all the output values.
+    """
 
     plots_container = ObjectProperty(None)
+    """Widget container for all the graphs displayed for the formula.
+    """
 
     description = StringProperty('')
+    """Description shown for the formula.
+    """
 
     name = StringProperty('')
+    """Name shown for the formula.
+    """
 
-    hidden_variables = ObjectProperty(set(['base_magnification', ]))
+    hidden_variables = ObjectProperty({'base_magnification'})
+    """List of all the input/output variables that are not shown in the GUI.
+    """
 
     def populate_widget(self):
+        """Adds widgets for all the variables.
+        """
         props_container_x = self.props_container_x
         props_container_y = self.props_container_y
         formula = self.formula
@@ -778,6 +1032,8 @@ class FormulaWidget(BoxLayout):
             props_container_y.add_widget(display)
 
     def add_plot(self):
+        """Adds a new plot for the formula.
+        """
         plot = FormulaPlot(graph=None, formula=self.formula)
         self.formula.plots.append(plot)
         widget = PlotWidget(plot=plot, formula_widget=self)
@@ -786,23 +1042,43 @@ class FormulaWidget(BoxLayout):
         widget.populate_x_variables()
 
     def remove_plot(self, plot_widget):
+        """Removes an existing plot from the formula.
+        """
         self.formula.plots.remove(plot_widget.plot)
         self.plots_container.remove_widget(plot_widget.__self__)
 
 
 class PropertyDisplayBinding(EventDispatcher):
+    """Tracks a property (input/output variable) and updates the widget
+    representing the property with the new value.
+    """
 
     prop_from_display_setter = ObjectProperty(lambda x: x)
+    """Lambda that can be used to convert the property from the displayed value
+    in the GUI when that changes (that could e.g. be a string) to the correct
+    type when setting the property value of the formula.
+    """
 
     display_from_prop_setter = ObjectProperty(lambda x: x)
+    """Like :attr:`prop_from_display_setter`, but converts the property so it
+    can be displayed in the GUI (e.g. to string from float).
+    """
 
     obj = ObjectProperty(None)
+    """The object to track.
+    """
 
     obj_prop = StringProperty('')
+    """The property of :attr:`obj` to track.
+    """
 
     read_only = BooleanProperty(False)
+    """Whether it's read only and cannot be updated from the GUI.
+    """
 
     prop_value = ObjectProperty('')
+    """Current value of the property as it's shown in the GUI.
+    """
 
     def __init__(self, **kwargs):
         super(PropertyDisplayBinding, self).__init__(**kwargs)
@@ -829,6 +1105,8 @@ class PropertyDisplayBinding(EventDispatcher):
         watch_prop()
 
     def set_obj_property(self, value):
+        """Callback to set the from the GUI.
+        """
         if not self.obj or not self.obj_prop or self.read_only:
             return
 
@@ -836,27 +1114,47 @@ class PropertyDisplayBinding(EventDispatcher):
 
 
 class FormulaVariableBehavior(EventDispatcher):
+    """Visualization for a formula variable with an attached name.
+    """
 
     name = StringProperty('')
+    """The name of the property that is displayed to user.
+    """
 
 
 class PlotWidget(BoxLayout):
+    """Widget that visualizes a plot for a formula.
+    """
 
-    plot = ObjectProperty(None, rebind=True)
+    plot: FormulaPlot = ObjectProperty(None, rebind=True)
+    """The plot that visualizes the formula.
+    """
 
-    formula_widget = ObjectProperty(None)
+    formula_widget: FormulaWidget = ObjectProperty(None)
+    """The formula to visualize.
+    """
 
     mouse_x_val = NumericProperty(0)
+    """x-pos of the mouse in formula input domain.
+    """
 
     mouse_x2_val = NumericProperty(None, allownone=True)
+    """x2-pos of the mouse in formula input domain.
+    """
 
     mouse_y_val = NumericProperty(0)
+    """y value at the current mouse pos in formula output domain.
+    """
 
     graph_min_height = NumericProperty(200)
+    """Smallest height for the graph.
+    """
 
     _names_to_x_variables = DictProperty({})
 
     def select_x_variable(self, x_prop, variable_name):
+        """Sets the input variable to display on the horizontal/vertical.
+        """
         formula_prop = '{}_variable_formula'.format(x_prop)
         variable_prop = '{}_variable'.format(x_prop)
 
@@ -869,6 +1167,9 @@ class PlotWidget(BoxLayout):
             setattr(self.plot, variable_prop, var)
 
     def populate_x_variables(self):
+        """Updates the list of input variables the user can select from in the
+        GUI, when selecting the variable to show on an axis.
+        """
         formula = self.formula_widget.formula
         deps = set()
         for var in formula.y_variables:
@@ -885,22 +1186,49 @@ Factory.register('FormulaVariableBehavior', cls=FormulaVariableBehavior)
 
 
 class OpticsApp(App):
+    """The app that shows all the formula.
+    """
 
     theme = ObjectProperty(None, rebind=True)
+    """The flat material design style theme to use.
+    """
 
     formula_container_widget = ObjectProperty(None)
+    """Widget that contains all the formula.
+    """
 
-    focal_len_from_io_f = ObjectProperty(None)
+    focal_len_from_io_f: LensFocalLengthFormula = ObjectProperty(None)
+    """Formula that computes focal length and mag from the other
+    parameters.
+    """
 
-    image_from_f = ObjectProperty(None)
+    image_from_f: LensFixedObjectFormula = ObjectProperty(None)
+    """Formula that computes the parameters for a fixed object.
+    """
 
-    objective_lens = ObjectProperty(None)
+    objective_lens: LensFixedObjectFormula = ObjectProperty(None)
+    """Formula that computes the parameters for a fixed object.
 
-    cam_lens_further = ObjectProperty(None)
+    This is the first lens in the 4-lens chain.
+    """
 
-    cam_lens_closer = ObjectProperty(None)
+    cam_lens_further: LensFixedObjectFormula = ObjectProperty(None)
+    """Formula that computes the parameters for a fixed object.
 
-    cam_lens_closer2 = ObjectProperty(None)
+    This is the second lens in the 4-lens chain.
+    """
+
+    cam_lens_closer: LensFixedObjectFormula = ObjectProperty(None)
+    """Formula that computes the parameters for a fixed object.
+
+    This is the third lens in the 4-lens chain.
+    """
+
+    cam_lens_closer2: LensFixedObjectFormula = ObjectProperty(None)
+    """Formula that computes the parameters for a fixed object.
+
+    This is the forth and final lens in the 4-lens chain.
+    """
 
     def __init__(self, **kwargs):
         self.theme = ColorTheme()

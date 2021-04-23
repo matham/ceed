@@ -1,8 +1,16 @@
 """Projector test app
 =====================
 
-App to test the projector - MCS hardware data link.
+App to test the projector - MCS hardware data link (see
+:class:`~ceed.storage.controller.DataSerializerBase`).
 
+When run, it shows a screen that allows individually setting the corner pixel
+bits. It also supports setting the video mode (proxy for frame rate) and
+the r, g, and b projector LED state.
+
+When run, and if the MCS system is also running and sampling the digital port
+and pixel mode is ON for the projector, setting the individual bits in the app
+should also set the MCS port it is connected to high/low.
 """
 from kivy.app import App
 from kivy.lang import Builder
@@ -88,21 +96,37 @@ BoxLayout:
 
 
 class IOApp(App):
+    """The app.
+    """
 
     led_mode = StringProperty('RGB')
+    """Current LED mode from :attr:`led_modes`.
+    """
 
     video_mode = StringProperty('RGB')
+    """Current video mode from :attr:`video_modes`.
+    """
 
     led_modes = {'RGB': 0, 'GB': 1, 'RB': 2, 'B': 3, 'RG': 4, 'G': 5, 'R': 6,
                  'none': 7}
+    """Valid LED modes.
+    """
 
     video_modes = ['RGB', 'QUAD4X', 'QUAD12X']
+    """Valid video modes.
+    """
 
     screen_size = (1920, 1080)
+    """Size of the screen.
+    """
 
     bits_texture = ObjectProperty(None)
+    """Corner pixel texture.
+    """
 
     pixel_mode = BooleanProperty(False)
+    """If the projector pixel-mode is ON.
+    """
 
     def build(self):
         tex = self.bits_texture = Texture.create(size=(1, 1))
