@@ -9,7 +9,7 @@ Programming Teensy
 
 If this is a new Teensy device, it'll need to be re-programmed. The easiest way is to download the
 pre-compiled
-[teensy_estimation.ino.hex file](https://github.com/matham/ceed/blob/master/ceed/view/teensy_estimation/teensy_estimation.ino.hex).
+[teensy_estimation.ino.hex file](./teensy_estimation.ino.hex).
 Then, following the instructions and using the [Teensy Loader App](https://www.pjrc.com/teensy/loader.html),
 program the Teensy with the hex file.
 
@@ -19,7 +19,7 @@ If something has changed and the hex file needs to be recompiled, then follow th
 [Teensyduino add-on](https://www.pjrc.com/teensy/td_download.html).
 
 Then, get and open the source
-[teensy_estimation.ino file](https://github.com/matham/ceed/blob/master/ceed/view/teensy_estimation/teensy_estimation.ino).
+[teensy_estimation.ino file](./teensy_estimation.ino).
 Then, locate the ``teensy4/usb_rawhid.c`` file, it'll be located under the arduino installation
 (e.g. ``arduino-1.8.13/hardware/teensy/avr/cores/teensy4/usb_rawhid.c``). You'll have to make three changes in the file
 to improve latency:

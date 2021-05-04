@@ -1,9 +1,13 @@
-'''Ceed
-=================
+"""Ceed
+=======
 
-Ceed is an in vitro experiment that stimulates brain slices with a projector
-and records their activity.
-'''
+Ceed is a Python based application to help run in-vitro experiments that
+optically stimulates brain slices and records their activity.
+
+Ceed is the user interface for describing and running the experiments.
+The overall system is described in :ref:`ceed-blueprint`.
+See the :ref:`ceed-guide` for the Ceed specific guide.
+"""
 
 import sys
 import os
@@ -14,14 +18,17 @@ __all__ = ('__version__', 'is_view_inst', 'get_pyinstaller_datas')
 __version__ = '1.0.0.dev2'
 
 is_view_inst = 'CEED_IS_VIEW' in os.environ
-'''Whether ceed is imported from the client code that displays the projector
-output as in :mod:`ceed.view.main`.
+'''As described in :mod:`~ceed.view.controller`, Ceed will start a second
+process to run a "real" experiment in full-screen.
+
+:attr:`is_view_inst` is automatically set to True when Ceed is running in
+this second process.
 '''
 
 
 def get_pyinstaller_datas():
     """Returns the ``datas`` list required by PyInstaller to be able to package
-    :mod:`base_kivy_app` in a application.
+    :mod:`ceed` in a executable application.
 
     """
     root = pathlib.Path(os.path.dirname(sys.modules[__name__].__file__))

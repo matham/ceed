@@ -1,10 +1,13 @@
 '''Viewer widgets
-=====================
+=================
 
-Widgets used on the viewer side of the controller/viewer interface.
-These are displayed when the second process of the viewer is running.
+Defines widgets used with the :mod:`~ceed.view` module. These widgets are used
+to control and display the experiment on screen, both when playing the
+experiment for preview and when playing the experiment full-screen in a second
+process.
 '''
 from time import perf_counter
+from typing import List
 
 from kivy.uix.behaviors.focus import FocusBehavior
 from kivy.uix.scatter import Scatter
@@ -21,11 +24,13 @@ _get_app = App.get_running_app
 
 
 class ViewRootFocusBehavior(FocusBehavior):
-    '''Adds focus behavior to the viewer.
+    """The root widget used for the second process when the experiment is
+    played. It adds focus behavior to the viewer.
 
     Whenever a key is pressed in the second process it is passed on to the
-    controller.
-    '''
+    controller in the main process who handles it as needed (possibly sending
+    a message back to the second process).
+    """
 
     def keyboard_on_key_down(self, window, keycode, text, modifiers):
         _get_app().view_controller.send_keyboard_down(
@@ -38,22 +43,53 @@ class ViewRootFocusBehavior(FocusBehavior):
 
 
 class MEAArrayAlign(Scatter):
+    """The widget used during the experiment design to help align the MEA
+    electrode array to the camera and projector.
+
+    It displays a grid of points that you can align to the real-world camera
+    acquired picture of the electrode grid. See :mod:`~ceed.view.controller`
+    for more details.
+    """
 
     num_rows = NumericProperty(12)
+    """Number of rows.
+
+    See :attr:`~ceed.view.controller.ViewControllerBase.mea_num_rows`
+    """
 
     num_cols = NumericProperty(12)
+    """Number of columns.
+
+    See :attr:`~ceed.view.controller.ViewControllerBase.mea_num_cols`
+    """
 
     pitch = NumericProperty(20)
+    """The distance in pixels between the rows/columns.
+
+    See :attr:`~ceed.view.controller.ViewControllerBase.mea_pitch`
+    """
 
     diameter = NumericProperty(3)
+    """Diameter of each electrode circle in pixels..
+
+    See :attr:`~ceed.view.controller.ViewControllerBase.mea_diameter`
+    """
 
     show = BooleanProperty(False)
+    """Whether the grid is currently shown.
+    """
 
     color = None
+    """The grid color.
+    """
 
     label = None
+    """The label that shows the "A1" corner electrode.
+    """
 
     label2 = None
+    """The label that shows the "M1" corner electrode.
+    """
 
     def __init__(self, **kwargs):
         super(MEAArrayAlign, self).__init__(**kwargs)
@@ -74,6 +110,9 @@ class MEAArrayAlign(Scatter):
         track_show()
 
     def update_graphics(self, *largs):
+        """Automatic callback that updates the graphics whenever any parameter
+        changes.
+        """
         self.canvas.remove_group('MEAArrayAlign')
         pitch = self.pitch
         radius = self.diameter / 2.0
@@ -122,11 +161,16 @@ class MEAArrayAlign(Scatter):
         return super(MEAArrayAlign, self).on_touch_up(touch)
 
     @staticmethod
-    def make_matrix(elems):
+    def make_matrix(elems: List[List[float]]) -> Matrix:
+        """Converts a matrix represented as a 2D list to a kivy Matrix.
+        """
         mat = Matrix()
         mat.set(array=elems)
         return mat
 
     @staticmethod
-    def compare_mat(mat, mat_list):
+    def compare_mat(mat: Matrix, mat_list: List[List[float]]) -> bool:
+        """Compares a matrix represented as a 2D list to a kivy Matrix object
+        and returns whether they are equivalent.
+        """
         return mat.tolist() == tuple(tuple(item) for item in mat_list)

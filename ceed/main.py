@@ -1,8 +1,8 @@
-'''Ceed App
+"""Ceed App
 =====================
 
-The main module that runs the GUI.
-'''
+The main module that runs the Ceed GUI.
+"""
 import ceed
 
 from functools import partial
@@ -48,8 +48,8 @@ __all__ = ('CeedApp', 'run_app')
 
 
 class CeedApp(BaseKivyApp):
-    '''The app which runs the GUI.
-    '''
+    """The app which runs the main Ceed GUI.
+    """
 
     _config_props_ = (
         'last_directory', 'external_function_plugin_package',
@@ -63,62 +63,112 @@ class CeedApp(BaseKivyApp):
     }
 
     last_directory = StringProperty('~')
+    """The last directory opened in the GUI.
+    """
 
     external_function_plugin_package: str = ''
-    """A external function plugin package containing any additional functions
-    to be displayed in the UI.
+    """The name of an external function plugin package that contains additional
+    functions to be displayed in the GUI to the user.
+
+    See :mod:`~ceed.function.plugin` for details.
     """
 
     external_stage_plugin_package: str = ''
-    """A external stage plugin package containing any additional stages
-    to be displayed in the UI.
+    """The name of an external stage plugin package that contains additional
+    stages to be displayed in the GUI to the user.
+
+    See :mod:`~ceed.stage.plugin` for details.
     """
 
     kv_loaded = False
-    """For tests, we don't want to load kv multiple times.
+    """For tests, we don't want to load kv multiple times so we only load kv if
+    it wasn't loaded before.
     """
 
     yesno_prompt = ObjectProperty(None, allownone=True)
     '''Stores a instance of :class:`YesNoPrompt` that is automatically created
-    by this app class. That class is described in ``base_kivy_app/graphics.kv``.
+    by this app class. That class is described in ``base_kivy_app/graphics.kv``
+    and shows a prompt with yes/no options and callback.
     '''
 
     function_factory: FunctionFactoryBase = None
+    """The :class:`~ceed.function.FunctionFactoryBase` that contains all the
+    functions shown in the GUI.
+    """
 
     player: CeedPlayer = None
+    """The :class:`ceed.player.CeedPlayer` used to play the video camera and
+    record the images to disk.
+    """
 
     view_controller: ControllerSideViewControllerBase = None
+    """The :class:`~ceed.view.controller.ControllerSideViewControllerBase` used
+    to run the experiment and display the stages.
+    """
 
     ceed_data: CeedDataWriterBase = None
+    """The :class:`~ceed.storage.controller.CeedDataWriterBase` used to load
+    and save the data to disk.
+    """
 
     data_serializer: DataSerializerBase = None
+    """The :class:`~ceed.storage.controller.DataSerializerBase` used to
+    generate the corner pixel values for Ceed-MCS temporal synchronization.
+    """
 
     stage_factory: StageFactoryBase = None
+    """The :class:`~ceed.stage.StageFactoryBase` that contains all the
+    stages shown in the GUI.
+    """
 
     shape_factory: CeedPainter = ObjectProperty(None, rebind=True)
-
-    # remote_player: CeedRemotePlayer = None
+    """The :class:`~ceed.shape.shape_widgets.CeedPainter` used to draw shapes
+    and contains all the shapes shown in the GUI.
+    """
 
     agreed_discard = False
 
     drag_controller: CeedDragNDrop = ObjectProperty(None, rebind=True)
+    """The :class:`~ceed.graphics.CeedDragNDrop` used for dragging and
+    dropping widgets on in the GUI.
+    """
 
     stages_container: StageList = ObjectProperty(None, rebind=True)
+    """The :class:`~ceed.stage.stage_widgets.StageList` widget that contains
+    all the root stages' widgets in the GUI.
+    """
 
     funcs_container: FuncList = ObjectProperty(None, rebind=True)
+    """The :class:`~ceed.function.func_widgets.FuncList` widget that contains
+    all the root functions' widgets in the GUI.
+    """
 
     shapes_container: ShapeList = ObjectProperty(None, rebind=True)
+    """The :class:`~ceed.shape.shape_widgets.ShapeList` widget that contains
+    all the shapes' widgets in the GUI.
+    """
 
     shape_groups_container = ObjectProperty(
         None, rebind=True)  # type: ShapeGroupList
+    """The :class:`~ceed.shape.shape_widgets.ShapeGroupList` widget that
+    contains all the shape groups' widgets in the GUI.
+    """
 
     pinned_graph = None
-    """PinnedGraph into which the stage graph may be pinned.
+    """PinnedGraph widget into which the experiment preview graph may be pinned.
+
+    When pinned, it's displayed not as a popup, but as a flat widget.
     """
 
     mea_align_widget: MEAArrayAlign = ObjectProperty(None, rebind=True)
+    """The :class:`~ceed.view.view_widgets.MEAArrayAlign` widget used to align
+    the MEA grid to the camera.
+    """
 
     central_display: BufferImage = ObjectProperty(None, rebind=True)
+    """The :class:`~base_kivy_app.graphics.BufferImage` widget into which the
+    camera widget is drawn.
+    """
 
     _processing_error = False
 
@@ -139,6 +189,8 @@ class CeedApp(BaseKivyApp):
         self.apply_app_settings()
 
     def load_app_kv(self):
+        """Loads the app's kv files, if not yet loaded.
+        """
         if CeedApp.kv_loaded:
             return
         CeedApp.kv_loaded = True
@@ -210,8 +262,8 @@ class CeedApp(BaseKivyApp):
         self.view_controller.set_led_mode(self.view_controller.LED_mode_idle)
 
     def set_tittle(self, *largs):
-        ''' Sets the title of the window using the currently running
-        tab. This is called at 1Hz. '''
+        """Periodically called by the Kivy Clock to update the title.
+        """
         star = ''
         if self.ceed_data.has_unsaved or self.ceed_data.config_changed:
             star = '*'
@@ -229,6 +281,9 @@ class CeedApp(BaseKivyApp):
             ceed.__version__, star, filename, read_only))
 
     def changed_callback(self, *largs, **kwargs):
+        """Callback bound to anything that can change the Ceed data to indicate
+        whether it needs to be re-saved.
+        """
         self.ceed_data.config_changed = True
 
     def check_close(self):
@@ -291,7 +346,7 @@ class CeedApp(BaseKivyApp):
 
 
 def run_app():
-    """The function that starts the GUI and the entry point for
+    """The function that starts the main Ceed GUI and the entry point for
     the main script.
     """
     cpl_media.error_callback = report_exception_in_app

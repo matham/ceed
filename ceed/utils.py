@@ -1,8 +1,8 @@
-'''Utilities
+"""Utilities
 ===================
 
-Utilities used in :mod:`ceed`.
-'''
+Various tools used in :mod:`ceed`.
+"""
 import re
 import pathlib
 from collections import deque
@@ -17,7 +17,7 @@ _name_pat = re.compile('^(.+)-([0-9]+)$')
 
 
 def fix_name(name, *names):
-    '''Fixes the name so that it is unique among the names in ``names``.
+    """Fixes the name so that it is unique among the names in ``names``.
 
     :Params:
 
@@ -43,7 +43,7 @@ def fix_name(name, *names):
         >>> fix_name('troll', ['troll', 'troll-2', 'toll', 'foll'], \
 ['bole', 'cole'])
         'troll-3'
-    '''
+    """
     if not any((name in n for n in names)):
         return name
 
@@ -61,6 +61,14 @@ def fix_name(name, *names):
 
 
 def update_key_if_other_key(items, key, value, other_key, key_map):
+    """Given a dict, or list/tuple of dicts (recursively), it goes through all
+    the dicts and updates the keys who match.
+
+    Specifically, if a key matches ``key``, its value matches ``value``,
+    there's another key named ``other_key`` in the dict, and the ``value`` of
+    ``other_key`` is in ``key_map``, then the value of ``other_key`` is
+    updated to that value from ``key_map``.
+    """
     for item in items:
         if isinstance(item, dict):
             if key in item and item[key] == value and other_key in item:

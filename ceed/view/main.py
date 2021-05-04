@@ -1,8 +1,14 @@
-'''Ceed View App
-=====================
+'''Ceed Viewer side App
+=======================
 
-The module that runs the :mod:`ceed.view` GUI for displaying the pixels on the
-projector. This is run in a seperate process than the main server side GUI.
+Ceed starts a second process when it runs an actual experiment and all the
+shapes and their intensities that are ultimately displayed on the projector are
+displayed in this second process, full-screen.
+
+This module is the Ceed app that the second process runs. It shares most of the
+same configuration as the main :class:`~ceed.main.CeedApp`, but the GUI
+is very simple because it only plays the shapes and forwards any keyboard
+interactions to the main Ceed process.
 '''
 import os
 os.environ['SDL_VIDEO_MINIMIZE_ON_FOCUS_LOSS'] = '0'
@@ -12,10 +18,9 @@ from functools import partial
 from base_kivy_app.app import run_app as run_cpl_app, app_error, BaseKivyApp
 
 from kivy.lang import Builder
-from kivy.graphics import Color, Point, Fbo, Rectangle, Scale, PushMatrix, \
-    PopMatrix, Translate, ClearColor, ClearBuffers
+from kivy.graphics import Fbo, Scale, Translate, ClearColor, ClearBuffers
 from kivy.uix.widget import Widget
-from kivy.graphics.opengl import glEnable, GL_DITHER, glDisable
+from kivy.graphics.opengl import GL_DITHER, glDisable
 from kivy.logger import Logger
 from kivy.compat import string_types
 
@@ -32,7 +37,7 @@ from ceed.shape import CeedPaintCanvasBehavior
 if ceed.is_view_inst or __name__ == '__main__':
     from kivy.core.window import Window
 
-__all__ = ('CeedViewApp', 'run_app')
+__all__ = ('CeedViewApp', 'run_app', 'ViewRootWidget')
 
 
 kv = '''
@@ -52,12 +57,14 @@ kv = '''
 
 
 class ViewRootWidget(ViewRootFocusBehavior, Widget):
+    """The widget that is the root kivy widget in the app.
+    """
     pass
 
 
 class CeedViewApp(BaseKivyApp):
-    '''The app which runs the GUI.
-    '''
+    """The app which runs the GUI in the second Ceed process.
+    """
 
     _config_props_ = (
         'external_function_plugin_package',
@@ -69,25 +76,35 @@ class CeedViewApp(BaseKivyApp):
     }
 
     view_controller: ViewSideViewControllerBase = None
+    """Same as :attr:`~ceed.main.CeedApp.view_controller`.
+    """
 
     data_serializer: DataSerializerBase = None
+    """Same as :attr:`~ceed.main.CeedApp.data_serializer`.
+    """
 
     function_factory: FunctionFactoryBase = None
+    """Same as :attr:`~ceed.main.CeedApp.function_factory`.
+    """
 
     stage_factory: StageFactoryBase = None
+    """Same as :attr:`~ceed.main.CeedApp.stage_factory`.
+    """
 
     shape_factory: CeedPaintCanvasBehavior = None
+    """Same as :attr:`~ceed.main.CeedApp.shape_factory`.
+    """
 
     ceed_data: CeedDataWriterBase = None
+    """Same as :attr:`~ceed.main.CeedApp.ceed_data`.
+    """
 
     external_function_plugin_package: str = ''
-    """A external function plugin package containing any additional functions
-    to be displayed in the UI.
+    """Same as :attr:`~ceed.main.CeedApp.external_function_plugin_package`.
     """
 
     external_stage_plugin_package: str = ''
-    """A external stage plugin package containing any additional stages
-    to be displayed in the UI.
+    """Same as :attr:`~ceed.main.CeedApp.external_stage_plugin_package`.
     """
 
     def __init__(self, **kwargs):
@@ -110,6 +127,9 @@ class CeedViewApp(BaseKivyApp):
         pass
 
     def get_display_canvas(self):
+        """Gets the canvas of the widget to which all the shapes graphics will
+        be added.
+        """
         return self.root.ids.display_canvas.canvas
 
     def build(self):
@@ -118,6 +138,12 @@ class CeedViewApp(BaseKivyApp):
         return widget
 
     def get_root_pixels(self):
+        """Returns all the pixels values of the widget containing the shapes,
+        as well as the size of that widget.
+
+        This is how you can save an image of whatever is currently displayed on
+        screen.
+        """
         widget = self.root.ids.display_canvas
 
         canvas_parent_index = widget.parent.canvas.indexof(widget.canvas)
@@ -161,25 +187,9 @@ class CeedViewApp(BaseKivyApp):
     def ask_cannot_close(self, *largs, **kwargs):
         return False
 
-    def handle_exception(self, exception, exc_info=None, event=None, obj=None,
-                         level='error', *largs):
-        '''Should be called whenever an exception is caught in the app.
-
-        :parameters:
-
-            `exception`: string
-                The caught exception (i.e. the ``e`` in
-                ``except Exception as e``)
-            `exc_info`: stack trace
-                If not None, the return value of ``sys.exc_info()``. It is used
-                to log the stack trace.
-            `event`: :class:`moa.threads.ScheduledEvent` instance
-                If not None and the exception originated from within a
-                :class:`moa.threads.ScheduledEventLoop`, it's the
-                :class:`moa.threads.ScheduledEvent` that caused the execution.
-            `obj`: object
-                If not None, the object that caused the exception.
-        '''
+    def handle_exception(
+            self, exception, exc_info=None, event=None, obj=None,
+            level='error', *largs):
         if isinstance(exc_info, string_types):
             self.get_logger().error(exception)
             self.get_logger().error(exc_info)
@@ -196,8 +206,9 @@ class CeedViewApp(BaseKivyApp):
 
 
 run_app = partial(run_cpl_app, CeedViewApp)
-'''The function that starts the GUI and the entry point for
-the main script.
+'''The function that starts the GUI and runs :class:`CeedViewApp`.
+
+This is the entry point for the main script.
 '''
 
 if __name__ == '__main__':

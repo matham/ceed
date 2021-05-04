@@ -1,8 +1,215 @@
-'''View Controller
-======================
+"""Experiment Controller
+========================
 
-Displays the preview or live pixel output of the experiment.
-'''
+Runs, controls, and displays Ceed experiments on screen, both during a "real"
+experiment and when previewing it.
+
+The purpose of Ceed is to run visual-temporal experiments. Once a
+:mod:`~ceed.stage` containing one or more :mod:`~ceed.function`s
+and one or more :mod:`~ceed.shape`s has been designed, you're ready to run
+the experiment.
+
+Following are some of the experiment configuration options:
+
+.. _view-flip:
+
+Camera-projector-array alignment
+--------------------------------
+
+There are three systems interacting with the tissue, and they all need to be
+aligned to each other; the projector, the camera, and the MEA electrode grid.
+
+Camera-projector
+^^^^^^^^^^^^^^^^
+
+The first step is to draw any unique shape in Ceed and project this pattern
+on the MEA plane and then capture the projected pattern using the camera.
+Then in the GUI scale and align the captured image to the original shape. This
+will give us the camera to projector :attr:`ViewControllerBase.cam_transform`
+matrix.
+
+With the camera aligned to the projector output, you can draw shapes and target
+specific regions of the slice, visually (from a broad field stimulation camera
+capture) and it will be projected at the correct place on the tissue. If
+there's mirroring, making affine alignment impossible you can either
+:attr:`ViewControllerBase.flip_camera` or
+:attr:`ViewControllerBase.flip_projector` horizontally. These settings are
+also exposed in the GUI.
+
+Camera-array
+^^^^^^^^^^^^
+
+With the camera aligned to the projector, we just need to align the MEA grid to
+the camera. First take a camera picture of the grid - you should be able to see
+the 2D grid of electrode termination points. Then, in the GUI display the
+virtual grid defined by :attr:`ViewControllerBase.mea_num_rows`,
+:attr:`ViewControllerBase.mea_num_cols`,
+:attr:`ViewControllerBase.mea_pitch`,
+:attr:`ViewControllerBase.mea_diameter`, and
+:attr:`ViewControllerBase.mirror_mea` and manually align it to the image.
+This will generate the :attr:`ViewControllerBase.mea_transform`.
+
+With the array aligned to the image and the projector aligned to the image
+we can now know exactly the electrodes on which the drawn shapes will cover
+and we can relate the activity of those cells to the stimulation.
+
+.. _view-video-mode:
+
+Video mode
+----------
+
+The projector supports 120 (119.96 more accurately) frames per second at its
+full resolution of 1920x1080 pixels, but it also offers higher speed modes.
+
+It can split the GPU image into 4 quadrants, such that it renders 4 960x540
+pixel images for each overall frame. So at the cost of a half of the x, y
+resolution we can play at 480Hz.
+
+Normally each image has red, green, and blue channels. By instead outputting
+a grayscale image, we can use each of the three channels to further multiply
+our speed by three to render 960x540 grayscale at 1,440 Hz.
+
+The video mode is configurable with :attr:`ViewControllerBase.video_mode`
+and from the GUI. Ceed will automatically correctly render the images for each
+mode when it is selected.
+
+LED mode
+--------
+
+The projector has three LEDs; red, green, and blue. In Ceed you can draw shapes
+and select their color(s). Internally, the projector will uses its LEDs to
+display the image with the requested colors, like a normal projector.
+
+However, you can manually turn OFF each of these LEDs and then that color will
+be displayed. :attr:`ViewControllerBase.LED_mode_idle`
+and :attr:`ViewControllerBase.LED_mode` configure which LEDs are active outside
+and during an experiment, respectively.
+
+Typically you'd select ``'none'`` for :attr:`ViewControllerBase.LED_mode_idle`
+so that the projector is OFF outside the experiment. This way you don't
+stimulate the tissue outside the experiment. During the experiment you can
+either rely on the color selected for each stage, turn OFF specific LEDs or use
+the optical filters to filter out unwanted color channels.
+
+Frame rate and dropped frames
+-----------------------------
+
+Frame time
+^^^^^^^^^^
+
+The projector and GPU display frames at a specific
+:attr:`ViewControllerBase.frame_rate`. In Ceed (GUI) you must enter the exact
+GPU frame rate, otherwise Ceed will project the stages at an incorrect rate.
+The frame rate will be internally converted to a fraction
+(:attr:`ViewControllerBase.frame_rate_numerator`,
+:attr:`ViewControllerBase.frame_rate_denominator`) that will be used to clock
+the functions (see below).
+
+Normally, the GPU limits us to the frame rate so we don't have to estimate from
+software when to display the next frame, because we immediately display the next
+frame when the GPU returns control to the CPU. However, if it's not available,
+:attr:`ViewControllerBase.use_software_frame_rate` can be used to force the
+frame rate. Although it's very unreliable and should not be used during an
+experiment.
+
+Long frames
+^^^^^^^^^^^
+
+In an ideal system, every frame is displayed for exactly the duration of
+the period of the frame_rate before displaying the next frame. In this system
+the time of each frame is 0, 1 * period,, 2 * period, ..., n * period.
+Since the period is an exact fraction, the current time can be expressed as an
+exact fraction and when passed to a stage's function it can accurately determine
+when each function is done.
+
+In a real system, some frames may be displayed for more than one frame duration.
+This could happen if the CPU is too slow then the current frame is e.g.
+displayed for 2 or more frames before the next frame is shown. If this is not
+accounted for, all subsequent frames are temporally displaced by the number of
+long frames.
+
+For example, say the frame rate and period is exactly 1 second. Normally, we'd
+display frames at 0s, 1s, ... ns, and use that time when computing the functions
+for each frame (i.e. multiplying the frame count by the period to get the time).
+Naively, if we display frame 0 at 0s, 1 at 1s, 2 at 2s. But then frame 2
+actually goes long and is displayed for 2 seconds. Because we're counting
+frames, the next frame time will be computed as frame 3 at 3s. However, in real
+time, because frame 2 was two frames long the actual frame 3 time is 4s when
+frame 3 is displayed. So all frames are delayed.
+
+Dropping frames
+^^^^^^^^^^^^^^^
+
+To fix this, frame 3 should be dropped and we should instead display frame 4
+next. Or more generally, we need to drop frames until the frame number times the
+period catches up with the real time.
+
+Ceed has two approaches to detecting when to drop frames; a software approach
+and a hardware approach. The software approach uses the time after rendering
+frames and a median filter for :class:`FrameEstimation`. With default settings
+it may take a few frames before we correct the delay.
+
+We also have a hardware solution using a `Teensy device
+<https://github.com/matham/ceed/tree/master/ceed/view/teensy_estimation>`_
+for :class:`TeensyFrameEstimation`. This device watches for dropped frames
+and notifies us over USB when it happens. This lets us respond more quickly.
+
+The hardware device can be turned OFF with
+:attr:`TeensyFrameEstimation.use_teensy`, which is also configurable in the GUI.
+If disabled, we fall back to the software approach, unless it's completely
+disabled with :attr:`ViewControllerBase.skip_estimated_missed_frames`.
+
+Experiment flow
+---------------
+
+pre-computed.
+
+experiment copy to special name
+
+frame rate
+
+Frame warmup
+^^^^^^^^^^^^
+
+for projector to update LED and for median estimation.
+
+Experiment control
+------------------
+
+There are two sides that communicate over queue.
+
+The usage of ceed is to run a GUI in which stages, shapes, and functions
+are designed. Subsequently, the stage is played on the projector or
+previewed in the main GUI and displays shapes varying with intensity as
+time progresses, as designed.
+
+When the stage is played as a preview in the main GUI, all the code is
+executed within the main process. In this case the controller is a
+:class:`ControllerSideViewControllerBase` instance.
+
+When the stage is played for real, it is played in a second process in
+a second window which can be displayed on the projector window. In
+this case, the controller in the second process is a
+:class:`ViewSideViewControllerBase` instance while in the main GUI it
+is a :class:`ControllerSideViewControllerBase` instance. Data is constantly
+sent between the two processes, specifically, the second process is
+initialized with the data to be displayed at the start. Once the playing
+starts, the client continuously sends data back to the main GUI for
+processing and storage.
+
+This class controls all aspects of how the data is presented, e.g. whether
+the window is full screen, the various modes, etc.
+
+Viewer GUI interaction
+^^^^^^^^^^^^^^^^^^^^^^
+
+Keyboard commands are sent to the main process to handle.
+
+Synchronization
+---------------
+
+Corner pixel
+"""
 import multiprocessing as mp
 import numpy as np
 from decimal import Decimal
@@ -13,13 +220,14 @@ from fractions import Fraction
 import traceback
 from queue import Empty
 import uuid
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, Any
 from threading import Thread
 from tree_config import get_config_children_names
 import usb.core
 import usb.util
 from usb.core import Device as USBDevice, Endpoint
 import logging
+from ffpyplayer.pic import Image
 
 from kivy.event import EventDispatcher
 from kivy.properties import NumericProperty, StringProperty, BooleanProperty, \
@@ -38,7 +246,6 @@ from more_kivy_app.utils import yaml_dumps, yaml_loads
 from ceed.stage import StageDoneException, last_experiment_stage_name, \
     StageFactoryBase
 
-ignore_vpixx_import_error = False
 try:
     from pypixxlib import _libdpx as libdpx
     from pypixxlib.propixx import PROPixx
@@ -49,40 +256,117 @@ except ImportError:
 __all__ = (
     'FrameEstimation', 'TeensyFrameEstimation', 'ViewControllerBase',
     'ViewSideViewControllerBase', 'view_process_enter',
-    'ControllerSideViewControllerBase'
+    'ControllerSideViewControllerBase', 'ignore_vpixx_import_error'
 )
+
+ignore_vpixx_import_error = False
+"""Ceed requires the pypixxlib package to control the projector. Ceed can still
+run in demo mode with it being installed (it requires hardware drivers to
+install) and it will ignore any projector commands.
+
+Set this to True to make it skip the projector commands. E.g. during testing
+on the CI.
+"""
 
 _get_app = App.get_running_app
 
 
 class FrameEstimation:
+    """A window-based running-median estimator.
+
+    Starting from the first frame, you pass it (:meth:`add_frame`) the time
+    just after each frame is rendered. With that, it estimates the time
+    the first frame was rendered by estimating the whole number of frames passed
+    since :attr:`first_frame_time`, rounding, and then back-computing the first
+    frame time from the current frame time, the count, and the GPU period.
+
+    So, each frame gives us an estimate of when the first frame was rendered.
+    Next, we keep a :attr:`history` of this estimate from the last 100 frames
+    and its median is the best estimate for the actual first frame render time.
+
+    Next, given the best estimate of the first frame render time and the period,
+    we compute how many frames have passed and round to whole frames. We record
+    this number for the last ``n`` (:attr:`skip_detection_smoothing_n_frames`)
+    frames in the circular :attr:`render_times` buffer. Our assumption is that
+    starting from the first of the ``n`` frames until the nth frame, we should
+    have rendered ``n - 1`` frames.
+
+    Averaging this over the ``n`` frames, so that we are less sensitive to
+    individual frame jitter, we get the best estimate of how many frames we
+    should have rendered by now, given the start time and the period.
+    Additionally, globally, we keep count of the total number of frame actually
+    submitted to the GPU and rendered. If our estimate for the number of frames
+    we should have rendered is larger than the number of actual rendered,
+    we know that some frame took to long to render and we need to drop one or
+    more frames to compensate.
+
+    :meth:`add_frame` returns now many frames need to be dropped to catch up.
+
+    Before the first real frame, we do some frame warmup and initialize
+    :attr:`render_times` with :meth:`reset`.
+    """
 
     _config_props_ = ('skip_detection_smoothing_n_frames', )
 
     min_heap: List = []
+    """The min heap used to track the median.
+    """
 
     max_heap: List = []
+    """The max heap used to track the median.
+    """
 
     history: List = []
+    """A circular buffer of 100 items that tracks the estimate of the time that
+    the first frame was rendered, using the last 100 frames.
+
+    :attr:`count` is the index in :attr:`history` of the oldest timestamp
+    (i.e. the next one to be overwritten).
+    """
 
     count: int = 0
+    """Index in :attr:`history`.
+    """
 
     frame_rate: float = 0
+    """The GPU frame rate.
+    """
 
     last_render_times_i: int = 0
 
     render_times: List[float] = []
+    """A circular buffer of :attr:`skip_detection_smoothing_n_frames` items
+    that tracks the estimate of how many frames should have been rendered,
+    using the last :attr:`skip_detection_smoothing_n_frames` frames.
 
-    skip_detection_smoothing_n_frames: int = 4
-
-    smoothing_frame_growth: float = 0.
-
-    first_frame_time: float = 0.
-    """The time that the first experiment frame was expected to be rendered,
-    given the warmup frames.
+    :attr:`last_render_times_i` is the index in :attr:`render_times` of the
+    oldest estimate (i.e. the next one to be overwritten).
     """
 
-    def reset(self, frame_rate: float, render_times: List[float]):
+    skip_detection_smoothing_n_frames: int = 4
+    """How many frames ot average to detect when a frame needs to be skipped.
+
+    See class description.
+    """
+
+    smoothing_frame_growth: float = 0.
+    """When averaging :attr:`render_times`, we subtract
+    :attr:`smoothing_frame_growth`, which is the average over ``range(n)``,
+    which is the expected number of frames to added over the last
+    :attr:`skip_detection_smoothing_n_frames` frames.
+
+    If the remainder is not zero, it is the number of frames to be dropped.
+    """
+
+    first_frame_time: float = 0.
+    """The best current estimate of the time that the first experiment frame was
+    rendered.
+    """
+
+    def reset(self, frame_rate: float, render_times: List[float]) -> None:
+        """Resets the instance and initializes it to the render times from the
+        warm up frames.
+        """
         self.frame_rate = frame_rate
         n = self.skip_detection_smoothing_n_frames
         times = np.asarray(render_times)
@@ -115,7 +399,10 @@ class FrameEstimation:
         else:
             self.smoothing_frame_growth = 0
 
-    def update_first_render_time(self, render_time):
+    def update_first_render_time(self, render_time: float) -> None:
+        """Adds the frame render time to the running-median history and updates
+        :attr:`first_frame_time` with the new best estimate.
+        """
         history = self.history
         frame_rate = self.frame_rate
         max_heap = self.max_heap
@@ -181,8 +468,16 @@ class FrameEstimation:
 
         self.first_frame_time = med
 
-    def add_frame(self, render_time, count, n_sub_frames):
-        """Estimates number of missed frames during experiment, after warmup.
+    def add_frame(
+            self, render_time: float, count: int, n_sub_frames: int) -> int:
+        """Estimates number of missed frames during experiment, given the render
+        time of the last frame and the total frames sent to the GPU.
+
+        ``n_sub_frames`` is the number of sub-frames included in ``count``, e.g.
+        in quad mode.
+
+        Can only be called after it is initialized with warmup frames in
+        :meth:`reset`.
         """
         self.update_first_render_time(render_time)
 
@@ -206,36 +501,92 @@ class FrameEstimation:
 
 
 class TeensyFrameEstimation(EventDispatcher):
+    """Alternatively to :class:`FrameEstimation`, we can estimate when the GPU
+    rendered a frame for too long and frame needs to be dropped using the
+    attached Teensy microcontroller.
+
+    This microcontroller watches the clock bit in the 24-bit corner pixel that
+    is described in :class:`~ceed.storage.controller.DataSerializerBase`. Then,
+    if a frame change is not seen after 1 / 119.96 seconds after the last clock
+    change, we know the frame is going long and we'll need to drop a frame.
+
+    This information is communicated over the USB and this class, in the main
+    process but in a second thread, continuously reads the USB. When it
+    indicates that a frame needs to be skipped, it updates the
+    :attr:`shared_value` that is seen by the second Ceed process that runs the
+    experiment and that drops the required number of frames.
+
+    The Teensy can and is only used during an actual experiment when Ceed is run
+    from a second process, because otherwise the corner pixel is not visible,
+    and the GPU doesn't match the frame rate anyway.
+    """
 
     _config_props_ = ('usb_vendor_id', 'usb_product_id', 'use_teensy')
 
     usb_vendor_id: int = 0x16C0
+    """The Teensy vendor ID. This is how we find the attached Teensy on the
+    bus. If there's more than one, this needs to be modified.
+    """
 
     usb_product_id: int = 0x0486
+    """The Teensy product ID. This is how we find the attached Teensy on the
+    bus. If there's more than one, this needs to be modified.
+    """
 
     use_teensy = BooleanProperty(True)
+    """Whether to use the Teensy.
+
+    If it's not attached, set this to False. When False, it falls back on
+    :class:`FrameEstimation`.
+    """
 
     is_available = False
+    """Indicates whether the Teensy is available and found.
+
+    If :attr:`use_teensy`, but not :attr:`is_available`, then we don't do
+    any frame adjustment.
+    """
 
     _magic_header = b'\xAB\xBC\xCD\xDF'
+    """USB packet header.
+    """
 
     _start_exp_msg = _magic_header + b'\x01' + b'\x00' * 59
+    """Header for packets sent to USB that indicate experiment is starting.
+    """
 
     _end_exp_msg = _magic_header + b'\x02' + b'\x00' * 59
+    """Header for packets sent to USB that indicate experiment is ending.
+    """
 
     usb_device: Optional[USBDevice] = None
+    """The USB device handle.
+    """
 
     endpoint_out: Optional[Endpoint] = None
+    """The output endpoint of the USB that we use to send messages to the
+    Teensy.
+    """
 
     endpoint_in: Optional[Endpoint] = None
+    """The input endpoint of the USB that we use to read messages from the
+    Teensy.
+    """
 
     _stop_thread = False
+    """Indicates to thread to end.
+    """
 
     _thread: Optional[Thread] = None
 
     _reattach_device = False
 
     shared_value: mp.Value = None
+    """A values shared between the main process (that updates this value based
+    on the Teensy and indicates the number of frames skipped) and the second
+    experiment process that uses this value to drop frames based on how many
+    the Teensy thinks were skipped.
+    """
 
     def _endpoint_filter(self, endpoint_type):
         def filt(endpoint):
@@ -245,7 +596,10 @@ class TeensyFrameEstimation(EventDispatcher):
         return filt
 
     def configure_device(self):
-        """This is only called on the viewer side, not in the main app.
+        """Configures the Teensy.
+
+        This is called by the main Ceed process before the second process is
+        started and opens the device in the main process.
         """
         self.is_available = False
         self._reattach_device = False
@@ -280,6 +634,11 @@ class TeensyFrameEstimation(EventDispatcher):
         self.is_available = True
 
     def release_device(self):
+        """Releases a previously configured Teensy.
+
+        This is called by the main Ceed process after the second process is
+        stopped and closes the device.
+        """
         if self.usb_device is not None:
             usb.util.dispose_resources(self.usb_device)
             if self._reattach_device:
@@ -288,6 +647,14 @@ class TeensyFrameEstimation(EventDispatcher):
             self.endpoint_in = self.endpoint_out = None
 
     def start_estimation(self, frame_rate):
+        """For each experiment, it notifies the Teensy that a new experiment
+        started so that it starts counting skipped frames once it sees the first
+        clock toggle in the corner pixel.
+
+        Called by the main Ceed process and it starts a new thread and
+        continuously reads from the Teensy and correspondingly updates
+        :attr:`shared_value`.
+        """
         if frame_rate != 119.96:
             raise ValueError(
                 f'Tried to start teensy with a screen frame rate of '
@@ -356,6 +723,12 @@ class TeensyFrameEstimation(EventDispatcher):
             self.endpoint_out.write(self._end_exp_msg)
 
     def stop_estimation(self):
+        """After each experiment it notifies the Teensy that the experiment
+        ended so it goes back to waiting for the next experiment notification.
+
+        Called by the main Ceed process and it also stops the second thread
+        started by :meth:`start_estimation`.
+        """
         if self._thread is None:
             return
 
@@ -365,36 +738,24 @@ class TeensyFrameEstimation(EventDispatcher):
 
 
 class ViewControllerBase(EventDispatcher):
-    '''A base class for visualizing the output of a :mod:`ceed.stage` on the
+    """Base class for running a Ceed experiment and visualizing the output of a
+    :mod:`ceed.stage` on the projector (full-screen) or during preview.
+
+    There are two sub-classes; :class:`ControllerSideViewControllerBase` for
+    playing the experiment when it is previewed in the Ceed GUI and
+    :class:`ViewSideViewControllerBase` for playing the experiment in the
+    second Ceed process when it is played "for real".
+
+    Additionally, :class:`ControllerSideViewControllerBase` is used to control
+    the experiment from within the main Ceed process in each case.
+    A base class for visualizing the output of a :mod:`ceed.stage` on the
     projector or to preview it in the main GUI.
-
-    The usage of ceed is to run a GUI in which stages, shapes, and functions
-    are designed. Subsequently, the stage is played on the projector or
-    previewed in the main GUI and displays shapes varying with intensity as
-    time progresses, as designed.
-
-    When the stage is played as a preview in the main GUI, all the code is
-    executed within the main process. In this case the controller is a
-    :class:`ControllerSideViewControllerBase` instance.
-
-    When the stage is played for real, it is played in a second process in
-    a second window which can be displayed on the projector window. In
-    this case, the controller in the second process is a
-    :class:`ViewSideViewControllerBase` instance while in the main GUI it
-    is a :class:`ControllerSideViewControllerBase` instance. Data is constantly
-    sent between the two processes, specifically, the second process is
-    initialized with the data to be displayed at the start. Once the playing
-    starts, the client continuously sends data back to the main GUI for
-    processing and storage.
-
-    This class controls all aspects of how the data is presented, e.g. whether
-    the window is full screen, the various modes, etc.
 
     :Events:
 
         `on_changed`:
             Triggered whenever a configuration option of the class is changed.
-    '''
+    """
 
     _config_props_ = (
         'screen_width', 'screen_height', 'frame_rate',
@@ -414,24 +775,33 @@ class ViewControllerBase(EventDispatcher):
     }
 
     screen_width = NumericProperty(1920)
-    '''The screen width on which the data is played. This is the full-screen
-    size.
+    '''The screen width in pixels on which the data is played. This is the
+    full-screen width.
     '''
 
     flip_projector = BooleanProperty(True)
+    """Whether to flip the projector output horizontally, around the center.
+    See also :ref:`view-flip`.
+    """
 
     flip_camera = BooleanProperty(False)
+    """Whether to flip the camera images horizontally, around the center.
+    See also :ref:`view-flip`.
+    """
 
     screen_height = NumericProperty(1080)
-    '''The screen height on which the data is played. This is the full-screen
-    size.
+    '''The screen height in pixels on which the data is played. This is the
+    full-screen height.
     '''
 
     screen_offset_x = NumericProperty(0)
-    '''When there are multiple monitors, the window on which the data is played
-    is controlled by the position of the screen. E.g. to set it on the right
-    screen of two screens, each 1920 pixel wide and with the main screen being
-    on the left. Then the :attr:`screen_offset_x` should be set to ``1920``.
+    '''When there are multiple monitors, the monitor on which the experiment is
+    shown in full-screen mode is controlled by the x-position of the displayed
+    window.
+
+    E.g. to show it on the right monitor of two monitors each 1920 pixel wide,
+    and with the main monitor being on the left. Then the
+    :attr:`screen_offset_x` should be set to ``1920``.
     '''
 
     def _get_frame_rate(self):
@@ -444,8 +814,15 @@ class ViewControllerBase(EventDispatcher):
     frame_rate = AliasProperty(
         _get_frame_rate, _set_frame_rate, cache=True,
         bind=('_frame_rate_numerator', '_frame_rate_denominator'))
-    '''The frame rate at which the data is played. This should match the
-    currently selected monitor's refresh rate.
+    '''The frame-rate of the GPU that plays the experiment.
+
+    This should be set to the exact refresh rate of the GPU, as can be found in
+    e.g. the nvidia control panel. Otherwise, the experiment will be out of sync
+    and played incorrectly.
+
+    This is internally converted to a fraction, so the number must be such
+    that it can be converted to a fraction. E.g. 119.96 or 59.94 can be
+    represented correctly as fractions.
     '''
 
     def _get_frame_rate_numerator(self):
@@ -457,6 +834,8 @@ class ViewControllerBase(EventDispatcher):
     frame_rate_numerator: int = AliasProperty(
         _get_frame_rate_numerator, _set_frame_rate_numerator, cache=True,
         bind=('_frame_rate_numerator',))
+    """The numerator of the :attr:`frame_rate` fraction.
+    """
 
     def _get_frame_rate_denominator(self):
         return self._frame_rate_denominator
@@ -467,60 +846,105 @@ class ViewControllerBase(EventDispatcher):
     frame_rate_denominator: int = AliasProperty(
         _get_frame_rate_denominator, _set_frame_rate_denominator, cache=True,
         bind=('_frame_rate_denominator',))
+    """The denominator of the :attr:`frame_rate` fraction.
+    """
 
     _frame_rate_numerator: int = NumericProperty(2999)
 
     _frame_rate_denominator: int = NumericProperty(25)
 
     use_software_frame_rate = BooleanProperty(False)
-    '''Depending on the GPU, the software is unable to render faster than the
-    GPU refresh rate. In that case, :attr:`frame_rate`, should match the value
-    that the GPU is playing at and this should be False.
+    '''Depending on the CPU/GPU, the software may be unable to render faster
+    than the GPU refresh rate. In that case, the GPU limits us to the GPU frame
+    rate and :attr:`frame_rate` should be set to match the GPU refresh rate
+    and this should be False.
 
     If the GPU isn't forcing a frame rate. Then this should be True and
-    :attr:`frame_rate` should be the desired frame rate. However, this will be
-    wildly inaccurate in this mode, so we should make sure that GPU is vsync'd
-    and this mode is False.
+    :attr:`frame_rate` should be the desired frame rate. That will restrict us
+    the given frame rate. However, the actual frame rate will be wildly
+    inaccurate in this mode, so it's only useful for testing.
 
     One can tell whether the GPU is forcing a frame rate by setting
     :attr:`frame_rate` to a large value and setting
     :attr:`use_software_frame_rate` to False and seeing what the resultant
-    frame rate is. If it isn't capped at some value, e.g. 120Hz, it means that
-    the GPU isn't forcing it.
+    frame rate is. If it isn't capped at some value constant, e.g. 120Hz, it
+    means that the GPU isn't forcing a rate.
     '''
 
     log_debug_timing = BooleanProperty(False)
     """Whether to log the times that frames are drawn and rendered to a debug
     section in the h5 file.
+
+    If True, this will additionally be logged for each displayed frame in a
+    special section in the file.
     """
 
     skip_estimated_missed_frames = BooleanProperty(True)
-    """Whether to skip frames when we estimate that the last frame was
-    displayed over the duration of multiple frames. So we may want to skip
-    the frames that should have been displayed but weren't, rather than
-    displaying all the subsequent frames at a delay of the number of missed
-    frames.
+    """Whether to drop frames to compensate when we detect that a previous
+    frame was displayed for longer than a single GPU frame duration. Then, we
+    may want to drop an equivalent number of frames, rather than
+    displaying all the subsequent frames at a delay.
+
+    See :class:`FrameEstimation` and :class:`TeensyFrameEstimation` for how
+    we detect these long frames. Use :attr:`TeensyFrameEstimation.use_teensy`
+    to control which estimator is used.
     """
 
     cam_transform = ObjectProperty(Matrix().tolist())
+    """A 4x4 matrix that controls the rotation, offset, and scaling of the
+    camera images relative to the projector.
+
+    In the Ceed GUI, a user can transform the camera image, in addition to
+    :attr:`flip_camera` until it fully aligns with the projector output.
+    See also :ref:`view-flip`.
+    """
 
     mea_transform = ObjectProperty(Matrix().tolist())
+    """A 4x4 matrix that controls the rotation, offset, and scaling of the
+    mea array relative to the camera.
+
+    This is a grid that corresponds to the electrodes in the electrode array.
+    In the Ceed GUI, a user can transform this grid, in addition to
+    :attr:`mirror_mea` until it fully aligns with a camera image of the grid
+    from the actual array.
+
+    See also :ref:`view-flip` and the other ``mea_`` properties of this class.
+    """
 
     mirror_mea = BooleanProperty(True)
+    """When True, the MEA grid is mirrored vertically around the center.
+    See :attr:`mea_transform` also.
+    """
 
     mea_num_rows = NumericProperty(12)
+    """The number of electrode rows in the array. See :attr:`mea_transform`
+    also.
+    """
 
     mea_num_cols = NumericProperty(12)
+    """The number of electrode columns in the array. See :attr:`mea_transform`
+    also.
+    """
 
     mea_pitch = NumericProperty(20)
+    """The distance in pixels, center-to-center, between neighboring
+    rows/columns. It is assumed that it is the same for columns and rows.
+
+    See :attr:`mea_transform` also.
+    """
 
     mea_diameter = NumericProperty(3)
+    """The diameter in pixels of the displayed electrode circles in the grid.
+
+    See :attr:`mea_transform` also.
+    """
 
     pad_to_stage_handshake = BooleanProperty(True)
-    """Ceed sends some handshaking info to MCS for each experiment, to help
-    us align the ceed and MCS data afterwards. If the root stage of the
-    experiment is too short, it's possible the full handshake would not be
-    sent, preventing alignment afterwards.
+    """Ad described in :class:`~ceed.storage.controller.DataSerializerBase`,
+    Ceed sends handshaking data to the MCS system at the start of each
+    experiment. This helps us align the Ceed and MCS data afterwards. If the
+    root stage of the experiment is too short, it's possible the full handshake
+    would not be sent, preventing alignment afterwards.
 
     If :attr:`pad_to_stage_handshake`, then the root stage will be padded
     so it goes for the minimum number of clock frames required to finish
@@ -530,53 +954,69 @@ class ViewControllerBase(EventDispatcher):
 
     output_count = BooleanProperty(True)
     '''Whether the corner pixel is used to output frame information on the
-    PROPixx controller IO pot. If True,
-    :class:`ceed.storage.controller.DataSerializerBase` is used to set the 24
-    bits of the corner pixel.
+    PROPixx controller IO pot as described in
+    :class:`~ceed.storage.controller.DataSerializerBase`.
+
+    If True, :class:`ceed.storage.controller.DataSerializerBase` is used to set
+    the 24 bits of the corner pixel. Otherwise, that pixel is treated like the
+    other normal pixels.
     '''
 
     fullscreen = BooleanProperty(True)
-    '''Whether the second window should run in fullscreen mode. In fullscreen
-    mode the window has no borders.
+    '''Whether the second Ceed window that runs the "real experiment" is run
+    in fullscreen mode.
+
+    In fullscreen mode the window has no borders and takes over the whole
+    screen.
     '''
 
     stage_active = BooleanProperty(False)
-    '''True when a stage is playing. Read-only.
+    '''True when an experiment is being played. Read-only.
     '''
 
     cpu_fps = NumericProperty(0)
-    '''The estimated CPU frames-per-second of the window playing the data.
+    '''The estimated CPU frames-per-second of the window playing the experiment.
     '''
 
     gpu_fps = NumericProperty(0)
-    '''The estimated GPU frames-per-second of the window playing the data.
+    '''The estimated GPU frames-per-second of the window playing the experiment.
     '''
 
     propixx_lib = BooleanProperty(False)
-    '''True when the propixx python library is available. Read-only.
+    '''True when the propixx python library (pypixxlib) is available. Read-only.
     '''
 
     video_modes = ['RGB', 'QUAD4X', 'QUAD12X']
     '''The video modes that the PROPixx projector can be set to.
+
+    See also :ref:`view-video-mode`.
     '''
 
     led_modes = {'RGB': 0, 'GB': 1, 'RB': 2, 'B': 3, 'RG': 4, 'G': 5, 'R': 6,
                  'none': 7}
-    '''The color modes the PROPixx projector can be set to. It determines which
-    of the RGB LEDs are turned OFF.
+    '''The color modes the PROPixx projector can be set to.
+
+    It determines which of the RGB LEDs are turned OFF. E.g. ``"RG"`` means that
+    the blue LED is OFF.
     '''
 
     video_mode = StringProperty('RGB')
-    '''The current video mode from the :attr:`video_modes`.
+    '''The current video mode from among the :attr:`video_modes`.
+
+    See also :ref:`view-video-mode`.
     '''
 
     LED_mode = StringProperty('RGB')
-    '''The LED mode the projector is set to during the experiment.
+    '''The LED mode the projector will be set to during the experiment.
+
     Its value is from the :attr:`led_modes`.
     '''
 
     LED_mode_idle = StringProperty('none')
-    '''The LED mode the projector is set to before/after the experiment.
+    '''The LED mode the projector will be set to before/after the experiment.
+    This is used to turn OFF the projector LEDs in between experiments so that
+    light is not projected on the tissue while stages are designed.
+
     Its value is from the :attr:`led_modes`.
     '''
 
@@ -585,45 +1025,60 @@ class ViewControllerBase(EventDispatcher):
 
     do_quad_mode = AliasProperty(
         _get_do_quad_mode, None, cache=True, bind=('video_mode', ))
-    '''Whether the video mode is a quad mode. Read-only.
+    '''Whether the video mode is one of the quad modes. Read-only.
     '''
 
     pre_compute_stages: bool = BooleanProperty(False)
-    """
+    """Whether the stage run by the experiment should be pre-computed. See
+    :mod:`~ceed.stage` for details.
     """
 
     _original_fps = Clock._max_fps if not os.environ.get(
         'KIVY_DOC_INCLUDE', None) else 0
-    '''Original kivy clock fps, so we can set it back.
+    '''Original kivy clock fps, so we can set it back after each experiment.
     '''
 
     canvas_name = 'view_controller'
-    '''Name used to add graphics instructions to the kivy canvas for easy
-    removal later by name.
+    '''Name used for the Kivy canvas to which we add the experiment's graphics
+    instructions.
     '''
 
     current_canvas = None
-    '''The last canvas used on which the shapes graphics and color instructions
-    was added.
+    '''The last canvas used on which the experiment's shapes, graphics, and
+    color instructions was added.
     '''
 
     shape_views: List[Dict[str, Color]] = []
-    '''List of kivy graphics instructions added to the :attr:`current_canvas`.
+    '''List of kivy shapes graphics instructions added to the
+    :attr:`current_canvas`.
+
+    These are the shape's whose color and intensity is controlled by the
+    experiment.
     '''
 
     tick_event = None
-    '''The kivy clock event that updates the colors on every frame.
+    '''The kivy clock event that updates the shapes' colors on every frame.
     '''
 
     tick_func = None
-    '''The iterator that updates the colors on every frame.
+    '''The :meth:`~ceed.stage.StageFactoryBase.tick_stage` generator that
+    updates the shapes on every frame.
     '''
 
     count = 0
-    '''The current frame count.
+    '''The current global frame count, reset for each experiment.
+
+    This number divided by the :attr:`frame_rate` is the current global
+    experiment time.
     '''
 
     experiment_uuid: bytes = b''
+    """A unique uuid that is re-generated before each experiment and sent along
+    over the corner pixel as the initial uniquely-identifying handshake-pattern.
+    It allows us to locate this experiment in the MCS data post-hoc.
+
+    See :class:`~ceed.storage.controller.DataSerializerBase`.
+    """
 
     def _get_effective_rate(self):
         rate = Fraction(
@@ -637,8 +1092,10 @@ class ViewControllerBase(EventDispatcher):
     effective_frame_rate: Fraction = AliasProperty(
         _get_effective_rate, None, cache=True,
         bind=('video_mode', '_frame_rate_numerator', '_frame_rate_denominator'))
-    '''The actual frame rate at which the projector is updated. E.g. in
-    ``'QUAD4X'`` :attr:`video_mode` it is updated at 4 * 120Hz = 480Hz.
+    '''The effective frame rate at which the experiment's shapes is updated.
+
+    E.g. in ``'QUAD4X'`` :attr:`video_mode` shapes are updated at about
+    4 * 120Hz = 480Hz.
 
     It is read only and automatically computed.
     '''
@@ -648,61 +1105,111 @@ class ViewControllerBase(EventDispatcher):
     _flip_stats = {'last_call_t': 0., 'count': 0, 'tstart': 0.}
 
     flip_fps = 0
-    '''The GPU fps.
-    '''
 
     serializer = None
     '''The :meth:`ceed.storage.controller.DataSerializerBase.get_bits`
     generator instance that generates the corner pixel value.
+
+    It is advanced for each frame and its value set to the 24-bits of the
+    corner pixel.
     '''
 
     serializer_tex = None
-    '''The kivy texture that displays the corner pixel value.
+    '''The kivy texture that displays the corner pixel value on screen.
     '''
 
-    queue_view_read = None
-    '''The queue used by the view side to receive messages from the main GUI
-    controller side.
+    queue_view_read: mp.Queue = None
+    '''The queue used by the second viewer process side to receive messages
+    from the main GUI controller side.
     '''
 
-    queue_view_write = None
-    '''The queue used by the view side to write messages to the main GUI
-    controller side.
+    queue_view_write: mp.Queue = None
+    '''The queue used by the second viewer process side to send messages
+    to the main GUI controller side.
     '''
 
     _scheduled_pos_restore = False
+    """Whether we're in the middle of restoring the camera transform.
+    """
 
     _stage_ended_last_frame = False
+    """Set when in quad mode, when the last frames only cover some of the 4 or
+    12 sub-frames. Then, we still draw those partial frames and only finish the
+    experiment on the next tick.
+    """
 
     _frame_buffers = None
+    """Buffer used to batch send frame data to the logging system.
+
+    This is data logged by
+    :meth:`~ceed.storage.controller.CeedDataWriterBase.add_frame`.
+    """
 
     _frame_buffers_i = 0
+    """The index in :attr:`_frame_buffers` where to save the next data.
+    """
 
     _flip_frame_buffer = None
+    """Buffer used to batch send frame render data to the logging system.
+
+    This is data logged by
+    :meth:`~ceed.storage.controller.CeedDataWriterBase.add_frame_flip`.
+    """
 
     _flip_frame_buffer_i = 0
+    """The index in :attr:`_flip_frame_buffer` where to save the next data.
+    """
 
     _debug_frame_buffer = None
+    """Buffer used to batch send frame debugging data to the logging system.
+
+    This is data logged by
+    :meth:`~ceed.storage.controller.CeedDataWriterBase.add_debug_data`.
+    """
 
     _debug_frame_buffer_i = 0
+    """The index in :attr:`_debug_frame_buffer` where to save the next data.
+    """
 
     _debug_last_tick_times = 0, 0
+    """Saves the timing info for the last frame.
+    """
 
     _n_missed_frames: int = 0
-    """Estimated number of frames missed during the last render.
+    """Estimated number of frames missed upto and during the last render
+    that we have not yet compensated for by dropping frames.
     """
 
     _total_missed_frames: int = 0
+    """The total number of frames that had to be dropped.
+    """
 
     _n_sub_frames = 1
+    """The number of sub-frames within a frame.
+
+    E.g. in quad12 mode this is 12.
+    """
 
     stage_shape_names: List[str] = []
+    """List of all the :mod:`~ceed.shape` names used during this experiment.
+    """
 
     frame_estimation: FrameEstimation = None
+    """The running-median based frame dropping estimator.
+
+    See :class:`FrameEstimation`.
+    """
 
     teensy_frame_estimation: TeensyFrameEstimation = None
+    """The Teensy based frame dropping estimator.
+
+    See :class:`TeensyFrameEstimation`.
+    """
 
     _warmup_render_times: List[float] = []
+    """List of the render times of the frames rendered during the experiment
+    warmup phase.
+    """
 
     __events__ = ('on_changed', )
 
@@ -716,6 +1223,8 @@ class ViewControllerBase(EventDispatcher):
         self.teensy_frame_estimation = TeensyFrameEstimation()
 
     def _restore_cam_pos(self):
+        """Resets transformation to the value from before a viewport resize.
+        """
         if self._scheduled_pos_restore:
             return
 
@@ -732,12 +1241,21 @@ class ViewControllerBase(EventDispatcher):
         pass
 
     def request_process_data(self, data_type, data):
-        '''Called by the client that displays the shapes when it needs to
-        update the controller with some data.
-        '''
+        """Called during the experiment, either by the second or main Ceed
+        process (when previewing) to pass data to the main controller to be
+        logged or displayed.
+
+        It is the general interface by which the frame callbacks pass data
+        back to the controller.
+        """
         pass
 
     def _process_data(self, data_type, data):
+        """The default handler for :meth:`request_process_data` when the
+        data generation and logging happens in the same process during preview.
+
+        It simply saves the data as needed.
+        """
         if data_type == 'GPU':
             self.gpu_fps = data
         elif data_type == 'CPU':
@@ -752,9 +1270,9 @@ class ViewControllerBase(EventDispatcher):
             assert False
 
     def add_graphics(self, canvas, black_back=False):
-        '''Adds all the graphics required to visualize the shapes to the
-        canvas.
-        '''
+        """Called at the start of the experiment to add all the graphics
+        required to visualize the shapes, to the :attr:`current_canvas`.
+        """
         _get_app().stage_factory.remove_shapes_gl_color_instructions(
             canvas, self.canvas_name)
         self.shape_views = []
@@ -813,10 +1331,16 @@ class ViewControllerBase(EventDispatcher):
                 Rectangle(texture=tex, pos=(0, h - 1), size=(1, 1),
                           group=self.canvas_name)
 
-    def start_stage(self, stage_name, canvas):
-        '''Starts the stage. It adds the graphics instructions to the canvas
-        and starts playing the shapes.
-        '''
+    def start_stage(self, stage_name: str, canvas):
+        """Starts the experiment using the special
+        :attr:`~ceed.stage.last_experiment_stage_name` stage.
+
+        It adds the graphics instructions to the canvas, saves it as
+        :attr:`current_canvas`, and starts playing the experiment using the
+        stage.
+
+        ``stage_name`` is ignored because we use the special stage instead.
+        """
         from kivy.core.window import Window
         if self.tick_event:
             raise TypeError('Cannot start new stage while stage is active')
@@ -890,8 +1414,8 @@ class ViewControllerBase(EventDispatcher):
         self._debug_last_tick_times = 0, 0
 
     def end_stage(self):
-        '''Ends the stage if one is playing.
-        '''
+        """Ends the current experiment, if one is running.
+        """
         from kivy.core.window import Window
         if not self.tick_event:
             return
@@ -929,12 +1453,19 @@ class ViewControllerBase(EventDispatcher):
             self._debug_frame_buffer = None
 
     def tick_callback(self, *largs):
-        '''Called before every CPU frame to handle any processing work.
+        """Called for every CPU Clock frame to handle any processing work.
 
-        Warmup is required to ensure projector LED had time to change to the
-        experiment value (compared to idle). In addition to allowing us to
-        estimate when frames are missed.
-        '''
+        If not :attr:`use_software_frame_rate` and if the GPU restricts
+        the CPU to the GPU refresh rate, then this is called once before
+        each frame is rendered so we can update the projector at the expected
+        frame rate.
+
+        Before the experiment starts for real we do 50 empty warmup frames.
+        Warmup is required to ensure the projector LED had time to change to the
+        experiment value :attr:`LED_mode` (compared to :attr:`LED_mode_idle`).
+        In addition to allowing us to estimate the time of the first experiment
+        frame render for :class:`FrameEstimation`.
+        """
         # are we finishing up in quad mode after there were some partial frame
         # at the end of last iteration so we couldn't finish then?
         if self._stage_ended_last_frame:
@@ -1093,8 +1624,11 @@ class ViewControllerBase(EventDispatcher):
             self._debug_last_tick_times = t, clock()
 
     def flip_callback(self, *largs):
-        '''Called before every GPU frame by the graphics system.
-        '''
+        """Called for every GPU rendered frame by the graphics system.
+
+        This method lets us estimate the rendering times and if we need to drop
+        frames.
+        """
         ts = clock()
         from kivy.core.window import Window
         Window.on_flip()
@@ -1161,8 +1695,16 @@ class ViewControllerBase(EventDispatcher):
 
 
 class ViewSideViewControllerBase(ViewControllerBase):
-    '''The instance that is created on the viewer side.
-    '''
+    """This class is used for experiment control when Ceed is running a
+    real experiment in the second Ceed process.
+
+    If Ceed is running in the second process started with
+    :func:`view_process_enter`, then this is a "real" experiment and this class
+    is used. It has a inter-process queue from which it gets messages from the
+    main Ceed process, such as to start or stop an experiment. It also sends
+    back messages to the main process including data about the rendered frames
+    and data to be logged.
+    """
 
     def start_stage(self, stage_name, canvas):
         self.prepare_view_window()
@@ -1193,22 +1735,21 @@ class ViewSideViewControllerBase(ViewControllerBase):
             self.queue_view_write.put_nowait((data_type, str(data)))
 
     def send_keyboard_down(self, key, modifiers, t):
-        '''Gets called by the window for every keyboard key press, which it
-        passes on to the main GUI process.
-        '''
+        """Gets called by the window for every keyboard key press, which it
+        sends on to the main GUI process to handle.
+        """
         self.queue_view_write.put_nowait((
             'key_down', yaml_dumps((key, t, list(modifiers)))))
 
     def send_keyboard_up(self, key, t):
-        '''Gets called by the window for every keyboard key release, which it
-        passes on to the main GUI process.
-        '''
+        """Gets called by the window for every keyboard key release, which it
+        sends on to the main GUI process to handle.
+        """
         self.queue_view_write.put_nowait(('key_up', yaml_dumps((key, t))))
 
     def handle_exception(self, exception, exc_info=None):
-        '''Called by the second process upon an error which is passed on to the
-        main process.
-        '''
+        """Called upon an error which is passed on to the main process.
+        """
         if exc_info is not None and not isinstance(exc_info, str):
             exc_info = ''.join(traceback.format_exception(*exc_info))
         self.queue_view_write.put_nowait(
@@ -1216,10 +1757,10 @@ class ViewSideViewControllerBase(ViewControllerBase):
 
     @app_error
     def view_read(self, *largs):
-        '''Communication between the two process occurs through queues, this
-        is run periodically to serve the queue and read messages from the main
-        GUI.
-        '''
+        """Communication between the two process occurs through queues. This
+        method is run periodically by the Kivy Clock to serve the queue and
+        read and handle messages from the main GUI.
+        """
         from kivy.core.window import Window
         read = self.queue_view_read
         write = self.queue_view_write
@@ -1247,19 +1788,29 @@ class ViewSideViewControllerBase(ViewControllerBase):
                 break
 
     def prepare_view_window(self, *largs):
-        '''Called before the app is run to prepare the app according to the
-        configuration parameters.
-        '''
+        """Called before :class:`~ceed.view.main.CeedViewApp` is run, to
+        prepare the new window according to the configuration parameters.
+        """
         from kivy.core.window import Window
         Window.size = self.screen_width, self.screen_height
         Window.left = self.screen_offset_x
         Window.fullscreen = self.fullscreen
 
 
-def view_process_enter(read, write, settings, app_settings, shared_value):
-    '''Called by the second internal view process when it is created.
-    This calls :meth:`ViewSideViewControllerBase.view_process_enter`.
-    '''
+def view_process_enter(
+        read: mp.Queue, write: mp.Queue, settings: Dict[str, Any],
+        app_settings: dict, shared_value: mp.Value):
+    """Entry method for the second Ceed process that runs "real" experiments.
+
+    It is called by this process when it is created. This in turns configures
+    the app and then runs it until it's closed.
+
+    The experiment is run in this process by
+    :class:`ViewSideViewControllerBase`. It receives control messages and sends
+    back data to the main process over the provided queues.
+    :class:`ControllerSideViewControllerBase` handles these queues on the main
+    process side.
+    """
     from more_kivy_app.app import run_app
     from ceed.view.main import CeedViewApp
 
@@ -1293,12 +1844,21 @@ def view_process_enter(read, write, settings, app_settings, shared_value):
 
 
 class ControllerSideViewControllerBase(ViewControllerBase):
-    '''The instance that is created in the main GUI.
-    '''
+    """This class is used by the main Ceed process to control experiments
+    run either as previews (in the main Ceed process) or as a real experiment
+    (in a second process).
 
-    view_process = ObjectProperty(None, allownone=True)
-    '''Process of the internal window that runs the experiment through
-    a :class:`ViewSideViewControllerBase`.
+    If the experiment is run in the second process, then that second process
+    runs :class:`ViewSideViewControllerBase` and this class is used by the
+    main process to send control messages and receive experiment data from that
+    process over queues.
+
+    Otherwise, this class directly controls the experiment.
+    """
+
+    view_process: Optional[mp.Process] = ObjectProperty(None, allownone=True)
+    '''The second process that runs "real" experiments in full-screen mode.
+    See :func:`view_process_enter`.
     '''
 
     _ctrl_down = False
@@ -1306,17 +1866,58 @@ class ControllerSideViewControllerBase(ViewControllerBase):
     '''
 
     selected_stage_name = ''
-    '''The name of the stage currently selected in the GUI. This will be the
-    one started.
+    '''The name of the stage currently selected in the GUI to be run.
+
+    This will be the stage that is copied and run.
     '''
 
-    initial_cam_image = None
+    initial_cam_image: Optional[Image] = None
+    """The last camera image received before the experiment starts, if any.
 
-    last_cam_image = ObjectProperty(None, allownone=True)
+    See also :attr:`last_cam_image`.
+
+    It is only set for a "real" experiment, not during preview.
+    """
+
+    last_cam_image: Optional[Image] = ObjectProperty(None, allownone=True)
+    """After the experiment ends, this contains the last camera image acquired
+    before the experiment ended. If no image was taken during the experiment,
+    this is the image from before the experiment if there's one.
+
+    This allows us to keep the last image generated by the tissue in response
+    to experiment stimulation. In the GUI, after the experiment ended, there's
+    a button which when pressed will take this image (if not None) and set it
+    as the camera image.
+
+    It is only set for a "real" experiment, not during preview.
+
+    See also :attr:`proj_pixels`.
+    """
 
     proj_size = None
+    """If :attr:`last_cam_image` is an image and not None, this contains the
+    screen size from which the :attr:`proj_pixels` were generated.
+
+    It's the second index value of the tuple returned by
+    :meth:`~ceed.view.main.CeedViewApp.get_root_pixels`.
+
+    It is only set for a "real" experiment, not during preview.
+    """
 
     proj_pixels = None
+    """If :attr:`last_cam_image` is an image and not None, this contains the
+    pixel intensity values for all the pixels shown during the last frame before
+    the experiment ended.
+
+    Together with :attr:`last_cam_image`, this lets you compare the pixels
+    displayed on the projector to the image from the tissue lighting up in
+    response to those pixels.
+
+    It's the first index value of the tuple returned by
+    :meth:`~ceed.view.main.CeedViewApp.get_root_pixels`.
+
+    It is only set for a "real" experiment, not during preview.
+    """
 
     _last_ctrl_release = 0
 
@@ -1327,12 +1928,17 @@ class ControllerSideViewControllerBase(ViewControllerBase):
     def request_stage_start(
             self, stage_name: str, experiment_uuid: Optional[bytes] = None
     ) -> None:
-        '''Starts the stage either in the GUI when previewing or in the
-        viewer.
+        """Starts the experiment using the stage, either running it in the GUI
+        when previewing or in the second process.
 
-        Look into immediately erroring out if already running. So that we
-        don't overwrite the initial image if we're already running.
-        '''
+        This internally calls the appropriate
+        :meth:`ViewControllerBase.start_stage` method either for
+        :class:`ViewSideViewControllerBase` or
+        :class:`ControllerSideViewControllerBase` so this should be used to
+        start the experiment.
+        """
+        # Look into immediately erroring out if already running. So that we
+        # don't overwrite the initial image if we're already running.
         # needs to be set here so button is reset on fail
         self.stage_active = True
         self.last_cam_image = self.proj_pixels = self.proj_size = None
@@ -1383,9 +1989,15 @@ class ControllerSideViewControllerBase(ViewControllerBase):
 
     @app_error
     def request_stage_end(self):
-        '''Ends the stage either in the GUI when previewing or in the
-        viewer.
-        '''
+        """Ends the currently running experiment, whether it's running in the
+        GUI when previewing or in the second process.
+
+        This internally calls the appropriate
+        :meth:`ViewControllerBase.end_stage` method either for
+        :class:`ViewSideViewControllerBase` or
+        :class:`ControllerSideViewControllerBase` so this should be used to
+        stop the experiment.
+        """
         if self.view_process is None:
             self.end_stage()
         elif self.queue_view_read is not None:
@@ -1395,6 +2007,10 @@ class ControllerSideViewControllerBase(ViewControllerBase):
             self.queue_view_read.put_nowait(('end_stage', None))
 
     def stage_end_cleanup(self, state=None):
+        """Automatically called by Ceed after a :meth:`request_stage_end`
+        request and it cleans up any resources and finalizes the last
+        experiment.
+        """
         # we only do teensy estimation on the second process
         if self.teensy_frame_estimation.is_available:
             self.teensy_frame_estimation.stop_estimation()
@@ -1422,9 +2038,8 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         self.stage_end_cleanup()
 
     def request_fullscreen(self, state):
-        '''Sets the fullscreen state to full or not of the second internal
-        view process.
-        '''
+        """Sets the :attr:`fullscreen` state of the second Ceed process.
+        """
         self.fullscreen = state
         if self.view_process and self.queue_view_read:
             self.queue_view_read.put_nowait(('fullscreen', state))
@@ -1446,9 +2061,9 @@ class ControllerSideViewControllerBase(ViewControllerBase):
 
     @app_error
     def start_process(self):
-        '''Starts the process of the internal window that runs the experiment
-        through a :class:`ViewSideViewControllerBase`.
-        '''
+        """Starts the second Ceed process that runs the "real" experiment
+        using :class:`ViewSideViewControllerBase`.
+        """
         if self.view_process:
             return
 
@@ -1476,18 +2091,19 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         Clock.schedule_interval(self.controller_read, .25)
 
     def stop_process(self):
-        '''Ends the :class:`view_process` process by sending a EOF to
+        """Ends the :class:`view_process` process by sending a EOF to
         the second process.
-        '''
+        """
         if self.view_process and self.queue_view_read:
             self.queue_view_read.put_nowait(('eof', None))
             self.queue_view_read = None
 
     @app_error
     def finish_stop_process(self):
-        '''Called by by the read queue thread when we receive the message that
-        the second process received an EOF and that it stopped.
-        '''
+        """Automatically called by Ceed through the read queue when we receive
+        the message that the second process received the :meth:`stop_process`
+        EOF and that it stopped.
+        """
         if not self.view_process:
             return
 
@@ -1499,9 +2115,12 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         self.teensy_frame_estimation.release_device()
 
     def handle_key_press(self, key, t, modifiers=[], down=True):
-        '''Called by by the read queue thread when we receive a keypress
+        """Called by by the read queue thread when we receive a keypress
         event from the second process.
-        '''
+
+        In response it e.g. starts/stops the experiment, closes the second
+        process etc.
+        """
         if key in ('ctrl', 'lctrl', 'rctrl'):
             self._ctrl_down = down
             if not down:
@@ -1522,9 +2141,9 @@ class ControllerSideViewControllerBase(ViewControllerBase):
             self.request_fullscreen(not self.fullscreen)
 
     def controller_read(self, *largs):
-        '''Called periodically to serve the queue that receives messages from
-        the second process.
-        '''
+        """Called periodically by the Kivy Clock to serve the queue that
+        receives messages from the second Ceed process.
+        """
         read = self.queue_view_write
         while True:
             try:
@@ -1574,6 +2193,12 @@ class ControllerSideViewControllerBase(ViewControllerBase):
 
     @app_error
     def set_pixel_mode(self, state, ignore_exception=False):
+        """Sets the projector pixel mode to show the corner pixel on the
+        controller IO.
+
+        It is called with True before the experiment starts and with False
+        when it ends.
+        """
         if PROPixxCTRL is None:
             if ignore_vpixx_import_error:
                 return
@@ -1597,9 +2222,9 @@ class ControllerSideViewControllerBase(ViewControllerBase):
 
     @app_error
     def set_led_mode(self, mode, ignore_exception=False):
-        '''Sets the projector's LED mode. ``mode`` can be one of
+        """Sets the projector's LED mode to one of the
         :attr:`ViewControllerBase.led_modes`.
-        '''
+        """
         if libdpx is None:
             if ignore_vpixx_import_error:
                 return
@@ -1616,9 +2241,9 @@ class ControllerSideViewControllerBase(ViewControllerBase):
 
     @app_error
     def set_video_mode(self, mode, ignore_exception=False):
-        '''Sets the projector's video mode. ``mode`` can be one of
+        """Sets the projector's video mode to one of the
         :attr:`ViewControllerBase.video_modes`.
-        '''
+        """
         if PROPixx is None:
             if ignore_vpixx_import_error:
                 return

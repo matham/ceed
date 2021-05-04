@@ -1,3 +1,11 @@
+"""Ceed entry
+=============
+
+When run as a script, it runs the Ceed GUI.
+
+Ceed is run through the separate script to allow Ceed to internally run
+additional processes without entering a recursion loop.
+"""
 # Icon made by https://www.flaticon.com/authors/freepik from
 # https://www.flaticon.com/
 
@@ -27,14 +35,14 @@ if __name__ == '__main__':
     gc.collect()
     import logging
 
-    if app() is not None and False:
-        logging.error('Memory leak: failed to release app for test ')
-        import objgraph
-        objgraph.show_backrefs(
-            [app()], filename=r'E:\backrefs.png', max_depth=100,
-            too_many=1)
-        # objgraph.show_chain(
-        #     objgraph.find_backref_chain(
-        #         app(), objgraph.is_proper_module),
-        #     filename=r'E:\chain.png')
+    # if app() is not None and False:
+    #     logging.error('Memory leak: failed to release app for test ')
+    #     import objgraph
+    #     objgraph.show_backrefs(
+    #         [app()], filename=r'E:\backrefs.png', max_depth=100,
+    #         too_many=1)
+    #     objgraph.show_chain(
+    #         objgraph.find_backref_chain(
+    #             app(), objgraph.is_proper_module),
+    #         filename=r'E:\chain.png')
     # assert app() is None

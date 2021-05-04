@@ -5,7 +5,7 @@ Introduction
 -------------
 
 Ceed is a Python based application to help run in-vitro experiments that
-stimulates brain slices and records their activity.
+optically stimulates brain slices and records their activity.
 
 Ceed is the user interface for describing and running the experiments.
 The overall system is described in :ref:`ceed-blueprint`.

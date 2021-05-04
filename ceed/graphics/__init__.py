@@ -203,8 +203,8 @@ class WidgetList(CompoundSelectionBehavior, FocusBehavior):
 
 
 class CeedDragNDrop(DraggableController):
-    '''Adds ``KNSpaceBehavior`` to the drag controller.
-    '''
+    """Ceed drag and drop controller.
+    """
     pass
 
 
