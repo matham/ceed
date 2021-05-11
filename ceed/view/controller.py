@@ -91,6 +91,8 @@ stimulate the tissue outside the experiment. During the experiment you can
 either rely on the color selected for each stage, turn OFF specific LEDs or use
 the optical filters to filter out unwanted color channels.
 
+.. _dropped-frames:
+
 Frame rate and dropped frames
 -----------------------------
 
@@ -158,6 +160,15 @@ The hardware device can be turned OFF with
 :attr:`TeensyFrameEstimation.use_teensy`, which is also configurable in the GUI.
 If disabled, we fall back to the software approach, unless it's completely
 disabled with :attr:`ViewControllerBase.skip_estimated_missed_frames`.
+
+.. note::
+
+    For any dropped frames, we still pass the time to the stage and it generates
+    the shape values for these frames, but the frames are just dropped.
+
+    This ensures that the root stage receives contiguous times at the given
+    frame rate without any jumps, rather, we just don't draw the frames that
+    need to be skipped.
 
 Experiment flow
 ---------------

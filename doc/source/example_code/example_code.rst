@@ -1,3 +1,5 @@
+.. _example-analysis:
+
 ########################
   Example Analysis Code
 ########################

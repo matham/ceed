@@ -44,7 +44,7 @@ from queue import Queue, Empty
 import numpy as np
 from functools import partial
 import struct
-from typing import Generator, Dict, List
+from typing import Generator, Dict, List, Union
 import re
 import time
 from tree_config import get_config_children_names
@@ -893,7 +893,9 @@ class CeedDataWriterBase(EventDispatcher):
     def get_blocks_experiment_numbers(blocks, ignore_list=None) -> List[str]:
         """Returns list of experiments in the given nix blocks.
 
-        They are each a number, represented as a str.
+        ``ignore_list``, if provided, is a list of experiment numbers to skip.
+
+        Each experiment name is a number, represented as a str.
         """
         experiments = []
         ignore_list = set(map(str, ignore_list or []))
@@ -906,7 +908,7 @@ class CeedDataWriterBase(EventDispatcher):
         return list(sorted(experiments, key=int))
 
     @staticmethod
-    def get_experiment_block_name(experiment_num):
+    def get_experiment_block_name(experiment_num: Union[str, int]) -> str:
         """Converts the experiment number to the full name used to name the
         block that stores the experiment data.
         """
@@ -1189,6 +1191,8 @@ class DataSerializerBase(EventDispatcher):
        :meth:`get_bits`. The counter then starts sending its current value when
        the bytes are done. The length of the bytes is sent before the bytes
        (zero is sent if empty).
+
+    See also :ref:`handshake-protocol`.
     """
 
     _config_props_ = (
