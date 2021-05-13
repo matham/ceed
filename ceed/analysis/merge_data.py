@@ -156,19 +156,24 @@ file with all the data using :meth:`CeedMCSDataMerger.merge_data`.
 
 Following is a worked example::
 
+    import logging
     ceed_file = 'ceed_data.h5'
     mcs_file = 'mcs_data.h5'
     output_file = 'ceed_mcs_merged.h5'
     notes = ''
     notes_filename = None  # no notes
+    debug = False
 
     # create merge object
-    merger = CeedMCSDataMerger(ceed_filename=ceed_file, mcs_filename=mcs_file)
+    merger = CeedMCSDataMerger(
+        ceed_filename=ceed_file, mcs_filename=mcs_file, debug=debug)
 
     # read ceed and MCS data and parse MCS metadata
     merger.read_mcs_data()
     merger.read_ceed_data()
     merger.parse_mcs_data()
+
+    print(merger.get_skipped_frames_summary_header)
 
     alignment = {}
     # get alignment for all interesting experiments
@@ -179,13 +184,16 @@ Following is a worked example::
 
         # try to get the Ceed-MCS alignment
         try:
-            align = alignment[experiment] = merger.get_alignment()
+            align = alignment[experiment] = merger.get_alignment(
+                ignore_additional_ceed_frames=True)
             # print experiment summary, see method for column meaning
             print(merger.get_skipped_frames_summary(align, experiment))
         except Exception as e:
             print(
                 "Couldn't align MCS and ceed data for experiment "
                 "{} ({})".format(experiment, e))
+            if debug:
+                logging.exception(e)
 
     # finally create new file from alignment and existing files
     merger.merge_data(
@@ -202,6 +210,7 @@ from typing import List, Dict, Optional, Tuple, Union
 from shutil import copy2
 from McsPy import ureg
 import McsPy.McsData
+import logging
 import numpy as np
 import nixio as nix
 from more_kivy_app.utils import yaml_dumps, yaml_loads
@@ -327,6 +336,10 @@ class DigitalDataStore:
     data recorded through the Propixx-MCS data link. Then we can align each
     frame to its location in the MCS data by comparing them (especially since
     Ceed sends frame numbers over the counter bits).
+
+    The indices passed in to ``__init__`` should have first been mapped through
+    :attr:`~ceed.storage.controller.DataSerializerBase.\
+projector_to_aquisition_map` when creating the class, if this is the MCS store.
     """
 
     counter_bit_width: int = 32
@@ -426,14 +439,20 @@ class DigitalDataStore:
     the Ceed data, since Ceed knows this as it records it for each frame.
     """
 
-    def __init__(self, short_count_indices, count_indices, clock_index,
-                 counter_bit_width):
-        """indices are first mapped with projector_to_aquisition_map. """
+    debug = False
+    """Whether to print debug traces or ignore alignment issues. Automatically
+    set from :attr:`CeedMCSDataMerger.debug`.
+    """
+
+    def __init__(
+            self, short_count_indices, count_indices, clock_index,
+            counter_bit_width, debug=False):
         super(DigitalDataStore, self).__init__()
         self.short_count_indices = short_count_indices
         self.count_indices = count_indices
         self.clock_index = clock_index
         self.counter_bit_width = counter_bit_width
+        self.debug = debug
 
         self.short_map = BitMapping32(short_count_indices)
         self.count_map = BitMapping32(count_indices)
@@ -899,9 +918,15 @@ class MCSDigitalData(DigitalDataStore):
         med = np.median(diff)
         # each experiment is proceeded by 30-50 blank frames, so 10 is safe.
         # And we should never skip 10+ frames sequentially in a stable system
+        # breaks is the indices between experiment - potential experiment start
         breaks = np.nonzero(diff >= (10 * med))[0]
 
+        # if MCS stops recording during Ceed experiment we don't have a break
+        if not len(breaks) and len(start):
+            breaks = [len(start) - 1]
+
         experiments = self.experiments = defaultdict(list)
+        # the start of the next (potential) experiment
         start_i = 0
         for break_i in breaks:
             s = start_i
@@ -946,7 +971,9 @@ class MCSDigitalData(DigitalDataStore):
                 self.check_counter_consistency(
                     count_data, count_2d, count_inverted_2d, n_handshake_ints,
                     False, 1, True)
-            except AlignmentException:
+            except AlignmentException as e:
+                if self.debug:
+                    logging.exception(e)
                 continue
 
             if not handshake_len:
@@ -1087,9 +1114,16 @@ class CeedMCSDataMerger:
     """The :class:`MCSDigitalData` used to parse the MCS data.
     """
 
-    def __init__(self, ceed_filename, mcs_filename):
+    debug = False
+    """Whether to print full traces when alignment or other merging related
+    events fail. By default it just drops the failed alignment and tries the
+    next alignment.
+    """
+
+    def __init__(self, ceed_filename, mcs_filename, debug=False):
         self.ceed_filename = ceed_filename
         self.mcs_filename = mcs_filename
+        self.debug = debug
 
     @property
     def n_sub_frames(self):
@@ -1268,7 +1302,7 @@ class CeedMCSDataMerger:
         if self.ceed_data_container is None:
             self.ceed_data_container = CeedDigitalData(
                 short_count_indices, count_indices, clock_index,
-                counter_bit_width)
+                counter_bit_width, debug=self.debug)
         elif not self.ceed_data_container.compare(
                 short_count_indices, count_indices, clock_index):
             raise ValueError('Ceed-MCS hardware mapping has changed in file')
@@ -1290,7 +1324,7 @@ class CeedMCSDataMerger:
         if self.mcs_data_container is None:
             self.mcs_data_container = MCSDigitalData(
                 short_count_indices, count_indices, clock_index,
-                counter_bit_width)
+                counter_bit_width, debug=self.debug)
         elif not self.mcs_data_container.compare(
                 short_count_indices, count_indices, clock_index):
             raise ValueError('Ceed-MCS hardware mapping has changed in file')
@@ -1341,7 +1375,7 @@ class CeedMCSDataMerger:
             pre_estimated_start=pre_estimated_start,
             estimated_start=estimated_start)
 
-    def get_alignment(self) -> np.ndarray:
+    def get_alignment(self, ignore_additional_ceed_frames=True) -> np.ndarray:
         """After reading and parsing the Ceed and MCS data you can compute
         the alignment between the current Ceed experiment and the MCS file.
 
@@ -1349,12 +1383,23 @@ class CeedMCSDataMerger:
         index into the raw MCS electrode data and corresponds to a Ceed frame.
         The index is the start index in the electrode data corresponding to when
         the ith Ceed frame was beginning to be displayed.
+
+        :param ignore_additional_ceed_frames: Whether to chop OFF the Ceed data
+            to the MCS data. I.e. if There are more Ceed frames than recorded
+            in the MCS data, e.g. because MCS was stopped recording while Ceed
+            was still projecting frames, then those final Ceed frames will not
+            be recorded by MCS in the digital stream. By default we will drop
+            these remaining Ceed frames as not rendered, but if False we will
+            raise an exception instead.
         """
         if self.ceed_version == '1.0.0.dev0':
             return self._get_alignment_v1_0_0_dev0(True)
-        return self._get_alignment(True)
+        return self._get_alignment(
+            True, ignore_additional_ceed_frames=ignore_additional_ceed_frames)
 
-    def _get_alignment(self, search_uuid=True) -> np.ndarray:
+    def _get_alignment(
+            self, search_uuid=True, ignore_additional_ceed_frames=True
+    ) -> np.ndarray:
         if not search_uuid:
             raise NotImplementedError
 
@@ -1364,7 +1409,6 @@ class CeedMCSDataMerger:
         if not handshake:
             raise AlignmentException(
                 'Cannot find experiment - no Ceed experiment ID parsed')
-
         if handshake not in mcs.experiments:
             if not mcs.experiments:
                 raise AlignmentException(
@@ -1401,8 +1445,13 @@ class CeedMCSDataMerger:
         assert n_mcs
 
         if n_mcs < n_ceed:
-            raise AlignmentException(
-                'MCS missed some ceed frames, cannot align')
+            if ignore_additional_ceed_frames:
+                n_ceed = n_mcs
+                ceed_count_data_main_frames = \
+                    ceed_count_data_main_frames[:n_mcs]
+            else:
+                raise AlignmentException(
+                    'MCS missed some ceed frames, cannot align')
         if n_mcs > n_ceed + 1:
             raise AlignmentException(
                 'MCS read frames that ceed did not send, cannot align')
@@ -1506,12 +1555,33 @@ class CeedMCSDataMerger:
         main_skipped = len(ceed_skipped_main)
         skipped = len(ceed_skipped)
 
+        excess = np.sum(
+            self.ceed_data['rendered_frames']) - len(ceed_mcs_alignment)
+        excess_s = ''
+        if excess:
+            excess_s = f' Final {excess} Ceed frames not recorded'
+
         return (
             f'Aligned experiment {experiment_num: >2}. '
             f'MCS: [{ceed_mcs_alignment[0]: 10} - '
             f'{ceed_mcs_alignment[-1]: 10}] '
-            f'({len(ceed_mcs_alignment): 7} frames). {num_long: 3} slow, '
-            f'{skipped: 3} ({main_skipped: 2}) dropped. Max {largest_bad} bad')
+            f'({len(ceed_mcs_alignment): 7} frames). '
+            f'{num_long: 3} long, '
+            f'{skipped: 3} '
+            f'({main_skipped: 2}) dropped. '
+            f'Max {largest_bad: 3} bad.'
+            + excess_s
+        )
+
+    @property
+    def get_skipped_frames_summary_header(self):
+        return (
+            'Aligned experiment ##. '
+            'MCS: [start index - end index] '
+            '(### exp frames). '
+            '# long, sub (main) dropped. '
+            'Max  hiccup.'
+        )
 
     def merge_data(
             self, filename: str, alignment_indices: Dict[str, np.ndarray],
@@ -1624,12 +1694,16 @@ if __name__ == '__main__':
     output_file = 'ceed_mcs_merged.h5'
     notes = ''
     notes_filename = None
+    debug = False
 
-    merger = CeedMCSDataMerger(ceed_filename=ceed_file, mcs_filename=mcs_file)
+    merger = CeedMCSDataMerger(
+        ceed_filename=ceed_file, mcs_filename=mcs_file, debug=debug)
 
     merger.read_mcs_data()
     merger.read_ceed_data()
     merger.parse_mcs_data()
+
+    print(merger.get_skipped_frames_summary_header)
 
     alignment = {}
     for experiment in merger.get_experiment_numbers(ignore_list=[]):
@@ -1637,13 +1711,16 @@ if __name__ == '__main__':
         merger.parse_ceed_experiment_data()
 
         try:
-            align = alignment[experiment] = merger.get_alignment()
+            align = alignment[experiment] = merger.get_alignment(
+                ignore_additional_ceed_frames=True)
             # see get_skipped_frames_summary for meaning of the printed values
             print(merger.get_skipped_frames_summary(align, experiment))
         except Exception as e:
             print(
                 "Couldn't align MCS and ceed data for experiment "
                 "{} ({})".format(experiment, e))
+            if debug:
+                logging.exception(e)
 
     merger.merge_data(
         output_file, alignment, notes=notes, notes_filename=notes_filename)

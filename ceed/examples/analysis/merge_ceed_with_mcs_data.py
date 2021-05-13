@@ -9,8 +9,10 @@ electrode (MEA) data recorded by the MCS system.
 The MCS data must be first exported from the native MCS format to the h5
 format.
 """
-from ceed.analysis.merge_data import CeedMCSDataMerger
+import logging
 import os.path
+
+from ceed.analysis.merge_data import CeedMCSDataMerger
 
 # The ceed file with the projector experimental data
 ceed_file = '../data/experiment_data_ceed.h5'
@@ -32,8 +34,12 @@ At time x, the slice woke up
 # integrated into the merged file. This will be appended to the notes above
 notes_filename = None
 
+# whether to skip failed alignments quietly or to print the exceptions
+debug = False
+
 # class that actually merges the two files
-merger = CeedMCSDataMerger(ceed_filename=ceed_file, mcs_filename=mcs_file)
+merger = CeedMCSDataMerger(
+    ceed_filename=ceed_file, mcs_filename=mcs_file, debug=debug)
 
 # read the MCS data - MCS data is one long file containing the data for all the
 # ceed experiments that played. Ceed however, splits the data into experiments
@@ -44,6 +50,9 @@ merger.read_ceed_data()
 # this parses the Ceed-MCS data-link data adn tries to break the MCS data into
 # experiments so we can later locate individual experiments for alignment
 merger.parse_mcs_data()
+
+# print header for alignment logs
+print(merger.get_skipped_frames_summary_header)
 
 # this dictionary will accumulate the alignment metadata for all the
 # experiments in the data files. Each item is an experiment
@@ -56,16 +65,19 @@ for experiment in merger.get_experiment_numbers(ignore_list=[]):
     merger.parse_ceed_experiment_data()
 
     try:
-        # compute the alignment
-        align = alignment[experiment] = merger.get_alignment()
-        print(
-            'Aligned MCS and ceed data for experiment {} at MCS samples '
-            '[{} - {}] ({} frames)'.format(
-                experiment, align[0], align[-1], len(align)))
+        # compute the alignment, ignore remaining frame if Ceed projected more
+        # frames than recorded in MCS file, e.g. if MCS stopped recording
+        # during experiment
+        align = alignment[experiment] = merger.get_alignment(
+            ignore_additional_ceed_frames=True)
+        # see get_skipped_frames_summary for meaning of the printed values
+        print(merger.get_skipped_frames_summary(align, experiment))
     except Exception as e:
         print(
             "Couldn't align MCS and ceed data for experiment "
             "{} ({})".format(experiment, e))
+        if debug:
+            logging.exception(e)
 
 # now actually merge the files and include the alignment metadata
 merger.merge_data(
