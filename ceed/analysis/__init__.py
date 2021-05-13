@@ -85,6 +85,7 @@ import math
 import scipy.io
 import numpy as np
 import sys
+from fractions import Fraction
 import itertools
 from functools import wraps
 import nixio as nix
@@ -1566,11 +1567,14 @@ class CeedDataReader:
         else:
             end = n
 
+        speed_frac = Fraction(
+            *float(speed).as_integer_ratio()).limit_denominator(10_000)
+        play_rate = rate * speed_frac
         stream = {
             'pix_fmt_in': 'rgba', 'pix_fmt_out': out_fmt,
             'width_in': w, 'height_in': h, 'width_out': w,
             'height_out': h, 'codec': codec,
-            'frame_rate': (int(speed * rate), 1)}
+            'frame_rate': (play_rate.numerator, play_rate.denominator)}
         writer = MediaWriter(
             filename, [stream], fmt=video_fmt, lib_opts=lib_opts)
 
@@ -1625,7 +1629,7 @@ class CeedDataReader:
 
             fbo.draw()
             img = Image(plane_buffers=[fbo.pixels], pix_fmt='rgba', size=(w, h))
-            writer.write_frame(img, float((i - start + 1) / (rate * speed)))
+            writer.write_frame(img, float((i - start + 1) / play_rate))
         pbar.close()
 
     @staticmethod
