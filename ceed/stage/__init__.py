@@ -1661,7 +1661,7 @@ class CeedStage(EventDispatcher):
         '''
         d = {'cls': 'CeedStage'}
         for name in ('order', 'name', 'color_r', 'color_g', 'color_b',
-                     'complete_on', 'disable_pre_compute'):
+                     'complete_on', 'disable_pre_compute', 'loop'):
             d[name] = getattr(self, name)
 
         d['stages'] = [s.get_state(expand_ref=expand_ref) for s in self.stages]
