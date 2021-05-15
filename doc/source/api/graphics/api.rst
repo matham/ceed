@@ -1,5 +1,5 @@
-Graphics
-========
+Graphics API
+============
 
 .. toctree::
    :maxdepth: 2

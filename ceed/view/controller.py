@@ -5,8 +5,8 @@ Runs, controls, and displays Ceed experiments on screen, both during a "real"
 experiment and when previewing it.
 
 The purpose of Ceed is to run visual-temporal experiments. Once a
-:mod:`~ceed.stage` containing one or more :mod:`~ceed.function`s
-and one or more :mod:`~ceed.shape`s has been designed, you're ready to run
+:mod:`~ceed.stage` containing one or more :mod:`~ceed.function`
+and one or more :mod:`~ceed.shape` has been designed, you're ready to run
 the experiment.
 
 Following are some of the experiment configuration options:

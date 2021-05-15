@@ -869,7 +869,7 @@ class CeedDataReader:
         scaled micro-volt.
 
         :param electrode: The electrode name as stored in
-        :attr:`electrodes_data`
+            :attr:`electrodes_data`
         :return: A 2-tuple of `(offset, scale) `` that can be used to convert.
             E.g. ``micro-volt = (input - offset) * scale``.
         """
@@ -1480,7 +1480,7 @@ class CeedDataReader:
         :param projector_pos_hint: The optional relative bottom left position
             where to draw the shapes. E.g. ``(1, 0)`` means to draw at a
             horizontal offset the size of the projector, but at the zero
-             vertical offset.
+            vertical offset.
         :param paint_funcs: Additional functions that the drawing engine will
             call for each Ceed frame so it will be given the opportunity to
             draw other things.

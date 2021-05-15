@@ -1,5 +1,5 @@
-View
-====
+View API
+========
 
 .. toctree::
    :maxdepth: 2

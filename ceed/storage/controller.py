@@ -529,7 +529,7 @@ class CeedDataWriterBase(EventDispatcher):
     def discard_file(self):
         """Closes and discards the :attr:`backup_filename` and then re-opens
         the :attr:`filename` (if any) and creates a new :attr:`backup_filename`
-         rom it.
+        from it.
         """
         if not self.has_unsaved and not self.config_changed:
             return

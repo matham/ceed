@@ -1,5 +1,5 @@
-Analysis
-========
+Analysis API
+============
 
 .. toctree::
    :maxdepth: 2

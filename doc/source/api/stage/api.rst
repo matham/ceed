@@ -1,5 +1,5 @@
-Stage
-=====
+Stage API
+=========
 
 .. toctree::
    :maxdepth: 2

@@ -606,20 +606,21 @@ sub-classes to be included in the GUI. Following is an example of how
 :mod:`ceed.function.plugin` for complete examples::
 
 
-class MyFunc(CeedFunc):
+    class MyFunc(CeedFunc):
 
-    def __init__(
-            self, name='MyFunc', description='y(t) = random() * t', **kwargs):
-        # this sets the default name of the class and description, but allows
-        # it to be overwritten when specified
-        super().__init__(name=name, description=description, **kwargs)
+        def __init__(
+                self, name='MyFunc', description='y(t) = random() * t',
+                **kwargs):
+            # this sets the default name of the class and description, but
+            # allows it to be overwritten when specified
+            super().__init__(name=name, description=description, **kwargs)
 
-    def __call__(self, t: Union[int, float, Fraction]) -> float:
-        # alwasy call super first, this handles loop iteration and checking
-        # whether the function is done and raises FuncDoneException
-        super().__call__(t)
-        # return the value
-        return random() * self.get_relative_time(t)
+        def __call__(self, t: Union[int, float, Fraction]) -> float:
+            # alwasy call super first, this handles loop iteration and checking
+            # whether the function is done and raises FuncDoneException
+            super().__call__(t)
+            # return the value
+            return random() * self.get_relative_time(t)
 
 If properly registered from the plugin, this function type will be available
 in the Ceed GUI.

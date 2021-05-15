@@ -536,7 +536,7 @@ projector_to_aquisition_map` when creating the class, if this is the MCS store.
         :ref:`serializer-sub-frames`.
 
         It returns a three tuple, ``(count, count_2d, count_inverted_2d)``.
-        As explained in :ref:`handshake-protocol, each long counter int is sent
+        As explained in :ref:`handshake-protocol`, each long counter int is sent
         broken across multiple frames, in addition to being sent inverted
         (except for handshake that is not inverted).
         So each int is sent in parts as k1, k1_inv, k2, k2_inv, ..., kn, kn_inv.
@@ -1535,8 +1535,9 @@ class CeedMCSDataMerger:
         There are 8 numbers in the summary.
 
         1.   The experiment number.
-        2-3. The start index and end index in the MCS electrode data
+        2.   The start index index in the MCS electrode data
              corresponding to the experiment.
+        3.   The end index in the MCS electrode data.
         4.   The number of electrode data samples during the experiment.
         5.   The number of Ceed frames that went long (i.e. the number of frames
              whose data was not the next frame, but an older frame that the GPU

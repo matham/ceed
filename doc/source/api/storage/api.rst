@@ -1,5 +1,5 @@
-Storage
-=======
+Storage API
+===========
 
 .. toctree::
    :maxdepth: 2

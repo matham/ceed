@@ -1,5 +1,5 @@
-Shape
-=====
+Shape API
+=========
 
 .. toctree::
    :maxdepth: 2

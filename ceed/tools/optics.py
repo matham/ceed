@@ -1,4 +1,7 @@
-"""Optics App
+"""
+.. _optics-app:
+
+Optics App
 ==============
 
 App used to help design the lens system used in the microscope. See
