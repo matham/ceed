@@ -618,7 +618,7 @@
                     flat_color: app.theme.text_primary
                 ThemedSpinner:
                     id: stage_spinner
-                    values: sorted(app.stage_factory.stage_names.keys()) if app.stage_factory.stage_names else []
+                    values: sorted((s.name for s in app.stage_factory.stages)) if app.stage_factory.stage_names and app.stage_factory.stages else ['<no stage>']  # update when name change
                     text_autoupdate: True
                     size_hint_x: None
                     width: self.minimum_width
@@ -630,12 +630,13 @@
                 FlatSizedTextInput:
                     id: rate
                     size_hint_x: None
-                    width: '40dp'
-                    text: '30.'
+                    width: '70dp'
+                    text: str(app.view_controller.frame_rate)
                     hint_text: 'rate'
                     background_color: root.flat_color
                     input_filter: 'float'
                 FlatImageButton:
+                    disabled: stage_spinner.text == '<no stage>'
                     source: 'flat_refresh.png'
                     flat_color: app.theme.accent
                     on_release: if stage_spinner.text: root.refresh_graph(stage_spinner.text, float(rate.text))
