@@ -153,7 +153,7 @@ class CeedPlayer(EventDispatcher):
     """Maps :attr:`recorder_name` to a user friendly name.
     """
 
-    last_image = None
+    last_image = ObjectProperty(None, allownone=True)
     """The last :attr:`player` image displayed in the GUI.
     """
 

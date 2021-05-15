@@ -195,6 +195,7 @@
                     h5_save.dismiss()
                 text: 'Add to h5 file'
     FlatImageButton:
+        disabled: app.player.last_image is None
         scale_down_color: True
         source: 'flat_screenshot_save.png'
         hover_text: 'Save cam image'
