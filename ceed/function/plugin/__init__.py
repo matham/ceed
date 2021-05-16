@@ -1,4 +1,7 @@
-"""Function plugins
+"""
+.. _func-plugin:
+
+Function plugins
 =====================
 
 Defines a plugin architecture so that new functions can be defined at runtime

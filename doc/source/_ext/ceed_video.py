@@ -50,8 +50,8 @@ class Video(Directive):
 def visit_video_node(self, node):
     name = pathlib.Path(node["path"]).name
     out_dir = pathlib.Path(self.builder.confdir).joinpath('_videos')
-    rel_name = os.path.relpath(out_dir.joinpath(name), pathlib.Path(node.source).parent)
-    print(rel_name)
+    rel_name = os.path.relpath(
+        out_dir.joinpath(name), pathlib.Path(node.source).parent)
     extension = os.path.splitext(node["path"])[1][1:]
 
     maxsize = ''

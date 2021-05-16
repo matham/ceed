@@ -11,7 +11,7 @@ Contents:
    getting_started.rst
    blueprint.rst
    installation.rst
-   guide.rst
+   guide/guide.rst
 
    config.rst
 

@@ -1,5 +1,8 @@
-"""Function
-===========
+"""
+.. _function-api:
+
+Function
+========
 
 Defines the functions used along with :mod:`ceed.shape` to create time-varying
 intensities for the shapes during an experiment. :class:`~ceed.stage.CeedStage`
@@ -12,6 +15,8 @@ scalar value, the graphics system can only accept values in the ``[0, 1]``
 range for each red, green, or blue channel. Consequently, the graphics system
 (at :meth:`ceed.stage.StageFactoryBase.fill_shape_gl_color_values`) will clip
 the function output to that range.
+
+.. _function-factory-plugin:
 
 Function factory and plugins
 ----------------------------
@@ -162,6 +167,8 @@ internally, not by external code).
 To evaluate the function, just call it with a time value as in the example
 above.
 
+.. _func-domain:
+
 Domain and monotonicity
 ^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -285,6 +292,8 @@ loop. E.g.::
 1341, in __call__
     ceed.function.FuncDoneException
 
+.. _func-timebase:
+
 Timebase
 ^^^^^^^^
 
@@ -403,6 +412,8 @@ values returned by :meth:`FuncBase.get_gui_props`,
 
 These methods control what properties are editable by the user and the values
 they may potentially take.
+
+.. _func-random-param:
 
 Randomizing parameters
 ^^^^^^^^^^^^^^^^^^^^^^
