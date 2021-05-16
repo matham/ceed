@@ -30,9 +30,11 @@ setup(
         'kivy_garden.painter~=0.2.0', 'trio', 'cpl_media~=0.1.2',
         'tree-config~=0.1.1', 'pyusb'],
     extras_require={
-        'dev': ['pytest>=3.6', 'pytest-cov', 'flake8', 'sphinx-rtd-theme',
-                'coveralls', 'trio', 'pytest-trio', 'pyinstaller',
-                'pytest-kivy~=0.1.0.dev1', 'pytest-dependency'],
+        'dev': [
+            'pytest>=3.6', 'pytest-cov', 'flake8', 'sphinx-rtd-theme',
+            'coveralls', 'trio', 'pytest-trio', 'pyinstaller',
+            'pytest-kivy~=0.1.0.dev1', 'pytest-dependency', 'docutils',
+            'sphinx'],
     },
     package_data={'ceed': ['data/*', '*.kv']},
     entry_points={'console_scripts': ['ceed=ceed.main:run_app']},

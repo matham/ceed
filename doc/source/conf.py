@@ -13,10 +13,13 @@
 from functools import partial
 import sphinx_rtd_theme
 import os
+import sys
 import kivy  # this sets the doc include env variable
 import ceed
 from ceed.main import CeedApp
 from more_kivy_app.config import create_doc_listener, write_config_props_rst
+
+sys.path.append(os.path.abspath("./_ext"))
 
 # -- Project information -----------------------------------------------------
 
@@ -37,6 +40,7 @@ extensions = [
     'sphinx.ext.intersphinx',
     "sphinx_rtd_theme",
     "sphinx.ext.autosectionlabel",
+    "ceed_video",
 ]
 
 intersphinx_mapping = {
