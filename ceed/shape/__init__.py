@@ -1,5 +1,8 @@
-"""Shapes
-============
+"""
+.. _shape-api:
+
+Shapes
+======
 
 Defines the shapes which are used with a :mod:`ceed.function` to create regions
 with time-varying intensity during an experiment :mod:`ceed.stage`.

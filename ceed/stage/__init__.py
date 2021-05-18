@@ -1,5 +1,8 @@
-"""Stage
-==========
+"""
+.. _stage-api:
+
+Stage
+=====
 
 A :class:`CeedStage` combines :mod:`ceed.shapes` on the screen with a
 :class:`~ceed.function.FuncBase` or sequence of
@@ -7,6 +10,8 @@ A :class:`CeedStage` combines :mod:`ceed.shapes` on the screen with a
 time progresses in the experiment. This module defines the :class:`CeedStage`
 and associated classes used to store and compute the intensity values during
 the experiment.
+
+.. _stage-factory-plugin:
 
 Stage factory and plugins
 -------------------------

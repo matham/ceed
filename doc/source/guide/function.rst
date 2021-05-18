@@ -59,6 +59,8 @@ infinite recursion as shown at the end of video.
 
 .. video:: ../media/guide/function_group.webm
 
+.. _func-precision:
+
 Function timebase
 -----------------
 

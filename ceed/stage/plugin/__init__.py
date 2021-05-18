@@ -1,4 +1,7 @@
-"""Stage plugins
+"""
+.. _stage-plugin:
+
+Stage plugins
 =====================
 
 Defines a plugin architecture so that new stages can be defined at runtime
