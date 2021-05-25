@@ -357,6 +357,7 @@ This prints::
                            (0.495, 0, 0.495, 1),
                            (0.66, 0, 0.66, 1),
                            (0.825, 0, 0.825, 1)]})
+.. _pre-compute:
 
 Pre-computing
 -------------
@@ -379,7 +380,7 @@ period both during the virtual computation and during the replay, so we can
 simply count frames to locate the desired intensity.
 
 Pre-computing can be enabled in the GUI through the
-`:attr:`~ceed.view.controller.ViewControllerBase.pre_compute_stages` property.
+:attr:`~ceed.view.controller.ViewControllerBase.pre_compute_stages` property.
 
 Not all stages can be pre-computed. A stage could have functions that are
 infinite in duration (i.e. negarive :attr:`~ceed.function.FuncBase.duration`,

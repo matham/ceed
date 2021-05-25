@@ -83,4 +83,4 @@ The stages and preview graph are explained in the :ref:`stage guide <stage-guide
 
 .. video:: ../media/guide/function_precision.webm
 
-:download:`Ceed config of the video. <../media/guide/function_precision.yml>`
+:download:`Ceed config of the video <../media/guide/function_precision.yml>`

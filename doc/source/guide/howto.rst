@@ -20,6 +20,8 @@ Randomize parameter
 Precision timing
 ^^^^^^^^^^^^^^^^
 
+See :ref:`<func-precision>`
+
 Shape
 -----
 
@@ -42,3 +44,19 @@ Unique function for each shape color channel
 
 Experiment
 ----------
+
+.. _logged-experiment:
+
+Logged experiment
+^^^^^^^^^^^^^^^^^
+
+Aligning camera to projector
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Aligning MEA to camera
+^^^^^^^^^^^^^^^^^^^^^^
+
+Full field stimulation
+^^^^^^^^^^^^^^^^^^^^^^
+
+Use reload button to get last camera image

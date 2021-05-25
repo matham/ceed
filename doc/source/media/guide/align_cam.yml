@@ -1,0 +1,74 @@
+function: []
+shape:
+  groups: []
+  shapes:
+  - center:
+    - 244.36363636363814
+    - 907.6363636363702
+    cls: CeedPaintCircle
+    is_valid: true
+    line_color: &id001
+    - 0
+    - 1
+    - 0
+    - 1
+    line_color_locked: &id002
+    - 0.4
+    - 0.56
+    - 0.36
+    - 1
+    line_width: 1
+    locked: false
+    name: Shape
+    radius: 105.41818181818252
+  - center:
+    - 486.4000000000034
+    - 370.03636363636633
+    cls: CeedPaintCircle
+    is_valid: true
+    line_color: *id001
+    line_color_locked: *id002
+    line_width: 1
+    locked: false
+    name: Shape-2
+    radius: 156.61818181818296
+  - center:
+    - 1533.6727272727385
+    - 889.0181818181883
+    cls: CeedPaintCircle
+    is_valid: true
+    line_color: *id001
+    line_color_locked: *id002
+    line_width: 1
+    locked: false
+    name: Shape-3
+    radius: 168.25454545454613
+stage:
+- cls: CeedStage
+  color_b: true
+  color_g: false
+  color_r: false
+  complete_on: all
+  disable_pre_compute: false
+  functions:
+  - a: 1.0
+    cls: ConstFunc
+    duration: 10.0
+    loop: 1
+    name: Const
+    noisy_parameter_samples: {}
+    noisy_parameters: {}
+    t_offset: 0.0
+    timebase_denominator: 1
+    timebase_numerator: 0
+  loop: 1
+  name: Align
+  order: serial
+  shapes:
+  - keep_dark: false
+    name: Shape
+  - keep_dark: false
+    name: Shape-2
+  - keep_dark: false
+    name: Shape-3
+  stages: []

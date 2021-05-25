@@ -127,6 +127,8 @@ Do the following::
 To program the Teensy if it's a new device, please follow the `instructions in the repo
 <https://github.com/matham/ceed/blob/master/ceed/view/teensy_estimation/readme.md>`__.
 
+.. _linux-network:
+
 Network setup
 *************
 
@@ -216,6 +218,7 @@ Or, you can run it directly using ``python ceed/run_app.py``.
 
 You can alternatively clone it and install it in-place like in the Ubuntu instructions.
 
+.. _win-filers:
 
 Thor/Filers
 ***********

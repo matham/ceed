@@ -1041,7 +1041,7 @@ class ViewControllerBase(EventDispatcher):
 
     pre_compute_stages: bool = BooleanProperty(False)
     """Whether the stage run by the experiment should be pre-computed. See
-    :mod:`~ceed.stage` for details.
+    :ref:`pre-compute` for details.
     """
 
     _original_fps = Clock._max_fps if not os.environ.get(

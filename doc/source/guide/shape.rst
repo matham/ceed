@@ -42,6 +42,8 @@ to the closest feasible area.
 
 .. video:: ../media/guide/shape_control.webm
 
+.. _control-shape:
+
 Controlling shapes
 ------------------
 

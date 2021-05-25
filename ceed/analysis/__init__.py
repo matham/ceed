@@ -1,5 +1,8 @@
-"""Ceed data analysis
-=====================
+"""
+.. _ceed-analysis:
+
+Ceed data analysis
+==================
 
 Reads a combined Ceed and MCS H5 data file that has been merged with
 :mod:`~ceed.analysis.merge_data`, using :class:`CeedDataReader`.
