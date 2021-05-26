@@ -4,6 +4,9 @@
   Example Analysis Code
 ########################
 
+The following examples can also be found in the
+`Ceed repo <https://github.com/matham/ceed/tree/master/ceed/examples>`_.
+
 .. toctree::
    :maxdepth: 2
 

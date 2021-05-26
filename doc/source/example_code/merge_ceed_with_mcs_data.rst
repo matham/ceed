@@ -1,3 +1,5 @@
+.. _merge-example:
+
 Merging Ceed Data with MCS Data
 ===============================
 

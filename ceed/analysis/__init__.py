@@ -54,6 +54,22 @@ sets further class properties and allows you to use instance methods that
 require the Ceed data. E.g. see :attr:`CeedDataReader.shapes_intensity` and
 :attr:`CeedDataReader.electrode_intensity_alignment`.
 
+Loading images
+^^^^^^^^^^^^^^
+
+If you have an image file that you would like to use during analysis, you can
+read it using :class:`ffpyplayer.pic.ImageLoader`. E.g.::
+
+    >>> from ffpyplayer.pic import ImageLoader
+    >>> images = [m for m in ImageLoader('filename.bmp')]
+    >>> images
+    Out[4]: [(<ffpyplayer.pic.Image at 0x232dceb8a68>, 0.0)]
+    >>> images[0][0]
+    Out[5]: <ffpyplayer.pic.Image at 0x232dceb8a68>
+
+It returns a list of images and the timestamp of the images, e.g. in case
+it is a gif. If the file contains only one image, just access the first.
+
 Experiment movie
 ----------------
 

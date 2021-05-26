@@ -6,18 +6,20 @@ Ceed experiment
 Running experiment
 ------------------
 
-Any of the stages created in the stages pane can be run as an experiment.
+Any of the stages created in the stages pane can be :ref:`run as an experiment <view-api>`.
 As shown in the :ref:`stage guide <stage-guide>`, a stage
+
 1. can be previewed as an intensity vs. time plot for each shape. See :ref:`preview-stage`.
 2. It can be previewed by playing the experiment in the drawing area. See :ref:`preview-play-stage`.
 3. Or the experiment can be played as a real experiment by opening the second
    Ceed window and playing the experiment.
 
-To run an experiment, select the stage to use from the dropdown menu and press the
-window button. This will open a second blank Window that is full screen.
-The experiment will play in that screen when started.
+To run a real experiment, select the stage to use from the dropdown menu and press the
+window button. This will open a second blank Window that is fullscreen.
+The experiment will play in that screen when the stage is started with the keyboard.
 
 Following are the keyboard shortcuts used to to interact with Ceed from that window:
+
 * ``ctrl-s`` starts an experiment using the currently selected stage.
 * ``ctrl-c`` stops the currently running experiment.
 * ``ctrl-z`` stops the currently running experiment (if any) and closes the fullscreen window.
@@ -28,36 +30,41 @@ Following are the keyboard shortcuts used to to interact with Ceed from that win
 The fraction (0 / 0 in the image) is the estimated experiment CPU and GPU refresh rate for
 Ceed, respectively.
 
+.. _experiment-data:
+
 Experiment data
 ^^^^^^^^^^^^^^^
 
-Each experiment (even when previewed) that is run creates a new unique section in the Nix H5
-data file and Ceed stores all the experiment data there.
+Ceed saves all the experiment data into a `Nix <https://nixpy.readthedocs.io/en/latest/>`_
+data file. Each experiment (even when previewed-played) creates a new unique section
+in the Nix H5 data file and Ceed stores all the experiment data there.
 
-Ceed saves the current camera image, if any, and the complete Ceed configuration
-including the stages/shapes/functions required to reproduce the experiment. During the
-experiment it saves for every frame the red, green, and blue intensity values for every
-rendered shape. It also saves the frame time and frame digital IO pattern that is sent
-along the ProPixx to MCS hardware connection so we can temporally align the Ceed frames
-to the MCS electrode data.
+Ceed saves the current camera image, if any, and the complete
+:ref:`Ceed configuration <tut-config>` including the stages/shapes/functions required
+to reproduce the experiment. During the experiment it saves for every frame the red,
+green, and blue intensity values for every rendered shape. It also saves the frame time
+and frame digital IO pattern that is sent along the ProPixx to MCS hardware connection
+so we can temporally align the Ceed frames to the MCS electrode data post hoc.
 
-Additionally, each experiment is logged to the image/experiment log window. It displays
+Additionally, each experiment is added to the image/experiment log window. It displays
 the camera image, if any, and it allows you to enter notes for the experiment that is
-available during analysis.
+available during :ref:`analysis <analyze-tut>`.
 
 .. image:: ../media/guide/experiment_log_window.png
 
-Ceed automatically creates an anonymous `Nix <https://nixpy.readthedocs.io/en/latest/>`_
-file when Ceed starts. Experiment data is saved there. When the file is explicitly
-saved to a location (see :ref:`tut-config`) the data is copied and saved there.
-Ceed maintains an internal temp file to which it writes future data and
-copies it to the requested file when explicitly saved by the user. Unsaved data
-can safely be discarded without affecting the user data file.
+Ceed automatically creates an anonymous Nix file when Ceed starts. Experiment data is
+saved there. When the file is explicitly saved to a location (see :ref:`tut-config`)
+the data is copied and saved there. But, Ceed maintains the internal anonymous file
+to which it writes future data and copies it to the requested file when explicitly
+saved by the user. Consequently, unsaved data can safely be discarded without affecting
+the user data file. Ceed will prompt you when closing Ceed while there's data in the
+Ceed file that has not been explicitly saved.
 
 Spatial system alignment
 ------------------------
 
 There are three physical systems that interact with a tissue slice:
+
 1. The MEA it rests on. There's an electrode grid beneath the tissue and the tissue
    orientation determines on which electrodes it rests on.
 2. The projector. The projector, through the lenses, projects light patterns on the
@@ -69,10 +76,13 @@ There are two spatial alignment procedures, described below, that enables us to 
 precisely where on the tissue the projector stimulated and which electrodes are
 beneath it.
 
-The first computes the transformation matrix between the camera and projector, the second
-between the camera and the MEA electrode termination points. Together, we can compute
-the transformation matrix between any of three physical systems. These matrices are stored
-with the rest of the Ceed configuration and saved with experiments and is available
+The first computes the transformation matrix between the camera and projector
+(:py:attr:`~ceed.view.controller.ViewControllerBase.cam_transform`),
+the second between the camera and the MEA electrode termination
+points (:py:attr:`~ceed.view.controller.ViewControllerBase.mea_transform`).
+Together, we can compute the transformation matrix between
+any of three physical systems. These matrices are stored with the rest of the
+:ref:`Ceed configuration <tut-config>` and saved with experiments and is available
 during analysis.
 
 .. _align-cam-proj:
@@ -92,10 +102,10 @@ Following is an screenshot and configuration file for an example stage.
 
 .. image:: ../media/guide/align_cam_before.png
 
-:download:`Ceed camera alignment config. <../media/guide/align_cam.yml>`
+:download:`Ceed camera alignment config <../media/guide/align_cam.yml>`
 
 Now ensure that Filers2 is streaming camera images to Ceed and run the experiment
-as normal in the other fullscreen window on **an empty array**.
+in the fullscreen window on **an empty array**.
 
 For the example stage, we would see the following being projected on the tissue
 and on screen. Notice that the projector output is flipped; it's set in the settings
@@ -139,7 +149,12 @@ array, is in the top left corner.
 
 If the number of electrodes in the columns/rows don't match or the electrodes
 need to be flipped, you can change them in the configuration file (see
-:ref:`tut-config`).
+:ref:`tut-config`, and properties
+:py:attr:`~ceed.view.controller.ViewControllerBase.mea_diameter`,
+:py:attr:`~ceed.view.controller.ViewControllerBase.mea_num_cols`,
+:py:attr:`~ceed.view.controller.ViewControllerBase.mea_num_rows`,
+:py:attr:`~ceed.view.controller.ViewControllerBase.mea_pitch`,
+:py:attr:`~ceed.view.controller.ViewControllerBase.mirror_mea`,).
 
 .. video:: ../media/guide/align_mea.webm
 
@@ -150,10 +165,11 @@ already include the incorrect matrix saved at the start of the experiment.
 
 Ceed lets you back-apply the MEA transformation matrix to existing experiment data
 as shown in the following video. The red bar indicates that the transform
-is different than the subsequent experiment (or current value for last experiment).
+is different than the subsequent experiment (or current value for last experiment) -
+meaning that it changed.
 At the top you can copy the transform from any experiment to another, where app means
 the current Ceed app value. In the video we copy the current transform to experiments
-1-4.
+1-4 (with the assumption that the current transform applies to all these experiments).
 
 .. video:: ../media/guide/align_mea_apply.webm
 
@@ -178,11 +194,12 @@ Projection Frame rate
 
 By default the projector refreshes and re-renders the stimulation shapes at 120Hz
 (119.96 more precisely). The rate must be correctly set in the settings window
-to the exact decimal, and it must show the correct fraction. Otherwise the experiment
-will be OFF a little.
+to the exact decimal to match the GPU refresh rate, and it must show the correct
+fraction. Otherwise the experiment will be OFF temporally. You can see the
+refresh rate for your GPU by inspecting e.g. the NVIDIA control panel.
 
 At 120Hz it is too slow if we need to stimulate at e.g. 100Hz. E.g. a sine wave
-would have barely one sample per cycle. The projector can be refreshed at higher
+would barely have one sample per cycle. The projector can be refreshed at higher
 rates, at a cost of lower resolution or color. From the settings you can select
 these faster video modes. There are three options:
 
@@ -191,8 +208,8 @@ these faster video modes. There are three options:
    of the resolution.
 3. QUAD12X, a mode that updates at 12 * 120Hz at the cost of only having a quarter
    of the resolution and only being able to project one intensity value for the red,
-   green, and blue channels (you can still turn OFF specific LEDs though, see
-   :ref:`led-tut`).
+   green, and blue channels (i.e. grayscale - you can still turn OFF specific LEDs
+   though, see :ref:`led-tut`).
 
 The mode can be selected from the settings window (see :ref:`tut-config-window`).
 E.g. here we selected QUAD12X for the video mode. This results in a refresh rate
@@ -214,38 +231,46 @@ Projector LEDs
 
 The projector contains three internal LEDs - red, green, and blue that allows
 rendering any color using a combination of these LEDs. Typically you specify in
-Ceed the color to use for each stage (e.g. red and green) and an intensity for
-each video frame from the functions. Then the projector will automatically
-control the LEDs to output the requested color.
+Ceed the color to use for each stage (e.g. red and green, see :ref:`stage-color`)
+and an intensity for each video frame from the functions. Then the projector
+will automatically control the LEDs to output the requested color.
 
 The projector LEDs can also be directly turned ON or OFF individually. In the
 settings window (see :ref:`tut-config-window`) you can select any of the
 red, green, and/or blue LEDs to be ON or OFF independently.
 
 There are two options:
-1. **Projector LED mode**. This controls which LED is available when running the
-   experiments. Any of the turned OFF LEDs will not respond if Ceed sets that color.
-2. **Projector LED mode (idle)**. Like the first, it controls the LEDs outside an
-   experiment. Outside the experiment they should be OFF (i.e. set option to none)
-   because otherwise the projector would be projecting on the slice the Ceed window.
-   Setting it to none turns OFF all the LEDs. Ceed will automatically switch to
-   the first mode option when the experiment starts.
 
-In QUAD12X mode, Ceed will set the color to grayscale because red, green , and blue
+1. **Projector LED mode**
+   (:py:attr:`~ceed.view.controller.ViewControllerBase.LED_mode`).
+   This controls which LED is available when running the
+   experiments. Any of the turned OFF LEDs will not respond if Ceed sets that color
+   (e.g. setting it to ``"RG"``, will disable the blue LED).
+2. **Projector LED mode (idle)**
+   (:py:attr:`~ceed.view.controller.ViewControllerBase.LED_mode_idle`).
+   Like the first, but it controls the LEDs outside an
+   experiment. Outside the experiment they should be OFF (i.e. set option to none)
+   because otherwise the projector would be projecting on the slice the whole time.
+   Setting it to none turns OFF all the LEDs. Ceed will automatically switch to
+   the first mode option when the experiment starts and then switch back when done.
+
+In QUAD12X mode, Ceed will set the color to grayscale because red, green, and blue
 are assigned the same intensity value. However, you probably only want to stimulate
-a specific color (e.g. blue). Manually turn OFF the other LEDs in that case.
+a specific color (e.g. blue). Manually turn OFF the other LEDs in that case and even
+though Ceed will request to stimulate all three LEDs (gray), the projector will only
+use the blue LED.
 
 .. _tut-config:
 
 Ceed configuration
-------------------------
+------------------
 
 Ceed is fully configured from a yaml configuration file. The settings in the file
 are documented in the auto generated
 `configuration docs <https://matham.github.io/ceed/config.html>`_. The default
 yaml file loaded by Ceed is contained where Ceed is installed, under
 ``ceed/data/CeedApp_config.yaml``. The file can be edited or deleted
-altogether (and Ceed will recreate it), when Ceed is closed.
+altogether (and Ceed will recreate it), while Ceed is closed.
 
 In addition to the app settings in the file, Ceed can also include all the
 stages, shapes, and functions in the yaml configuration. Ceed relies on the
@@ -269,25 +294,31 @@ a template later for a new experiment. To use it, import the stages yaml file.
 
 In addition to the stages, it can also export and import the overall app settings
 from the yaml file (e.g. the frame rate, camera and MEA transforms etc).
-Importing **only the stages** is recommended because it may not be visibly obvious that
-the configuration options changed.
+Importing **only the stages** is recommended because it may not be visibly obvious
+all the configuration options that changed when importing the app settings.
+
+Following is an example config file with just the stage/shape/functions
+settings as well as one with the app settings as well:
+
+:download:`Stages config <../media/guide/stages_config.yml>`
+:download:`Stages and app settings config <../media/guide/stages_with_app_settings_config.yml>`
 
 H5 file
 ^^^^^^^
 
-Ceed uses the H5 files to store the experiment data. However, it also stores a
-complete copy of the current app settings and stages/shapes/functions. In
-addition, the complete settings are also saved for each experiment with the
-experiment data.
+Ceed uses Nix H5 files to store the experiment data. However, it also stores a
+complete copy of the current app settings and stages/shapes/functions whenever
+it is saved. In addition, the complete settings are also saved for each
+experiment with the experiment data.
 
 Like with the yaml file, you can import the last configuration from the H5
 file. But, you can also explicitly save or re-open the H5 file.
 
 You can save and save-as the H5 file (including from the save icon). Until
-saved, the changes are saved to a temp file and copied to the indicated
-H5 file when manually saved. You can also discard unsaved changes or close
+saved, the changes are saved to a temp file and only copied to the indicated
+H5 file every time manually saved. You can also discard unsaved changes or close
 the H5 file altogether. And you can open existing H5 files, which loads
-their last config.
+their last config into Ceed.
 
 .. _tut-config-window:
 
@@ -303,15 +334,21 @@ Following is an overview of the settings not explained in previous sections.
 Each settings also has an associated property in the yaml file and documented
 in the `configuration docs <https://matham.github.io/ceed/config.html>`_.
 
-* "Projector window is fullscreen": See ``fullscreen`` in the config docs.
+* "Projector window is fullscreen": See
+  :py:attr:`~ceed.view.controller.ViewControllerBase.fullscreen` in the config docs.
   This should be True.
-* "Restrict projector play rate": See ``use_software_frame_rate`` in the config docs.
-  This should be False expect perhaps during testing.
-* "File compression": See ``compression`` in the config docs.
-* "Pad stage duration to handshake": See ``pad_to_stage_handshake`` in the config docs.
-  This should ideally be True, otherwise merging Ceed with MCS data may not work.
-* "Pre-compute finite stages/functions": See ``pre_compute_stages`` in the config docs.
-  This should ideally be True, especially if stage functions are not light, because
+* "Restrict projector play rate": See
+  :py:attr:`~ceed.view.controller.ViewControllerBase.use_software_frame_rate`
+  in the config docs. This should be False expect perhaps during testing.
+* "File compression": See
+  :py:attr:`~ceed.storage.controller.CeedDataWriterBase.compression`` in the config docs.
+* "Pad stage duration to handshake": See
+  :py:attr:`~ceed.view.controller.ViewControllerBase.pad_to_stage_handshake`
+  in the config docs. This should ideally be True, otherwise merging Ceed with MCS
+  data may not work.
+* "Pre-compute finite stages/functions": See
+  :py:attr:`~ceed.view.controller.ViewControllerBase.pre_compute_stages` in the config docs.
+  This should ideally be True, especially if stage functions do much computation, because
   otherwise Ceed would do too much work during the experiment, potentially missing
   frames. By pre-computing, all the computation is done before the experiment starts.
 
@@ -319,8 +356,10 @@ in the `configuration docs <https://matham.github.io/ceed/config.html>`_.
 
       If turned ON, there will be a slight delay (potentially many seconds) between
       starting an experiment and the experiment actually starting.
-* "Use Teensy": See ``use_teensy`` in the config docs and :ref:`dropped-frames`
-  for details about the Teensy.
+
+* "Use Teensy": See
+  :py:attr:`~ceed.view.controller.TeensyFrameEstimation.use_teensy``
+  in the config docs and :ref:`dropped-frames` for details about the Teensy.
 
   The Teensy is a hardware device to help detect when the GPU mises a frame and a
   frame should be dropped to compensate. It also has an LED that blinks faster
@@ -337,11 +376,50 @@ Post experiment Analysis
 Merge data
 ^^^^^^^^^^
 
+After experiments you'll have two files:
+
+1. The Ceed H5 :ref:`data file <experiment-data>` containing the intensity
+   values for every shape and for every frame, for each experiment stored in
+   the file.
+2. A MCS proprietary file containing all the electrode data recorded during the
+   experiments. The MCS data tool allows you to export this data into an HDF5
+   (H5) file.
+
+The merging step merges both files and computes the temporal alignment between
+them so we know exactly which electrode samples correlate with each projected frame.
+
+It outputs a Ceed based Nix H5 file that contains the Ceed experiment data, the
+electrode data, and the alignment between them for all experiments.
+
+See :ref:`merge-api` and :ref:`merge-api-example` for the merging API. See also
+:ref:`merge-example` for a completely worked example.
+
 .. _analyze-tut:
 
 Analyze data
 ^^^^^^^^^^^^
 
-merging, example for merging
-Analysis examples
-Movie
+After :ref:`merging <merge-tut>` the Ceed and MCS data into a single Ceed file,
+you can use the :py:class:`~ceed.analysis.CeedDataReader` to load the data
+and the experiment Ceed configuration.
+
+See :ref:`ceed-analysis` for the API. See also
+:ref:`example-analysis` for completely worked through examples of reading
+and using the data.
+
+Some data relevant :py:class:`~ceed.analysis.CeedDataReader` properties are
+:py:attr:`~ceed.analysis.CeedDataReader.electrodes_data`,
+:py:attr:`~ceed.analysis.CeedDataReader.electrode_intensity_alignment`,
+:py:attr:`~ceed.analysis.CeedDataReader.shapes_intensity`,
+:py:attr:`~ceed.analysis.CeedDataReader.shapes_intensity_rendered`, but see
+the examples and the other class properties for full details.
+
+For example, Ceed can generate a video replaying the stage and the electrodes'
+voltage corresponding to the stage frames. The following video shows the voltage
+of each of the electrodes in the array, and it replays the stage stimulation
+protocol. It is replayed on a image of the tissue. Additionally, a rectangle
+shows the electrodes the tissue falls on. I.e. the top right corner of the tissue
+corresponds to the A1 electrode. Meaning the array is rotated approximately
+90 degrees clockwise.
+
+.. video:: ../media/guide/analysis_video.webm

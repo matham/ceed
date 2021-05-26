@@ -1,5 +1,8 @@
-"""Ceed-MCS data merging
-=========================
+"""
+.. _merge-api:
+
+Ceed-MCS data merging
+=====================
 
 During an experiment both Ceed and MCS record their respective data to separate
 files. Ceed records the projected frames and all its shapes to an H5 file, while
@@ -133,6 +136,8 @@ stopped early and is too short to have sent the full handshake. So multiple
 experiments could potentially share the same handshake, if the initial bytes
 were the same. In that case the user would need to disambiguate between them
 somehow.
+
+.. _merge-api-example:
 
 Merging example
 ---------------

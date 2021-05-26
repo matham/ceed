@@ -8,14 +8,25 @@ Installation
 Demo install
 ------------
 
-The most recent version of Ceed can be installed simply with::
+For Windows you can download a pre-compiled Ceed executable (``Ceed.exe``) from the
+`release page <https://github.com/matham/ceed/releases>`_.
+
+Alternatively, the most recent stable version of Ceed can be installed from
+source simply with::
 
     pip install ceed
     # or if you want to install the most recent pre-release version
     pip install ceed --pre
 
 This is sufficient to run Ceed as a demo on Windows/Linux without the connected hardware
-of the "real" system.
+of the "real" system. See :ref:`usage` for how to run Ceed.
+
+.. note::
+
+    When running Ceed installed as above, you'll likely get the following error logged to
+    the log window: ``ImportError: Cannot open PROPixx library`` when starting Ceed.
+    This is normal and happens because the projector control software is not installed.
+    It can be safely ignored for demo purposes.
 
 Installation on Ubuntu
 ----------------------

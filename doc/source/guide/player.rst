@@ -81,7 +81,7 @@ Logging image
 ^^^^^^^^^^^^^
 
 Whenever an experiment starts Ceed will save the current camera image, if any, with the
-experiment data. However, at any time the current camera image can be added to the
+:ref:`experiment-data`. However, at any time the current camera image can be added to the
 current data file along with notes.
 
 Press the button highlighted in the image and the dialog will appear. You can write
