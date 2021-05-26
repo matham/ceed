@@ -841,7 +841,7 @@ class CeedDataReader:
         for item in mcs_block.data_arrays:
             if not item.name.startswith('electrode_'):
                 continue
-            electrode_data[item.name[10:]] = np.asarray(item)
+            electrode_data[item.name[10:]] = item
 
             electrodes_metadata[item.name[10:]] = electrode_metadata = {}
             for prop in mcs_metadata.sections[item.name].props:
@@ -1223,7 +1223,7 @@ class CeedDataReader:
 
         electrodes_data = [None, ] * n_electrodes
         # y_min, y_max = float('inf'), float('-inf')
-        alignment = np.array(self.electrode_intensity_alignment)
+        alignment = np.asarray(self.electrode_intensity_alignment)
 
         # get the frequency from any channel
         name = None
