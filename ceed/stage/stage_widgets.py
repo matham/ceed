@@ -430,7 +430,9 @@ class StageWidget(ShowMoreBehavior, BoxLayout):
     def name(self):
         """The :attr:`ceed.stage.CeedStage.name` of the stage.
         """
-        return self.stage.name
+        if self.ref_stage is None:
+            return self.stage.name
+        return self.ref_stage.name
 
     def get_visible_children(self):
         """Iterates and yields all the widgets representing the sub-stages,
