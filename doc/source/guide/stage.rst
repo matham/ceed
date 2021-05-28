@@ -12,6 +12,8 @@ frame the current time is computed as the frame number multiplied by the period 
 the video frame rate. This time is passed to the functions and sub-stages which
 set their corresponding shapes for that frame from their functions' return value.
 
+See the :ref:`stage API <stage-api>` for in-depth stage details.
+
 Creating stages
 ---------------
 
@@ -52,6 +54,8 @@ range.
 
 .. video:: ../media/guide/stage_graph.webm
 
+.. _mod-stage:
+
 Modifying functions
 -------------------
 
@@ -61,8 +65,8 @@ reference to the original function following any changes to it. Pressing the T-f
 button will replace it with an editable function that is a copy of the referenced
 function.
 
-We can also set the stage to loop over its function sequence, e.g. 3 times in the
-video.
+We can also set the stage to :py:attr:`~ceed.stage.CeedStage.loop` over its function
+sequence, e.g. 3 times in the video.
 
 .. video:: ../media/guide/stage_mod_function.webm
 

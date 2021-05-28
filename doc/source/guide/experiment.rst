@@ -1,6 +1,8 @@
 Ceed experiment
 ===============
 
+See the :ref:`experiment control API <view-api>` for in-depth experiment control details.
+
 .. _run-experiment:
 
 Running experiment

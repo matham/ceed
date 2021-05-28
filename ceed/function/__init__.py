@@ -427,8 +427,8 @@ loop iteration (:attr:`FuncBase.loop_tree_count`).
 
 All parameters that support randomization must be returned by
 :meth:`FuncBase.get_noise_supported_parameters` and the specific distribution
-used to randomize each parameter is stored in
-:attr:`FuncBase.noisy_parameters`. The GUI manages
+used to randomize each parameter (based on :mod:`~ceed.function.param_noise`)
+is stored in :attr:`FuncBase.noisy_parameters`. The GUI manages
 :attr:`FuncBase.noisy_parameters` from user configuration based on
 :meth:`FuncBase.get_noise_supported_parameters`.
 
@@ -443,6 +443,16 @@ as many iterations they'll experience and the samples are stored in
 :attr:`FuncBase.noisy_parameter_samples`. Then, the parameter is set to the
 corresponding value for each iteration at the start in
 :meth:`FuncBase.init_func` and :meth:`FuncBase.init_loop_iteration`.
+
+As explained in :ref:`ref-function-api`, Ceed supports function re-use by
+creating a function and using references to it elsewhere. Parameters changed
+in the original function will also be reflected in the references.
+You have two options for how randomized parameters are handled in reference
+functions, controlled by
+:attr:`~ceed.function.param_noise.NoiseBase.lock_after_forked`. If it's True,
+all the reference function's random values will be the same as the original's
+randomly generated values. If False, they will all have uniquely sampled
+values.
 
 Possible noise distributions are listed in the
 :class:`ceed.function.param_noise.ParameterNoiseFactory` stored in
@@ -555,6 +565,8 @@ E.g. this is required to recover functions from a template file, from old data,
 or even to be able to run the experiment because it is run from a second
 process. Consequently, anything required for the function to be reconstructed
 must be returned by :meth:`FuncBase.get_state`.
+
+.. _ref-function-api:
 
 Reference functions
 -------------------

@@ -8,6 +8,8 @@ The stage calls the function or sequence of functions for every video frame with
 the current global time and the function returns a scalar value between 0-1, inclusive.
 This intensity is used for that stage's shapes for that frame.
 
+See the :ref:`function API <function-api>` for in-depth function details.
+
 Creating functions
 ------------------
 
@@ -24,23 +26,21 @@ existing cosine functions.
 Customizing functions
 ---------------------
 
-Each function has parameters that describe its output as a function of time. It also has a
-duration - the time :ref:`domain where it's valid. <func-domain>` It can also be looped
-``n`` times, where the function restarts ``n`` times over its domain until done.
+Each function has parameters that describe its output as a function of time. All
+functions have these basic parameters:
+
+#. **Duration** (:py:attr:`~ceed.function.FuncBase.duration`) - the time
+   :ref:`domain where it's valid. <func-domain>`. See also :ref:`func-precision`.
+#. **Loop** (:py:attr:`~ceed.function.FuncBase.loop`) - the number of times to loop.
+   The function restarts as many times over its domain until done.
+#. **TB num/denom** (:py:attr:`~ceed.function.FuncBase.timebase`) see :ref:`func-precision`.
+#. **Offset** (:py:attr:`~ceed.function.CeedFunc.t_offset`) - an offset to the time
+   parameter. E.g. if the function is ``y = m * t + b``, specifying a non-zero value
+   for offset will compute ``y = m * (t + t_offset) + b``.
 
 .. video:: ../media/guide/function_customize.webm
 
-Randomizing functions
----------------------
-
-Function parameters can be :ref:`randomized <func-random-param>` so it is resampled before
-a new experiment, or once for every loop iteration. It can also be sampled and locked
-so all instances tha re-use it share the same randomized values.
-
-As seen in the video, there are multiple distributions to choose from and more can
-be added by plugins.
-
-.. video:: ../media/guide/function_random.webm
+.. _func-group-tut:
 
 Function groups
 ---------------
@@ -59,19 +59,90 @@ infinite recursion as shown at the end of video.
 
 .. video:: ../media/guide/function_group.webm
 
+Randomizing functions
+---------------------
+
+Function parameters can be :ref:`randomized <func-random-param>` so it is resampled before
+each experiment. As seen in the video, there are multiple distributions to choose from
+and more can be added by :ref:`plugins. <func-plugin>`
+
+.. video:: ../media/guide/function_random.webm
+
+Looping
+^^^^^^^
+
+When a function or :ref:`stage <mod-stage>` is looped, randomized parameters can be
+resampled once and the value used for all loop iterations, or it can be resampled
+once for each loop iteration.
+
+In Ceed, the "Resample each loop"
+(:py:attr:`~ceed.function.param_noise.NoiseBase.sample_each_loop`) option controls
+this behavior. For example, this protocol contains a function of constant intensity
+of 5 sec duration. Additionally, the function loops twice and the stage loops 3 times
+for a total of 6 loops. The intensity parameter is randomized from a Gaussian and
+is not resampled for each loop. So its :ref:`graph <preview-stage>` is constant.
+
+.. image:: ../media/guide/function_random.png
+:download:`Ceed config <../media/guide/function_random.yml>`
+
+This protocol however does resample each loop iteration, which is reflected in its
+graph.
+
+.. image:: ../media/guide/function_random_per_loop.png
+:download:`Ceed config <../media/guide/function_random_per_loop.yml>`
+
+Lock after forking
+^^^^^^^^^^^^^^^^^^
+
+Before an experiment, functions with random parameters are re-sampled and then
+copied; that's so the original prototype functions are not directly used by an
+experiment. After the copy, Ceed again re-samples the functions because of the
+following.
+
+As shown :ref:`above <func-group-tut>`, Ceed supports reference functions that can
+be re-used in multiple places, allowing them to share parameters. These references
+are individually cloned from the prototype at the copying step into unique functions.
+The randomized parameters of the cloned functions support two options with regards to
+re-sampling, controlled by "Lock after fork"
+(:py:attr:`~ceed.function.param_noise.NoiseBase.lock_after_forked`).
+
+If **False**, Ceed will resample the parameter again after cloning. This ensures that
+each cloned copy will not share the same random values as the original and sibling
+functions. If **True**, the cloned functions will not be re-sampled so they will
+share the original re-sampled parameters.
+
+The following protocol contains 3 functions; a reference to a constant function that
+loops 5 times and its intensity is randomized, it's followed by a short cosine, that is
+followed again by a reference to the same constant function.
+
+Here we set "Lock after fork" to False. You can see how both references to the
+constant function have different values.
+
+.. image:: ../media/guide/function_random_fork.png
+:download:`Ceed config <../media/guide/function_random_fork.yml>`
+
+Here we set "Lock after fork" to True. You can see how both reference functions
+repeat the same pattern because they share the same random values for each loop
+iteration.
+
+.. image:: ../media/guide/function_random_fork_lock.png
+:download:`Ceed config <../media/guide/function_random_fork_lock.yml>`
+
 .. _func-precision:
 
 Function timebase
 -----------------
 
 Functions are sampled by the stage at integer multiples of the video frame rate period.
-As function duration approaches the period, specifying duration using time in decimal
-leads to inaccuracy. Functions therefore support specifying duration as integer multiple
-of video frames. E.g. it can be set to be exactly one frame long.
+As function :py:attr:`~ceed.function.FuncBase.duration` approaches the period,
+specifying duration using time in decimal
+leads to inaccuracy and rounding. Functions therefore support specifying duration as
+integer multiple of video frames. E.g. it can be set to be exactly one frame long.
 
 When the function :ref:`timebase <func-timebase>` is specified and non-zero, the duration
-is multiplied by the timebase to get the duration in seconds. So when the timebase is
-exactly one over the frame rate - the period, a duration of one means one frame.
+is multiplied by the :py:attr:`~ceed.function.FuncBase.timebase` to get the duration
+in seconds. So when the timebase is exactly one over the frame rate - the period,
+a duration of one means one frame.
 
 E.g. in the video, the frame rate is 59.94, or 2997 / 50. Setting the timebase fraction
 to 50 / 2997 will allow use to set the duration of each constant function in the group
@@ -84,3 +155,6 @@ The stages and preview graph are explained in the :ref:`stage guide <stage-guide
 .. video:: ../media/guide/function_precision.webm
 
 :download:`Ceed config of the video <../media/guide/function_precision.yml>`
+
+Children of function groups (recursively) inherit their timebase from their parents,
+if it's not explicitly overwritten by the child.
