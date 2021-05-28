@@ -71,3 +71,50 @@ A single shape may be in multiple groups and all these groups may be added to a 
 simultaneously, as well as the individual shape itself, without problems.
 
 .. video:: ../media/guide/shape_groups.webm
+
+Shape plugin
+------------
+
+Although Ceed does not offer a plugin for shapes, it's simple to create shapes
+with a script, dump it to disk as a yaml file, and import it into Ceed from the
+GUI. See :py:mod:`~ceed.shape` for more details.
+
+Following is an example using :py:class:`~ceed.shape.CeedPaintCanvasBehavior`
+with the specific shape classes and their corresponding ``create_shape`` methods;
+:py:class:`~ceed.shape.CeedPaintCircle`
+(:meth:`~kivy_garden.painter.PaintCircle.create_shape`),
+:py:class:`~ceed.shape.CeedPaintEllipse`
+(:meth:`~kivy_garden.painter.PaintEllipse.create_shape`),
+:py:class:`~ceed.shape.CeedPaintPolygon`
+(:meth:`~kivy_garden.painter.PaintPolygon.create_shape`).
+
+After running the script it will generate a yml file that can be imported into
+Ceed from the GUI and it'll contain these shapes.
+
+.. code-block:: python
+
+    from ceed.shape import CeedPaintCanvasBehavior, CeedPaintCircle, \
+        CeedPaintEllipse, CeedPaintPolygon
+    from ceed.storage.controller import CeedDataWriterBase
+
+    # create shape factory to which we'll add shapes
+    shape_factory = CeedPaintCanvasBehavior()
+    # create the shapes. Notice we use the Shape classes imported from Ceed
+    ellipse = CeedPaintEllipse.create_shape(
+        center=(250, 450), radius_x=200, radius_y=400)
+    circle = CeedPaintCircle.create_shape(center=(700, 300), radius=200)
+    polygon = CeedPaintPolygon.create_shape(points=[275, 300, 700, 300, 500, 800])
+
+    # add shapes to factory
+    shape_factory.add_shape(ellipse)
+    shape_factory.add_shape(circle)
+    shape_factory.add_shape(polygon)
+
+    # save it to disk for import later
+    CeedDataWriterBase.save_shapes_to_yaml(filename, shape_factory)
+
+:download:`Generated Ceed config <../media/guide/shapes.yml>`
+
+The ProPixx projector used by Ceed has a resolution of 1920x108, so that should
+be the maximum extent of the shapes. The exact available drawing area can
+be read/set in Ceed's config.

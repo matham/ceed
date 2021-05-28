@@ -597,6 +597,39 @@ class CeedDataWriterBase(EventDispatcher):
             if self.data_lock:
                 self.data_lock.release()
 
+    @staticmethod
+    def save_shapes_to_yaml(filename, shape_factory, overwrite=False):
+        """Exports the shape data to a yaml file so it can be imported
+        from the GUI.
+
+        It can be used to create shapes from a script, dump it to a file,
+        and then import it from the GUI.
+
+        :param filename: The filename to save to (should end with with .yaml or
+            .yml for ease of use).
+        :param shape_factory: The :class:`~ceed.shape.CeedPaintCanvasBehavior`
+            containing the shapes that will be dumped to the file.
+        :param overwrite: Whether to overwrite the file if it exists.
+
+        E.g.::
+
+            from ceed.shape import CeedPaintCanvasBehavior, CeedPaintCircle
+
+            shape_factory = CeedPaintCanvasBehavior()
+            circle = CeedPaintCircle.create_shape(center=(700, 300), radius=200)
+            shape_factory.add_shape(circle)
+            CeedDataWriterBase.save_shapes_to_yaml(filename, shape_factory)
+        """
+        shapes = shape_factory.get_state()
+        data = {'shape': shapes, 'function': [], 'stage': []}
+
+        if exists(filename) and not overwrite:
+            raise ValueError('{} already exists'.format(filename))
+
+        data = yaml_dumps(data)
+        with open(filename, 'w') as fh:
+            fh.write(data)
+
     def write_yaml_config(self, filename, overwrite=False, stages_only=False):
         """Exports the config data to a yaml file.
 
