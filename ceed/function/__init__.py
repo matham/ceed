@@ -1643,7 +1643,7 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
             instances replaced by their original normal function.
         """
         obj = self.__class__(function_factory=self.function_factory)
-        obj.apply_state(self.get_state(expand_ref=True))
+        obj.apply_state(deepcopy(self.get_state(expand_ref=True)))
         return obj
 
     def init_func_tree(self, root: Optional['FuncBase'] = None) -> None:
@@ -1921,7 +1921,8 @@ class CeedFuncRef:
 
     def get_state(self, recurse=True, expand_ref=False):
         if expand_ref:
-            return self.func.get_state(recurse=recurse, expand_ref=True)
+            return deepcopy(
+                self.func.get_state(recurse=recurse, expand_ref=True))
 
         state = {'ref_name': self.func.name, 'cls': 'CeedFuncRef'}
         return state
@@ -2260,10 +2261,7 @@ line 934, in __call__
 
         if recurse:
             for f in self.funcs:
-                if isinstance(f, CeedFuncRef) and expand_ref:
-                    state = f.func.get_state(recurse=recurse, expand_ref=True)
-                else:
-                    state = f.get_state(recurse=recurse, expand_ref=expand_ref)
+                state = f.get_state(recurse=recurse, expand_ref=expand_ref)
                 funcs.append(state)
         return d
 

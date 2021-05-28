@@ -1760,7 +1760,7 @@ class CeedStage(EventDispatcher):
             stage_factory=self.stage_factory,
             function_factory=self.function_factory,
             shape_factory=self.shape_factory)
-        obj.apply_state(self.get_state(expand_ref=True))
+        obj.apply_state(deepcopy(self.get_state(expand_ref=True)))
         return obj
 
     def replace_ref_stage_with_source(
@@ -2522,7 +2522,7 @@ class CeedStageRef:
 
     def get_state(self, expand_ref: bool = False) -> dict:
         if expand_ref:
-            return self.stage.get_state(expand_ref=True)
+            return deepcopy(self.stage.get_state(expand_ref=True))
 
         state = {}
         state['ref_name'] = self.stage.name
