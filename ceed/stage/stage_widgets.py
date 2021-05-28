@@ -211,11 +211,13 @@ class StageList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
         """Makes a stage ready to be run as an experiment.
 
         It takes the stage, copies it and expands all sub-stages that are
-        references, then samples all the parameters and finally adds this stage
-        to the :attr:`stage_factory`.
+        references, then samples all the parameters and finally adds this
+        copied stage to the :attr:`stage_factory`. See
+        :meth:`~ceed.stage.CeedStage.copy_and_resample`.
 
-        The stage is then named :attr:`ceed.stage.last_experiment_stage_name`.
-        If a stage with that name already exists, that stage is first removed.
+        The copied stage is then named
+        :attr:`~ceed.stage.last_experiment_stage_name`. If a stage with that
+        name already exists, that stage is first removed.
 
         :param stage_name: The name of the registered stage to copy.
         """

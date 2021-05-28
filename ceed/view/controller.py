@@ -176,53 +176,147 @@ disabled with :attr:`ViewControllerBase.skip_estimated_missed_frames`.
 Experiment flow
 ---------------
 
-pre-computed.
+Following is the overall experiment flow and what Ceed does when running an
+experiment.
 
-experiment copy to special name
+Experiment mode
+^^^^^^^^^^^^^^^
 
-frame rate
+There are two modes under which the experiment runs; in **preview mode** or as
+a "real" experiment. In preview mode, the stage is run directly in the Ceed
+GUI in the drawing area but is not projected on the projector (unless the
+:attr:`~ViewControllerBase.LED_mode_idle` is not ``none``). All the code is
+executed within the main Ceed process and the controller used to control the
+experiment is a :class:`ControllerSideViewControllerBase` instance.
 
-Frame warmup
-^^^^^^^^^^^^
-
-for projector to update LED and for median estimation.
+In a **"real"** experiment, the user launches a second full screen window from
+within Ceed. This starts a new process that communicates with Ceed over a queue
+and runs the experiment in that fullscreen window. In
+this case, the controller in the second process is a
+:class:`ViewSideViewControllerBase` instance, but the main GUI still has its
+:class:`ControllerSideViewControllerBase` instance through it communicates with
+the :class:`ViewSideViewControllerBase` instance. Data is constantly
+sent between the two processes, specifically, the second process is
+initialized with the config at the start. Then, once the playing
+starts, the client (second process) continuously sends data back to the main
+Ceed GUI for processing and storage.
 
 Experiment control
-------------------
+^^^^^^^^^^^^^^^^^^
 
-There are two sides that communicate over queue.
+When running from the full-screen window, you can control the experiment
+using keyboard shortcuts. Specifically, the following shortcuts:
 
-The usage of ceed is to run a GUI in which stages, shapes, and functions
-are designed. Subsequently, the stage is played on the projector or
-previewed in the main GUI and displays shapes varying with intensity as
-time progresses, as designed.
+* ``ctrl-s`` starts an experiment using the currently selected stage (selected
+  in the Ceed GUI).
+* ``ctrl-c`` stops the currently running experiment.
+* ``ctrl-z`` stops the currently running experiment (if any) and closes the
+  fullscreen window.
+* ``ctrl-f`` toggles the second window between fullscreen and normal. This
+  should not really be used.
 
-When the stage is played as a preview in the main GUI, all the code is
-executed within the main process. In this case the controller is a
-:class:`ControllerSideViewControllerBase` instance.
+If previewing, you can start or stop the stage using the play button in the GUI.
 
-When the stage is played for real, it is played in a second process in
-a second window which can be displayed on the projector window. In
-this case, the controller in the second process is a
-:class:`ViewSideViewControllerBase` instance while in the main GUI it
-is a :class:`ControllerSideViewControllerBase` instance. Data is constantly
-sent between the two processes, specifically, the second process is
-initialized with the data to be displayed at the start. Once the playing
-starts, the client continuously sends data back to the main GUI for
-processing and storage.
+Preparing stage
+^^^^^^^^^^^^^^^
 
-This class controls all aspects of how the data is presented, e.g. whether
-the window is full screen, the various modes, etc.
+When the user starts the experiment, starting with the stage selected by the
+user, Ceed copies the stage into a new
+stage named :attr:`~ceed.stage.last_experiment_stage_name`. If one already
+exists with that name, it is replaced. This is the stage that will be run
+and the name of the stage you should look up in the analysis stage.
 
-Viewer GUI interaction
-^^^^^^^^^^^^^^^^^^^^^^
+Given the stage, it samples all the randomized function parameters, it expands
+all the reference stages and functions, and it re-samples the function
+parameters not marked as
+:attr:`~ceed.function.param_noise.NoiseBase.lock_after_forked`. See
+:meth:`~ceed.stage.CeedStage.copy_and_resample`.
 
-Keyboard commands are sent to the main process to handle.
+Preparing hardware
+^^^^^^^^^^^^^^^^^^
+
+Next, it prepares a new section in the data file for this experiment (see
+:meth:`~ceed.storage.controller.prepare_experiment`). It then set the video
+mode (:attr:`~ViewControllerBase.video_mode`) and LED state
+(:attr:`~ViewControllerBase.LED_mode`) to the requested state and it is ready
+to run the stage.
+
+If it's running for "real" and not being previewed, Ceed tell the second process
+to start the stage in the second full-screen window. It also starts
+communication with the :class:`TeensyFrameEstimation` if it's being used. Now,
+it sets up all the graphics and everything it needs to run.
+
+Warmup
+^^^^^^
+
+When starting the stage, the stage will pre-compute the intensity values for all
+its frames if enabled (:ref:`pre-compute`). For a long experiment, this may take
+some time during which the GUI won't update. If the Teensy is running, the
+Teensy's LED will blink faster than normal until the pre-computing and warmup is
+done and the stage actually starts playing frames when it will blink even
+faster until the stage is done.
+
+When pre-computing is done, Ceed will run 50 blank frames. This gives sufficient
+time to make sure :attr:`~ViewControllerBase.LED_mode` is updated. It also
+allows us to collect the rendering time of these warmup frames, which will then
+be used to initialize :class:`FrameEstimation` to help us estimate when to drop
+frames as a fallback if Teensy is not available.
+
+Running stage
+^^^^^^^^^^^^^
+
+To run the stage, Ceed will sample the stage's function at integer multiples of
+the period of the GPU refresh rate (:attr:`~ViewControllerBase.frame_rate` or
+rather :attr:`~ViewControllerBase.effective_frame_rate` if any of the quad
+modes is ON). Specifically, Ceed counts GPU frames and increments the counter by
+one for each frame (or sub-frame if the quad mode is ON). So to compute the
+current frame time, it divides :attr:`~ViewControllerBase.count` by
+:attr:`~ViewControllerBase.effective_frame_rate`.
+
+Hence :attr:`~ViewControllerBase.frame_rate` **must be exactly the GPU refresh
+rate**. E.g. if the GPU is updating at 119.96 (which is typical), the frame
+rate must be set to ``119.96``, and not ``120``.
+
+At each frame or sub-frame, Ceed ticks the stage with the current frame time.
+This causes it to update all the shapes to the stage's function intensity and
+for the new frame to be rendered.
+
+As the experiment is running Ceed also logs all the shape data. It stores for
+each frame the intensity of all shapes as well as some minimal debug data about
+frame time. More debug data can be logged by turning ON
+:attr:`ViewControllerBase.log_debug_timing`. It also logs the corner pixel
+Ceed-MCS alignment pattern for each frame, to be used for later alignment
+(see :ref:`exp-sync`).
+
+Experiment shutdown
+^^^^^^^^^^^^^^^^^^^
+
+When the experiment finishes or is stopped, Ceed will save the last camera image
+just before the experiment stops (
+:attr:`~ControllerSideViewControllerBase.last_cam_image`), if the camera was
+playing. Then it stops the stage (if it didn't naturally stop) and cleans up.
+
+.. _exp-sync:
 
 Synchronization
 ---------------
 
-Corner pixel
+To facilitate temporal data alignment between the Ceed data (each projected
+frame) and MCS (the electrode data), Ceed outputs a bit pattern in the
+top-left corner pixel for each frame. This pixel is output by the projector
+controller as a bit pattern on its digital port, and is recorded by MCS.
+It is turned ON just before the experiment starts when running a "real"
+experiment using :meth:`ControllerSideViewControllerBase.set_pixel_mode`.
+
+Specifically, the corner pixel contains 24-bits (8 for red, green, and blue).
+Ceed sends synchronization data in this pixel, so that after an experiment
+Ceed can look at its frame and the MCS data that logged the pattern and it
+can figure out exactly the electrode samples that corresponds to each projected
+frame.
+
+See :class:`~ceed.storage.controller.DataSerializerBase` to see the details
+about this pattern. See also :ref:`handshake-protocol` to see how it used
+used to merge the data after an experiment.
 """
 import multiprocessing as mp
 import numpy as np
@@ -834,7 +928,8 @@ class ViewControllerBase(EventDispatcher):
     e.g. the nvidia control panel. Otherwise, the experiment will be out of sync
     and played incorrectly.
 
-    This is internally converted to a fraction, so the number must be such
+    This is internally converted to a fraction (:attr:`frame_rate_numerator`,
+    :attr:`frame_rate_denominator`), so the number must be such
     that it can be converted to a fraction. E.g. 119.96 or 59.94 can be
     represented correctly as fractions.
     '''
@@ -1082,8 +1177,8 @@ class ViewControllerBase(EventDispatcher):
     count = 0
     '''The current global frame count, reset for each experiment.
 
-    This number divided by the :attr:`frame_rate` is the current global
-    experiment time.
+    This number divided by the :attr:`effective_frame_rate` is the current
+    global experiment time.
     '''
 
     experiment_uuid: bytes = b''

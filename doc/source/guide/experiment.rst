@@ -41,9 +41,14 @@ Ceed saves all the experiment data into a `Nix <https://nixpy.readthedocs.io/en/
 data file. Each experiment (even when previewed-played) creates a new unique section
 in the Nix H5 data file and Ceed stores all the experiment data there.
 
-Ceed saves the current camera image, if any, and the complete
-:ref:`Ceed configuration <tut-config>` including the stages/shapes/functions required
-to reproduce the experiment. During the experiment it saves for every frame the red,
+Before running the experiment, Ceed copies the stage to be used for the experiment
+and creates a new stage called ``experiment_sampled``
+(:py:attr:`~ceed.stage.last_experiment_stage_name`) from it (overwriting the
+last one, if present). This is the stage Ceed actually runs. Then, Ceed saves the
+current camera image, if any, and the complete :ref:`Ceed configuration <tut-config>`
+including the stages/shapes/functions required to reproduce the experiment.
+
+During the experiment it saves for every frame the red,
 green, and blue intensity values for every rendered shape. It also saves the frame time
 and frame digital IO pattern that is sent along the ProPixx to MCS hardware connection
 so we can temporally align the Ceed frames to the MCS electrode data post hoc.
