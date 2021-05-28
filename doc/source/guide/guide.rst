@@ -18,5 +18,3 @@
    stage.rst
    player.rst
    experiment.rst
-
-   howto.rst

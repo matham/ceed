@@ -55,7 +55,7 @@ Dragging on the orange point of one will drag all the selected shapes.
 From the controls you can also duplicate the selected shapes, or delete them.
 
 There's a special button that adds a polygon shape named "enclosed" that encloses the
-whole projector area.
+whole projector area. It is typically used to stimulate the entire slice.
 
 From the controls you can also enable a mode to see the name of each shape and the x, y
 pixel position of the mouse as it transverses the drawing area.

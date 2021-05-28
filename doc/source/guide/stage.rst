@@ -25,6 +25,10 @@ available for re-use in other stages or to be run directly.
 This video shows multiple how to create a stage and name it, how to drag a sequence of
 functions into it and how to drag a shape and shape group into it.
 
+Each stage has three "shelves" where you can drag objects ordered vertically as
+stages, functions, and shapes. The controller only lets you drop the dragged object
+into the correct shelf, depending on the object.
+
 .. video:: ../media/guide/stage_create.webm
 
 .. _preview-stage:
@@ -142,3 +146,76 @@ Then the shape will be kept dark at all times.
 
 :download:`Ceed config of the video <../media/guide/stage_donut.yml>`
 
+Stage plugin
+------------
+
+Ceed comes with a blank stage baseclass, however using :ref:`plugins <stage-plugin>`
+Ceed can support any custom stage.
+
+It is fully explained in :ref:`stage-plugin`, but you can make your plugin available to
+Ceed by copying your Python file to the ``ceed/stage/plugin`` directory
+under where Ceed is installed, or register your external plugin package
+using :py:attr:`~ceed.main.CeedApp.external_stage_plugin_package`.
+
+Ceed gets your stage classes using a ``get_ceed_stages`` function in the plugin.
+
+To write a plugin, it helps to become familiar with the
+:ref:`stage API <stage-api>` and the :py:class:`~ceed.stage.CeedStage`
+class that all stages inherit from.
+
+A very simple stage plugin file that sets the intensity of all its shapes to
+``t ^ 2``, where ``t`` is the elapsed time is, and it lasts for 1 second
+for each loop iteration:
+
+.. code-block:: python
+
+    from ceed.stage import CeedStage, StageDoneException
+
+
+    class GrowStage(CeedStage):
+
+        def __init__(self, **kwargs):
+            self.name = 'Grow'
+            super().__init__(**kwargs)
+
+        def evaluate_stage(self, shapes, last_end_t):
+            r = self.color_r
+            g = self.color_g
+            b = self.color_b
+
+            # always get the first time
+            t = yield
+            for _ in range(self.loop):
+                t_start = t
+
+                # only go for 1 second
+                while t - t_start < 1:
+                    intensity = (t - t_start) ** 2
+
+                    # set the r, g, b for those color channels used. Alpha is None
+                    for name, shape_values in shapes.items():
+                        shape_values.append((
+                            intensity if r else 0.,
+                            intensity if g else 0.,
+                            intensity if b else 0.,
+                            None
+                        ))
+                    # this yields so GUI can draw shapes and resume for next frame
+                    t = yield
+
+            # this time value was not used so it ends on the last sample so
+            # that last time will be used as start of next stage and MUST be saved
+            # as t_end
+            self.t_end = t
+            # this is how we indicate we're done
+            raise StageDoneException
+
+
+    def get_ceed_stages(stage_factory):
+        return [GrowStage]
+
+Simply copy the above code into your python file and place it in your external
+package or in Ceed's plugin directory, e.g. ``ceed/stage/plugin/my_plugin.py``
+and ``Grow`` will be listed in the GUI. Make an instance of it and drag shapes
+into it and it can used to run an experiment without needing to add any
+functions (but you could if you wanted to use them somehow).

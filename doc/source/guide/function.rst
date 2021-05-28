@@ -158,3 +158,114 @@ The stages and preview graph are explained in the :ref:`stage guide <stage-guide
 
 Children of function groups (recursively) inherit their timebase from their parents,
 if it's not explicitly overwritten by the child.
+
+Function plugin
+---------------
+
+Ceed comes with a few functions, however using :ref:`plugins <func-plugin>`
+Ceed can support any custom function.
+
+It is fully explained in :ref:`func-plugin`, but you can make your plugin available to
+Ceed by copying your Python file to the ``ceed/function/plugin`` directory
+under where Ceed is installed, or register your external plugin package
+using :py:attr:`~ceed.main.CeedApp.external_function_plugin_package`.
+
+Ceed gets your function classes using a ``get_ceed_functions`` function in the
+plugin and similarly it uses ``get_ceed_distributions`` to get the probability
+distribution classes.
+
+To write a plugin, it helps to become familiar with the
+:ref:`function API <function-api>` and the :py:class:`~ceed.function.FuncBase`
+class that all functions inherit from.
+
+A very simple function plugin file that computes ``1 / (max(t, 1) ^ 2)``,
+where ``t`` is the elapsed time is:
+
+.. code-block:: python
+
+    from kivy.properties import NumericProperty
+    from ceed.function import CeedFunc
+
+
+    class DecayFunc(CeedFunc):
+
+        # The parameter must be a Kivy property, so the GUI can update from it
+        c = NumericProperty(1.)
+
+        def __init__(self, **kwargs):
+            self.name = 'Decay'
+            self.description = 'y(t) = m / (t + t_offset) ^ 2'
+            super().__init__(**kwargs)
+
+        def __call__(self, t):
+            # super handles checking whether function is finished
+            super().__call__(t)
+            t = self.get_relative_time(t)
+            return self.c / max(t, 1) ** 2
+
+        def get_gui_props(self):
+            # makes sure c is editable from the GUI
+            d = super().get_gui_props()
+            d['c'] = None
+            return d
+
+        def get_state(self, *largs, **kwargs):
+            # makes sure c is included in config
+            d = super().get_state(*largs, **kwargs)
+            d['c'] = self.c
+            return d
+
+        def get_noise_supported_parameters(self):
+            # enables c to be randomized
+            val = super().get_noise_supported_parameters()
+            val.add('c')
+            return val
+
+
+    def get_ceed_functions(function_factory):
+        return [DecayFunc]
+
+Simply copy the above code into your python file and place it in your external
+package or in Ceed's plugin directory, e.g. ``ceed/function/plugin/my_plugin.py``
+and ``DecayFunc`` will be listed in the GUI.
+
+Similarly, you can add a simple random distribution that returns one of two numbers
+and make it available to randomize parameters, by copying the following code into
+your function plugin file:
+
+.. code-block:: python
+
+    from random import random
+    from kivy.properties import NumericProperty
+    from ceed.function.param_noise import NoiseBase
+
+
+    class BinaryNoise(NoiseBase):
+
+        # The parameters must be a Kivy property, so the GUI can update from it
+        # The type of the default value (0.0 - float here) is the type the user
+        # can enter in the GUI. E.g. if it was an int, only ints could be entered
+        a = NumericProperty(0.)
+
+        b = NumericProperty(0.)
+
+        def sample(self):
+            return self.a if random() < .5 else self.b
+
+        def get_config(self):
+            # makes sure c is included in config and editable from the GUI
+            config = super().get_config()
+            for attr in ('a', 'b'):
+                config[attr] = getattr(self, attr)
+            return config
+
+        def get_prop_pretty_name(self):
+            # the user friendly name to display in the GUI
+            names = super().get_prop_pretty_name()
+            names['a'] = 'First value'
+            names['b'] = 'Second value'
+            return names
+
+
+    def get_ceed_distributions(function_factory):
+        return [BinaryNoise]

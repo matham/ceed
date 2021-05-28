@@ -20,6 +20,10 @@ Additionally, if the user provides a package name in the
 :attr:`~ceed.main.CeedApp.external_function_plugin_package` configuration
 variable, the GUI will similarly import and register the plugins in
 that package with :func:`ceed.function.register_external_functions`.
+The package must however be a proper python package that can be imported.
+E.g. if :attr:`~ceed.main.CeedApp.external_function_plugin_package`
+is ``my_ceed_plugin.func``, Ceed will try something roughly like
+``from my_ceed_plugin.func import get_ceed_functions``.
 
 Files in ``ceed/function/plugin`` that want to define new function or function
 distribution classes should define a function in the file called

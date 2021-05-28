@@ -18,9 +18,9 @@ Complete developer API documentation is at :ref:`ceed-root-api`.
 Usage
 -----
 
-Ceed is normally run on the PCs connected to the required hardware described
+Ceed is normally run on the PC connected to the required hardware described
 in :ref:`ceed-blueprint`. However, it can also be run in a demo-mode on
-a Windows/Linux PC without any additional hardware.
+a Windows/Linux PC without any additional hardware (see :ref:`demo-install`).
 
 To run Ceed, you first need to install it as a python package; see :ref:`install-ceed`.
 
@@ -30,10 +30,6 @@ After it's installed, you can run it by running the ``run_app`` file, or by ente
     python ceed/run_app.py
     # or if you are in the python environment where ceed was installed, just
     ceed
-
-A compiled executable can be downloaded from the
-`release page <https://github.com/matham/ceed/releases>`__ for Windows. This can be run
-as a demo, without installation.
 
 Configuration
 -------------

@@ -332,7 +332,7 @@ exposed in the settings window:
 
 .. image:: ../media/guide/settings_window.png
 
-Following is an overview of the settings not explained in previous sections.
+Following is an overview of the settings not explained in previous/subsequent sections.
 Each settings also has an associated property in the yaml file and documented
 in the `configuration docs <https://matham.github.io/ceed/config.html>`_.
 
@@ -348,7 +348,7 @@ in the `configuration docs <https://matham.github.io/ceed/config.html>`_.
   :py:attr:`~ceed.view.controller.ViewControllerBase.pad_to_stage_handshake`
   in the config docs. This should ideally be True, otherwise merging Ceed with MCS
   data may not work.
-* "Pre-compute finite stages/functions": See
+* "Pre-compute finite stages/functions": See :ref:`pre-compute` and
   :py:attr:`~ceed.view.controller.ViewControllerBase.pre_compute_stages` in the config docs.
   This should ideally be True, especially if stage functions do much computation, because
   otherwise Ceed would do too much work during the experiment, potentially missing
@@ -359,16 +359,33 @@ in the `configuration docs <https://matham.github.io/ceed/config.html>`_.
       If turned ON, there will be a slight delay (potentially many seconds) between
       starting an experiment and the experiment actually starting.
 
-* "Use Teensy": See
-  :py:attr:`~ceed.view.controller.TeensyFrameEstimation.use_teensy``
-  in the config docs and :ref:`dropped-frames` for details about the Teensy.
+.. _teensy-tut:
 
-  The Teensy is a hardware device to help detect when the GPU mises a frame and a
-  frame should be dropped to compensate. It also has an LED that blinks faster
-  when the experiment starts, while it's pre-computing the stages (see above)
-  and getting things ready, and it blinks even faster while the experiment is
-  running. This LED can help you track the current experiment stage during an
-  experiment.
+Teensy uC
+---------
+
+The CPU/GPU will sometimes take more than a frame duration to display a frame.
+E.g. if the computer is processing too much, it may not submit the next frame in
+time. Consequently, Ceed needs to :ref:`drop a frame <dropped-frames>` to
+compensate for the slow frame.
+
+Ceed can detect delayed frames using a software-based time estimation (
+:py:class:`~ceed.view.controller.FrameEstimation`), or using
+a connected Teensy microcontroller (
+:py:class:`~ceed.view.controller.TeensyFrameEstimation`). The Teensy,
+by watching the Ceed to MCS hardware
+link, can notify Ceed more quickly and reliably than the software approach.
+
+Whether to use the Teensy is set in the settings window (see "Use Teensy" -
+:ref:`tut-config-window`,
+:py:attr:`~ceed.view.controller.TeensyFrameEstimation.use_teensy`).
+The Teensy can only be used when the GPU is updating
+at 119.96Hz (it's hardcoded in the Teensy's firmware).
+
+The Teensy also has an LED that blinks faster when the experiment starts,
+while it's pre-computing the stages (see above) and getting things ready.
+It blinks even faster while the experiment is running. This LED can help
+you track the current experiment state during an experiment.
 
 Post experiment Analysis
 ------------------------

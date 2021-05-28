@@ -20,6 +20,10 @@ Additionally, if the user provides a package name in the
 :attr:`~ceed.main.CeedApp.external_stage_plugin_package` configuration
 variable, the GUI will similarly import and register the plugins in
 that package with :func:`ceed.stage.register_external_stages`.
+The package must however be a proper python package that can be imported.
+E.g. if :attr:`~ceed.main.CeedApp.external_stage_plugin_package`
+is ``my_ceed_plugin.stage``, Ceed will try something roughly like
+``from my_ceed_plugin.stage import get_ceed_stages``.
 
 Files in ``ceed/stage/plugin`` that want to define new stage classes should
 define a function in the file called ``get_ceed_stages`` that

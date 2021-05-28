@@ -5,6 +5,8 @@ Installation
 
 `Ceed <https://github.com/matham/ceed>`__ requires Python 3.7+.
 
+.. _demo-install:
+
 Demo install
 ------------
 
@@ -27,6 +29,10 @@ of the "real" system. See :ref:`usage` for how to run Ceed.
     the log window: ``ImportError: Cannot open PROPixx library`` when starting Ceed.
     This is normal and happens because the projector control software is not installed.
     It can be safely ignored for demo purposes.
+
+    Also, if the Teensy microcontroller is not connected but "Use Teensy" is enabled in the
+    :ref:`tut-config-window`, Ceed won't run experiments. Turn it OFF for a demo install.
+
 
 Installation on Ubuntu
 ----------------------
