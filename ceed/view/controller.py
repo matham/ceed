@@ -2,7 +2,7 @@
 .. _view-api:
 
 Experiment Controller
-========================
+=====================
 
 Runs, controls, and displays Ceed experiments on screen, both during a "real"
 experiment and when previewing it.

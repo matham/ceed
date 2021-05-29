@@ -1,10 +1,10 @@
-View API
-========
+Experiment API
+==============
 
 .. toctree::
    :maxdepth: 2
 
    view.rst
-   view_widgets.rst
    controller.rst
+   view_widgets.rst
    main.rst

@@ -1,6 +1,10 @@
 function: []
 shape:
-  groups: []
+  groups:
+  - name: shapes
+    shapes:
+    - ellipse
+    - polygon
   shapes:
   - angle: 0
     center:
@@ -20,7 +24,7 @@ shape:
     - 1
     line_width: 1.0
     locked: false
-    name: Shape
+    name: ellipse
     radius_x: 200
     radius_y: 400
   - center:
@@ -32,7 +36,7 @@ shape:
     line_color_locked: *id002
     line_width: 1.0
     locked: false
-    name: Shape-2
+    name: circle
     radius: 200
   - cls: CeedPaintPolygon
     is_valid: true
@@ -40,7 +44,7 @@ shape:
     line_color_locked: *id002
     line_width: 1.0
     locked: false
-    name: Shape-3
+    name: polygon
     points:
     - 275
     - 300

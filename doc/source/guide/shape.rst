@@ -76,8 +76,8 @@ Shape plugin
 ------------
 
 Although Ceed does not offer a plugin for shapes, it's simple to create shapes
-with a script, dump it to disk as a yaml file, and import it into Ceed from the
-GUI. See :py:mod:`~ceed.shape` for more details.
+and shape groups with a script, dump it to disk as a yaml file, and import it
+into Ceed from the GUI. See :py:mod:`~ceed.shape` for more details.
 
 Following is an example using :py:class:`~ceed.shape.CeedPaintCanvasBehavior`
 with the specific shape classes and their corresponding ``create_shape`` methods;
@@ -99,16 +99,24 @@ Ceed from the GUI and it'll contain these shapes.
 
     # create shape factory to which we'll add shapes
     shape_factory = CeedPaintCanvasBehavior()
-    # create the shapes. Notice we use the Shape classes imported from Ceed
+    # create the shapes and name them. We use the Shape classes imported from Ceed
     ellipse = CeedPaintEllipse.create_shape(
-        center=(250, 450), radius_x=200, radius_y=400)
-    circle = CeedPaintCircle.create_shape(center=(700, 300), radius=200)
-    polygon = CeedPaintPolygon.create_shape(points=[275, 300, 700, 300, 500, 800])
+        center=(250, 450), radius_x=200, radius_y=400, name='ellipse')
+    circle = CeedPaintCircle.create_shape(
+        center=(700, 300), radius=200, name='circle')
+    polygon = CeedPaintPolygon.create_shape(
+        points=[275, 300, 700, 300, 500, 800], name='polygon')
 
-    # add shapes to factory
+    # add the shapes to factory
     shape_factory.add_shape(ellipse)
     shape_factory.add_shape(circle)
     shape_factory.add_shape(polygon)
+
+    # create group, name it, and add shapes to it
+    group = shape_factory.add_group()
+    group.name = 'shapes'
+    group.add_shape(ellipse)
+    group.add_shape(polygon)
 
     # save it to disk for import later
     CeedDataWriterBase.save_shapes_to_yaml(filename, shape_factory)

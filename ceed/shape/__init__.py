@@ -22,8 +22,8 @@ Shape plugin
 ------------
 
 Although Ceed does not offer a plugin for shapes, it's simple to create shapes
-with a script, dump it to disk as a yaml file, and import it into Ceed from the
-GUI.
+and shape groups with a script, dump it to disk as a yaml file, and import it
+into Ceed from the GUI.
 
 Following is an example using :class:`CeedPaintCanvasBehavior` and the methods
 of its baseclass :class:`~kivy_garden.painter.PaintCanvasBehavior` as well
@@ -44,35 +44,61 @@ the resulting shapes may not be valid:
 
     # create shape factory to which we'll add shapes
     shape_factory = CeedPaintCanvasBehavior()
-    # create the shapes. Notice we use the Shape classes imported from Ceed
+    # create the shapes and name them. We use the Shape classes from Ceed
     ellipse = CeedPaintEllipse.create_shape(
-        center=(250, 450), radius_x=200, radius_y=400)
-    circle = CeedPaintCircle.create_shape(center=(700, 300), radius=200)
+        center=(250, 450), radius_x=200, radius_y=400, name='ellipse')
+    circle = CeedPaintCircle.create_shape(
+        center=(700, 300), radius=200, name='circle')
     polygon = CeedPaintPolygon.create_shape(
-        points=[275, 300, 700, 300, 500, 800])
+        points=[275, 300, 700, 300, 500, 800], name='polygon')
 
-    # add shapes to factory
+    # add the shapes to factory
     shape_factory.add_shape(ellipse)
     shape_factory.add_shape(circle)
     shape_factory.add_shape(polygon)
+
+    # create group, name it, and add shapes to it
+    group = shape_factory.add_group()
+    group.name = 'shapes'
+    group.add_shape(ellipse)
+    group.add_shape(polygon)
 
     # save it to disk for import later
     CeedDataWriterBase.save_shapes_to_yaml(filename, shape_factory)
 
-If you remember the shape parameters, you can also create the shapes by type
-name:
+You can also create the shapes by type name using
+:meth:`~kivy_garden.painter.PaintCanvasBehavior.create_shape`:
 
 .. code-block:: python
 
-    ellipse = shape_factory.create_shape(
-        'ellipse', center=(250, 450), radius_x=200, radius_y=400)
-    circle = shape_factory.create_shape('circle', center=(700, 300), radius=200)
-    polygon = shape_factory.create_shape(
-        'polygon', points=[275, 300, 700, 300, 500, 800])
+    from ceed.shape import CeedPaintCanvasBehavior
+    from ceed.storage.controller import CeedDataWriterBase
 
+    # create shape factory to which we'll add shapes
+    shape_factory = CeedPaintCanvasBehavior()
+
+    # create shape using config, including name
+    ellipse = shape_factory.create_shape(
+        'ellipse', center=(250, 450), radius_x=200, radius_y=400,
+        name='ellipse')
+    circle = shape_factory.create_shape(
+        'circle', center=(700, 300), radius=200, name='circle')
+    polygon = shape_factory.create_shape(
+        'polygon', points=[275, 300, 700, 300, 500, 800], name='polygon')
+
+    # add the shapes to factory
     shape_factory.add_shape(ellipse)
     shape_factory.add_shape(circle)
     shape_factory.add_shape(polygon)
+
+    # create group, name it, and add shapes to it
+    group = shape_factory.add_group()
+    group.name = 'shapes'
+    group.add_shape(ellipse)
+    group.add_shape(polygon)
+
+    # save it to disk for import later
+    CeedDataWriterBase.save_shapes_to_yaml(filename, shape_factory)
 
 The ProPixx projector used by Ceed has a resolution of 1920x108, so that should
 be the maximum extent of the shapes. The exact available drawing area can also
