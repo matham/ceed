@@ -336,6 +336,7 @@ import usb.util
 from usb.core import Device as USBDevice, Endpoint
 import logging
 from ffpyplayer.pic import Image
+import orjson
 
 from kivy.event import EventDispatcher
 from kivy.properties import NumericProperty, StringProperty, BooleanProperty, \
@@ -353,6 +354,7 @@ from more_kivy_app.utils import yaml_dumps, yaml_loads
 
 from ceed.stage import StageDoneException, last_experiment_stage_name, \
     StageFactoryBase
+from ceed.function import FunctionFactoryBase
 
 try:
     from pypixxlib import _libdpx as libdpx
@@ -1284,6 +1286,10 @@ class ViewControllerBase(EventDispatcher):
     """Saves the timing info for the last frame.
     """
 
+    _event_data = []
+    """Keeps any captured logging events until it is saved to t6he file.
+    """
+
     _n_missed_frames: int = 0
     """Estimated number of frames missed upto and during the last render
     that we have not yet compensated for by dropping frames.
@@ -1375,6 +1381,8 @@ class ViewControllerBase(EventDispatcher):
             App.get_running_app().ceed_data.add_frame_flip(data)
         elif data_type == 'debug_data':
             App.get_running_app().ceed_data.add_debug_data(*data)
+        elif data_type == 'event_data':
+            App.get_running_app().ceed_data.add_event_data(data)
         else:
             assert False
 
@@ -1440,6 +1448,21 @@ class ViewControllerBase(EventDispatcher):
                 Rectangle(texture=tex, pos=(0, h - 1), size=(1, 1),
                           group=self.canvas_name)
 
+    def _data_log_callback(self, obj, ceed_id, event, *args):
+        """Callback the binds to stage/function factory's data events during
+        an experiment so it can be captured and logged.
+        """
+        data = self._event_data
+        # first frame is 1 so adjust to zero
+        data.append(((self.count or 1) - 1, ceed_id, event, args))
+
+        if len(data) < 32:
+            return
+
+        self.request_process_data('event_data', orjson.dumps(
+            data, option=orjson.OPT_NON_STR_KEYS | orjson.OPT_SERIALIZE_NUMPY))
+        del data[:]
+
     def start_stage(self, stage_name: str, canvas):
         """Starts the experiment using the special
         :attr:`~ceed.stage.last_experiment_stage_name` stage.
@@ -1494,6 +1517,12 @@ class ViewControllerBase(EventDispatcher):
             next(self.serializer)
 
         self.current_canvas = canvas
+
+        self._event_data = []
+
+        function_factory: FunctionFactoryBase = _get_app().function_factory
+        function_factory.fbind('on_data_event', self._data_log_callback)
+        stage_factory.fbind('on_data_event', self._data_log_callback)
         self.tick_func = stage_factory.tick_stage(
             1 / self.effective_frame_rate,
             self.effective_frame_rate, stage_name=last_experiment_stage_name,
@@ -1535,6 +1564,11 @@ class ViewControllerBase(EventDispatcher):
         _get_app().stage_factory.remove_shapes_gl_color_instructions(
             self.current_canvas, self.canvas_name)
 
+        stage_factory: StageFactoryBase = _get_app().stage_factory
+        function_factory: FunctionFactoryBase = _get_app().function_factory
+        function_factory.funbind('on_data_event', self._data_log_callback)
+        stage_factory.funbind('on_data_event', self._data_log_callback)
+
         self.tick_func = self.tick_event = self.current_canvas = None
         self.shape_views = []
 
@@ -1560,6 +1594,12 @@ class ViewControllerBase(EventDispatcher):
                 self.request_process_data(
                     'debug_data', ('timing', self._debug_frame_buffer[:i, :]))
             self._debug_frame_buffer = None
+
+        if self._event_data:
+            self.request_process_data('event_data', orjson.dumps(
+                self._event_data,
+                option=orjson.OPT_NON_STR_KEYS | orjson.OPT_SERIALIZE_NUMPY))
+        self._event_data = []
 
     def tick_callback(self, *largs):
         """Called for every CPU Clock frame to handle any processing work.
@@ -1835,6 +1875,8 @@ class ViewSideViewControllerBase(ViewControllerBase):
                 (data_type, (counter_bits.tobytes(), shape_rgba.tobytes())))
         elif data_type == 'frame_flip':
             self.queue_view_write.put_nowait((data_type, data.tobytes()))
+        elif data_type == 'event_data':
+            self.queue_view_write.put_nowait((data_type, data))
         elif data_type == 'debug_data':
             name, arr = data
             self.queue_view_write.put_nowait(
@@ -2063,7 +2105,8 @@ class ControllerSideViewControllerBase(ViewControllerBase):
 
         app = App.get_running_app()
         app.stages_container.\
-            copy_and_resample_experiment_stage(stage_name)
+            copy_and_resample_experiment_stage(stage_name, set_ceed_id=True)
+
         app.dump_app_settings_to_file()
         app.load_app_settings_from_file()
         self.stage_shape_names = sorted(
@@ -2164,7 +2207,7 @@ class ControllerSideViewControllerBase(ViewControllerBase):
             name, arr = data
             data = name, arr.copy()
         else:
-            assert data_type in ('CPU', 'GPU')
+            assert data_type in ('CPU', 'GPU', 'event_data')
 
         self._process_data(data_type, data)
 
@@ -2285,6 +2328,8 @@ class ControllerSideViewControllerBase(ViewControllerBase):
                         value, dtype=[('count', np.uint64), ('t', np.float64)])
 
                     self._process_data(msg, decoded)
+                elif msg == 'event_data':
+                    self._process_data(msg, value)
                 elif msg == 'debug_data':
                     name, data, dtype, shape = value
                     decoded = np.frombuffer(data, dtype=dtype)

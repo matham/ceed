@@ -1471,14 +1471,16 @@ def test_recursive_stage_pre_compute(
 
     for s in (s1, s2, s3, s4, s5, s6):
         if not s.can_pre_compute and not s.disable_pre_compute:
-            for f, items, t_end in s.runtime_functions:
+            for f, items, logs, t_end in s.runtime_functions:
                 assert f is None
                 assert items
                 assert t_end in {5, 10}
+                assert len(logs) == len(items) or len(logs) == len(items) + 1
         else:
-            for f, items, t_end in s.runtime_functions:
+            for f, items, logs, t_end in s.runtime_functions:
                 assert f is not None
                 assert items is None
+                assert logs is None
                 assert t_end is None
 
     for s in (root, g1, g2):

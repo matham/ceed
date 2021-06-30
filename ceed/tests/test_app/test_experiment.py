@@ -13,6 +13,7 @@ from ceed.tests.ceed_app import CeedTestApp
 from ceed.tests.test_stages import get_stage_time_intensity
 from ceed.analysis.merge_data import CeedMCSDataMerger
 from ceed.tests.test_app.examples.stages import ParaAllStage
+from ceed.stage import last_experiment_stage_name
 
 stored_images = []
 stored_b_values = [(.0, .2), (.1, .3)]
@@ -495,6 +496,45 @@ def test_saved_data(experiment_ceed_filename):
                 image, f.experiment_cam_image, exact=not existing_exp)
 
             assert f.led_state.tolist() == [(0, 1, 1, 1)]
+
+
+@pytest.mark.dependency()
+@pytest.mark.parametrize('src', ['internal', 'external'])
+def test_event_data(
+        src, internal_experiment_filename, external_experiment_filename):
+    from ceed.analysis import CeedDataReader
+    fname = internal_experiment_filename
+    if src == 'external':
+        fname = external_experiment_filename
+
+    loops = [
+        [0, i, 'start' + s, [0, ]]
+        for i in (0, 1, 3, 2, 4) for s in ('', '_loop')
+    ]
+
+    for i in range(1, 8):
+        for s in (2, 4):
+            loops.append([i * 30, s, 'end_loop', [i - 1, ]])
+            loops.append([i * 30, s, 'start_loop', [i, ]])
+    for i in (2, 1, 4, 3, 0):
+        loops.append([8 * 30, i, 'end_loop', [7 if i in (2, 4) else 0, ]])
+        loops.append([8 * 30, i, 'end', [7 if i in (2, 4) else 0, ]])
+
+    with CeedDataReader(fname) as f:
+
+        for exp in (0, 1):
+            import pprint
+            f.load_experiment(exp)
+            events = [d[:-1] + [d[-1][:-1], ] for d in f.event_data]
+            pprint.pprint(events)
+            assert events == loops
+
+            stage = f.stage_factory.stage_names[last_experiment_stage_name]
+            assert stage.ceed_id == 0
+            assert stage.stages[0].ceed_id == 1
+            assert stage.stages[0].functions[0].ceed_id == 2
+            assert stage.stages[1].ceed_id == 3
+            assert stage.stages[1].functions[0].ceed_id == 4
 
 
 @pytest.mark.dependency()

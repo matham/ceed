@@ -956,7 +956,7 @@ class CeedDataWriterBase(EventDispatcher):
     @app_error
     def collect_experiment(self, block, shapes, frame_bits, frame_counter,
                            frame_time, frame_time_counter, queue, lock,
-                           led_state):
+                           led_state, event_data, event_data_count):
         """Method that runs in its own thread, for each experiment, that gets
         incoming experiment data over the :attr:`data_queue` and saves it to
         the file.
@@ -1001,6 +1001,13 @@ class CeedDataWriterBase(EventDispatcher):
                 lock.acquire()
                 try:
                     led_state.append(rec)
+                finally:
+                    lock.release()
+            elif msg == 'event_data':
+                lock.acquire()
+                try:
+                    event_data.append(np.frombuffer(value, dtype=np.uint8))
+                    event_data_count.append(len(value))
                 finally:
                     lock.release()
             elif msg == 'debug_data':
@@ -1071,13 +1078,18 @@ class CeedDataWriterBase(EventDispatcher):
                      (0, ), dtype=np.uint8), np.empty((0, ), dtype=np.uint8)),
                 names=('frame', 'r', 'g', 'b')))
 
+        event_data = block.create_data_array(
+                'event_data', 'event_data', dtype=np.uint8, data=[])
+        event_data_count = block.create_data_array(
+                'event_data_count', 'event_data', dtype=np.uint32, data=[])
+
         self.data_queue = Queue()
         self.data_lock = RLock()
         t = self.data_thread = Thread(
             target=self.collect_experiment, name='data_collection',
             args=(block, shapes, frame_bits, frame_counter, frame_time,
                   frame_time_counter, self.data_queue, self.data_lock,
-                  led_state))
+                  led_state, event_data, event_data_count))
         t.start()
 
     def stop_experiment(self):
@@ -1163,6 +1175,19 @@ class CeedDataWriterBase(EventDispatcher):
         """
         if self.data_queue:
             self.data_queue.put_nowait(('debug_data', (name, data)))
+            self.has_unsaved = True
+
+    def add_event_data(self, data: bytes):
+        """Adds event data logged during the experiment to the
+        :attr:`data_queue` to be saved.
+
+        ``data`` is a json encoded bytes object, encoded with ``orjson``. It
+        contains a list of the most recent logged data. See
+        :attr:`~ceed.analysis.CeedDataReader.event_data` for details and for
+        the decoded logs.
+        """
+        if self.data_queue:
+            self.data_queue.put_nowait(('event_data', data))
             self.has_unsaved = True
 
 

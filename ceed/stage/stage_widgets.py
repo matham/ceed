@@ -207,7 +207,8 @@ class StageList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
         shape_widget.initialize_display(shape, self)
         stage.display.shape_widget.add_widget(shape_widget)
 
-    def copy_and_resample_experiment_stage(self, stage_name):
+    def copy_and_resample_experiment_stage(
+            self, stage_name, set_ceed_id: bool = False):
         """Makes a stage ready to be run as an experiment.
 
         It takes the stage, copies it and expands all sub-stages that are
@@ -220,6 +221,10 @@ class StageList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
         name already exists, that stage is first removed.
 
         :param stage_name: The name of the registered stage to copy.
+        :param set_ceed_id: If ``True``, we call
+            :meth:`~ceed.utils.CeedWithID.set_ceed_id` with argument zero on
+            the newly copied root stage to set the stage/sub-stages and
+            functions unique IDs.
         """
         stage = self.stage_factory.stage_names[stage_name].copy_and_resample()
         stage.name = last_experiment_stage_name
@@ -234,6 +239,9 @@ class StageList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
 
         self.stage_factory.add_stage(stage)
         self.show_stage(stage, expand_stage=False)
+
+        if set_ceed_id:
+            stage.set_ceed_id(0)
 
 
 class StageChildrenViewList(DraggableLayoutBehavior, BoxLayout):
@@ -273,8 +281,6 @@ class StageChildrenList(StageChildrenViewList):
             return
 
         if dragged_stage.parent_stage is None:
-            assert dragged_stage in stage_factory.stages
-
             new_stage = stage_factory.get_stage_ref(stage=dragged_stage)
         else:
             new_stage = deepcopy(dragged_stage)

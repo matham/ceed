@@ -28,7 +28,7 @@ setup(
         'kivy_garden.collider~=0.1.0',
         'McsPyDataTools', 'kivy_garden.drag_n_drop~=0.1.0',
         'kivy_garden.painter~=0.2.0', 'trio', 'cpl_media~=0.1.2',
-        'tree-config~=0.1.1', 'pyusb'],
+        'tree-config~=0.1.1', 'pyusb', 'orjson'],
     extras_require={
         'dev': [
             'pytest>=3.6', 'pytest-cov', 'flake8', 'sphinx-rtd-theme',

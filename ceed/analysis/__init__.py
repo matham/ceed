@@ -111,6 +111,7 @@ import nixio as nix
 import pathlib
 from typing import List, Union, Optional, Dict, Any, Tuple
 from numpy.lib.format import open_memmap
+import orjson
 
 from more_kivy_app.utils import yaml_loads
 from more_kivy_app.config import apply_config
@@ -123,7 +124,7 @@ from ffpyplayer.writer import MediaWriter
 from ceed.function import FunctionFactoryBase, register_all_functions, \
     register_external_functions
 from ceed.stage import StageFactoryBase, register_external_stages, \
-    register_all_stages
+    register_all_stages, CeedStage, last_experiment_stage_name
 from ceed.shape import CeedPaintCanvasBehavior
 from ceed.storage.controller import DataSerializerBase, CeedDataWriterBase
 from ceed.view.controller import ViewControllerBase
@@ -502,6 +503,80 @@ class CeedDataReader:
       the projector.
     """
 
+    event_data: list = []
+    """After :meth:`load_experiment`, it is a list of all the events logged
+    during the experiment.
+
+    During an experiment, functions and stages can log arbitrary events to the
+    data file. Each event contains some identifying info as well an arbitrary
+    data payload. The identifying info is a 3-tuple of
+    ``(frame, ceed_id, name)``:
+
+        `frame`: int
+            This is the GPU frame number at which the event was logged. For
+            events logged after the last displayed frame (e.g. when the
+            experiment ends), it'll be the one above the largest frame number.
+            The values can be between zero and the length of
+            :attr:`shapes_intensity_rendered_gpu_rate`, inclusive.
+        `ceed_id`: int
+            The :attr:`~ceed.utils.CeedWithID.ceed_id` of the object doing the
+            logging. :meth:`~ceed.utils.CeedWithID.set_ceed_id` is automatically
+            called on the root stage before an experiment is run. It sets all
+            sub-stage's and all their function's
+            :attr:`~ceed.utils.CeedWithID.ceed_id`, each to a number that is
+            unique among all of them (it's only unique per stages/functions used
+            in that experiment, not globally or even between experiments). You
+            can lookup the :attr:`~ceed.utils.CeedWithID.ceed_id` of a
+            stage/function to locate it in the logs using
+            :attr:`experiment_stage`.
+        `name`: str
+            The event type being logged. It is a unique string, specific to the
+            event. See below for the list of currently built-in events.
+
+    The payload is a list of any of the native python data types (e.g. int,
+    list, str etc.) and simple numpy arrays. It shouldn't be too big otherwise
+    frames may be dropped if it takes too long to process.
+
+
+    :class:`~ceed.function.FunctionFactoryBase` and
+    :class:`~ceed.stage.StageFactoryBase` each define a ``on_data_event``
+    dispatchable event that when dispatched with arguments will be automatically
+    logged during the experiment. Following is the list of built in events
+    dispatched automatically.
+
+    :Function/stage events:
+
+        `start`:
+            Dispatched by each stage and function when they are initially
+            started. Its payload is a 2-item list of the current loop iteration
+            (nominally zero) and the global ceed time (with higher resolution
+            than GPU frames, so any real number) when it started.
+        `end`:
+            Dispatched by each stage and function when they are ended. Its
+            payload is a 2-item list of the final loop iteration number and the
+            global ceed time when it ended. This event may not be logged if
+            e.g. the user suddenly ends the stage so it never reached its end.
+        `loop_start`:
+            Dispatched by each stage and function when each loop iteration
+            starts, including the first loop iteration. Its payload is a 2-item
+            list of the current loop iteration number and the global ceed time
+            when it started.
+        `loop_end`:
+            Dispatched by each stage and function when each loop iteration
+            ends, including the last loop iteration. Its payload is a 2-item
+            list of the loop iteration number that just ended and the global
+            ceed time when it ended. This event may not be logged if
+            e.g. the user suddenly ends the stage so the loop never reached its
+            end.
+
+    Plugins can similarly log events by dispatching to the ``on_data_event``.
+    E.g. ``stage_factory.dispatch('on_data_event', stage.ceed_id, 'drug', .4,
+    'h2o')`` could be dispatched so that event ``drug`` is logged for the
+    current Ceed frame labeled as the specific stage, including a payload of
+    ``[.4, 'h2o']``. The could e.g. mean that .4 ml of the drug was injected
+    at this frame.
+    """
+
     view_controller: ViewControllerBase = None
     """After :meth:`load_experiment`, it is the
     :class:`~ceed.view.controller.ViewControllerBase` instance configured to
@@ -536,6 +611,13 @@ class CeedDataReader:
     """After :meth:`load_experiment`, it is the name of the stage among
     the stages in :attr:`stage_factory` that was used to run the currently
     :attr:`loaded_experiment`.
+    """
+
+    experiment_stage: CeedStage = None
+    """After :meth:`load_experiment`, it is the :class:`~ceed.stage.CeedStage`
+    instance that is configured exactly like the stage used to run the
+    experiment. All the properties, sub-stages, and functions match that
+    original stage.
     """
 
     experiment_notes: str = ''
@@ -855,6 +937,8 @@ class CeedDataReader:
             if name in config_data['app_settings']:
                 apply_config(obj, config_data['app_settings'][name])
         self.populate_config(config_data, shape, func, stage)
+        self.experiment_stage = stage.stage_names[last_experiment_stage_name]
+
         n_sub_frames = 1
         if view.video_mode == 'QUAD4X':
             n_sub_frames = 4
@@ -904,6 +988,20 @@ class CeedDataReader:
         self._shapes_intensity_rendered_gpu_rate = None
 
         self.led_state = np.asarray(block.data_arrays['led_state'])
+
+        self.event_data = []
+        if 'event_data' in block.data_arrays:
+            event_data = np.asarray(block.data_arrays['event_data'])
+            event_data_counter = np.asarray(
+                block.data_arrays['event_data_count'])
+
+            items = []
+            i = 0
+            for count in event_data_counter:
+                items.append(orjson.loads(event_data[i:i + count].tobytes()))
+                i += count
+
+            self.event_data = list(itertools.chain(*items))
 
     def load_mcs_data(self):
         """Loads the MCS electrode data and stores them in the instance

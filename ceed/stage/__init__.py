@@ -176,8 +176,15 @@ as well as some initialization.
 Next, using :meth:`CeedStage.apply_pre_compute` it pre-computes all the stages
 and functions for which it is enabled. See below for details. Finally, the
 stage is sampled, a sample at a time using the :meth:`CeedStage.tick_stage`
-generator. This generator either returns the pre-comuted values, if enabled, or
+generator. This generator either returns the pre-comuted values, computed
+before the experiment started if enabled, or
 it computes the sample values and yields them until the root stage is done.
+
+When the stage is done, it internally raises a :class:`StageDoneException`.
+This gets caught and Ceed knows that the stage is done. At the end of each loop
+iteration and at the end of the overall stage it calls
+:meth:`CeedStage.finalize_loop_iteration`, and
+:meth:`CeedStage.finalize_stage`, respectively.
 
 Customizing stages
 ^^^^^^^^^^^^^^^^^^
@@ -188,8 +195,11 @@ Following are some relevant methods - see their docs for more details.
 * If the stage generates the samples directly without using the function
   classes, :meth:`CeedStage.resample_func_parameters` needs to be augmented if
   the stage has any randomness.
-* :meth:`CeedStage.init_stage_tree` may be augmented if the stage requires
-  additional initialization.
+* :meth:`CeedStage.init_stage_tree`, :meth:`FuncBase.init_func`,
+  :meth:`CeedStage.init_loop_iteration`,
+  :meth:`CeedStage.finalize_loop_iteration`, and
+  :meth:`CeedStage.finalize_stage` may be augmented if any of these stage
+  lifecycle events requires additional initialization/finalization.
 * :meth:`CeedStage.evaluate_stage` is the most approperiate method to overwrite
   to have the stage directly compute values for the shapes. By default it
   goes through all the loops and for each loop it goes through all the functions
@@ -213,6 +223,12 @@ In all cases, :meth:`CeedStage.get_state` may also need to
 be augmented to return any parameters that are part of the instance, otherwise
 they won't be copied when the stage is internally copied and the stage will use
 incorrect values when run e.g. in the second process that runs the experiment.
+
+If stages are pre-computed, it may not have any side-effects, because they
+would occur before the experiment during pre-computing. So if these side-effects
+are needed (e.g. drug delivery), either turn off pre-computing for the stage
+or set its function's duration to negative to disable it for the function and
+consequently the stage containing it.
 
 Running a stage
 ---------------
@@ -575,6 +591,11 @@ See :meth:`CeedStage.evaluate_stage` for further details.
 Other methods could potentially also be overwritten to hook into the stage
 lifecycle, but they generally require more care. See all :class:`CeedStage`
 methods and below for further details.
+
+TODO: if a function or stage has zero duration, any data events logged during
+ intitialization is not logged if pre-computing. Log these as well. Similarly,
+ logs created after the last frame of a stage/function is not logged when
+ pre-computing.
 """
 import importlib
 from copy import deepcopy
@@ -594,7 +615,7 @@ from kivy.graphics import Color, Canvas
 
 from ceed.function import CeedFunc, FuncDoneException, CeedFuncRef, \
     FunctionFactoryBase, FuncBase, CeedFuncOrRefInstance
-from ceed.utils import fix_name, update_key_if_other_key
+from ceed.utils import fix_name, update_key_if_other_key, CeedWithID
 from ceed.shape import CeedShapeGroup, CeedPaintCanvasBehavior, CeedShape
 
 __all__ = (
@@ -646,6 +667,20 @@ class StageFactoryBase(EventDispatcher):
 
         `on_changed`:
             Triggered whenever a stage is added or removed from the factory.
+        on_data_event:
+            The event is dispatched by stages whenever the wish to log
+            something. During an experiment, this data is captured and
+            recorded in the file.
+
+            To dispatch, you must pass the function's
+            :attr:`~ceed.utils.CeedWithID.ceed_id`
+            and a string indicating the event type. You can also pass arbitrary
+            arguments that gets recorded as well. E.g.
+            ``stage_factory.dispatch('on_data_event', stage.ceed_id, 'drug',
+            .4, 'h2o')``.
+
+            See :attr:`~ceed.analysis.CeedDataReader.event_data` for details
+            on default events as well as data type and argument requirements.
     """
 
     stages_cls: Dict[str, Type['StageType']] = {}
@@ -718,7 +753,7 @@ class StageFactoryBase(EventDispatcher):
     package. The second item in the tuple is the bytes content of the file.
     """
 
-    __events__ = ('on_changed', )
+    __events__ = ('on_changed', 'on_data_event')
 
     def __init__(self, function_factory, shape_factory, **kwargs):
         self.shape_factory = shape_factory
@@ -731,6 +766,9 @@ class StageFactoryBase(EventDispatcher):
         self.plugin_sources = {}
 
     def on_changed(self, *largs, **kwargs):
+        pass
+
+    def on_data_event(self, ceed_id, event, *args):
         pass
 
     def get_stage_ref(
@@ -1369,7 +1407,7 @@ class StageFactoryBase(EventDispatcher):
         return obj_values
 
 
-class CeedStage(EventDispatcher):
+class CeedStage(EventDispatcher, CeedWithID):
     '''The stage that controls a time period of an experiment.
 
     See :mod:`ceed.stage` for details.
@@ -1515,13 +1553,23 @@ class CeedStage(EventDispatcher):
         This is for internal use and is not saved with the stage state.
     """
 
+    t_start: NumFraction = 0
+    '''The global time with which the stage or loop iteration was
+    initialized. The value is in seconds.
+
+    Don't set directly, it is set in :meth:`init_stage` and
+    :meth:`init_loop_iteration`. If the stage is :attr:`can_pre_compute`, this
+    is not used after pre-computing the stage.
+    '''
+
     t_end: NumFraction = 0
     """The time at which the loop or stage ended in global timebase.
 
     Set by the stage after each loop is done and is only valid once loop/stage
     is done. It is used by the next stage in :attr:`stages` after this stage to
     know when to start, or for this stage to know when the the next loop
-    started.
+    started. If the stage is :attr:`can_pre_compute`, after pre-computing the
+    stage it is only set to indicate when the stage ends, not for each loop.
 
     If overwriting :meth:`evaluate_stage`, this must be set with the
     last time value passed in that was *not* used, indicating the time the
@@ -1530,10 +1578,28 @@ class CeedStage(EventDispatcher):
     start from this time. Similarly, if manually setting :attr:`runtime_stage`,
     the total stage duration is included and this value is automatically set
     from it in :meth:`evaluate_pre_computed_stage`.
+
+    It is updated before :meth:`finalize_loop_iteration`, and
+    :meth:`finalize_stage` are called.
     """
 
+    loop_count: int = 0
+    '''The current loop iteration.
+
+    This goes from zero (set by :meth:`init_stage` /
+    :meth:`init_loop_iteration`) to :attr:`loop` - 1. The stage is done when
+    it is exactly :attr:`loop` - 1, having looped :attr:`times`.
+    When :meth:`finalize_loop_iteration` and
+    :meth:`finalize_stage` are called, it is the value for the loop
+    iteration that just ended.
+
+    If the stage is :attr:`can_pre_compute`, this is not used after
+    pre-computing the stage.
+    '''
+
     runtime_functions: List[
-        Tuple[Optional[FuncBase], Optional[List[float]], Optional[float]]] = []
+        Tuple[Optional[FuncBase], Optional[List[float]], Optional[list],
+              Optional[float]]] = []
     """Stores the pre-computed function values for those can be pre-computed
     and the original function for the rest.
 
@@ -1543,19 +1609,21 @@ class CeedStage(EventDispatcher):
     :attr:`~ceed.function.FuncBase.duration` is non-negative) and store them
     here interleaved with those that are infinite.
 
-    It is a list of 3-tuples of the same length as :attr:`functions`. Each item
-    is ``(function, intensity, duration)``. It is generated by
+    It is a list of 4-tuples of the same length as :attr:`functions`. Each item
+    is ``(function, intensity, logs, duration)``. It is generated by
     :meth:`pre_compute_functions`.
 
     If the corresponding function is
-    pre-computable, the ``function`` is None and intensity and duration
+    pre-computable, the ``function`` is None and intensity, logs, and duration
     is similar to :attr:`runtime_stage` with the same constraints about each
-    intensity value corresponds to a time point the function is sampled and the
-    ending time-point must be larger or equal to duration, relative to the
-    function start time.
+    intensity and logs value corresponds to a time point the function is sampled
+    and the ending time-point must be larger or equal to duration, relative to
+    the function start time. ``logs`` may be one value larger than
+    ``intensity``, if there's some logs to be emitted on the frame after the
+    last sample.
 
     If the function is not pre-computable, the ``function`` is the original
-    function and ``intensity`` and ``duration`` are None.
+    function and ``intensity``, ``logs``, and ``duration`` are None.
 
     If set manually, ensure that :meth:`apply_pre_compute` is overwritten to do
     nothing, otherwise it may overwrite your value. Similarly,
@@ -1563,8 +1631,8 @@ class CeedStage(EventDispatcher):
     """
 
     runtime_stage: Optional[
-        Tuple[Dict[str, List[RGBA_Type]], int, NumFraction]] = None
-    """A 2-tuple of stage ``(intensity, duration)``.
+        Tuple[Dict[str, List[RGBA_Type]], list, int, NumFraction]] = None
+    """A 4-tuple of stage ``(intensity, logs, count, duration)``.
 
     If :attr:`can_pre_compute`, then this stage's intensity values are
     pre-computed into a list for each shape and stored here. Otherwise, if
@@ -1579,6 +1647,14 @@ class CeedStage(EventDispatcher):
     values at those times. Then during the experiment, as we get time values,
     we instead count the number of tick stage calls and that number is the
     index into the values list that we return for all the shapes.
+
+    Similarly, ``logs`` is a list of any data event logs captured during
+    pre-computing. These logs are replayed during the real experiment for
+    each corresponding frame.
+
+    ``count`` is the number of frames in ``intensity`` and ``logs``.
+    However, ``logs`` may be one value larger than ``intensity`` (``count``), if
+    there's some logs to be emitted on the frame after the last sample.
 
     After the last value in the list is used, the next time point past will
     raise a :class:`StageDoneException` indicating the stage is done and the
@@ -1667,7 +1743,7 @@ class CeedStage(EventDispatcher):
         '''
         d = {'cls': 'CeedStage'}
         for name in ('order', 'name', 'color_r', 'color_g', 'color_b',
-                     'complete_on', 'disable_pre_compute', 'loop'):
+                     'complete_on', 'disable_pre_compute', 'loop', 'ceed_id'):
             d[name] = getattr(self, name)
 
         d['stages'] = [s.get_state(expand_ref=expand_ref) for s in self.stages]
@@ -1941,6 +2017,66 @@ class CeedStage(EventDispatcher):
 
         return list(names), keep_dark
 
+    def init_stage(self, t_start: NumFraction) -> None:
+        """Initializes the stage so it is ready to be used to get
+        the stage values. See also :meth:`init_stage_tree` and
+        :meth:`init_loop_iteration`. If overriding, ``super`` must be called.
+
+        If the stage is :attr:`can_pre_compute`, this is not used after
+        pre-computing the stage.
+
+        :param t_start: The time in seconds in global time. :attr:`t_start`
+            will be set to this value.
+        """
+        self.t_start = t_start
+        self.loop_count = 0
+
+        t = float(t_start)
+        self.stage_factory.dispatch(
+            'on_data_event', self.ceed_id, 'start', self.loop_count, t)
+        self.stage_factory.dispatch(
+            'on_data_event', self.ceed_id, 'start_loop', self.loop_count, t)
+
+    def init_loop_iteration(
+            self, t_start: NumFraction, loop_count: int) -> None:
+        """Initializes the stage at the beginning of each loop.
+
+        It's called internally at the start of every :attr:`loop` iteration,
+        **except the first**. See also :meth:`init_stage_tree` and
+        :meth:`init_stage`. If overriding, ``super`` must be called.
+
+        If the stage is :attr:`can_pre_compute`, this is not used after
+        pre-computing the stage.
+
+        :param t_start: The time in seconds in global time. :attr:`t_start`
+            will be set to this value.
+        :param loop_count: The current loop count.
+        """
+        self.t_start = t_start
+        self.loop_count = loop_count
+
+        self.stage_factory.dispatch(
+            'on_data_event', self.ceed_id, 'start_loop', self.loop_count,
+            float(t_start))
+
+    def finalize_stage(self) -> None:
+        """Finalizes the stage at the end of all its loops, when the
+        stage is done. See also :meth:`finalize_loop_iteration`.
+        If overriding, ``super`` must be called.
+        """
+        self.stage_factory.dispatch(
+            'on_data_event', self.ceed_id, 'end', self.loop_count,
+            float(self.t_end))
+
+    def finalize_loop_iteration(self) -> None:
+        """Finalizes the stage at the end of each loop, including the first
+        and last. See also :meth:`finalize_stage`.
+        If overriding, ``super`` must be called.
+        """
+        self.stage_factory.dispatch(
+            'on_data_event', self.ceed_id, 'end_loop', self.loop_count,
+            float(self.t_end))
+
     def tick_stage(
             self, shapes: Dict[str, List[RGBA_Type]], last_end_t: NumFraction
     ) -> Generator[None, NumFraction, None]:
@@ -2004,9 +2140,10 @@ class CeedStage(EventDispatcher):
         generally safer and simpler to customize :meth:`evaluate_stage` instead
         and have Ceed generated the pre-compute values from it.
         """
+        dispatch = self.stage_factory.dispatch
         # next t to use. On the last t not used raises StageDoneException
         t = yield
-        stage_data, n, t_end = self.runtime_stage
+        stage_data, logs, n, t_end = self.runtime_stage
 
         # stage was sampled with a init value of zero, so end is
         # relative to current sample time, not end time of last
@@ -2018,11 +2155,17 @@ class CeedStage(EventDispatcher):
         for i in range(n):
             for name, colors in stage_data.items():
                 shapes[name].append(colors[i])
+            for log in logs[i]:
+                dispatch('on_data_event', *log)
             prev_t = t
             t = yield
 
         assert prev_t <= self.t_end or isclose(prev_t, self.t_end)
         assert t >= self.t_end or isclose(t, self.t_end)
+
+        if len(logs) > n:
+            for log in logs[n]:
+                dispatch('on_data_event', *log)
 
         raise StageDoneException
 
@@ -2062,13 +2205,17 @@ class CeedStage(EventDispatcher):
                 raise StageDoneException
         """
         # next t to use. On the last t not used raises StageDoneException
+        self.init_stage(last_end_t)
+
         pad_stage_ticks = self.pad_stage_ticks
         names, keep_dark = self._get_shape_names()
 
         t = yield
 
         count = 0
-        for _ in range(self.loop):
+        for i in range(self.loop):
+            if i:
+                self.init_loop_iteration(last_end_t, i)
             tick = self.tick_stage_loop(shapes, last_end_t)
             next(tick)
 
@@ -2079,7 +2226,9 @@ class CeedStage(EventDispatcher):
                     t = yield
             except StageDoneException:
                 last_end_t = self.t_end
+                self.finalize_loop_iteration()
 
+        self.finalize_stage()
         if count >= pad_stage_ticks:
             raise StageDoneException
 
@@ -2220,14 +2369,15 @@ class CeedStage(EventDispatcher):
     def pre_compute_functions(
             self, frame_rate: Fraction
     ) -> List[Tuple[
-            Optional[FuncBase], Optional[List[float]], Optional[float]]]:
+            Optional[FuncBase], Optional[List[float]], Optional[list],
+            Optional[float]]]:
         """Goes through all the stage's functions and pre-computes those
         that are finite and can be pre-computed.
 
         Returns a list of pre-computed values/original functions, one for each
-        function of the stage. Each item is a 3-tuple of either
-        ``(func, None, None)`` when the function is not finite, otherwise
-        ``(None, pre_computed_values, end_time)``.
+        function of the stage. Each item is a 4-tuple of either
+        ``(func, None, None, None)`` when the function is not finite, otherwise
+        ``(None, pre_computed_values, logs, end_time)``.
 
         This allows only some functions to be pre-computed.
         """
@@ -2235,6 +2385,13 @@ class CeedStage(EventDispatcher):
         t = 0
         last_end_t = None
         values = []
+        logs = []
+
+        current_log = []
+
+        def save_log(obj, ceed_id, event, *args):
+            current_log.append((ceed_id, event, *args))
+            return True
 
         for func in self.functions:
             # this function should have been copied when it was created for
@@ -2243,46 +2400,69 @@ class CeedStage(EventDispatcher):
 
             # we hit a un-cacheable function, reset
             if func.duration < 0:
-                if values:
-                    computed.append((None, values, last_end_t))
+                if current_log:
+                    logs.append(current_log)
+                    current_log = []
+                if values or logs:
+                    computed.append((None, values, logs, last_end_t))
 
-                computed.append((func, None, None))
+                computed.append((func, None, None, None))
                 t = 0
                 last_end_t = None
                 values = []
+                logs = []
                 continue
 
+            uid = self.function_factory.fbind('on_data_event', save_log)
             try:
                 func.init_func(
                     t / frame_rate if last_end_t is None else last_end_t
                 )
                 values.append(func(t / frame_rate))
+                logs.append(current_log)
+                current_log = []
 
                 while True:
                     t += 1
                     values.append(func(t / frame_rate))
+                    logs.append(current_log)
+                    current_log = []
             except FuncDoneException:
                 last_end_t = func.t_end
                 assert last_end_t >= 0, "Should be concrete value"
+            self.function_factory.unbind_uid('on_data_event', uid)
 
-        if values:
-            computed.append((None, values, last_end_t))
+        if current_log:
+            logs.append(current_log)
+
+        if values or logs:
+            computed.append((None, values, logs, last_end_t))
 
         return computed
 
     def pre_compute_stage(
             self, frame_rate: Fraction, t_start: NumFraction, shapes: Set[str]
-    ) -> Tuple[Dict[str, List[RGBA_Type]], int, NumFraction]:
+    ) -> Tuple[Dict[str, List[RGBA_Type]], list, int, NumFraction]:
         """If the stage is to be pre-computed, :meth:`apply_pre_compute`
         uses this to pre-compute the stage intensity values for all the
         shapes for all time points when the stage would be active.
 
-        It returns the shape intensity values for all time points as well as
-        the end time when the stage ended relative to zero time (not
+        It returns the shape intensity values and data logs for all time points
+        as well as the end time when the stage ended relative to zero time (not
         ``t_start``).
         """
         stage_data = {s: [] for s in shapes}
         stage_data_temp = {s: [] for s in shapes}
+        logs = []
+
+        current_log = []
+
+        def save_log(obj, ceed_id, event, *args):
+            current_log.append((ceed_id, event, *args))
+            return True
+
+        func_uid = self.function_factory.fbind('on_data_event', save_log)
+        stage_uid = self.stage_factory.fbind('on_data_event', save_log)
 
         # we ignore t_start because we sample relative to zero so we can just
         # add end time to actual passed in time at runtime
@@ -2305,11 +2485,19 @@ class CeedStage(EventDispatcher):
 
                     del colors[:]
 
+                logs.append(current_log)
+                current_log = []
                 i += 1
         except StageDoneException:
             pass
 
-        return stage_data, i, self.t_end
+        self.function_factory.unbind_uid('on_data_event', func_uid)
+        self.stage_factory.unbind_uid('on_data_event', stage_uid)
+
+        if current_log:
+            logs.append(current_log)
+
+        return stage_data, logs, i, self.t_end
 
     def tick_funcs(
             self, last_end_t: NumFraction
@@ -2322,10 +2510,11 @@ class CeedStage(EventDispatcher):
         values, assuming the passed in time is exactly those values used
         when pre-computing relative to ``last_end_t``.
         '''
+        dispatch = self.stage_factory.dispatch
         # always get a time stamp
         t = yield
 
-        for func, values, end_t in self.runtime_functions:
+        for func, values, logs, end_t in self.runtime_functions:
             # values were pre-computed
             if func is None:
                 # this was sampled with a init value of zero, so end is
@@ -2334,9 +2523,16 @@ class CeedStage(EventDispatcher):
                 # ended before the sample. So we align with sample time
                 last_end_t = t + end_t
                 prev_t = t
-                for value in values:
+                for value, log in zip(values, logs):
+                    for item in log:
+                        dispatch('on_data_event', *item)
                     prev_t = t
                     t = yield value
+
+                if len(logs) > len(values):
+                    for item in logs[len(values)]:
+                        dispatch('on_data_event', *item)
+
                 assert prev_t <= last_end_t or isclose(prev_t, last_end_t)
                 assert t >= last_end_t or isclose(t, last_end_t)
                 continue
@@ -2377,7 +2573,8 @@ class CeedStage(EventDispatcher):
         self.can_pre_compute = funcs_are_finite and can_pre_compute_stages \
             and not self.disable_pre_compute
 
-        self.runtime_functions = [(func, None, None) for func in self.functions]
+        self.runtime_functions = [
+            (func, None, None, None) for func in self.functions]
         self.runtime_stage = None
 
     def apply_pre_compute(
@@ -2474,6 +2671,22 @@ class CeedStage(EventDispatcher):
                 else:
                     shapes.add(shape.shape.name)
         return shapes
+
+    def set_ceed_id(self, min_available: int) -> int:
+        min_available = super().set_ceed_id(min_available)
+        for func in self.functions:
+            if isinstance(func, CeedFuncRef):
+                raise TypeError('Cannot set ceed id for ref function')
+
+            min_available = func.set_ceed_id(min_available)
+
+        for stage in self.stages:
+            if isinstance(stage, CeedStageRef):
+                raise TypeError('Cannot set ceed id for ref stage')
+
+            min_available = stage.set_ceed_id(min_available)
+
+        return min_available
 
 
 class CeedStageRef:

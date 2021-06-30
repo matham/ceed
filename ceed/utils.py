@@ -10,7 +10,7 @@ from typing import List, Tuple, Any, Union
 
 __all__ = (
     'fix_name', 'update_key_if_other_key', 'collapse_list_to_counts',
-    'get_plugin_modules',
+    'get_plugin_modules', 'CeedWithID',
 )
 
 _name_pat = re.compile('^(.+)-([0-9]+)$')
@@ -156,3 +156,31 @@ def get_plugin_modules(
             packages.append(package)
 
     return packages, files
+
+
+class CeedWithID:
+    """Adds :attr:`ceed_id` to the class so that any inheriting class instance
+    can be associated with a unique integer ID for logging purposes.
+
+    The ID is not automatically set for every object, it is manually set
+    when :meth:`set_ceed_id` is called. See stage/function for when it's called.
+    """
+
+    ceed_id: int = 0
+    """The integer id of the object.
+    """
+
+    def set_ceed_id(self, min_available: int) -> int:
+        """Sets the ID of this and any sub objects, each to a number equal or
+        greater than ``min_available`` and returns the next minimum number
+        available to be used.
+
+        See :attr:`~ceed.analysis.CeedDataReader.event_data` for more details.
+
+        :param min_available: The minimum number available to be used for the
+            ID so it is unique.
+        :return: The next minimum available number that can be used. Any number
+            larger or equal to it is free to be used.
+        """
+        self.ceed_id = min_available
+        return min_available + 1

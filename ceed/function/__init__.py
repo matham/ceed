@@ -488,6 +488,9 @@ shapes intensity. :meth:`CeedFunc.__call__` will call
 :meth:`FuncBase.init_loop_iteration` as the timestemps reach the end of its
 domain and it loops around (if any). When done with the loops, it'll
 raise a :class:`FuncDoneException` to indicate the function is done.
+At the end of each loop iteration and at the end of the overall function it
+calls :meth:`FuncBase.finalize_loop_iteration`, and
+:meth:`FuncBase.finalize_func`, respectively.
 
 Customizing functions
 ^^^^^^^^^^^^^^^^^^^^^
@@ -498,9 +501,11 @@ Following are some relevant methods - see their docs for more details.
 * If the function generates the samples directly without using the public
   interfaces classes, :meth:`FuncBase.resample_parameters` needs to be
   augmented if the function has any randomness.
-* :meth:`FuncBase.init_func_tree`, :meth:`FuncBase.init_func`, and
-  :meth:`FuncBase.init_loop_iteration` may be augmented if any of these function
-  lifecycle events requires additional initialization.
+* :meth:`FuncBase.init_func_tree`, :meth:`FuncBase.init_func`,
+  :meth:`FuncBase.init_loop_iteration`,
+  :meth:`FuncBase.finalize_loop_iteration`, and
+  :meth:`FuncBase.finalize_func` may be augmented if any of these function
+  lifecycle events requires additional initialization/finalization.
 * :meth:`CeedFunc.__call__` is the method to inherit from and augment
   to return custom values from your function. See the built-in plugins, such as
   :class:`ceed.function.plugin.LinearFunc` for examples, or below.
@@ -510,6 +515,11 @@ In all cases, :meth:`FuncBase.get_state` may also need to
 be augmented to return any parameters that are part of the instance, otherwise
 they won't be copied when the function is copied and the function will use
 incorrect values during an actual experiment when all functions are copied.
+
+If functions are pre-computed, it may not have any side-effects, because they
+would occur before the experiment during pre-computing. So if these side-effects
+are needed (e.g. drug delivery), either turn off pre-computing for its stage
+or set the function's duration to negative to disable it for the function.
 
 Saving and restoring functions
 ------------------------------
@@ -663,7 +673,7 @@ from kivy.event import EventDispatcher
 from kivy.properties import StringProperty, NumericProperty, BooleanProperty, \
     ObjectProperty, DictProperty, AliasProperty
 
-from ceed.utils import fix_name, update_key_if_other_key
+from ceed.utils import fix_name, update_key_if_other_key, CeedWithID
 from ceed.function.param_noise import ParameterNoiseFactory, NoiseBase
 
 __all__ = (
@@ -705,9 +715,23 @@ class FunctionFactoryBase(EventDispatcher):
         on_changed:
             The event is triggered every time a function is added or removed
             from the factory or if a class is registered.
+        on_data_event:
+            The event is dispatched by functions whenever the wish to log
+            something. During an experiment, this data is captured and
+            recorded in the file.
+
+            To dispatch, you must pass the function's
+            :attr:`~ceed.utils.CeedWithID.ceed_id`
+            and a string indicating the event type. You can also pass arbitrary
+            arguments that gets recorded as well. E.g.
+            ``function_factory.dispatch('on_data_event', func.ceed_id, 'drug',
+            .4, 'h2o')``.
+
+            See :attr:`~ceed.analysis.CeedDataReader.event_data` for details
+            on default events as well as data type and argument requirements.
     """
 
-    __events__ = ('on_changed', )
+    __events__ = ('on_changed', 'on_data_event')
 
     funcs_cls: Dict[str, Type[FuncType]] = {}
     '''Dict whose keys is the name of the function classes registered
@@ -795,6 +819,9 @@ class FunctionFactoryBase(EventDispatcher):
         self.param_noise_factory = ParameterNoiseFactory()
 
     def on_changed(self, *largs, **kwargs):
+        pass
+
+    def on_data_event(self, ceed_id, event, *args):
         pass
 
     def get_func_ref(
@@ -1094,7 +1121,7 @@ class FunctionFactoryBase(EventDispatcher):
         return funcs, name_map
 
 
-class FuncBase(EventDispatcher):
+class FuncBase(EventDispatcher, CeedWithID):
     """The base class for all functions.
 
     See :mod:`ceed.function` for details.
@@ -1275,7 +1302,7 @@ class FuncBase(EventDispatcher):
     :meth:`get_relative_time` removes it to get to local time.
     The value is in seconds. See :mod:`ceed.function` for more details.
 
-    Don't set directly, it is set with :meth:`init_func` and
+    Don't set directly, it is set in :meth:`init_func` and
     :meth:`init_loop_iteration`.
     '''
 
@@ -1286,14 +1313,20 @@ class FuncBase(EventDispatcher):
     :meth:`CeedFunc.is_loop_done` returned True) and is typically the second
     value from :meth:`get_domain`, or the current time value if that is
     negative.
+
+    It is updated before :meth:`finalize_loop_iteration`, and
+    :meth:`finalize_func` are called.
     """
 
     loop_count: int = 0
     '''The current loop iteration.
 
-    This goes from zero (reset by :meth:`init_func` /
+    This goes from zero (set by :meth:`init_func` /
     :meth:`init_loop_iteration`) to :attr:`loop`. The function is done when
     it is exactly :attr:`loop`, having looped :attr:`times`.
+    When :meth:`finalize_loop_iteration` and
+    :meth:`finalize_func` are called, it is the value for the loop
+    iteration that just ended.
 
     See also :mod:`ceed.function`.
     '''
@@ -1541,6 +1574,7 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
             'noisy_parameters':
                 {k: v.get_config() for k, v in self.noisy_parameters.items()},
             'noisy_parameter_samples': self.noisy_parameter_samples,
+            'ceed_id': self.ceed_id,
         }
         return d
 
@@ -1682,7 +1716,8 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
 
     def init_func(self, t_start: NumFraction) -> None:
         """Initializes the function so it is ready to be called to get
-        the function values. See also :meth:`init_func_tree`.
+        the function values. See also :meth:`init_func_tree` and
+        :meth:`init_loop_iteration`. If overriding, ``super`` must be called.
 
         :param t_start: The time in seconds in global time. :attr:`t_start`
             will be set to this value. All subsequent calls to the
@@ -1695,11 +1730,18 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
         for key, values in self.noisy_parameter_samples.items():
             setattr(self, key, values[loop_tree_count])
 
+        t = float(t_start)
+        self.function_factory.dispatch(
+            'on_data_event', self.ceed_id, 'start', self.loop_count, t)
+        self.function_factory.dispatch(
+            'on_data_event', self.ceed_id, 'start_loop', self.loop_count, t)
+
     def init_loop_iteration(self, t_start: NumFraction) -> None:
         """Initializes the function at the beginning of each loop.
 
         It's called internally at the start of every :attr:`loop` iteration,
-        **except the first**. See also :meth:`init_func_tree`.
+        **except the first**. See also :meth:`init_func_tree` and
+        :meth:`init_func`. If overriding, ``super`` must be called.
 
         :param t_start: The time in seconds in global time. :attr:`t_start`
             will be set to this value. All subsequent calls to the
@@ -1710,6 +1752,28 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
         loop_tree_count = self.loop_tree_count
         for key, values in self.noisy_parameter_samples.items():
             setattr(self, key, values[loop_tree_count])
+
+        self.function_factory.dispatch(
+            'on_data_event', self.ceed_id, 'start_loop', self.loop_count,
+            float(t_start))
+
+    def finalize_func(self) -> None:
+        """Finalizes the function at the end of all its loops, when the
+        function is done. See also :meth:`finalize_loop_iteration`.
+        If overriding, ``super`` must be called.
+        """
+        self.function_factory.dispatch(
+            'on_data_event', self.ceed_id, 'end', self.loop_count,
+            float(self.t_end))
+
+    def finalize_loop_iteration(self) -> None:
+        """Finalizes the function at the end of each loop, including the first
+        and last. See also :meth:`finalize_func`.
+        If overriding, ``super`` must be called.
+        """
+        self.function_factory.dispatch(
+            'on_data_event', self.ceed_id, 'end_loop', self.loop_count,
+            float(self.t_end))
 
     def get_domain(
             self, current_iteration: bool = True
@@ -1783,11 +1847,15 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
                 f'Called after the current loop iteration ({self.loop_count}) '
                 f'reached the end of all loops ({self.loop})')
 
+        self.finalize_loop_iteration()
+        if self.loop_count + 1 >= self.loop:
+            self.finalize_func()
+            self.loop_count += 1
+            self.loop_tree_count += 1
+            return False
+
         self.loop_count += 1
         self.loop_tree_count += 1
-
-        if self.loop_count >= self.loop:
-            return False
 
         self.init_loop_iteration(t)
         return True
@@ -1983,6 +2051,7 @@ class CeedFunc(FuncBase):
                 'Cannot call function {} with time {} less than the '
                 'function start {}'.format(self, t, self.t_start))
         if self.loop_count >= self.loop:
+            self.finalize_func()
             raise FuncDoneException
 
         while True:
@@ -2106,10 +2175,17 @@ line 934, in __call__
                 'function start {}'.format(self, self.t_start))
 
         if self.loop_count >= self.loop:
+            # it can be called multiple times, but shouldn't
+            if not self.loop:
+                self.t_end = self.t_start
+            self.finalize_func()
             raise FuncDoneException
 
         funcs = self.funcs
         if not funcs or self._func_idx >= len(self.funcs):
+            if not funcs:
+                self.t_end = self.t_start
+            self.finalize_func()
             raise FuncDoneException
 
         while True:
@@ -2123,6 +2199,7 @@ line 934, in __call__
                 self._func_idx += 1
 
                 if self._func_idx >= len(self.funcs):
+                    self.end_t = end_t
                     if not self.tick_loop(end_t):
                         break
                 else:
@@ -2300,6 +2377,16 @@ line 934, in __call__
             tree = (parent_tree or []) + [self]
             func.resample_parameters(
                 parent_tree=tree, is_forked=is_forked, base_loops=base_loops)
+
+    def set_ceed_id(self, min_available: int) -> int:
+        min_available = super().set_ceed_id(min_available)
+        for func in self.funcs:
+            if isinstance(func, CeedFuncRef):
+                raise TypeError('Cannot set ceed id for ref function')
+
+            min_available = func.set_ceed_id(min_available)
+
+        return min_available
 
 
 def register_all_functions(function_factory: FunctionFactoryBase):

@@ -953,6 +953,44 @@ async def test_moat_single_stage_shapes(stage_app: CeedTestApp, tmp_path):
     f.close_h5()
 
 
+@pytest.mark.parametrize('func', [True, False])
+async def test_event_data_empty(stage_app: CeedTestApp, tmp_path, func):
+    from ..test_stages import create_2_shape_stage
+    from ceed.function.plugin import ConstFunc
+    from ceed.analysis import CeedDataReader
+
+    root, s1, s2, shape1, shape2 = create_2_shape_stage(
+        stage_app.app.stage_factory, show_in_gui=True, app=stage_app)
+
+    if func:
+        s1.stage.add_func(ConstFunc(
+            function_factory=stage_app.app.function_factory, duration=0))
+
+    stage_app.app.view_controller.use_software_frame_rate = False
+    stage_app.app.view_controller.request_stage_start(root.name)
+    await wait_experiment_done(stage_app)
+
+    filename = str(tmp_path / 'event_data_empty.h5')
+    stage_app.app.ceed_data.save(filename=filename)
+
+    if func:
+        order = (0, 1, 3, 2), (2, 1, 3, 0)
+    else:
+        order = (0, 1, 2), (1, 2, 0)
+    loops = [
+        [0, i, 'start' + s, [0, ]] for i in order[0] for s in ('', '_loop')
+    ]
+    loops += [
+        [0, i, 'end' + s, [0, ]] for i in order[1] for s in ('_loop', '')
+    ]
+
+    with CeedDataReader(filename) as f:
+        f.load_experiment(0)
+        events = [d[:-1] + [d[-1][:-1], ] for d in f.event_data]
+        print(events)
+        assert loops == events
+
+
 @pytest.mark.parametrize(
     'quad,sub_frames', [('RGB', 1), ('QUAD4X', 4), ('QUAD12X', 12)])
 @pytest.mark.parametrize('skip', [False, True])
