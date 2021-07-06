@@ -970,7 +970,7 @@ async def test_event_data_empty(stage_app: CeedTestApp, tmp_path, func):
     stage_app.app.view_controller.skip_estimated_missed_frames = False
     stage_app.app.view_controller.frame_rate = 10
     stage_app.app.view_controller.request_stage_start(root.name)
-    await wait_experiment_done(stage_app)
+    await wait_experiment_done(stage_app, timeout=180)
 
     filename = str(tmp_path / 'event_data_empty.h5')
     stage_app.app.ceed_data.save(filename=filename)
