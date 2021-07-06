@@ -967,6 +967,8 @@ async def test_event_data_empty(stage_app: CeedTestApp, tmp_path, func):
             function_factory=stage_app.app.function_factory, duration=0))
 
     stage_app.app.view_controller.use_software_frame_rate = False
+    stage_app.app.view_controller.skip_estimated_missed_frames = False
+    stage_app.app.view_controller.frame_rate = 10
     stage_app.app.view_controller.request_stage_start(root.name)
     await wait_experiment_done(stage_app)
 

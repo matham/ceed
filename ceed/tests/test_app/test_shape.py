@@ -325,8 +325,8 @@ async def test_shape_area(
     shape1, shape2 = (cls(paint_app, painter) for cls in shape_classes)
     await paint_app.wait_clock_frames(2)
 
-    assert shape1.area * 0.99 < shape1.shape.area < shape1.area * 1.01
-    assert shape2.area * 0.99 < shape2.shape.area < shape2.area * 1.01
+    assert shape1.area * 0.95 < shape1.shape.area < shape1.area * 1.05
+    assert shape2.area * 0.95 < shape2.shape.area < shape2.area * 1.05
 
     assert painter.shapes == [shape1.shape, shape2.shape]
     shape1.check_shape_visible(True)
@@ -351,7 +351,7 @@ async def test_shape_area(
 
     assert shape1.area * 0.99 / 2. < \
         shape1.shape.area < shape1.area * 1.01 / 2.
-    assert shape2.area * 0.99 < shape2.shape.area < shape2.area * 1.01
+    assert shape2.area * 0.95 < shape2.shape.area < shape2.area * 1.05
     shape1.check_resize_by_area(0.5)
 
 
@@ -377,7 +377,7 @@ async def test_multiple_shapes_draw(
     await shape1.draw()
     await paint_app.wait_clock_frames(2)
     assert painter.shapes == [shape1.shape]
-    assert shape1.area * 0.99 < shape1.shape.area < shape1.area * 1.01
+    assert shape1.area * 0.95 < shape1.shape.area < shape1.area * 1.05
     shape1.check_shape_visible(True)
     assert len({shape.name for shape in painter.shapes}) == 1, \
         'Names must be unique'
@@ -385,7 +385,7 @@ async def test_multiple_shapes_draw(
     await shape2.draw()
     await paint_app.wait_clock_frames(2)
     assert painter.shapes == [shape1.shape, shape2.shape]
-    assert shape2.area * 0.99 < shape2.shape.area < shape2.area * 1.01
+    assert shape2.area * 0.95 < shape2.shape.area < shape2.area * 1.05
     shape1.check_shape_visible(True)
     shape2.check_shape_visible(True)
     assert len({shape.name for shape in painter.shapes}) == 2, \
