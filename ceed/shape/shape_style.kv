@@ -117,7 +117,7 @@
                 height: '100dp'
                 spacing: '5dp'
                 ScrollView:
-                    bar_width: '10dp'
+                    bar_width: '15dp'
                     scroll_type: ['bars']
                     ShapeGroupList:
                         test_name: 'shape group container'
@@ -125,7 +125,7 @@
                         id: shape_groups
                         orientation: 'vertical'
                         spacing: '3dp'
-                        padding: '0dp', '0dp', '0dp', '12dp'
+                        padding: '0dp', '0dp', '10dp', '12dp'
                         size_hint_y: None
                         height: self.minimum_height
                         size_hint_min_x: self.minimum_width
@@ -202,14 +202,14 @@
                         on_state: app.shape_factory.show_label = self.state == 'down'
                 Widget
         ScrollView:
-            bar_width: '10dp'
+            bar_width: '15dp'
             scroll_type: ['bars']
             ShapeList:
                 on_kv_post: app.shapes_container = self
                 id: shapes
                 orientation: 'vertical'
                 spacing: '3dp'
-                padding: 0, 0, 0, '12dp'
+                padding: 0, 0, '10dp', '12dp'
                 size_hint_y: None
                 height: self.minimum_height
                 size_hint_min_x: self.minimum_width

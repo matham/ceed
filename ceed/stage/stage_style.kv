@@ -54,7 +54,7 @@
                         flat_drop_text_color: app.theme.text_primary
                         flat_border_color: app.theme.divider
         ScrollView:
-            bar_width: '10dp'
+            bar_width: '15dp'
             scroll_type: ['bars']
             StageList:
                 id: stages
@@ -62,7 +62,7 @@
                 on_kv_post: app.stages_container = self
                 orientation: 'vertical'
                 spacing: '3dp'
-                padding: '0dp', 0, 0, '12dp'
+                padding: '0dp', 0, '10dp', '12dp'
                 stage_factory: app.stage_factory
                 size_hint_y: None
                 height: self.minimum_height

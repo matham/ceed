@@ -54,7 +54,7 @@
                         flat_drop_text_color: app.theme.text_primary
                         flat_border_color: app.theme.divider
         ScrollView:
-            bar_width: '10dp'
+            bar_width: '15dp'
             scroll_type: ['bars']
             FuncList:
                 on_kv_post: app.funcs_container = self
@@ -66,7 +66,7 @@
                 function_factory: app.function_factory
                 orientation: 'vertical'
                 spacing: '3dp'
-                padding: '0dp', '0dp', '0dp', '12dp'
+                padding: '0dp', '0dp', '10dp', '12dp'
                 size_hint_y: None
                 height: self.minimum_height
                 size_hint_min_x: self.minimum_width
