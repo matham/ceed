@@ -87,7 +87,8 @@ class StageList(DraggableLayoutBehavior, ShowMoreSelection, WidgetList,
         src_stage: CeedStage = self.stage_factory.stage_names[name]
 
         if parent is not None:
-            if parent.can_other_stage_be_added(src_stage):
+            if not isinstance(parent, CeedStageRef
+                              ) and parent.can_other_stage_be_added(src_stage):
                 stage = self.stage_factory.get_stage_ref(stage=src_stage)
                 parent.add_stage(stage)
                 self.show_sub_stage(stage, parent)
