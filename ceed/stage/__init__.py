@@ -193,7 +193,7 @@ A :class:`CeedStage` has multiple methods that can be overwritten by a plugin.
 Following are some relevant methods - see their docs for more details.
 
 * If the stage generates the samples directly without using the function
-  classes, :meth:`CeedStage.resample_func_parameters` needs to be augmented if
+  classes, :meth:`CeedStage.resample_parameters` needs to be augmented if
   the stage has any randomness.
 * :meth:`CeedStage.init_stage_tree`, :meth:`FuncBase.init_func`,
   :meth:`CeedStage.init_loop_iteration`,
@@ -604,6 +604,7 @@ from fractions import Fraction
 from os.path import dirname
 import operator
 from math import isclose
+from random import shuffle
 from functools import reduce
 from typing import Dict, List, Union, Tuple, Optional, Generator, Set, Type, \
     TypeVar
@@ -1517,6 +1518,58 @@ class CeedStage(EventDispatcher, CeedWithID):
     this is ignored.
     '''
 
+    randomize_child_order: bool = BooleanProperty(False)
+    """Whether the sub-stages order should be randomly re-shuffled before each
+    experiment.
+
+    If True, :attr:`stages` order stays the same, but the stage executes them
+    in random order. The order is pre-sampled before the stage is executed and
+    the given order is then used during the stage.
+
+    The order is stored in :attr:`shuffled_order`.
+
+    See also :attr:`randomize_order_each_loop`, :attr:`lock_after_forked`,
+    :attr:`loop_count`, and :attr:`loop_tree_count`.
+    """
+
+    randomize_order_each_loop = BooleanProperty(True)
+    """When :attr:`randomize_child_order` is True, whether the child order
+    should be re-shuffled for each loop iteration including loops of parent
+    and parent of parents etc. (True) or whether we shuffle
+    once before each experiment and use that order for all loop iterations.
+
+    See also :attr:`randomize_child_order`, :attr:`lock_after_forked`,
+    :attr:`loop_count`, and :attr:`loop_tree_count`.
+    """
+
+    lock_after_forked: bool = BooleanProperty(False)
+    """Stages can reference other stages. After the reference stages
+    are expanded and copied before running the stage as an experiment, if
+    :attr:`lock_after_forked` is False then :attr:`shuffled_order` is
+    re-sampled again for each copied stage. If it's True, then it is not
+    re-sampled again and all the stages referencing the original stage will
+    share the same randomized re-ordering as the referenced stage.
+
+    See also :attr:`copy_and_resample`.
+    """
+
+    shuffled_order: List[List[int]] = []
+    """When :attr:`randomize_child_order` is True, it is a list of the
+    :attr:`stages` ordering that we should use for each loop.
+
+    It is a list of lists, and each internal list corresponds to a single loop
+    iteration as indexed by :attr:`loop_tree_count`. If we don't
+    :attr:`randomize_order_each_loop`, then it contains a single list used for
+    all the loops, otherwise there's one for each loop.
+
+    If not :attr:`randomize_child_order`, then it's empty and they run in
+    :attr:`stages` order.
+
+    If there are more loops than number of items in the outer list, we use the
+    last sub-list for the remaining loops. If not all :attr:`stages` indices are
+    included in the internal lists, those stages are skipped.
+    """
+
     stage_factory: StageFactoryBase = None
     """The :class:`StageFactoryBase` this stage is associated with.
     """
@@ -1595,7 +1648,27 @@ class CeedStage(EventDispatcher, CeedWithID):
 
     If the stage is :attr:`can_pre_compute`, this is not used after
     pre-computing the stage.
+
+    See also :attr:`loop_tree_count`.
     '''
+
+    loop_tree_count: int = 0
+    """The current iteration, starting from zero, and incremented for each loop
+    of the stage, including outside loops that loop over the stage.
+
+    E.g.::
+
+        Stage:
+            name: root
+            loop: 2
+            Stage:
+                name: child
+                loop: 3
+
+    Then the root and child stage's :attr:`loop_count` will be 0 - 1, and 0 - 2,
+    respectively, while :attr:`loop_tree_count` will be 0 - 1 and 0 - 5,
+    respectively.
+    """
 
     runtime_functions: List[
         Tuple[Optional[FuncBase], Optional[List[float]], Optional[list],
@@ -1742,8 +1815,11 @@ class CeedStage(EventDispatcher, CeedWithID):
             A dict with all the configuration data.
         '''
         d = {'cls': 'CeedStage'}
-        for name in ('order', 'name', 'color_r', 'color_g', 'color_b',
-                     'complete_on', 'disable_pre_compute', 'loop', 'ceed_id'):
+        for name in (
+                'order', 'name', 'color_r', 'color_g', 'color_b',
+                'complete_on', 'disable_pre_compute', 'loop', 'ceed_id',
+                'randomize_child_order', 'randomize_order_each_loop',
+                'lock_after_forked', 'shuffled_order'):
             d[name] = getattr(self, name)
 
         d['stages'] = [s.get_state(expand_ref=expand_ref) for s in self.stages]
@@ -2033,12 +2109,13 @@ class CeedStage(EventDispatcher, CeedWithID):
 
         t = float(t_start)
         self.stage_factory.dispatch(
-            'on_data_event', self.ceed_id, 'start', self.loop_count, t)
+            'on_data_event', self.ceed_id, 'start', self.loop_count,
+            self.loop_tree_count, t)
         self.stage_factory.dispatch(
-            'on_data_event', self.ceed_id, 'start_loop', self.loop_count, t)
+            'on_data_event', self.ceed_id, 'start_loop', self.loop_count,
+            self.loop_tree_count, t)
 
-    def init_loop_iteration(
-            self, t_start: NumFraction, loop_count: int) -> None:
+    def init_loop_iteration(self, t_start: NumFraction) -> None:
         """Initializes the stage at the beginning of each loop.
 
         It's called internally at the start of every :attr:`loop` iteration,
@@ -2050,14 +2127,12 @@ class CeedStage(EventDispatcher, CeedWithID):
 
         :param t_start: The time in seconds in global time. :attr:`t_start`
             will be set to this value.
-        :param loop_count: The current loop count.
         """
         self.t_start = t_start
-        self.loop_count = loop_count
 
         self.stage_factory.dispatch(
             'on_data_event', self.ceed_id, 'start_loop', self.loop_count,
-            float(t_start))
+            self.loop_tree_count, float(t_start))
 
     def finalize_stage(self) -> None:
         """Finalizes the stage at the end of all its loops, when the
@@ -2066,7 +2141,7 @@ class CeedStage(EventDispatcher, CeedWithID):
         """
         self.stage_factory.dispatch(
             'on_data_event', self.ceed_id, 'end', self.loop_count,
-            float(self.t_end))
+            self.loop_tree_count, float(self.t_end))
 
     def finalize_loop_iteration(self) -> None:
         """Finalizes the stage at the end of each loop, including the first
@@ -2075,7 +2150,7 @@ class CeedStage(EventDispatcher, CeedWithID):
         """
         self.stage_factory.dispatch(
             'on_data_event', self.ceed_id, 'end_loop', self.loop_count,
-            float(self.t_end))
+            self.loop_tree_count, float(self.t_end))
 
     def tick_stage(
             self, shapes: Dict[str, List[RGBA_Type]], last_end_t: NumFraction
@@ -2215,7 +2290,7 @@ class CeedStage(EventDispatcher, CeedWithID):
         count = 0
         for i in range(self.loop):
             if i:
-                self.init_loop_iteration(last_end_t, i)
+                self.init_loop_iteration(last_end_t)
             tick = self.tick_stage_loop(shapes, last_end_t)
             next(tick)
 
@@ -2227,8 +2302,14 @@ class CeedStage(EventDispatcher, CeedWithID):
             except StageDoneException:
                 last_end_t = self.t_end
                 self.finalize_loop_iteration()
+                # last one is done after finalize_stage
+                if i != self.loop - 1:
+                    self.loop_count += 1
+                    self.loop_tree_count += 1
 
         self.finalize_stage()
+        self.loop_count += 1
+        self.loop_tree_count += 1
         if count >= pad_stage_ticks:
             raise StageDoneException
 
@@ -2246,6 +2327,16 @@ class CeedStage(EventDispatcher, CeedWithID):
         self.t_end = t
         raise StageDoneException
 
+    def _get_loop_stages(self) -> List['CeedStage']:
+        stages = self.stages
+        shuffled_order = self.shuffled_order
+        if not stages or not shuffled_order:
+            return stages[:]
+
+        i = self.loop_tree_count
+        indices = shuffled_order[i if i < len(shuffled_order) else -1]
+        return [stages[k] for k in indices]
+
     def tick_stage_loop(
             self, shapes: Dict[str, List[RGBA_Type]], last_end_t: NumFraction
     ) -> Generator[None, NumFraction, None]:
@@ -2253,7 +2344,7 @@ class CeedStage(EventDispatcher, CeedWithID):
         of the stage yielding the shape values for each time-point.
         """
         names, keep_dark = self._get_shape_names()
-        stages = self.stages[:]
+        stages = self._get_loop_stages()
         serial = self.order == 'serial'
         end_on_first = self.complete_on == 'any' and not serial
         r, g, b = self.color_r, self.color_g, self.color_b
@@ -2559,7 +2650,15 @@ class CeedStage(EventDispatcher, CeedWithID):
     def init_stage_tree(self, root: Optional['CeedStage'] = None) -> None:
         """Before the stage is :meth:`apply_pre_compute` and started, the stage
         and all sub-stages are recursively initialized.
+
+        Initializes the stage as part of the stage tree so it is ready
+        to be called to get the stage values as part of the tree. It is
+        called once for each stage of the entire stage tree.
+
+        :param root: The root of the stage tree. If None, it's self.
         """
+        self.loop_tree_count = 0
+
         for func in self.functions:
             func.init_func_tree()
 
@@ -2604,11 +2703,12 @@ class CeedStage(EventDispatcher, CeedWithID):
         for stage in self.stages:
             stage.apply_pre_compute(pre_compute, frame_rate, t_start, shapes)
 
-    def resample_func_parameters(
+    def resample_parameters(
             self, parent_tree: Optional[List['CeedStage']] = None,
             is_forked: bool = False) -> None:
         """Resamples all parameters of all functions of the stage that have
-        randomness associated with it.
+        randomness associated with it as well as :attr:`shuffled_order` if
+        :attr:`randomize_child_order`.
 
         ``parent_tree`` is not inclusive. It is a list of stages starting from
         the root stage leading up to this stage in the stage tree.
@@ -2628,34 +2728,49 @@ class CeedStage(EventDispatcher, CeedWithID):
             root_func.resample_parameters(
                 is_forked=is_forked, base_loops=base_loops)
 
+        self.shuffled_order = shuffled_order = []
+        if self.stages and self.randomize_child_order and \
+                not (self.lock_after_forked and is_forked):
+            indices = list(range(len(self.stages)))
+            if self.randomize_order_each_loop:
+                for _ in range(base_loops):
+                    shuffle(indices)
+                    shuffled_order.append(indices[:])
+            else:
+                shuffle(indices)
+                shuffled_order.append(indices[:])
+
         for stage in self.stages:
             if isinstance(stage, CeedStageRef):
                 stage = stage.stage
 
-            stage.resample_func_parameters(
+            stage.resample_parameters(
                 parent_tree + [self], is_forked=is_forked)
 
     def copy_and_resample(self) -> 'CeedStage':
-        """Resamples all the functions of the stage, copies the stage and
-        returns the duplicated stage.
+        """Resamples all the functions of the stage and :attr:`shuffled_order`,
+        copies and expands the stage, possibly resamples parameters, and returns
+        the duplicated stage.
 
         It copies a stage so that the stage is ready to run in a experiment.
         First it resamples all the parameters of all the functions that have
-        randomness associated with it. Then it copies and expends the stage and
-        any sub-stages and functions that refer to other functions. Then, it
+        randomness associated with it and it resamples :attr:`shuffled_order`.
+        Then it copies and expends the stage and any sub-stages and functions
+        that refer to other functions/stages. Then, it
         resamples again those randomized function parameters that are not
         marked as
-        :attr:`~ceed.function.param_noise.NoiseBase.lock_after_forked`. Those
+        :attr:`~ceed.function.param_noise.NoiseBase.lock_after_forked` as well
+        as :attr:`shuffled_order` if not :attr:`lock_after_forked`. Those
         will maintain their original re-sampled values so that all the expanded
-        copies of reference functions have the same random values.
+        copies of reference functions/stages have the same random values.
 
-        See :meth:`resample_func_parameters` and
+        See :meth:`resample_parameters` and
         :meth:`FuncBase.resample_parameters` as well.
         """
-        self.resample_func_parameters(is_forked=False)
+        self.resample_parameters(is_forked=False)
         stage = self.copy_expand_ref()
         # resample only those that can be resampled after expanding and forking
-        stage.resample_func_parameters(is_forked=True)
+        stage.resample_parameters(is_forked=True)
         return stage
 
     def get_stage_shape_names(self) -> Set[str]:

@@ -537,7 +537,6 @@ class CeedDataReader:
     list, str etc.) and simple numpy arrays. It shouldn't be too big otherwise
     frames may be dropped if it takes too long to process.
 
-
     :class:`~ceed.function.FunctionFactoryBase` and
     :class:`~ceed.stage.StageFactoryBase` each define a ``on_data_event``
     dispatchable event that when dispatched with arguments will be automatically
@@ -548,23 +547,31 @@ class CeedDataReader:
 
         `start`:
             Dispatched by each stage and function when they are initially
-            started. Its payload is a 2-item list of the current loop iteration
-            (nominally zero) and the global ceed time (with higher resolution
+            started. Its payload is a 3-item list of the current loop iteration
+            (:attr:`~ceed.function.FuncBase.loop_count` and
+            :attr:`~ceed.function.FuncBase.loop_tree_count`, nominally zero)
+            and the global ceed time (with higher resolution
             than GPU frames, so any real number) when it started.
         `end`:
             Dispatched by each stage and function when they are ended. Its
-            payload is a 2-item list of the final loop iteration number and the
+            payload is a 3-item list of the final loop iteration number
+            (:attr:`~ceed.function.FuncBase.loop_count` and
+            :attr:`~ceed.function.FuncBase.loop_tree_count`) and the
             global ceed time when it ended. This event may not be logged if
             e.g. the user suddenly ends the stage so it never reached its end.
         `loop_start`:
             Dispatched by each stage and function when each loop iteration
-            starts, including the first loop iteration. Its payload is a 2-item
-            list of the current loop iteration number and the global ceed time
-            when it started.
+            starts, including the first loop iteration. Its payload is a 3-item
+            list of the current loop iteration number
+            (:attr:`~ceed.function.FuncBase.loop_count` and
+            :attr:`~ceed.function.FuncBase.loop_tree_count`) and the global
+            ceed time when it started.
         `loop_end`:
             Dispatched by each stage and function when each loop iteration
-            ends, including the last loop iteration. Its payload is a 2-item
-            list of the loop iteration number that just ended and the global
+            ends, including the last loop iteration. Its payload is a 3-item
+            list of the loop iteration number that just ended
+            (:attr:`~ceed.function.FuncBase.loop_count` and
+            :attr:`~ceed.function.FuncBase.loop_tree_count`) and the global
             ceed time when it ended. This event may not be logged if
             e.g. the user suddenly ends the stage so the loop never reached its
             end.

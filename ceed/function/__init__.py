@@ -1732,9 +1732,11 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
 
         t = float(t_start)
         self.function_factory.dispatch(
-            'on_data_event', self.ceed_id, 'start', self.loop_count, t)
+            'on_data_event', self.ceed_id, 'start', self.loop_count,
+            self.loop_tree_count, t)
         self.function_factory.dispatch(
-            'on_data_event', self.ceed_id, 'start_loop', self.loop_count, t)
+            'on_data_event', self.ceed_id, 'start_loop', self.loop_count,
+            self.loop_tree_count, t)
 
     def init_loop_iteration(self, t_start: NumFraction) -> None:
         """Initializes the function at the beginning of each loop.
@@ -1755,7 +1757,7 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
 
         self.function_factory.dispatch(
             'on_data_event', self.ceed_id, 'start_loop', self.loop_count,
-            float(t_start))
+            self.loop_tree_count, float(t_start))
 
     def finalize_func(self) -> None:
         """Finalizes the function at the end of all its loops, when the
@@ -1764,7 +1766,7 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
         """
         self.function_factory.dispatch(
             'on_data_event', self.ceed_id, 'end', self.loop_count,
-            float(self.t_end))
+            self.loop_tree_count, float(self.t_end))
 
     def finalize_loop_iteration(self) -> None:
         """Finalizes the function at the end of each loop, including the first
@@ -1773,7 +1775,7 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
         """
         self.function_factory.dispatch(
             'on_data_event', self.ceed_id, 'end_loop', self.loop_count,
-            float(self.t_end))
+            self.loop_tree_count, float(self.t_end))
 
     def get_domain(
             self, current_iteration: bool = True

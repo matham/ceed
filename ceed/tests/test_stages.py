@@ -6,6 +6,7 @@ from typing import Tuple, List, Dict
 from collections import defaultdict
 import sys
 from itertools import product
+from functools import reduce
 from fractions import Fraction
 
 from ceed.shape import CeedPaintCanvasBehavior
@@ -71,6 +72,34 @@ def create_recursive_stages(
     return root, g1, g2, s1, s2, s3, s4, s5, s6
 
 
+def create_stage_with_4_children(
+        stage_factory: StageFactoryBase, show_in_gui=False, app=None):
+    root = SerialAllStage(
+        stage_factory=stage_factory, show_in_gui=show_in_gui, app=app,
+        create_add_to_parent=not show_in_gui)
+
+    s1 = ParaAllStage(
+        stage_factory=stage_factory, show_in_gui=show_in_gui, app=app,
+        parent_wrapper_stage=root,
+        create_add_to_parent=not show_in_gui)
+
+    s2 = SerialAnyStage(
+        stage_factory=stage_factory, show_in_gui=show_in_gui, app=app,
+        parent_wrapper_stage=root,
+        create_add_to_parent=not show_in_gui)
+    s3 = SerialAllStage(
+        stage_factory=stage_factory, show_in_gui=show_in_gui, app=app,
+        parent_wrapper_stage=root,
+        create_add_to_parent=not show_in_gui)
+
+    s4 = ParaAnyStage(
+        stage_factory=stage_factory, show_in_gui=show_in_gui, app=app,
+        parent_wrapper_stage=root,
+        create_add_to_parent=not show_in_gui)
+
+    return root, s1, s2, s3, s4
+
+
 def create_2_shape_stage(
         stage_factory: StageFactoryBase, show_in_gui=False, app=None):
     shape1 = CircleShapeP1(
@@ -130,18 +159,19 @@ def create_4_stages(stage_factory: StageFactoryBase):
 def get_stage_time_intensity(
         stage_factory: StageFactoryBase, stage_name: str, frame_rate: int,
         pre_compute: bool = False
-) -> Tuple[Dict[str, List[Tuple[float, float, float, float]]], int]:
+) -> Tuple[Dict[str, List[Tuple[float, float, float, float]]], int, CeedStage]:
     """Samples the stage with the given frame rate and returns the intensity
     value for each shape for each timestamp.
     """
+    stage = stage_factory.stage_names[stage_name].copy_and_resample()
     obj_values = stage_factory.get_all_shape_values(
-        Fraction(int(frame_rate), 1), stage_name=stage_name,
+        Fraction(int(frame_rate), 1), stage=stage,
         pre_compute=pre_compute)
 
     n = 0
     if obj_values:
         n = len(obj_values[list(obj_values.keys())[0]])
-    return obj_values, n
+    return obj_values, n, stage
 
 
 def test_register_stages(
@@ -943,7 +973,7 @@ def test_simple_stage_intensity(stage_factory: StageFactoryBase, pre_compute):
     stage.add_shape(shape.shape)
     stage.add_shape(shape2.shape)
 
-    values, n = get_stage_time_intensity(
+    values, n, _ = get_stage_time_intensity(
         stage_factory, stage.name, 10, pre_compute=pre_compute)
     assert n == 5 * 10
     assert len(values) == 2
@@ -984,7 +1014,7 @@ def test_recursive_stage_intensity(
     s1.stage.add_shape(shape.shape)
     s2.stage.add_shape(shape2.shape)
 
-    values, n = get_stage_time_intensity(
+    values, n, _ = get_stage_time_intensity(
         stage_factory, root.name, 10, pre_compute=pre_compute)
     assert n == 10 * 10
     assert len(values) == 2
@@ -1087,7 +1117,7 @@ def test_recursive_full_stage_with_loop_intensity(
     s3.stage.add_shape(shape2.shape)
     s6.stage.add_shape(shape2.shape)
 
-    values, n = get_stage_time_intensity(
+    values, n, _ = get_stage_time_intensity(
         stage_factory, root.name, 10, pre_compute=pre_compute)
     assert_recursive_stages_intensity(
         s1, s2, s3, s4, s5, s6, values, n, shape, shape2)
@@ -1119,7 +1149,7 @@ def test_single_frame_stage_intensity(
     stage.add_func(f)
     stage.add_shape(shape.shape)
 
-    values, n = get_stage_time_intensity(
+    values, n, _ = get_stage_time_intensity(
         stage_factory, stage.name, 120, pre_compute=pre_compute)
     assert n == 3 * 2
     assert len(values) == 1
@@ -1195,7 +1225,7 @@ def test_stage_func_float_duration(
     root.add_func(child_b)
     root.add_func(child_c)
 
-    values, n = get_stage_time_intensity(
+    values, n, _ = get_stage_time_intensity(
         stage_factory, root.name, rate, pre_compute=pre_compute)
     expected = int(
         rate * (4 * duration[0] + 3 * duration[1] + 5 * duration[2]))
@@ -1240,7 +1270,7 @@ def test_stage_func_float_duration_epsilon(
     root.add_func(child_c)
     root.add_func(child_d)
 
-    values, n = get_stage_time_intensity(
+    values, n, _ = get_stage_time_intensity(
         stage_factory, root.name, 60., pre_compute=pre_compute)
     expected = int(60. * 3.6)
     assert expected - 1 <= n <= expected + 1
@@ -1281,7 +1311,7 @@ def test_stage_func_clip_range(stage_factory: StageFactoryBase, pre_compute):
     root.add_func(child_c)
     root.add_func(child_d)
 
-    values, n = get_stage_time_intensity(
+    values, n, _ = get_stage_time_intensity(
         stage_factory, root.name, 60., pre_compute=pre_compute)
     intensities = {v[0] for v in values[shape.name]}
     assert intensities == {0, .2, .3, 1}
@@ -1438,7 +1468,7 @@ def test_recursive_stage_pre_compute(
     for disable, s in zip(disable_pre_compute, stages):
         s.stage.disable_pre_compute = disable
 
-    values, n = get_stage_time_intensity(
+    values, n, _ = get_stage_time_intensity(
         stage_factory, root.name, 10, pre_compute=True)
     assert_recursive_stages_intensity(
         s1, s2, s3, s4, s5, s6, values, n, shape, shape2)
@@ -1554,7 +1584,7 @@ def test_stage_padding(
     if pad:
         root.pad_stage_ticks = 22
 
-    _, n = get_stage_time_intensity(
+    _, n, _ = get_stage_time_intensity(
         stage_factory, root.name, 10, pre_compute=pre_compute)
 
     if pad:
@@ -1676,7 +1706,7 @@ def test_custom_stage_evaluate(stage_factory: StageFactoryBase, pre_compute):
     stage.add_shape(shape.shape)
     stage.add_shape(shape2.shape)
 
-    values, n = get_stage_time_intensity(
+    values, n, _ = get_stage_time_intensity(
         stage_factory, stage.name, 10, pre_compute=pre_compute)
     assert n == 10
 
@@ -1713,3 +1743,53 @@ def test_add_stage_unique_built_in_name(stage_factory: StageFactoryBase):
     assert stage_factory.stage_names[s.name] is s
     assert orig_name in stage_factory.stage_names
     assert s.name != orig_name
+
+
+@pytest.mark.parametrize('pre_compute', [True, False])
+@pytest.mark.parametrize('randomize_each_loop', [True, False])
+@pytest.mark.parametrize('randomize', [True, False])
+def test_random_stages_order(
+        stage_factory: StageFactoryBase, pre_compute, randomize_each_loop,
+        randomize):
+    root, s1, s2, s3, s4 = create_stage_with_4_children(stage_factory)
+
+    from ceed.function.plugin import LinearFunc
+    for i, stage in enumerate((s1, s2, s3, s4)):
+        stage.stage.add_func(LinearFunc(
+            function_factory=stage_factory.function_factory, b=0.1 * i, m=0,
+            duration=1))
+
+    root.stage.loop = 10
+    root.stage.randomize_child_order = randomize
+    root.stage.randomize_order_each_loop = randomize_each_loop
+
+    shape = CircleShapeP1(
+        app=None, painter=stage_factory.shape_factory, show_in_gui=False,
+        create_add_shape=True)
+    s1.stage.add_shape(shape.shape)
+    s2.stage.add_shape(shape.shape)
+    s3.stage.add_shape(shape.shape)
+    s4.stage.add_shape(shape.shape)
+
+    values, n, stage = get_stage_time_intensity(
+        stage_factory, root.name, 1, pre_compute=pre_compute)
+
+    def different(a, b):
+        assert a is not b
+
+    if not randomize:
+        assert not stage.shuffled_order
+        return
+
+    assert stage.shuffled_order
+    if randomize_each_loop:
+        assert len(stage.shuffled_order) == 10
+        reduce(different, stage.shuffled_order)
+
+        # 1 / 10^14 that they are all the same for 10 loops
+        assert len(set(tuple(s) for s in stage.shuffled_order)) > 1
+    else:
+        assert len(stage.shuffled_order) == 1
+
+    for item in stage.shuffled_order:
+        assert set(item) == {0, 1, 2, 3}

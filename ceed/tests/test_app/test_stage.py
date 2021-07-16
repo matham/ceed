@@ -975,21 +975,21 @@ async def test_event_data_empty(stage_app: CeedTestApp, tmp_path, func):
     filename = str(tmp_path / 'event_data_empty.h5')
     stage_app.app.ceed_data.save(filename=filename)
 
+    # order in which the stage/func id start/finish
     if func:
         order = (0, 1, 3, 2), (2, 1, 3, 0)
     else:
         order = (0, 1, 2), (1, 2, 0)
     loops = [
-        [0, i, 'start' + s, [0, ]] for i in order[0] for s in ('', '_loop')
+        [0, i, 'start' + s, [0, ] * 2] for i in order[0] for s in ('', '_loop')
     ]
     loops += [
-        [0, i, 'end' + s, [0, ]] for i in order[1] for s in ('_loop', '')
+        [0, i, 'end' + s, [0, ] * 2] for i in order[1] for s in ('_loop', '')
     ]
 
     with CeedDataReader(filename) as f:
         f.load_experiment(0)
         events = [d[:-1] + [d[-1][:-1], ] for d in f.event_data]
-        print(events)
         assert loops == events
 
 

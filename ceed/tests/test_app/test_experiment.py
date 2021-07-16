@@ -508,25 +508,23 @@ def test_event_data(
         fname = external_experiment_filename
 
     loops = [
-        [0, i, 'start' + s, [0, ]]
+        [0, i, 'start' + s, [0, 0]]
         for i in (0, 1, 3, 2, 4) for s in ('', '_loop')
     ]
 
     for i in range(1, 8):
         for s in (2, 4):
-            loops.append([i * 30, s, 'end_loop', [i - 1, ]])
-            loops.append([i * 30, s, 'start_loop', [i, ]])
+            loops.append([i * 30, s, 'end_loop', [i - 1, ] * 2])
+            loops.append([i * 30, s, 'start_loop', [i, ] * 2])
     for i in (2, 1, 4, 3, 0):
-        loops.append([8 * 30, i, 'end_loop', [7 if i in (2, 4) else 0, ]])
-        loops.append([8 * 30, i, 'end', [7 if i in (2, 4) else 0, ]])
+        loops.append([8 * 30, i, 'end_loop', [7 if i in (2, 4) else 0, ] * 2])
+        loops.append([8 * 30, i, 'end', [7 if i in (2, 4) else 0, ] * 2])
 
     with CeedDataReader(fname) as f:
 
         for exp in (0, 1):
-            import pprint
             f.load_experiment(exp)
             events = [d[:-1] + [d[-1][:-1], ] for d in f.event_data]
-            pprint.pprint(events)
             assert events == loops
 
             stage = f.stage_factory.stage_names[last_experiment_stage_name]
@@ -582,14 +580,14 @@ def test_replay_experiment_data(experiment_ceed_filename):
                     assert isclose(float(d[i][j]), val, abs_tol=.001)
 
     with CeedDataReader(experiment_ceed_filename) as f:
-        values, n = get_stage_time_intensity(
+        values, n, _ = get_stage_time_intensity(
             f.app_config['stage_factory'], stored_stage_name, 120)
         verify_values()
 
         for exp, image, (b1, b2) in zip((0, 1), stored_images, stored_b_values):
             f.load_experiment(exp)
 
-            values, n = get_stage_time_intensity(
+            values, n, _ = get_stage_time_intensity(
                 f.stage_factory, f.experiment_stage_name, 120)
             verify_values()
 
@@ -699,7 +697,7 @@ async def test_import_yml_stages(
     stage_app.app.ceed_data.read_yaml_config(filename, stages_only=stages_only)
     await stage_app.wait_clock_frames(2)
 
-    values, n = get_stage_time_intensity(
+    values, n, _ = get_stage_time_intensity(
         stage_app.app.stage_factory, stored_stage_name, 120)
     verify_experiment(values, n, False)
 
@@ -716,7 +714,7 @@ async def test_import_yml_existing(
         existing_template_filename, stages_only=True)
     await stage_app.wait_clock_frames(2)
 
-    values, n = get_stage_time_intensity(
+    values, n, _ = get_stage_time_intensity(
         stage_app.app.stage_factory, stored_stage_name, 120)
     verify_experiment(values, n, True)
 
@@ -744,7 +742,7 @@ async def test_import_h5_stages(
     stage_app.app.ceed_data.import_file(filename, stages_only=stages_only)
     await stage_app.wait_clock_frames(2)
 
-    values, n = get_stage_time_intensity(
+    values, n, _ = get_stage_time_intensity(
         stage_app.app.stage_factory, stored_stage_name, 120)
     verify_experiment(values, n, False)
 
