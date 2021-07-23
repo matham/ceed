@@ -513,6 +513,9 @@ def test_stage_ref(stage_factory: StageFactoryBase):
     ref1 = stage_factory.get_stage_ref(name='me stage')
     ref2 = stage_factory.get_stage_ref(stage=s2)
 
+    assert s.get_ref_src() is s
+    assert ref1.get_ref_src() is s
+
     assert ref1.stage is s
     assert ref2.stage is s2
     assert s.has_ref

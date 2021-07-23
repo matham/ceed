@@ -1958,6 +1958,15 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
                 if key in samples:
                     del samples[key]
 
+    def get_ref_src(self) -> 'FuncBase':
+        """Returns the function referenced by this object if we are a
+        :class:`CeedFuncRef`, otherwise it just returns this function.
+
+        Useful to get the referenced function without having to check whether we
+        are a :class:`CeedFuncRef`. I.e. ``func.get_ref_src().name``.
+        """
+        return self
+
 
 class CeedFuncRef:
     """A function that refers to another function.
@@ -2024,6 +2033,11 @@ class CeedFuncRef:
             'A CeedFuncRef function instance cannot be called like a normal '
             'function. To use, copy it into a normal function with '
             'copy_expand_ref')
+
+    def get_ref_src(self) -> 'FuncBase':
+        """See :meth:`CeedStage.get_ref_src`.
+        """
+        return self.func
 
 
 class CeedFunc(FuncBase):

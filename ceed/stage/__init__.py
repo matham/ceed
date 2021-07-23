@@ -2803,6 +2803,15 @@ class CeedStage(EventDispatcher, CeedWithID):
 
         return min_available
 
+    def get_ref_src(self) -> 'CeedStage':
+        """Returns the stage referenced by this object if we are a
+        :class:`CeedStageRef`, otherwise it just returns this stage.
+
+        Useful to get the referenced stage without having to check whether we
+        are a :class:`CeedStageRef`. I.e. ``stage.get_ref_src().name``.
+        """
+        return self
+
 
 class CeedStageRef:
     """A stage that refers to another stage.
@@ -2870,6 +2879,11 @@ class CeedStageRef:
 
     def copy_expand_ref(self) -> CeedStage:
         return self.stage.copy_expand_ref()
+
+    def get_ref_src(self) -> 'CeedStage':
+        """See :meth:`CeedStage.get_ref_src`.
+        """
+        return self.stage
 
 
 class StageShape(EventDispatcher):

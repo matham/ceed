@@ -595,6 +595,9 @@ def test_func_ref(function_factory: FunctionFactoryBase):
     ref1 = function_factory.get_func_ref(name='f')
     ref2 = function_factory.get_func_ref(func=f2)
 
+    assert f.get_ref_src() is f
+    assert ref1.get_ref_src() is f
+
     assert ref1.func is f
     assert ref2.func is f2
     assert f.has_ref
