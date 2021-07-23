@@ -564,7 +564,7 @@ following sub-class in the stage plugin:
 
         def evaluate_stage(self, shapes, last_end_t):
             # always get the first time
-            t = yield
+            self.t_start = t = yield
             for _ in range(2):
                 # r, g, b, a values. a (alpha) should be None
                 shapes['circle'].append((0.5, 0, 0, None))
@@ -2235,14 +2235,14 @@ class CeedStage(EventDispatcher, CeedWithID):
         """
         dispatch = self.stage_factory.dispatch
         # next t to use. On the last t not used raises StageDoneException
-        t = yield
+        self.t_start = t = yield
         stage_data, logs, n, t_end = self.runtime_stage
 
         # stage was sampled with a init value of zero, so end is
         # relative to current sample time, not end time of last
         # stage. Because with the latter, the sampled stage could have
         # ended before the sample (t). So we align with sample time
-        self.t_end = t + t_end
+        t_end += t
         prev_t = t
 
         for i in range(n):
@@ -2253,6 +2253,7 @@ class CeedStage(EventDispatcher, CeedWithID):
             prev_t = t
             t = yield
 
+        self.t_end = t_end
         assert prev_t <= self.t_end or isclose(prev_t, self.t_end)
         assert t >= self.t_end or isclose(t, self.t_end)
 
@@ -2275,13 +2276,14 @@ class CeedStage(EventDispatcher, CeedWithID):
         considered at all when overwriting this method.
 
         However, :attr:`t_end` must be set with the final stage time before the
-        method ends, otherwise it'll break the timing. Following is an
-        appropriate customization (assuming those named shapes exist in the
-        GUI)::
+        method ends, otherwise it'll break the timing. Similarly,
+        :attr:`t_start` should be set the first time value of the stage.
+        Following is an appropriate customization (assuming those named shapes
+        exist in the GUI)::
 
             def evaluate_stage(self, shapes, last_end_t):
                 # always get the first time
-                t = yield
+                self.t_start = t = yield
                 # we ignore any looping and just use 10 time points.
                 for i in range(10):
                     # r, g, b, a values

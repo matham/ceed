@@ -184,7 +184,7 @@ for each loop iteration:
             b = self.color_b
 
             # always get the first time
-            t = yield
+            self.t_start = t = yield
             for _ in range(self.loop):
                 t_start = t
 
