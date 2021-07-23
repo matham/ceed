@@ -961,6 +961,7 @@ async def test_event_data_empty(stage_app: CeedTestApp, tmp_path, func):
 
     root, s1, s2, shape1, shape2 = create_2_shape_stage(
         stage_app.app.stage_factory, show_in_gui=True, app=stage_app)
+    s1.stage.name = 'test stage'
 
     if func:
         s1.stage.add_func(ConstFunc(
@@ -991,6 +992,20 @@ async def test_event_data_empty(stage_app: CeedTestApp, tmp_path, func):
         f.load_experiment(0)
         events = [d[:-1] + [d[-1][:-1], ] for d in f.event_data]
         assert loops == events
+
+        s = f.experiment_stage.stages[0]
+
+        for kw in [{'ceed_id': s.ceed_id}, {'ceed_name': s1.stage.name},
+                   {'ceed_obj': s}]:
+            items = f.format_event_data(event='start_loop', **kw)
+            assert len(items) == 1
+            assert items[0][:5] == [0, s, 'start_loop', 0, 0]
+
+            items = f.format_event_data(**kw)
+            assert len(items) == 4
+            for item, val in zip(
+                    items, ['start', 'start_loop', 'end_loop', 'end']):
+                assert item[:5] == [0, s, val, 0, 0]
 
 
 @pytest.mark.parametrize(
