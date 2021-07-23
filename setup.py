@@ -36,6 +36,6 @@ setup(
             'pytest-kivy~=0.1.0.dev2', 'pytest-dependency', 'docutils',
             'sphinx'],
     },
-    package_data={'ceed': ['data/*', '*.kv']},
+    package_data={'ceed': ['data/*', '*.kv', '**/*.kv']},
     entry_points={'console_scripts': ['ceed=ceed.main:run_app']},
 )
