@@ -1819,7 +1819,7 @@ class CeedStage(EventDispatcher, CeedWithID):
                 'order', 'name', 'color_r', 'color_g', 'color_b',
                 'complete_on', 'disable_pre_compute', 'loop', 'ceed_id',
                 'randomize_child_order', 'randomize_order_each_loop',
-                'lock_after_forked', 'shuffled_order'):
+                'lock_after_forked', 'shuffled_order', 'pad_stage_ticks'):
             d[name] = getattr(self, name)
 
         d['stages'] = [s.get_state(expand_ref=expand_ref) for s in self.stages]
