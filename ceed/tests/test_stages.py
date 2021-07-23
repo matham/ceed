@@ -1380,6 +1380,10 @@ def test_stage_func_tree_init(stage_factory: StageFactoryBase, pre_compute):
             tree_counter[self.name] += 1
             super().init_stage_tree(*args, **kwargs)
 
+    stage_factory.register(HookStage)
+    stage_factory.function_factory.register(GroupHook)
+    stage_factory.function_factory.register(ConstHook)
+
     root = HookStage(
         stage_factory=stage_factory,
         function_factory=stage_factory.function_factory,
