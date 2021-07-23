@@ -1005,7 +1005,7 @@ def test_simple_stage_intensity(stage_factory: StageFactoryBase, pre_compute):
     stage.add_shape(shape.shape)
     stage.add_shape(shape2.shape)
 
-    values, n, _ = get_stage_time_intensity(
+    values, n, root = get_stage_time_intensity(
         stage_factory, stage.name, 10, pre_compute=pre_compute)
     assert n == 5 * 10
     assert len(values) == 2
@@ -1046,7 +1046,7 @@ def test_recursive_stage_intensity(
     s1.stage.add_shape(shape.shape)
     s2.stage.add_shape(shape2.shape)
 
-    values, n, _ = get_stage_time_intensity(
+    values, n, stage = get_stage_time_intensity(
         stage_factory, root.name, 10, pre_compute=pre_compute)
     assert n == 10 * 10
     assert len(values) == 2
@@ -1149,7 +1149,7 @@ def test_recursive_full_stage_with_loop_intensity(
     s3.stage.add_shape(shape2.shape)
     s6.stage.add_shape(shape2.shape)
 
-    values, n, _ = get_stage_time_intensity(
+    values, n, stage = get_stage_time_intensity(
         stage_factory, root.name, 10, pre_compute=pre_compute)
     assert_recursive_stages_intensity(
         s1, s2, s3, s4, s5, s6, values, n, shape, shape2)
@@ -1181,7 +1181,7 @@ def test_single_frame_stage_intensity(
     stage.add_func(f)
     stage.add_shape(shape.shape)
 
-    values, n, _ = get_stage_time_intensity(
+    values, n, root = get_stage_time_intensity(
         stage_factory, stage.name, 120, pre_compute=pre_compute)
     assert n == 3 * 2
     assert len(values) == 1
@@ -1257,7 +1257,7 @@ def test_stage_func_float_duration(
     root.add_func(child_b)
     root.add_func(child_c)
 
-    values, n, _ = get_stage_time_intensity(
+    values, n, stage = get_stage_time_intensity(
         stage_factory, root.name, rate, pre_compute=pre_compute)
     expected = int(
         rate * (4 * duration[0] + 3 * duration[1] + 5 * duration[2]))
@@ -1302,7 +1302,7 @@ def test_stage_func_float_duration_epsilon(
     root.add_func(child_c)
     root.add_func(child_d)
 
-    values, n, _ = get_stage_time_intensity(
+    values, n, stage = get_stage_time_intensity(
         stage_factory, root.name, 60., pre_compute=pre_compute)
     expected = int(60. * 3.6)
     assert expected - 1 <= n <= expected + 1
@@ -1343,7 +1343,7 @@ def test_stage_func_clip_range(stage_factory: StageFactoryBase, pre_compute):
     root.add_func(child_c)
     root.add_func(child_d)
 
-    values, n, _ = get_stage_time_intensity(
+    values, n, stage = get_stage_time_intensity(
         stage_factory, root.name, 60., pre_compute=pre_compute)
     intensities = {v[0] for v in values[shape.name]}
     assert intensities == {0, .2, .3, 1}
@@ -1504,10 +1504,15 @@ def test_recursive_stage_pre_compute(
     for disable, s in zip(disable_pre_compute, stages):
         s.stage.disable_pre_compute = disable
 
-    values, n, _ = get_stage_time_intensity(
+    values, n, stage = get_stage_time_intensity(
         stage_factory, root.name, 10, pre_compute=True)
     assert_recursive_stages_intensity(
         s1, s2, s3, s4, s5, s6, values, n, shape, shape2)
+
+    root.stage = stage
+    g1.stage, s3.stage, s4.stage, g2.stage = stage.stages
+    s1.stage, s2.stage = g1.stage.stages
+    s5.stage, s6.stage = g2.stage.stages
 
     root, g1, g2, s1, s2, s3, s4, s5, s6 = [s.stage for s in stages]
     for s in (s1, s2, s3, s4, s5, s6):
@@ -1642,11 +1647,10 @@ def test_t_end_empty_stage(stage_factory: StageFactoryBase, pre_compute):
         create_add_shape=True)
     root.add_shape(shape.shape)
 
-    get_stage_time_intensity(
+    _, _, stage = get_stage_time_intensity(
         stage_factory, root.name, 10, pre_compute=pre_compute)
 
-    # global time starts at 1 / 10
-    assert root.t_end == Fraction(1, 10)
+    assert stage.t_end - stage.t_start == 0
 
 
 def test_t_end_empty_stage_func(stage_factory: StageFactoryBase):
@@ -1669,12 +1673,13 @@ def test_t_end_empty_stage_func(stage_factory: StageFactoryBase):
     root.add_func(f1)
     root.add_func(f2)
 
-    get_stage_time_intensity(stage_factory, root.name, 10, pre_compute=False)
+    _, _, stage = get_stage_time_intensity(
+        stage_factory, root.name, 10, pre_compute=False)
 
-    # global time starts at 1 / 10
-    assert f1.t_end == Fraction(1, 10) + .05
-    assert f2.t_end == Fraction(1, 10) + .05
-    assert root.t_end == Fraction(1, 10) + .05
+    assert math.isclose(
+        stage.functions[0].t_end - stage.functions[0].t_start, .05)
+    assert stage.functions[1].t_end - stage.functions[1].t_start == 0
+    assert math.isclose(stage.t_end - stage.t_start, .05)
 
 
 def test_external_plugin_source_in_factory(
@@ -1725,7 +1730,7 @@ def test_custom_stage_evaluate(stage_factory: StageFactoryBase, pre_compute):
     class MyStage(CeedStage):
 
         def evaluate_stage(self, shapes, last_end_t):
-            t = yield
+            self.t_start = t = yield
             for i in range(10):
                 shapes[shape.name].append((.1, .2, (i % 2) * .3, None))
                 shapes[shape2.name].append((.1, .2, (i % 2) * .5, None))
@@ -1742,7 +1747,7 @@ def test_custom_stage_evaluate(stage_factory: StageFactoryBase, pre_compute):
     stage.add_shape(shape.shape)
     stage.add_shape(shape2.shape)
 
-    values, n, _ = get_stage_time_intensity(
+    values, n, root = get_stage_time_intensity(
         stage_factory, stage.name, 10, pre_compute=pre_compute)
     assert n == 10
 
@@ -1758,7 +1763,7 @@ def test_custom_stage_evaluate(stage_factory: StageFactoryBase, pre_compute):
         assert b == (i % 2) * .5
         assert a == 1
 
-    assert stage.t_end == Fraction(11, 10)
+    assert root.t_end - root.t_start == Fraction(10, 10)
 
 
 def test_add_stage_unique_built_in_name(stage_factory: StageFactoryBase):
