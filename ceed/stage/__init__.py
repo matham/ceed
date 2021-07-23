@@ -909,11 +909,11 @@ class StageFactoryBase(EventDispatcher):
         """
         state = dict(state)
         c = state.pop('cls')
+
         if c == 'CeedStageRef':
             cls = CeedStageRef
         else:
-            assert c == 'CeedStage'
-            cls = CeedStage
+            cls = self.get(c)
         assert instance is None or instance.__class__ is cls
 
         stage = instance
@@ -1814,7 +1814,7 @@ class CeedStage(EventDispatcher, CeedWithID):
 
             A dict with all the configuration data.
         '''
-        d = {'cls': 'CeedStage'}
+        d = {'cls': self.__class__.__name__}
         for name in (
                 'order', 'name', 'color_r', 'color_g', 'color_b',
                 'complete_on', 'disable_pre_compute', 'loop', 'ceed_id',
