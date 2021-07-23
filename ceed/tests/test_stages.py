@@ -796,6 +796,7 @@ def test_can_other_stage_be_added_ref(stage_factory: StageFactoryBase):
 
 def test_expand_ref_stages(stage_factory: StageFactoryBase):
     g1 = make_stage(stage_factory, order='parallel')
+    g1.name = 'a stage'
 
     g2 = make_stage(stage_factory, order='parallel')
     ref_g2 = stage_factory.get_stage_ref(stage=g2)
@@ -814,6 +815,7 @@ def test_expand_ref_stages(stage_factory: StageFactoryBase):
     s3 = make_stage(
         stage_factory, order='serial', color_r=True, color_g=True,
         complete_on='any')
+    s3.name = 'another stage'
     ref_f3 = stage_factory.get_stage_ref(stage=s3)
     g1.add_stage(ref_f3)
 
@@ -838,6 +840,9 @@ def test_expand_ref_stages(stage_factory: StageFactoryBase):
     # the copy shouldn't have any refs
     assert len(list(g1_copy.get_stages(step_into_ref=False))) == \
         len(list(g1.get_stages(step_into_ref=True)))
+
+    assert g1_copy.name == 'a stage'
+    assert g1_copy.stages[2].name == 'another stage'
 
     for original_f, new_f in zip(
             g1.get_stages(step_into_ref=True),

@@ -1912,7 +1912,7 @@ class CeedStage(EventDispatcher, CeedWithID):
             stage_factory=self.stage_factory,
             function_factory=self.function_factory,
             shape_factory=self.shape_factory)
-        obj.apply_state(deepcopy(self.get_state(expand_ref=True)))
+        obj.apply_state(deepcopy(self.get_state(expand_ref=True)), clone=True)
         return obj
 
     def replace_ref_stage_with_source(

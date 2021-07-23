@@ -899,6 +899,7 @@ def test_expand_ref_funcs(function_factory: FunctionFactoryBase):
     const_cls = factory.get('ConstFunc')
 
     g1 = FuncGroup(function_factory=factory)
+    g1.name = 'a func'
 
     g2 = FuncGroup(function_factory=factory)
     ref_g2 = function_factory.get_func_ref(func=g2)
@@ -912,6 +913,7 @@ def test_expand_ref_funcs(function_factory: FunctionFactoryBase):
     f2 = const_cls(function_factory=factory, a=.25, duration=2)
     g1.add_func(f2)
     f3 = const_cls(function_factory=factory, a=.75, duration=2)
+    f3.name = 'another func'
     ref_f3 = function_factory.get_func_ref(func=f3)
     g1.add_func(ref_f3)
 
@@ -932,6 +934,9 @@ def test_expand_ref_funcs(function_factory: FunctionFactoryBase):
     # the copy shouldn't have any refs
     assert len(list(g1_copy.get_funcs(step_into_ref=False))) == \
         len(list(g1.get_funcs(step_into_ref=True)))
+
+    assert g1_copy.name == 'a func'
+    assert g1_copy.funcs[2].name == 'another func'
 
     for original_f, new_f in zip(
             g1.get_funcs(step_into_ref=True),

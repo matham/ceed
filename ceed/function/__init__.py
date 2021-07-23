@@ -1677,7 +1677,8 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
             instances replaced by their original normal function.
         """
         obj = self.__class__(function_factory=self.function_factory)
-        obj.apply_state(deepcopy(self.get_state(expand_ref=True)))
+        obj.apply_state(
+            deepcopy(self.get_state(expand_ref=True)), clone=True)
         return obj
 
     def init_func_tree(self, root: Optional['FuncBase'] = None) -> None:
