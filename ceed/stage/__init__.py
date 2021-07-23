@@ -2062,7 +2062,13 @@ class CeedStage(EventDispatcher, CeedWithID):
             self, step_into_ref: bool = True
     ) -> Generator[CeedStageOrRefInstance, None, None]:
         '''Generator that iterates depth-first through all the stages
-        and children :attr:`stages and yields these stages.`
+        and children :attr:`stages` and yields these stages.
+
+        :param step_into_ref: bool
+            If True, when it encounters a :class:`CeedStageRef` instance
+            it'll step into it and return that stage and its children.
+            Otherwise, it'll just return the :class:`CeedStageRef` and not
+            step into it.
         '''
         yield self
         for stage in self.stages:
@@ -2074,6 +2080,18 @@ class CeedStage(EventDispatcher, CeedWithID):
                 stage = stage.stage
             for s in stage.get_stages(step_into_ref):
                 yield s
+
+    def get_funcs(self) -> Generator[CeedFuncOrRefInstance, None, None]:
+        """Generator that iterates depth-first through all the stages
+        and children :attr:`stages` and for each stage yields each function from
+        :attr:`functions` as well as their children functions, recursively.
+
+        If it encounters a :class:`CeedStageRef` or :class:`CeedFuncRef` it'll
+        enter the original stage/function and yield its children.
+        """
+        for stage in self.get_stages(step_into_ref=True):
+            for func in stage.functions:
+                yield from func.get_funcs(step_into_ref=True)
 
     def _get_shape_names(self) -> Tuple[List[str], Set[str]]:
         # all shapes in this stage

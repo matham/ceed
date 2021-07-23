@@ -15,7 +15,7 @@ from ceed.stage import StageFactoryBase, CeedStage, CeedStageRef, \
     StageDoneException, register_all_stages, register_external_stages
 from ceed.tests.test_app.examples.stages import ParaAllStage, ParaAnyStage, \
     SerialAllStage, SerialAnyStage, assert_stages_same, make_stage, \
-    fake_plugin_stage
+    fake_plugin_stage, create_stage_funcs
 from ceed.tests.test_app.test_shape import make_4_shapes
 from ceed.tests.test_app.examples.shapes import Shape, EllipseShapeP1, \
     CircleShapeP1, PolygonShapeP1, FreeformPolygonShapeP1, EllipseShapeP2, \
@@ -736,6 +736,30 @@ def test_get_stage_ref(stage_factory: StageFactoryBase):
 
     assert list(g1.get_stages()) == [g1, g2, s1, s2]
     assert list(g1.get_stages(step_into_ref=False)) == [g1, ref_g2, s2]
+
+
+def test_get_funcs(stage_factory: StageFactoryBase):
+    g1 = make_stage(stage_factory)
+    g2 = make_stage(stage_factory)
+    g1.add_stage(g2)
+
+    s1 = make_stage(stage_factory)
+    g2.add_stage(s1)
+    s2 = make_stage(stage_factory)
+    g1.add_stage(s2)
+
+    funcs = create_stage_funcs(
+        None, function_factory=stage_factory.function_factory)
+    f1, f2, f3, f4, *_ = (f.func for f in funcs)
+    g1.add_func(f1)
+    g2.add_func(f2)
+    s1.add_func(f3)
+    s2.add_func(f4)
+
+    assert list(g1.get_funcs()) == [f1, f2, f3, f4]
+    assert list(g2.get_funcs()) == [f2, f3]
+    assert list(s1.get_funcs()) == [f3]
+    assert list(s2.get_funcs()) == [f4]
 
 
 def test_can_other_stage_be_added_ref(stage_factory: StageFactoryBase):
