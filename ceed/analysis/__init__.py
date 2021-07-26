@@ -51,8 +51,10 @@ into memory as sets the instance properties with the data (see
 Finally, you can load the Ceed data as well as the Ceed-MCS alignment for a
 specific experiment using :meth:`CeedDataReader.load_experiment`. This
 sets further class properties and allows you to use instance methods that
-require the Ceed data. E.g. see :attr:`CeedDataReader.shapes_intensity` and
-:attr:`CeedDataReader.electrode_intensity_alignment`.
+require the Ceed data. E.g. see :attr:`CeedDataReader.shapes_intensity`,
+:attr:`CeedDataReader.shapes_intensity_rendered_gpu_rate`,
+:attr:`CeedDataReader.electrode_intensity_alignment`, and
+:attr:`CeedDataReader.electrode_intensity_alignment_gpu_rate`.
 
 Loading images
 ^^^^^^^^^^^^^^
@@ -281,8 +283,10 @@ class CeedDataReader:
 
     electrode_intensity_alignment: Optional[np.ndarray] = None
     """After :meth:`load_experiment` it is a 1D array, mapping the ceed
-    frame data (:attr:`shapes_intensity_rendered`) to the MCS
-    :attr:`electrodes_data` by index.
+    frames (:attr:`shapes_intensity_rendered`) to the MCS
+    :attr:`electrodes_data` by index. See
+    :attr:`electrode_intensity_alignment_gpu_rate` for the indices, one per
+    GPU frame.
 
     If no alignment was computed for this file (e.g. if it's not a "merged"
     file), this is None.
@@ -319,6 +323,82 @@ class CeedDataReader:
     :meth:`CeedDataReader.compute_long_and_skipped_frames` helps analyze to find
     these dropped and long frames.
     """
+
+    _median_frame_duration_cache: int = 0
+
+    @property
+    def _median_frame_duration(self) -> int:
+        med = self._median_frame_duration_cache
+        if med:
+            return med
+
+        alignment = self.electrode_intensity_alignment
+        if alignment is None:
+            return 0
+
+        if len(alignment) >= 2:
+            diff = alignment[1:] - alignment[:-1]
+            self._median_frame_duration_cache = med = int(np.median(diff))
+            return med
+
+        return 0
+
+    _electrode_intensity_alignment_gpu_rate: Optional[np.ndarray] = None
+
+    @property
+    def electrode_intensity_alignment_gpu_rate(self) -> Optional[np.ndarray]:
+        """Like :attr:`electrode_intensity_alignment`, except that indices
+        corresponding to long frames are split into individual frames, rather
+        than one sample per long frame.
+
+        This means that each frame index corresponds to a single GPU frame
+        and is the same size as :attr:`shapes_intensity_rendered_gpu_rate`.
+
+        E.g. If Ceed projected 5 frames - 0, 1, 2, 3, and 4, but frame 1 was
+        displayed for 2 frames, and Ceed dropped its frame 3 to compensate,
+        then Ceed projected the following frames at the GPU rate: 0, 1, 1, 2, 4.
+
+        In this example, :attr:`electrode_intensity_alignment` would
+        hold 4 values indicating the indices in MCS of frames 0, 1, 3, 4. That's
+        because from MCS' pov, only 4 frames were emitted by Ceed because frames
+        2 and 3 were the same because the GPU didn't render frame 3.
+
+        :attr:`electrode_intensity_alignment_gpu_rate` however will actually
+        contain 5 values because we estimate where in the MCS data frame 2
+        would have occurred and add that index.
+
+        :attr:`electrode_intensity_alignment_gpu_rate` is None when
+        :attr:`electrode_intensity_alignment` is None.
+
+        .. warning::
+
+            If there are overwhelmingly too many long frames (i.e. the
+            approximate median frame was displayed longer compared to one
+            expected GPU period) it is not accurate.
+        """
+        align_gpu_rate = self._electrode_intensity_alignment_gpu_rate
+        if align_gpu_rate is None:
+            long_frames = self.rendered_frames_long
+            align = self.electrode_intensity_alignment
+            med_frame = self._median_frame_duration
+            if long_frames is None or align is None or not med_frame:
+                return None
+
+            align_gpu_rate = np.repeat(align, long_frames, axis=0)
+            # total number of new frames added until this index
+            new_frames = 0
+            for i in np.nonzero(long_frames > 1)[0]:
+                # we break frame into equal parts for new frame
+                n = long_frames[i]
+                offset = np.arange(n) * med_frame
+
+                align_gpu_rate[new_frames + i:new_frames + i + n] += offset
+
+                new_frames += n - 1
+
+            self._electrode_intensity_alignment_gpu_rate = align_gpu_rate
+
+        return align_gpu_rate
 
     shapes_intensity: Dict[str, np.ndarray] = {}
     """After :meth:`load_experiment`, it is a mapping whose keys are the
@@ -362,7 +442,8 @@ class CeedDataReader:
         names of the shapes drawn in ceed for this experiment and whose values
         is a 2D array containing the intensity value of the shape for each Ceed
         frame, **not including the dropped frames**. See also
-        :attr:`shapes_intensity_rendered_gpu_rate`.
+        :attr:`shapes_intensity_rendered_gpu_rate` for the data spaced exactly
+        one per GPU frame.
 
         Unlike :attr:`shapes_intensity`, it only contains the frames that were
         displayed and is the same size as :attr:`electrode_intensity_alignment`.
@@ -392,7 +473,8 @@ class CeedDataReader:
         corresponding to long frames are split into individual samples, rather
         than one sample per long frame.
 
-        This means that each frame sample corresponds to a single GPU frame.
+        This means that each frame sample corresponds to a single GPU frame
+        and is the same size as :attr:`electrode_intensity_alignment_gpu_rate`.
 
         E.g. If Ceed projected 5 frames - 0, 1, 2, 3, and 4, but frame 1 was
         displayed for 2 frames, and Ceed dropped its frame 3 to compensate,
@@ -414,14 +496,6 @@ class CeedDataReader:
             If there are overwhelmingly too many long frames (i.e. the
             approximate median frame was displayed longer compared to one
             expected GPU period) it is not accurate.
-
-        .. note::
-
-            While this will typically be the same size as
-            :attr:`shapes_intensity`, if Ceed didn't drop enough frames to
-            compensate for long frames, it may be larger. However, it will be
-            the same size as the number of GPU frames rendered at the GPU
-            period.
         """
         rendered_gpu_rate = self._shapes_intensity_rendered_gpu_rate
         if rendered_gpu_rate is None:
@@ -476,10 +550,11 @@ class CeedDataReader:
 
             long_frames = self._rendered_frames_long = np.empty(
                 len(alignment), dtype=np.int)
+            median = self._median_frame_duration
 
-            if len(alignment) >= 2:
+            if len(alignment) >= 2 and median:
                 diff = alignment[1:] - alignment[:-1]
-                long_frames[:-1] = np.round(diff / np.median(diff))
+                long_frames[:-1] = np.round(diff / median)
                 long_frames[-1] = 1
             else:
                 long_frames[:] = 1
@@ -959,6 +1034,13 @@ class CeedDataReader:
         rendered_counter = np.asarray(block.data_arrays['frame_time_counter'])
         frame_counter_n = block.data_arrays['frame_counter'].shape[0]
 
+        self._shapes_intensity_rendered = None
+        self._shapes_intensity_rendered_gpu_rate = None
+        self._median_frame_duration_cache = 0
+        self._electrode_intensity_alignment_gpu_rate = None
+        self._rendered_frames_long = None
+        self.event_data = []
+
         count_indices = np.arange(1, 1 + frame_counter_n)
         found = rendered_counter[:, np.newaxis] - \
             np.arange(n_sub_frames)[np.newaxis, :]
@@ -966,7 +1048,6 @@ class CeedDataReader:
         rendered_frames = np.isin(count_indices, found)
         self.rendered_frames = rendered_frames
 
-        self._rendered_frames_long = None
         if ('ceed_mcs_alignment' in self._nix_file.blocks and
                 'experiment_{}'.format(experiment) in
                 self._nix_file.blocks['ceed_mcs_alignment'].data_arrays):
@@ -992,12 +1073,8 @@ class CeedDataReader:
             name = item.name[6:]
             data[name] = np.asarray(item)
 
-        self._shapes_intensity_rendered = None
-        self._shapes_intensity_rendered_gpu_rate = None
-
         self.led_state = np.asarray(block.data_arrays['led_state'])
 
-        self.event_data = []
         if 'event_data' in block.data_arrays:
             event_data = np.asarray(block.data_arrays['event_data'])
             event_data_counter = np.asarray(

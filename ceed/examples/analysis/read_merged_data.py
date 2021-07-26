@@ -73,22 +73,22 @@ print('Loaded experiment {}'.format(reader.loaded_experiment))
 print('Stage run for this experiment is "{}"'.format(
     reader.experiment_stage_name))
 
-if reader.electrode_intensity_alignment is None:
+if reader.electrode_intensity_alignment_gpu_rate is None:
     print('Ceed-MCS alignment not found in the file. Did you forget to merge '
           'it into the ceed data file?')
 else:
     print('Ceed-MCS alignment indices shape is {}'.format(
-        reader.electrode_intensity_alignment.shape))
+        reader.electrode_intensity_alignment_gpu_rate.shape))
 
 # print the experiments notes, if any
 print('The experiment notes is:\n{}\n'.format(reader.experiment_notes.strip()))
 print('Experiment start is at time={}'.format(reader.experiment_start_time))
 print('Experiment camera image={}'.format(reader.experiment_cam_image))
 
-shapes = sorted(reader.shapes_intensity.keys())
+shapes = sorted(reader.shapes_intensity_rendered_gpu_rate.keys())
 print('Found the following shapes in the experiment: {}'.format(shapes))
 print('The intensity array for shape "{}" is size {}'.format(
-    shapes[0], reader.shapes_intensity[shapes[0]].shape))
+    shapes[0], reader.shapes_intensity_rendered_gpu_rate[shapes[0]].shape))
 
 print('The array recording the projector LED state is shape {}'.format(
     reader.led_state.shape))

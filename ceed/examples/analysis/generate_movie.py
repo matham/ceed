@@ -35,7 +35,7 @@ reader.load_experiment(1)
 print('Loaded experiment {}'.format(reader.loaded_experiment))
 print('Stage run for this experiment is {}'.format(
     reader.experiment_stage_name))
-if reader.electrode_intensity_alignment is None:
+if reader.electrode_intensity_alignment_gpu_rate is None:
     print('Ceed-MCS alignment not found in the file. Did you forget to merge '
           'it into the ceed data file?')
 

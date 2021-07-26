@@ -387,6 +387,7 @@ def test_saved_metadata(experiment_ceed_filename):
         assert not f.electrodes_metadata
         assert f.electrode_dig_data is None
         assert f.electrode_intensity_alignment is None
+        assert f.electrode_intensity_alignment_gpu_rate is None
 
         mcs_props = [
             'electrodes_data', 'electrodes_metadata', 'electrode_dig_data']
@@ -405,7 +406,10 @@ def test_saved_metadata(experiment_ceed_filename):
             assert not f.electrodes_metadata
             assert f.electrode_dig_data is None
         assert f.electrode_intensity_alignment is None
+        assert f.electrode_intensity_alignment_gpu_rate is None
+
         alignment = f.electrode_intensity_alignment
+        alignment_gpu = f.electrode_intensity_alignment_gpu_rate
 
         exp_props = [
             'view_controller', 'data_serializer', 'function_factory',
@@ -420,11 +424,20 @@ def test_saved_metadata(experiment_ceed_filename):
                 assert getattr(f, name) is value
             if merged_exp:
                 assert f.electrode_intensity_alignment is not None
+                assert f.electrode_intensity_alignment_gpu_rate is not None
                 assert len(f.electrode_intensity_alignment)
+                assert len(f.electrode_intensity_alignment_gpu_rate)
+                assert len(f.electrode_intensity_alignment_gpu_rate) >= \
+                       len(f.electrode_intensity_alignment)
+
                 assert f.electrode_intensity_alignment is not alignment
+                assert f.electrode_intensity_alignment_gpu_rate is not \
+                       alignment_gpu
                 alignment = f.electrode_intensity_alignment
+                alignment_gpu = f.electrode_intensity_alignment_gpu_rate
             else:
                 assert f.electrode_intensity_alignment is None
+                assert f.electrode_intensity_alignment_gpu_rate is None
 
             assert f.loaded_experiment == str(exp)
             assert f.experiment_cam_image is not None
@@ -472,6 +485,15 @@ def test_saved_data(experiment_ceed_filename):
             assert len(render) == 240
             assert np.all(render == np.arange(1, 241))
             assert len(np.asarray(f._block.data_arrays['frame_time'])) == 240
+
+            assert f.shapes_intensity_rendered[shape1].shape[0] <= d1.shape[0]
+            if f.electrode_intensity_alignment is not None:
+                assert f.shapes_intensity_rendered[shape1].shape[0] <= \
+                       f.shapes_intensity_rendered_gpu_rate[shape1].shape[0]
+            assert f.shapes_intensity_rendered[shape1].shape[1] == d1.shape[1]
+            if f.electrode_intensity_alignment is not None:
+                assert f.shapes_intensity_rendered[shape1].shape[1] == \
+                       f.shapes_intensity_rendered_gpu_rate[shape1].shape[1]
 
             for i in range(240):
                 for d, b, (active, inactive) in zip(
@@ -617,6 +639,7 @@ def test_mcs_data(merged_filename):
 
             f.load_experiment(exp)
             assert f.electrode_intensity_alignment is not None
+            assert f.electrode_intensity_alignment_gpu_rate is not None
             n = f.shapes_intensity[shape1].shape[0]
             assert n == 240 * n_sub_frames
             assert f.electrode_intensity_alignment[0] > last_end_sample
