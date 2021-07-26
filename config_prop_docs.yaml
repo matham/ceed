@@ -1,0 +1,626 @@
+ceed.main.CeedApp:
+  external_function_plugin_package:
+  - The name of an external function plugin package that contains additional
+  - functions to be displayed in the GUI to the user.
+  - ''
+  - See :mod:`~ceed.function.plugin` for details.
+  - ''
+  external_stage_plugin_package:
+  - The name of an external stage plugin package that contains additional
+  - stages to be displayed in the GUI to the user.
+  - ''
+  - See :mod:`~ceed.stage.plugin` for details.
+  - ''
+  last_directory:
+  - The last directory opened in the GUI.
+  - '    '
+  - ''
+ceed.player.CeedPlayer:
+  player_name:
+  - The name of the currently selected video player. It is one of "ffmpeg",
+  - '"thor", "ptgray", or "client".'
+  - ''
+ceed.storage.controller.CeedDataWriterBase:
+  backup_interval:
+  - How frequently the backup file is flushed to disk.
+  - ''
+  - The backup file is the one into which all new data is written to
+  - until saved explicitly in the GUI to the current data file. Until that
+  - happens, we write date to the backup file.
+  - ''
+  compression:
+  - Whether the h5 data file should internally compress the data that it
+  - writes.
+  - ''
+  - This is handled internally by the H5 library, with no external difference
+  - in how the file is loaded/saved/accessed, except that the file size may be
+  - smaller when compressed. Additionally, it may take a little more CPU when
+  - saving experiment data if compressions is enabled.
+  - ''
+  - Valid values are ``"ZIP"``, ``"None"``, or ``"Auto"``.
+  - ''
+  root_path:
+  - The directory part of the path where the data is saved.
+  - '    '
+  - ''
+ceed.storage.controller.DataSerializerBase:
+  clock_idx:
+  - The bit index to use for the clock.
+  - ''
+  - A number between 0-23, inclusive.
+  - ''
+  count_indices:
+  - A list of bit indices to use for the long counter as explained in
+  - :class:`DataSerializerBase`.
+  - ''
+  - Each item is a number between 0-23, inclusive. Their order is the order of
+  - the counter bit pattern. The first index is for the first (least
+  - significant) bit of the counter etc.
+  - ''
+  - If the length of :attr:`count_indices` doesn't divide
+  - :attr:`counter_bit_width` exactly, the ends are padded with zeros for those
+  - bits.
+  - ''
+  counter_bit_width:
+  - The number of bits in the long counter, as described in
+  - :class:`DataSerializerBase`.
+  - ''
+  - Must be a multiple of 8 (to align with a byte).
+  - ''
+  projector_to_aquisition_map:
+  - Maps the bit indices used by Ceed to the corresponding bit indices used
+  - by MCS. It is required to be able to align the two systems.
+  - ''
+  - I.e. if port zero of the projector is connected to port 3 of the MCS
+  - 'controller, then this would be ``{0: 3}``.'
+  - ''
+  short_count_indices:
+  - A list of bit indices to use for the short counter as explained in
+  - :class:`DataSerializerBase`.
+  - ''
+  - Each item is a number between 0-23, inclusive. Their order is the order of
+  - the counter bit pattern. E.g. if it was ``[1, 3]``, the the bit pattern for
+  - 'just the counter would look like: 0b0000, 0b0010, 0b1000, 0b1010, 0b0000,'
+  - 0b0010, 0b1000...
+  - ''
+ceed.view.controller.FrameEstimation:
+  skip_detection_smoothing_n_frames:
+  - How many frames ot average to detect when a frame needs to be skipped.
+  - ''
+  - See class description.
+  - ''
+ceed.view.controller.TeensyFrameEstimation:
+  usb_product_id:
+  - The Teensy product ID. This is how we find the attached Teensy on the
+  - bus. If there's more than one, this needs to be modified.
+  - ''
+  usb_vendor_id:
+  - The Teensy vendor ID. This is how we find the attached Teensy on the
+  - bus. If there's more than one, this needs to be modified.
+  - ''
+  use_teensy:
+  - Whether to use the Teensy.
+  - ''
+  - If it's not attached, set this to False. When False, it falls back on
+  - :class:`FrameEstimation`.
+  - ''
+ceed.view.controller.ViewControllerBase:
+  LED_mode:
+  - The LED mode the projector will be set to during the experiment.
+  - ''
+  - Its value is from the :attr:`led_modes`.
+  - ''
+  LED_mode_idle:
+  - The LED mode the projector will be set to before/after the experiment.
+  - This is used to turn OFF the projector LEDs in between experiments so that
+  - light is not projected on the tissue while stages are designed.
+  - ''
+  - Its value is from the :attr:`led_modes`.
+  - ''
+  cam_transform:
+  - A 4x4 matrix that controls the rotation, offset, and scaling of the
+  - camera images relative to the projector.
+  - ''
+  - In the Ceed GUI, a user can transform the camera image, in addition to
+  - :attr:`flip_camera` until it fully aligns with the projector output.
+  - See also :ref:`view-flip`.
+  - ''
+  experiment_uuid:
+  - A unique uuid that is re-generated before each experiment and sent along
+  - over the corner pixel as the initial uniquely-identifying handshake-pattern.
+  - It allows us to locate this experiment in the MCS data post-hoc.
+  - ''
+  - See :class:`~ceed.storage.controller.DataSerializerBase`.
+  - ''
+  flip_camera:
+  - Whether to flip the camera images horizontally, around the center.
+  - See also :ref:`view-flip`.
+  - ''
+  flip_projector:
+  - Whether to flip the projector output horizontally, around the center.
+  - See also :ref:`view-flip`.
+  - ''
+  frame_rate:
+  - The frame-rate of the GPU that plays the experiment.
+  - ''
+  - This should be set to the exact refresh rate of the GPU, as can be found in
+  - e.g. the nvidia control panel. Otherwise, the experiment will be out of sync
+  - and played incorrectly.
+  - ''
+  - This is internally converted to a fraction (:attr:`frame_rate_numerator`,
+  - :attr:`frame_rate_denominator`), so the number must be such
+  - that it can be converted to a fraction. E.g. 119.96 or 59.94 can be
+  - represented correctly as fractions.
+  - ''
+  frame_rate_denominator:
+  - The denominator of the :attr:`frame_rate` fraction.
+  - '    '
+  - ''
+  frame_rate_numerator:
+  - The numerator of the :attr:`frame_rate` fraction.
+  - '    '
+  - ''
+  fullscreen:
+  - Whether the second Ceed window that runs the "real experiment" is run
+  - in fullscreen mode.
+  - ''
+  - In fullscreen mode the window has no borders and takes over the whole
+  - screen.
+  - ''
+  log_debug_timing:
+  - Whether to log the times that frames are drawn and rendered to a debug
+  - section in the h5 file.
+  - ''
+  - If True, this will additionally be logged for each displayed frame in a
+  - special section in the file.
+  - ''
+  mea_diameter:
+  - The diameter in pixels of the displayed electrode circles in the grid.
+  - ''
+  - See :attr:`mea_transform` also.
+  - ''
+  mea_num_cols:
+  - The number of electrode columns in the array. See :attr:`mea_transform`
+  - also.
+  - ''
+  mea_num_rows:
+  - The number of electrode rows in the array. See :attr:`mea_transform`
+  - also.
+  - ''
+  mea_pitch:
+  - The distance in pixels, center-to-center, between neighboring
+  - rows/columns. It is assumed that it is the same for columns and rows.
+  - ''
+  - See :attr:`mea_transform` also.
+  - ''
+  mea_transform:
+  - A 4x4 matrix that controls the rotation, offset, and scaling of the
+  - mea array relative to the camera.
+  - ''
+  - This is a grid that corresponds to the electrodes in the electrode array.
+  - In the Ceed GUI, a user can transform this grid, in addition to
+  - :attr:`mirror_mea` until it fully aligns with a camera image of the grid
+  - from the actual array.
+  - ''
+  - See also :ref:`view-flip` and the other ``mea_`` properties of this class.
+  - ''
+  mirror_mea:
+  - When True, the MEA grid is mirrored vertically around the center.
+  - See :attr:`mea_transform` also.
+  - ''
+  output_count:
+  - Whether the corner pixel is used to output frame information on the
+  - PROPixx controller IO pot as described in
+  - :class:`~ceed.storage.controller.DataSerializerBase`.
+  - ''
+  - If True, :class:`ceed.storage.controller.DataSerializerBase` is used to set
+  - the 24 bits of the corner pixel. Otherwise, that pixel is treated like the
+  - other normal pixels.
+  - ''
+  pad_to_stage_handshake:
+  - Ad described in :class:`~ceed.storage.controller.DataSerializerBase`,
+  - Ceed sends handshaking data to the MCS system at the start of each
+  - experiment. This helps us align the Ceed and MCS data afterwards. If the
+  - root stage of the experiment is too short, it's possible the full handshake
+  - would not be sent, preventing alignment afterwards.
+  - ''
+  - If :attr:`pad_to_stage_handshake`, then the root stage will be padded
+  - so it goes for the minimum number of clock frames required to finish
+  - the handshake, if it's too short. The shapes will be black for those
+  - padded frames.
+  - ''
+  pre_compute_stages:
+  - Whether the stage run by the experiment should be pre-computed. See
+  - :ref:`pre-compute` for details.
+  - ''
+  screen_height:
+  - The screen height in pixels on which the data is played. This is the
+  - full-screen height.
+  - ''
+  screen_offset_x:
+  - When there are multiple monitors, the monitor on which the experiment is
+  - shown in full-screen mode is controlled by the x-position of the displayed
+  - window.
+  - ''
+  - E.g. to show it on the right monitor of two monitors each 1920 pixel wide,
+  - and with the main monitor being on the left. Then the
+  - :attr:`screen_offset_x` should be set to ``1920``.
+  - ''
+  screen_width:
+  - The screen width in pixels on which the data is played. This is the
+  - full-screen width.
+  - ''
+  skip_estimated_missed_frames:
+  - Whether to drop frames to compensate when we detect that a previous
+  - frame was displayed for longer than a single GPU frame duration. Then, we
+  - may want to drop an equivalent number of frames, rather than
+  - displaying all the subsequent frames at a delay.
+  - ''
+  - See :class:`FrameEstimation` and :class:`TeensyFrameEstimation` for how
+  - we detect these long frames. Use :attr:`TeensyFrameEstimation.use_teensy`
+  - to control which estimator is used.
+  - ''
+  use_software_frame_rate:
+  - Depending on the CPU/GPU, the software may be unable to render faster
+  - than the GPU refresh rate. In that case, the GPU limits us to the GPU frame
+  - rate and :attr:`frame_rate` should be set to match the GPU refresh rate
+  - and this should be False.
+  - ''
+  - If the GPU isn't forcing a frame rate. Then this should be True and
+  - :attr:`frame_rate` should be the desired frame rate. That will restrict us
+  - the given frame rate. However, the actual frame rate will be wildly
+  - inaccurate in this mode, so it's only useful for testing.
+  - ''
+  - One can tell whether the GPU is forcing a frame rate by setting
+  - :attr:`frame_rate` to a large value and setting
+  - :attr:`use_software_frame_rate` to False and seeing what the resultant
+  - frame rate is. If it isn't capped at some value constant, e.g. 120Hz, it
+  - means that the GPU isn't forcing a rate.
+  - ''
+  video_mode:
+  - The current video mode from among the :attr:`video_modes`.
+  - ''
+  - See also :ref:`view-video-mode`.
+  - ''
+ceed.view.main.CeedViewApp:
+  external_function_plugin_package:
+  - Same as :attr:`~ceed.main.CeedApp.external_function_plugin_package`.
+  - '    '
+  - ''
+  external_stage_plugin_package:
+  - Same as :attr:`~ceed.main.CeedApp.external_stage_plugin_package`.
+  - '    '
+  - ''
+cpl_media.ffmpeg.FFmpegPlayer:
+  dshow_filename:
+  - The name of the dshow camera to open.
+  - '    '
+  - ''
+  dshow_opt:
+  - The camera options associated with :attr:`dshow_true_filename` when
+  - dshow is used.
+  - ''
+  dshow_rate:
+  - The frame rate to request from the dshow camera.
+  - '    '
+  - ''
+  dshow_true_filename:
+  - The real and complete filename of the direct show (webcam) device.
+  - '    '
+  - ''
+  file_fmt:
+  - The format used to play the video. Can be empty or a format e.g.
+  - '``mjpeg`` for webcams.'
+  - ''
+  icodec:
+  - The codec used to open the video stream with if it needs to be
+  - specified for the camera.
+  - ''
+  play_filename:
+  - The filename of the media being played. Can be e.g. a filename etc.
+  - '    '
+  - ''
+  use_dshow:
+  - Whether we use dshow - i.e. USB webcams, or normal media sources.
+  - '    '
+  - ''
+cpl_media.player.BasePlayer:
+  metadata_play:
+  - (internal) Describes the video metadata of the video player. This is
+  - the requested format, or best guess of the metadata.
+  - ''
+  - Read only.
+  - ''
+  metadata_play_used:
+  - (internal) Describes the video metadata of the video player that is
+  - actually used by the player. This must be set before recorders may allow
+  - recording the player.
+  - ''
+  - Depending on the metadata needed by the recorder, it may refuse to
+  - record until the needed metadata is given.
+  - ''
+  - Read only.
+  - ''
+cpl_media.ptgray.PTGrayPlayer:
+  brightness:
+  - The camera options for the brightness setting.
+  - ''
+  - This may only be set by calling :meth:`ask_cam_option_config`, not
+  - set directly.
+  - ''
+  cam_config_opts:
+  - The configuration options used to configure the camera after opening.
+  - This are internal and can only be set by the internal thread once
+  - initially set by config.
+  - ''
+  exposure:
+  - The camera options for the exposure setting.
+  - ''
+  - This may only be set by calling :meth:`ask_cam_option_config`, not
+  - set directly.
+  - ''
+  frame_rate:
+  - The camera options for the frame_rate setting.
+  - ''
+  - This may only be set by calling :meth:`ask_cam_option_config`, not
+  - set directly.
+  - ''
+  gain:
+  - The camera options for the gain setting.
+  - ''
+  - This may only be set by calling :meth:`ask_cam_option_config`, not
+  - set directly.
+  - ''
+  gamma:
+  - The camera options for the gamma setting.
+  - ''
+  - This may only be set by calling :meth:`ask_cam_option_config`, not
+  - set directly.
+  - ''
+  hue:
+  - The camera options for the hue setting.
+  - ''
+  - This may only be set by calling :meth:`ask_cam_option_config`, not
+  - set directly.
+  - ''
+  ip:
+  - The IP address of the camera to open. Either :attr:`ip` or
+  - :attr:`serial` must be provided.
+  - ''
+  iris:
+  - The camera options for the iris setting.
+  - ''
+  - This may only be set by calling :meth:`ask_cam_option_config`, not
+  - set directly.
+  - ''
+  mirror:
+  - Whether the camera is mirrored. Read only.
+  - '    '
+  - ''
+  pan:
+  - The camera options for the pan setting.
+  - ''
+  - This may only be set by calling :meth:`ask_cam_option_config`, not
+  - set directly.
+  - ''
+  saturation:
+  - The camera options for the saturation setting.
+  - ''
+  - This may only be set by calling :meth:`ask_cam_option_config`, not
+  - set directly.
+  - ''
+  serial:
+  - The serial number of the camera to open. Either :attr:`ip` or
+  - :attr:`serial` must be provided.
+  - ''
+  sharpness:
+  - The camera options for the sharpness setting.
+  - ''
+  - This may only be set by calling :meth:`ask_cam_option_config`, not
+  - set directly.
+  - ''
+  shutter:
+  - The camera options for the shutter setting.
+  - ''
+  - This may only be set by calling :meth:`ask_cam_option_config`, not
+  - set directly.
+  - ''
+  tilt:
+  - The camera options for the tilt setting.
+  - ''
+  - This may only be set by calling :meth:`ask_cam_option_config`, not
+  - set directly.
+  - ''
+cpl_media.recorder.BaseRecorder:
+  metadata_record:
+  - (internal) Describes the video metadata of the recorder. This is
+  - the requested format, or best guess of the metadata.
+  - ''
+  - Read only.
+  - ''
+cpl_media.recorder.ImageFileRecorder:
+  compression:
+  - Whether to compress when :attr:`extension` is `tiff`. Can be one of
+  - '``''raw'', ''lzw'', ''zip''``.'
+  - ''
+  extension:
+  - The extension of the images being saved.
+  - '    '
+  - ''
+  record_directory:
+  - The directory into which videos should be saved.
+  - '    '
+  - ''
+  record_prefix:
+  - The prefix to the filename of the images being saved.
+  - '    '
+  - ''
+cpl_media.recorder.VideoRecorder:
+  estimate_record_rate:
+  - Whether to use :attr:`cpl_media.player.BasePlayer.real_rate` for the
+  - recorder frame rate, as opposed to the one initially provided by the
+  - player.
+  - ''
+  record_directory:
+  - The directory into which videos should be saved.
+  - '    '
+  - ''
+  record_fname:
+  - The filename to be used to record the next video.
+  - ''
+  - If ``{}`` is present in the filename, it'll be replaced with the value of
+  - :attr:`record_fname_count` which auto increments after every video, when
+  - used. We use Python's ``format`` machinery for this.
+  - ''
+  record_fname_count:
+  - A counter that auto increments by one after every recorded video.
+  - ''
+  - Used to give unique filenames for each video file. See
+  - :attr:`record_fname`.
+  - ''
+cpl_media.remote.client.RemoteVideoPlayer:
+  port:
+  - The server port that broadcasts the data.
+  - '    '
+  - ''
+  server:
+  - The server address that broadcasts the data.
+  - '    '
+  - ''
+  timeout:
+  - How long to wait before timing out when reading data before checking the
+  - queue for other requests.
+  - ''
+cpl_media.remote.server.RemoteVideoRecorder:
+  max_images_buffered:
+  - How many images the server should buffer before it starts dropping
+  - images, rather than queuing them to be sent to the client.
+  - ''
+  port:
+  - The server port on which to broadcast the data.
+  - '    '
+  - ''
+  server:
+  - The server address on which to broadcast the data.
+  - '    '
+  - ''
+  timeout:
+  - How long to wait before timing out when reading data before checking the
+  - queue for other requests.
+  - ''
+cpl_media.rtv.RTVPlayer:
+  pipe_name:
+  - The internal name used to communicate with Barst. When running remotely,
+  - or if the server already is open, the name is used to discover Barst.
+  - ''
+  pixel_fmt:
+  - The pixel format of the images being played.
+  - ''
+  - It can be one of the keys in :attr:`image_fmts`.
+  - ''
+  port:
+  - The RTV port (camera number) on the card to use.
+  - '    '
+  - ''
+  remote_computer_name:
+  - The name of the computer running Barst, if it's a remote computer.
+  - Otherwise it's the empty string.
+  - ''
+  video_fmt:
+  - The video format of the video being played.
+  - ''
+  - It can be one of the keys in :attr:`video_fmts`.
+  - ''
+cpl_media.thorcam.ThorCamPlayer:
+  binning_x:
+  - The x binning value to use.
+  - ''
+  binning_x_range:
+  - The supported exposure range.
+  - ''
+  binning_y:
+  - The y binning value to use.
+  - ''
+  binning_y_range:
+  - The supported exposure range.
+  - ''
+  black_level:
+  - The black level value to use.
+  - ''
+  black_level_range:
+  - The supported exposure range.
+  - ''
+  color_gain:
+  - The color gain for each red, green, and blue channel.
+  - ''
+  exposure_ms:
+  - The exposure value in ms to use.
+  - ''
+  exposure_range:
+  - The supported exposure range in ms.
+  - ''
+  frame_queue_size:
+  - The max number of image frames to be allowed on the camera's hardware
+  - queue. Once exceeded, the frames are dropped.
+  - ''
+  freq:
+  - The frequency to use.
+  - ''
+  gain:
+  - The gain value to use.
+  - ''
+  gain_range:
+  - The supported exposure range.
+  - ''
+  num_queued_frames:
+  - The number of image frames currently on the camera's hardware queue.
+  - ''
+  roi_height:
+  - The height after the y start position of the ROI in pixels, to use.
+  - ''
+  roi_width:
+  - The width after the x start position of the ROI in pixels, to use.
+  - ''
+  roi_x:
+  - The x start position of the ROI in pixels.
+  - ''
+  roi_y:
+  - The y start position of the ROI in pixels.
+  - ''
+  sensor_size:
+  - The size of the sensor in pixels.
+  - ''
+  serial:
+  - The serial number of the camera that will be opened.
+  - '    '
+  - ''
+  serials:
+  - The list of serial numbers representing the cameras available.
+  - '    '
+  - ''
+  supported_freqs:
+  - The supported frequencies.
+  - ''
+  supported_taps:
+  - The supported taps.
+  - ''
+  supported_triggers:
+  - The trigger types supported by the camera.
+  - ''
+  supports_color:
+  - Whether the camera supports color.
+  - ''
+  taps:
+  - The tap to use.
+  - ''
+  trigger_count:
+  - The number of frames to capture in response to the trigger.
+  - ''
+  trigger_type:
+  - The trigger type of the camera to use.
+  - ''
+more_kivy_app.app.MoreKivyApp:
+  inspect:
+  - Enables GUI inspection. If True, it is activated by hitting ctrl-e in
+  - the GUI.
+  - ''

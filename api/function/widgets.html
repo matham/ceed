@@ -1,0 +1,694 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Function Widgets &mdash; Ceed  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Shape API" href="../shape/api.html" />
+    <link rel="prev" title="Function plugins" href="function_plugin.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Ceed
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../blueprint.html">System Blueprint</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../guide/guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../config.html">CEED Config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../example_code/example_code.html">Example Analysis Code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../apps/apps.html">Ceed Apps</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">The Ceed API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../ceed.html">Ceed</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../analysis/api.html">Analysis API</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="api.html">Function API</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="function.html">Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="param_noise.html">Parameter randomization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="function_plugin.html">Function plugins</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Function Widgets</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../shape/api.html">Shape API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../stage/api.html">Stage API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../view/api.html">Experiment API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../storage/api.html">Storage API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../player.html">Video Player</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils.html">Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../graphics/api.html">Graphics API</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../optics/optics.html">Microscope optics</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Ceed</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../api.html">The Ceed API</a> &raquo;</li>
+        
+          <li><a href="api.html">Function API</a> &raquo;</li>
+        
+      <li>Function Widgets</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../../_sources/api/function/widgets.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <span class="target" id="module-ceed.function.func_widgets"></span><div class="section" id="function-widgets">
+<h1>Function Widgets<a class="headerlink" href="#function-widgets" title="Permalink to this headline">¶</a></h1>
+<p>Defines the GUI components used with <a class="reference internal" href="function.html#module-ceed.function" title="ceed.function"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ceed.function</span></code></a>.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncList">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.function.func_widgets.</span></span><span class="sig-name descname"><span class="pre">FuncList</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.func_widgets.FuncList" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://kivy-garden.github.io/drag_n_drop/flower.html#kivy_garden.drag_n_drop.DraggableLayoutBehavior" title="(in Drag-N-Drop)"><code class="xref py py-class docutils literal notranslate"><span class="pre">kivy_garden.drag_n_drop.DraggableLayoutBehavior</span></code></a>, <a class="reference internal" href="../graphics/graphics.html#ceed.graphics.ShowMoreSelection" title="ceed.graphics.ShowMoreSelection"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.graphics.ShowMoreSelection</span></code></a>, <a class="reference internal" href="../graphics/graphics.html#ceed.graphics.WidgetList" title="ceed.graphics.WidgetList"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.graphics.WidgetList</span></code></a>, <a class="reference external" href="https://kivy.org/doc/stable/api-kivy.uix.boxlayout.html#kivy.uix.boxlayout.BoxLayout" title="(in Kivy v2.0.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">kivy.uix.boxlayout.BoxLayout</span></code></a></p>
+<p>Widget that shows the list of available functions to the user and
+also allows for the creation of new functions to be added to the list.</p>
+<p>The functions come from <a class="reference internal" href="function.html#ceed.function.FunctionFactoryBase" title="ceed.function.FunctionFactoryBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.function.FunctionFactoryBase</span></code></a>.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncList.function_factory">
+<span class="sig-name descname"><span class="pre">function_factory</span></span><em class="property"><span class="pre">:</span> <a class="reference internal" href="function.html#ceed.function.FunctionFactoryBase" title="ceed.function.FunctionFactoryBase"><span class="pre">ceed.function.FunctionFactoryBase</span></a></em><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.function.func_widgets.FuncList.function_factory" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="function.html#ceed.function.FunctionFactoryBase" title="ceed.function.FunctionFactoryBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.function.FunctionFactoryBase</span></code></a> that is used for the list
+of functions available to the user and with whom new functions created in
+the GUI are registered.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncList.is_visible">
+<span class="sig-name descname"><span class="pre">is_visible</span></span><a class="headerlink" href="#ceed.function.func_widgets.FuncList.is_visible" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether the list is currently visible.</p>
+<p>It is used by the selection logic and it’s always True for this class.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncList.handle_drag_release">
+<span class="sig-name descname"><span class="pre">handle_drag_release</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drag_widget</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.func_widgets.FuncList.handle_drag_release" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is called when a widget is dropped in the layout.
+<code class="docutils literal notranslate"><span class="pre">index</span></code> is the index in <cite>children</cite> where the widget should be added.
+<code class="docutils literal notranslate"><span class="pre">drag_widget</span></code> is the <code class="xref py py-class docutils literal notranslate"><span class="pre">DraggableObjectBehavior</span></code> that was dropped
+there.</p>
+<p>This must be overwritten by the inherited class to actually do the
+<code class="docutils literal notranslate"><span class="pre">add_widget</span></code> or something else.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncList.add_func">
+<span class="sig-name descname"><span class="pre">add_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.func_widgets.FuncList.add_func" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a copy of the the function with the given <code class="docutils literal notranslate"><span class="pre">name</span></code> from
+<a class="reference internal" href="#ceed.function.func_widgets.FuncList.function_factory" title="ceed.function.func_widgets.FuncList.function_factory"><code class="xref py py-attr docutils literal notranslate"><span class="pre">function_factory</span></code></a> to the available functions in
+<a class="reference internal" href="#ceed.function.func_widgets.FuncList.function_factory" title="ceed.function.func_widgets.FuncList.function_factory"><code class="xref py py-attr docutils literal notranslate"><span class="pre">function_factory</span></code></a> (with a new name of course) or to a function
+group.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncList.show_child_func_in_func">
+<span class="sig-name descname"><span class="pre">show_child_func_in_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent_func</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="function.html#ceed.function.FuncGroup" title="ceed.function.FuncGroup"><span class="pre">ceed.function.FuncGroup</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">child_func</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="function.html#ceed.function.FuncBase" title="ceed.function.FuncBase"><span class="pre">ceed.function.FuncBase</span></a><span class="p"><span class="pre">,</span> </span><a class="reference internal" href="function.html#ceed.function.CeedFuncRef" title="ceed.function.CeedFuncRef"><span class="pre">ceed.function.CeedFuncRef</span></a><span class="p"><span class="pre">,</span> </span><a class="reference internal" href="function.html#ceed.function.FuncGroup" title="ceed.function.FuncGroup"><span class="pre">ceed.function.FuncGroup</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.func_widgets.FuncList.show_child_func_in_func" title="Permalink to this definition">¶</a></dt>
+<dd><p>Displays the child function in the GUI as the child of the parent.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>parent_func</strong> – Function child is added to.</p></li>
+<li><p><strong>child_func</strong> – the child function.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncList.show_func_in_listing">
+<span class="sig-name descname"><span class="pre">show_func_in_listing</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="function.html#ceed.function.FuncBase" title="ceed.function.FuncBase"><span class="pre">ceed.function.FuncBase</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.func_widgets.FuncList.show_func_in_listing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shows the function, previously added to the <a class="reference internal" href="#ceed.function.func_widgets.FuncList.function_factory" title="ceed.function.func_widgets.FuncList.function_factory"><code class="xref py py-attr docutils literal notranslate"><span class="pre">function_factory</span></code></a>
+in the GUI.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>func</strong> – The <a class="reference internal" href="function.html#ceed.function.FuncBase" title="ceed.function.FuncBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.function.FuncBase</span></code></a> to show.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncList.get_selectable_nodes">
+<span class="sig-name descname"><span class="pre">get_selectable_nodes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.func_widgets.FuncList.get_selectable_nodes" title="Permalink to this definition">¶</a></dt>
+<dd><p>(internal) Returns a list of the nodes that can be selected. It can
+be overwritten by the derived widget to return the correct list.</p>
+<p>This list is used to determine which nodes to select with group
+selection. E.g. the last element in the list will be selected when
+home is pressed, pagedown will move (or add to, if shift is held) the
+selection from the current position by negative <code class="xref py py-attr docutils literal notranslate"><span class="pre">page_count</span></code>
+nodes starting from the position of the currently selected node in
+this list and so on. Still, nodes can be selected even if they are not
+in this list.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>It is safe to dynamically change this list including removing,
+adding, or re-arranging its elements. Nodes can be selected even
+if they are not on this list. And selected nodes removed from the
+list will remain selected until <code class="xref py py-meth docutils literal notranslate"><span class="pre">deselect_node()</span></code> is called.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Layouts display their children in the reverse order. That is, the
+contents of <a class="reference external" href="https://kivy.org/doc/stable/api-kivy.uix.widget.html#kivy.uix.widget.Widget.children" title="(in Kivy v2.0.0)"><code class="xref py py-attr docutils literal notranslate"><span class="pre">children</span></code></a> is displayed
+form right to left, bottom to top. Therefore, internally, the
+indices of the elements returned by this function are reversed to
+make it work by default for most layouts so that the final result
+is consistent e.g. home, although it will select the last element
+in this list visually, will select the first element when
+counting from top to bottom and left to right. If this behavior is
+not desired, a reversed list should be returned instead.</p>
+</div>
+<p>Defaults to returning <a class="reference external" href="https://kivy.org/doc/stable/api-kivy.uix.widget.html#kivy.uix.widget.Widget.children" title="(in Kivy v2.0.0)"><code class="xref py py-attr docutils literal notranslate"><span class="pre">children</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncList.clear_all">
+<span class="sig-name descname"><span class="pre">clear_all</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.func_widgets.FuncList.clear_all" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes all the widgets associated with the registered functions in
+<a class="reference internal" href="#ceed.function.func_widgets.FuncList.function_factory" title="ceed.function.func_widgets.FuncList.function_factory"><code class="xref py py-attr docutils literal notranslate"><span class="pre">function_factory</span></code></a> from the GUI.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncList.show_function">
+<span class="sig-name descname"><span class="pre">show_function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="function.html#ceed.function.FuncBase" title="ceed.function.FuncBase"><span class="pre">ceed.function.FuncBase</span></a><span class="p"><span class="pre">,</span> </span><a class="reference internal" href="function.html#ceed.function.CeedFuncRef" title="ceed.function.CeedFuncRef"><span class="pre">ceed.function.CeedFuncRef</span></a><span class="p"><span class="pre">,</span> </span><a class="reference internal" href="function.html#ceed.function.FuncGroup" title="ceed.function.FuncGroup"><span class="pre">ceed.function.FuncGroup</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.func_widgets.FuncList.show_function" title="Permalink to this definition">¶</a></dt>
+<dd><p>Displays the function (that is in the <a class="reference internal" href="#ceed.function.func_widgets.FuncList.function_factory" title="ceed.function.func_widgets.FuncList.function_factory"><code class="xref py py-attr docutils literal notranslate"><span class="pre">function_factory</span></code></a>) in
+the GUI.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>func</strong> – The <a class="reference internal" href="function.html#ceed.function.FuncBase" title="ceed.function.FuncBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.function.FuncBase</span></code></a> to display.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncWidget">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.function.func_widgets.</span></span><span class="sig-name descname"><span class="pre">FuncWidget</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.func_widgets.FuncWidget" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../graphics/graphics.html#ceed.graphics.ShowMoreBehavior" title="ceed.graphics.ShowMoreBehavior"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.graphics.ShowMoreBehavior</span></code></a>, <a class="reference external" href="https://kivy.org/doc/stable/api-kivy.uix.boxlayout.html#kivy.uix.boxlayout.BoxLayout" title="(in Kivy v2.0.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">kivy.uix.boxlayout.BoxLayout</span></code></a></p>
+<p>The widget that represents a <a class="reference internal" href="function.html#ceed.function.CeedFunc" title="ceed.function.CeedFunc"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.function.CeedFunc</span></code></a> instance.</p>
+<p>It contains all the configuration options of the function.</p>
+<p>The class is reused anywhere a function is shown in the GUI, including
+in <a class="reference internal" href="../stage/stage.html#module-ceed.stage" title="ceed.stage"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ceed.stage</span></code></a> so it is abstracted.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncWidget.func">
+<span class="sig-name descname"><span class="pre">func</span></span><em class="property"><span class="pre">:</span> <span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="function.html#ceed.function.FuncBase" title="ceed.function.FuncBase"><span class="pre">ceed.function.FuncBase</span></a><span class="p"><span class="pre">,</span> </span><a class="reference internal" href="function.html#ceed.function.CeedFuncRef" title="ceed.function.CeedFuncRef"><span class="pre">ceed.function.CeedFuncRef</span></a><span class="p"><span class="pre">,</span> </span><a class="reference internal" href="function.html#ceed.function.FuncGroup" title="ceed.function.FuncGroup"><span class="pre">ceed.function.FuncGroup</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.function.func_widgets.FuncWidget.func" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.function.BaseFunc</span></code> or
+<a class="reference internal" href="function.html#ceed.function.CeedFuncRef" title="ceed.function.CeedFuncRef"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.function.CeedFuncRef</span></code></a> instance associated with this widget.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncWidget.ref_func">
+<span class="sig-name descname"><span class="pre">ref_func</span></span><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.function.func_widgets.FuncWidget.ref_func" title="Permalink to this definition">¶</a></dt>
+<dd><p>If <a class="reference internal" href="#ceed.function.func_widgets.FuncWidget.func" title="ceed.function.func_widgets.FuncWidget.func"><code class="xref py py-attr docutils literal notranslate"><span class="pre">func</span></code></a> is a <a class="reference internal" href="function.html#ceed.function.CeedFuncRef" title="ceed.function.CeedFuncRef"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.function.CeedFuncRef</span></code></a>, this is the
+actual <code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.function.BaseFunc</span></code> <a class="reference internal" href="#ceed.function.func_widgets.FuncWidget.func" title="ceed.function.func_widgets.FuncWidget.func"><code class="xref py py-attr docutils literal notranslate"><span class="pre">func</span></code></a> is internally
+referencing. Otherwise, it’s None.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncWidget.selected">
+<span class="sig-name descname"><span class="pre">selected</span></span><a class="headerlink" href="#ceed.function.func_widgets.FuncWidget.selected" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether the function is currently selected in the GUI.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncWidget.selection_controller">
+<span class="sig-name descname"><span class="pre">selection_controller</span></span><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.function.func_widgets.FuncWidget.selection_controller" title="Permalink to this definition">¶</a></dt>
+<dd><p>The container that gets called to select the widget when the user
+selects it with a touch. E.g. <a class="reference internal" href="#ceed.function.func_widgets.FuncList" title="ceed.function.func_widgets.FuncList"><code class="xref py py-class docutils literal notranslate"><span class="pre">FuncList</span></code></a> in the function listing
+case or <a class="reference internal" href="../stage/widgets.html#ceed.stage.stage_widgets.StageFuncChildrenList" title="ceed.stage.stage_widgets.StageFuncChildrenList"><code class="xref py py-class docutils literal notranslate"><span class="pre">StageFuncChildrenList</span></code></a> if it
+belongs to a stage.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncWidget.func_controller">
+<span class="sig-name descname"><span class="pre">func_controller</span></span><a class="headerlink" href="#ceed.function.func_widgets.FuncWidget.func_controller" title="Permalink to this definition">¶</a></dt>
+<dd><p>The controller to which the function is added or removed from.
+This is e.g. <a class="reference internal" href="function.html#ceed.function.FunctionFactoryBase" title="ceed.function.FunctionFactoryBase"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ceed.function.FunctionFactoryBase</span></code></a> in the function list
+case or the <code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.stage.CeedStage</span></code> to which the function is
+attached.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncWidget.is_visible">
+<span class="sig-name descname"><span class="pre">is_visible</span></span><a class="headerlink" href="#ceed.function.func_widgets.FuncWidget.is_visible" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether the function is currently visible in the GUI. I.e. when all of
+it’s parents all the way to the root is visible.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncWidget.theme_interpolation">
+<span class="sig-name descname"><span class="pre">theme_interpolation</span></span><em class="property"> <span class="pre">=</span> <span class="pre">0</span></em><a class="headerlink" href="#ceed.function.func_widgets.FuncWidget.theme_interpolation" title="Permalink to this definition">¶</a></dt>
+<dd><p>The fraction by which <code class="xref py py-meth docutils literal notranslate"><span class="pre">base_kivy_app.utils.ColorTheme.interpolate()</span></code>
+interpolates the two given colors
+(<code class="xref py py-attr docutils literal notranslate"><span class="pre">base_kivy_app.utils.ColorTheme.primary_light</span></code> and
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">base_kivy_app.utils.ColorTheme.primary</span></code>).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncWidget.settings_root">
+<span class="sig-name descname"><span class="pre">settings_root</span></span><em class="property"><span class="pre">:</span> <a class="reference internal" href="#ceed.function.func_widgets.FuncSettingsDropDown" title="ceed.function.func_widgets.FuncSettingsDropDown"><span class="pre">ceed.function.func_widgets.FuncSettingsDropDown</span></a></em><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.function.func_widgets.FuncWidget.settings_root" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="#ceed.function.func_widgets.FuncSettingsDropDown" title="ceed.function.func_widgets.FuncSettingsDropDown"><code class="xref py py-class docutils literal notranslate"><span class="pre">FuncSettingsDropDown</span></code></a> used by this function to show
+settings.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncWidget.expand_widget">
+<span class="sig-name descname"><span class="pre">expand_widget</span></span><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.function.func_widgets.FuncWidget.expand_widget" title="Permalink to this definition">¶</a></dt>
+<dd><p>The widget that when pressed will expand to show the <code class="xref py py-attr docutils literal notranslate"><span class="pre">more</span></code>
+widget.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncWidget.name">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#ceed.function.func_widgets.FuncWidget.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="function.html#ceed.function.FuncBase.name" title="ceed.function.FuncBase.name"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ceed.function.FuncBase.name</span></code></a> of the function.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncWidget.get_display_cls">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get_display_cls</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="function.html#ceed.function.FuncBase" title="ceed.function.FuncBase"><span class="pre">ceed.function.FuncBase</span></a><span class="p"><span class="pre">,</span> </span><a class="reference internal" href="function.html#ceed.function.FuncGroup" title="ceed.function.FuncGroup"><span class="pre">ceed.function.FuncGroup</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><span class="pre">ceed.function.func_widgets.FuncWidgetType</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ceed.function.func_widgets.FuncWidget.get_display_cls" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the widget class to use to display the function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>func</strong> – The <a class="reference internal" href="function.html#ceed.function.FuncBase" title="ceed.function.FuncBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.function.FuncBase</span></code></a> instance.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The widget class to use to display it in the GUI.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncWidget.add_func_noise_param">
+<span class="sig-name descname"><span class="pre">add_func_noise_param</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="function.html#ceed.function.FuncBase" title="ceed.function.FuncBase"><span class="pre">ceed.function.FuncBase</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">entry_widget</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.func_widgets.FuncWidget.add_func_noise_param" title="Permalink to this definition">¶</a></dt>
+<dd><p>Attaches a noise distribution to the function.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncWidget.display_properties">
+<span class="sig-name descname"><span class="pre">display_properties</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.func_widgets.FuncWidget.display_properties" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs the function’s configuration option widgets that is used
+by the user to customize the function in the GUI.</p>
+<p>It uses e.g. <a class="reference internal" href="function.html#ceed.function.FuncBase.get_gui_elements" title="ceed.function.FuncBase.get_gui_elements"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ceed.function.FuncBase.get_gui_elements()</span></code></a> and
+<a class="reference internal" href="function.html#ceed.function.FuncBase.get_gui_props" title="ceed.function.FuncBase.get_gui_props"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ceed.function.FuncBase.get_gui_props()</span></code></a> to get the options to
+show.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncWidget.initialize_display">
+<span class="sig-name descname"><span class="pre">initialize_display</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="function.html#ceed.function.FuncBase" title="ceed.function.FuncBase"><span class="pre">ceed.function.FuncBase</span></a><span class="p"><span class="pre">,</span> </span><a class="reference internal" href="function.html#ceed.function.CeedFuncRef" title="ceed.function.CeedFuncRef"><span class="pre">ceed.function.CeedFuncRef</span></a><span class="p"><span class="pre">,</span> </span><a class="reference internal" href="function.html#ceed.function.FuncGroup" title="ceed.function.FuncGroup"><span class="pre">ceed.function.FuncGroup</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func_controller</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">selection_controller</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.func_widgets.FuncWidget.initialize_display" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets <a class="reference internal" href="#ceed.function.func_widgets.FuncWidget.selection_controller" title="ceed.function.func_widgets.FuncWidget.selection_controller"><code class="xref py py-attr docutils literal notranslate"><span class="pre">selection_controller</span></code></a> and <a class="reference internal" href="#ceed.function.func_widgets.FuncWidget.func_controller" title="ceed.function.func_widgets.FuncWidget.func_controller"><code class="xref py py-attr docutils literal notranslate"><span class="pre">func_controller</span></code></a>,
+and generates and applies the kv GUI rules for the widget.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncWidget.remove_func">
+<span class="sig-name descname"><span class="pre">remove_func</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.func_widgets.FuncWidget.remove_func" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes the function from its parent and removes it from the GUI.
+This is used when deleting the function in the GUI.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncWidget.handle_expand_widget">
+<span class="sig-name descname"><span class="pre">handle_expand_widget</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">expand</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.func_widgets.FuncWidget.handle_expand_widget" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called from kv to hide the widget that exapnds the group view when
+the function being represented is not a group.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncWidget.replace_ref_func_with_source">
+<span class="sig-name descname"><span class="pre">replace_ref_func_with_source</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.func_widgets.FuncWidget.replace_ref_func_with_source" title="Permalink to this definition">¶</a></dt>
+<dd><p>If this <a class="reference internal" href="#ceed.function.func_widgets.FuncWidget.func" title="ceed.function.func_widgets.FuncWidget.func"><code class="xref py py-attr docutils literal notranslate"><span class="pre">func</span></code></a> is a <a class="reference internal" href="function.html#ceed.function.CeedFuncRef" title="ceed.function.CeedFuncRef"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.function.CeedFuncRef</span></code></a>, this
+will replace the reference with the a copy of the original function
+being referenced and the GUI will also be updated to reflect that.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncWidget.apply_kv">
+<span class="sig-name descname"><span class="pre">apply_kv</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.func_widgets.FuncWidget.apply_kv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies the kv rules to the widget.</p>
+<p>The rules are manually applied to the class because we want to have
+a chance to initialize some instance variables before the kv rules is
+applied so they can be referred to from kv without having to check
+if they are None.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncWidget.create_settings_dropdown">
+<span class="sig-name descname"><span class="pre">create_settings_dropdown</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.func_widgets.FuncWidget.create_settings_dropdown" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates the dropdown widget that displays the function’s
+configuration options.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncWidgetGroup">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.function.func_widgets.</span></span><span class="sig-name descname"><span class="pre">FuncWidgetGroup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.func_widgets.FuncWidgetGroup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ceed.function.func_widgets.FuncWidget" title="ceed.function.func_widgets.FuncWidget"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.function.func_widgets.FuncWidget</span></code></a></p>
+<p>The widget used to display a <a class="reference internal" href="function.html#ceed.function.FuncGroup" title="ceed.function.FuncGroup"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.function.FuncGroup</span></code></a> instance
+in the GUI.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncWidgetGroup.children_container">
+<span class="sig-name descname"><span class="pre">children_container</span></span><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.function.func_widgets.FuncWidgetGroup.children_container" title="Permalink to this definition">¶</a></dt>
+<dd><p>The widget instance that displays all the widgets representing the
+children functions of this function.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncWidgetGroup.remove_func">
+<span class="sig-name descname"><span class="pre">remove_func</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.func_widgets.FuncWidgetGroup.remove_func" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes the function from its parent and removes it from the GUI.
+This is used when deleting the function in the GUI.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncWidgetGroup.initialize_display">
+<span class="sig-name descname"><span class="pre">initialize_display</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func_controller</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">selection_controller</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.func_widgets.FuncWidgetGroup.initialize_display" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets <code class="xref py py-attr docutils literal notranslate"><span class="pre">selection_controller</span></code> and <code class="xref py py-attr docutils literal notranslate"><span class="pre">func_controller</span></code>,
+and generates and applies the kv GUI rules for the widget.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncWidgetGroup.apply_kv">
+<span class="sig-name descname"><span class="pre">apply_kv</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.func_widgets.FuncWidgetGroup.apply_kv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies the kv rules to the widget.</p>
+<p>The rules are manually applied to the class because we want to have
+a chance to initialize some instance variables before the kv rules is
+applied so they can be referred to from kv without having to check
+if they are None.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncWidgetGroup.selected_child">
+<span class="sig-name descname"><span class="pre">selected_child</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.func_widgets.FuncWidgetGroup.selected_child" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the child or sub-child etc. <a class="reference internal" href="function.html#ceed.function.FuncBase" title="ceed.function.FuncBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.function.FuncBase</span></code></a>
+that is selected in the GUI or None.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncWidgetGroup.handle_expand_widget">
+<span class="sig-name descname"><span class="pre">handle_expand_widget</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">expand</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.func_widgets.FuncWidgetGroup.handle_expand_widget" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called from kv to hide the widget that exapnds the group view when
+the function being represented is not a group.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncPropTextWidget">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.function.func_widgets.</span></span><span class="sig-name descname"><span class="pre">FuncPropTextWidget</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.func_widgets.FuncPropTextWidget" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">base_kivy_app.graphics.FlatTextInput</span></code></p>
+<p>The widget used to allow editing a text based configuration option of a
+<a class="reference internal" href="function.html#ceed.function.FuncBase" title="ceed.function.FuncBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.function.FuncBase</span></code></a>.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncPropTextWidget.func">
+<span class="sig-name descname"><span class="pre">func</span></span><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.function.func_widgets.FuncPropTextWidget.func" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="function.html#ceed.function.FuncBase" title="ceed.function.FuncBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.function.FuncBase</span></code></a> instance it’s associated with.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncPropTextWidget.prop_name">
+<span class="sig-name descname"><span class="pre">prop_name</span></span><em class="property"> <span class="pre">=</span> <span class="pre">''</span></em><a class="headerlink" href="#ceed.function.func_widgets.FuncPropTextWidget.prop_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>The name of the property of <a class="reference internal" href="#ceed.function.func_widgets.FuncPropTextWidget.func" title="ceed.function.func_widgets.FuncPropTextWidget.func"><code class="xref py py-attr docutils literal notranslate"><span class="pre">func</span></code></a> that this widget edits.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncPropTextWidget.apply_binding">
+<span class="sig-name descname"><span class="pre">apply_binding</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.func_widgets.FuncPropTextWidget.apply_binding" title="Permalink to this definition">¶</a></dt>
+<dd><p>Starts tracking the <a class="reference internal" href="#ceed.function.func_widgets.FuncPropTextWidget.prop_name" title="ceed.function.func_widgets.FuncPropTextWidget.prop_name"><code class="xref py py-attr docutils literal notranslate"><span class="pre">prop_name</span></code></a> of the associated
+<a class="reference internal" href="#ceed.function.func_widgets.FuncPropTextWidget.func" title="ceed.function.func_widgets.FuncPropTextWidget.func"><code class="xref py py-attr docutils literal notranslate"><span class="pre">func</span></code></a> and updates the GUI with changes.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncPropTextWidget.unbind_tracking">
+<span class="sig-name descname"><span class="pre">unbind_tracking</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.func_widgets.FuncPropTextWidget.unbind_tracking" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stops the tracking initialized with <a class="reference internal" href="#ceed.function.func_widgets.FuncPropTextWidget.apply_binding" title="ceed.function.func_widgets.FuncPropTextWidget.apply_binding"><code class="xref py py-meth docutils literal notranslate"><span class="pre">apply_binding()</span></code></a>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncNamePropTextWidget">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.function.func_widgets.</span></span><span class="sig-name descname"><span class="pre">FuncNamePropTextWidget</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.func_widgets.FuncNamePropTextWidget" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ceed.function.func_widgets.FuncPropTextWidget" title="ceed.function.func_widgets.FuncPropTextWidget"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.function.func_widgets.FuncPropTextWidget</span></code></a></p>
+<p>The widget used to edit the <a class="reference internal" href="function.html#ceed.function.FuncBase.name" title="ceed.function.FuncBase.name"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ceed.function.FuncBase.name</span></code></a> of a
+<a class="reference internal" href="function.html#ceed.function.FuncBase" title="ceed.function.FuncBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.function.FuncBase</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncSettingsDropDown">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.function.func_widgets.</span></span><span class="sig-name descname"><span class="pre">FuncSettingsDropDown</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func_widget</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.func_widgets.FuncSettingsDropDown" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">kivy.factory.FlatDropDown</span></code></p>
+<p>A dropdown widget used to show settings when customizing functions.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncSettingsDropDown.func_widget">
+<span class="sig-name descname"><span class="pre">func_widget</span></span><em class="property"><span class="pre">:</span> <a class="reference internal" href="#ceed.function.func_widgets.FuncWidget" title="ceed.function.func_widgets.FuncWidget"><span class="pre">ceed.function.func_widgets.FuncWidget</span></a></em><a class="headerlink" href="#ceed.function.func_widgets.FuncSettingsDropDown.func_widget" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="#ceed.function.func_widgets.FuncWidget" title="ceed.function.func_widgets.FuncWidget"><code class="xref py py-class docutils literal notranslate"><span class="pre">FuncWidget</span></code></a> this dropdown is displaying settings for.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncNoiseDropDown">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.function.func_widgets.</span></span><span class="sig-name descname"><span class="pre">FuncNoiseDropDown</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prop_name</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.func_widgets.FuncNoiseDropDown" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">kivy.factory.FlatDropDown</span></code></p>
+<p>Widget for displaying options to add randomness to the functions.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncNoiseDropDown.param_container">
+<span class="sig-name descname"><span class="pre">param_container</span></span><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.function.func_widgets.FuncNoiseDropDown.param_container" title="Permalink to this definition">¶</a></dt>
+<dd><p>The grid widget that displays all user configurable distribution
+parameters.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncNoiseDropDown.func">
+<span class="sig-name descname"><span class="pre">func</span></span><em class="property"><span class="pre">:</span> <a class="reference internal" href="function.html#ceed.function.FuncBase" title="ceed.function.FuncBase"><span class="pre">ceed.function.FuncBase</span></a></em><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.function.func_widgets.FuncNoiseDropDown.func" title="Permalink to this definition">¶</a></dt>
+<dd><p>The function to which this is attached.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncNoiseDropDown.prop_name">
+<span class="sig-name descname"><span class="pre">prop_name</span></span><em class="property"> <span class="pre">=</span> <span class="pre">''</span></em><a class="headerlink" href="#ceed.function.func_widgets.FuncNoiseDropDown.prop_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>The property of the function for which this widget selects the
+(optional) distribution.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncNoiseDropDown.noise_factory">
+<span class="sig-name descname"><span class="pre">noise_factory</span></span><em class="property"><span class="pre">:</span> <a class="reference internal" href="param_noise.html#ceed.function.param_noise.ParameterNoiseFactory" title="ceed.function.param_noise.ParameterNoiseFactory"><span class="pre">ceed.function.param_noise.ParameterNoiseFactory</span></a></em><a class="headerlink" href="#ceed.function.func_widgets.FuncNoiseDropDown.noise_factory" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="param_noise.html#ceed.function.param_noise.ParameterNoiseFactory" title="ceed.function.param_noise.ParameterNoiseFactory"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.function.param_noise.ParameterNoiseFactory</span></code></a> to use
+to get the noise distribution from.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncNoiseDropDown.noise_param">
+<span class="sig-name descname"><span class="pre">noise_param</span></span><em class="property"><span class="pre">:</span> <a class="reference internal" href="param_noise.html#ceed.function.param_noise.NoiseBase" title="ceed.function.param_noise.NoiseBase"><span class="pre">ceed.function.param_noise.NoiseBase</span></a></em><a class="headerlink" href="#ceed.function.func_widgets.FuncNoiseDropDown.noise_param" title="Permalink to this definition">¶</a></dt>
+<dd><p>The optional <a class="reference internal" href="param_noise.html#ceed.function.param_noise.NoiseBase" title="ceed.function.param_noise.NoiseBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.function.param_noise.NoiseBase</span></code></a> instance to
+use for the parameter.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncNoiseDropDown.clear_noise_param">
+<span class="sig-name descname"><span class="pre">clear_noise_param</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.func_widgets.FuncNoiseDropDown.clear_noise_param" title="Permalink to this definition">¶</a></dt>
+<dd><p>Unbinds and clears the widgets that track the distributions
+parameters.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncNoiseDropDown.set_noise_instance">
+<span class="sig-name descname"><span class="pre">set_noise_instance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cls_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.func_widgets.FuncNoiseDropDown.set_noise_instance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Selects the distribution class to use, by name.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.func_widgets.FuncNoiseDropDown.show_noise_params">
+<span class="sig-name descname"><span class="pre">show_noise_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">noise_param</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.func_widgets.FuncNoiseDropDown.show_noise_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>Displays the configurable parameters for the selected noise
+distribution.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="../shape/api.html" class="btn btn-neutral float-right" title="Shape API" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="function_plugin.html" class="btn btn-neutral float-left" title="Function plugins" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2019, Matthew Einhorn.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

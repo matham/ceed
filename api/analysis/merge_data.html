@@ -1,0 +1,1120 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Ceed-MCS data merging &mdash; Ceed  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Function API" href="../function/api.html" />
+    <link rel="prev" title="Ceed data analysis" href="analysis.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Ceed
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../blueprint.html">System Blueprint</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../guide/guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../config.html">CEED Config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../example_code/example_code.html">Example Analysis Code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../apps/apps.html">Ceed Apps</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">The Ceed API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../ceed.html">Ceed</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="api.html">Analysis API</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="analysis.html">Ceed data analysis</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Ceed-MCS data merging</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#temporal-alignment-protocol">Temporal alignment protocol</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#parsing-ceed-data">Parsing Ceed data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#parsing-mcs-data">Parsing MCS data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#merging">Merging</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#merging-example">Merging example</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../function/api.html">Function API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../shape/api.html">Shape API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../stage/api.html">Stage API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../view/api.html">Experiment API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../storage/api.html">Storage API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../player.html">Video Player</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils.html">Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../graphics/api.html">Graphics API</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../optics/optics.html">Microscope optics</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Ceed</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../api.html">The Ceed API</a> &raquo;</li>
+        
+          <li><a href="api.html">Analysis API</a> &raquo;</li>
+        
+      <li>Ceed-MCS data merging</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../../_sources/api/analysis/merge_data.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <span class="target" id="module-ceed.analysis.merge_data"></span><div class="section" id="ceed-mcs-data-merging">
+<span id="merge-api"></span><h1>Ceed-MCS data merging<a class="headerlink" href="#ceed-mcs-data-merging" title="Permalink to this headline">¶</a></h1>
+<p>During an experiment both Ceed and MCS record their respective data to separate
+files. Ceed records the projected frames and all its shapes to an H5 file, while
+MCS records its electrode and digital data to a proprietary file format that can
+be exported to H5.</p>
+<p>This module merges and temporally aligns the Ceed frames to the MCS electrode
+data and creates a single H5 file containing the data from both files.
+This new file can be read with <a class="reference internal" href="analysis.html#ceed.analysis.CeedDataReader" title="ceed.analysis.CeedDataReader"><code class="xref py py-class docutils literal notranslate"><span class="pre">CeedDataReader</span></code></a></p>
+<div class="section" id="temporal-alignment-protocol">
+<span id="handshake-protocol"></span><h2>Temporal alignment protocol<a class="headerlink" href="#temporal-alignment-protocol" title="Permalink to this headline">¶</a></h2>
+<p>As explained in <a class="reference internal" href="../storage/controller.html#ceed.storage.controller.DataSerializerBase" title="ceed.storage.controller.DataSerializerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataSerializerBase</span></code></a>,
+during a Ceed experiment Ceed generates upto 24-bits per projector frame that is
+recorded into the MCS data stream. Following is a basic summary as it relates to
+merging.</p>
+<p>Each frame contains upto 24-bits of data labeling the frame. There’s a clock
+that alternates high/low for each frame. There’s a short counter of a few bits
+that increments by one for each displayed frame (not including dropped frames)
+and overflows back to zero. This allows us to detect bad frames/data. And
+finally there’s a large n-bit counter int broken up into groups of a few bits,
+and each frame contains the next group of these bits until the full int was sent
+so it can start on the next counter value.</p>
+<p>E.g. if it’s 32-bit and we have 2 bits per frame, then naively it takes 16
+frames to send the full int, broken up into groups of two. However, each set of
+bits is sent twice, the bits followed by their one’s complement. So it takes
+32 frames to send the full int as follows: b0-1, b0-1_comp, b2-3, b2-3_comp,
+…, b30-31, b30-31_comp. This allows us to further detect data corruption.</p>
+<p>So, in an experiment as we send the global counter, starting from one it may
+look as follows. At frame zero we start sending the counter of 1. This takes 32
+frames to send. So, at frame 32 when we’re done with the int we start sending
+the next current value of the counter - 33. This is sent over the next 32 frames
+etc.</p>
+<div class="section" id="handshake">
+<h3>Handshake<a class="headerlink" href="#handshake" title="Permalink to this headline">¶</a></h3>
+<p>There’s one further caveat. At the start of the experiment Ceed sends some
+handshaking data before starting to send the counter ints. Specifically, the
+first int value is the number of ints in the subsequent handshake. The
+subsequent handshake is a sequence of ints, composed of bytes that are a
+unique signature of that experiment. This is how we can later locate a Ceed
+experiment in the MCS data that contains multiple experiments.</p>
+<p>Once the handshake is complete, Ceed starts sending the counter values of the
+frames as explained above. However, unlike the counter ints that are sent
+along with their complement, for the initial length int and handshake data the
+groups are sent twice. I.e. b0-1, b0-1, b2-3, b2-3, …, b30-31, b30-31. This
+allows us to locate the start of an experiment in the MCS data.</p>
+</div>
+<div class="section" id="sub-frames">
+<span id="serializer-sub-frames"></span><h3>Sub-frames<a class="headerlink" href="#sub-frames" title="Permalink to this headline">¶</a></h3>
+<p>When Ceed is running in quad mode where each frame has sub-frames (e.g. quad4x
+each frame is actually 4 frames), the digital IO is only updated for each major
+frame and it’s the same for all the frame’s sub-frames. So although Ceed records
+data for each sub frame, the serializer digital IO is only updated for each
+major frame. So the counter increments with the number of sub-frames times the
+number of frames it took to transmit the int - because that’s how may frames
+completed while sending a int.</p>
+<p>However, MCS can only see when a major frame changes because that’s when the
+digital IO changes. So we have to infer and break each main frame into
+sub-frames to find where in the electrode data the sub-frames were rendered.</p>
+</div>
+<div class="section" id="dropped-frames">
+<h3>Dropped frames<a class="headerlink" href="#dropped-frames" title="Permalink to this headline">¶</a></h3>
+<p>As explained in <a class="reference internal" href="../view/controller.html#dropped-frames"><span class="std std-ref">Frame rate and dropped frames</span></a>, Ceed will sometimes drop a frame. The
+Ceed frame counter (denoting the time as count / frame rate) still increments
+for the frame, but the frame is not displayed. Dropping a frame has no effect
+on the digital IO and it is continuous like normal (we don’t update the IO for
+the dropped frame). The only visible difference is that the counter int will
+have incremented by a larger values than normal when we send the next counter
+int after finishing the current int. That’s is how MCS can detect a dropped
+frame, in addition to observing that a Ceed frame went too long because the IO
+is not updated at the normal rate, like the
+<a class="reference internal" href="../view/controller.html#ceed.view.controller.TeensyFrameEstimation" title="ceed.view.controller.TeensyFrameEstimation"><code class="xref py py-class docutils literal notranslate"><span class="pre">TeensyFrameEstimation</span></code></a> detection approach.</p>
+</div>
+</div>
+<div class="section" id="parsing-ceed-data">
+<span id="merging-ceed-mcs"></span><h2>Parsing Ceed data<a class="headerlink" href="#parsing-ceed-data" title="Permalink to this headline">¶</a></h2>
+<p>Ceed logs all its data into the H5 file. When parsing an experiment using
+<a class="reference internal" href="#ceed.analysis.merge_data.CeedDigitalData" title="ceed.analysis.merge_data.CeedDigitalData"><code class="xref py py-class docutils literal notranslate"><span class="pre">CeedDigitalData</span></code></a>, it takes the digital IO data logged by Ceed, including
+the data for all the sub-frames and dropped frames, and it extracts the frame
+clock, short and long counter values for each frame. This gives us the expected
+value for each of these three signals for every frame.</p>
+</div>
+<div class="section" id="parsing-mcs-data">
+<span id="parse-ceed-mcs"></span><h2>Parsing MCS data<a class="headerlink" href="#parsing-mcs-data" title="Permalink to this headline">¶</a></h2>
+<p>Unlike parsing the Ceed data, the MCS data contains data for multiple
+experiments so when parsing we first have to split them into experiments and
+then we parse each experiment. Furthermore, each Ceed main frame is
+approximately 1 / 120 seconds long. MCS generally samples at multiple kHz.
+So MCS will typically read many duplicate values for each Ceed frame. This
+needs to be de-duplicated before parsing.</p>
+<p>Once the MCS has been de-duplicated and split into experiments, we can parse
+it like we parse the Ceed data and get the corresponding counter value for
+each detected frame.</p>
+<p>When parsing the MCS data we assume that there’s a pause of at least 10 frames
+between experiments, during which the clock is constant. This simplifies
+locating the start of experiments. Additionally, we cannot parse experiments
+which are shorter than a couple of frames.</p>
+</div>
+<div class="section" id="merging">
+<h2>Merging<a class="headerlink" href="#merging" title="Permalink to this headline">¶</a></h2>
+<p>When we have a Ceed experiment parsed both for the Ceed and MCS data, we can
+then relate and find exactly where in the electrode data a Ceed frame is
+displayed. This is returned by <a class="reference internal" href="#ceed.analysis.merge_data.CeedMCSDataMerger.get_alignment" title="ceed.analysis.merge_data.CeedMCSDataMerger.get_alignment"><code class="xref py py-meth docutils literal notranslate"><span class="pre">CeedMCSDataMerger.get_alignment()</span></code></a> and
+is stored in the new file.</p>
+<p>Typically we’d search in the parsed MCS data for the unique experiment’s
+handshake value as provided by Ceed’s data. However, if an experiment was
+stopped early and is too short to have sent the full handshake. So multiple
+experiments could potentially share the same handshake, if the initial bytes
+were the same. In that case the user would need to disambiguate between them
+somehow.</p>
+</div>
+<div class="section" id="merging-example">
+<span id="merge-api-example"></span><h2>Merging example<a class="headerlink" href="#merging-example" title="Permalink to this headline">¶</a></h2>
+<p>The typical steps for merging is to instantiate a <a class="reference internal" href="#ceed.analysis.merge_data.CeedMCSDataMerger" title="ceed.analysis.merge_data.CeedMCSDataMerger"><code class="xref py py-class docutils literal notranslate"><span class="pre">CeedMCSDataMerger</span></code></a>
+with the Ceed and MCS H5 files. Then <a class="reference internal" href="#ceed.analysis.merge_data.CeedMCSDataMerger.read_mcs_data" title="ceed.analysis.merge_data.CeedMCSDataMerger.read_mcs_data"><code class="xref py py-meth docutils literal notranslate"><span class="pre">CeedMCSDataMerger.read_mcs_data()</span></code></a>,
+<a class="reference internal" href="#ceed.analysis.merge_data.CeedMCSDataMerger.read_ceed_data" title="ceed.analysis.merge_data.CeedMCSDataMerger.read_ceed_data"><code class="xref py py-meth docutils literal notranslate"><span class="pre">CeedMCSDataMerger.read_ceed_data()</span></code></a>, and
+<a class="reference internal" href="#ceed.analysis.merge_data.CeedMCSDataMerger.parse_mcs_data" title="ceed.analysis.merge_data.CeedMCSDataMerger.parse_mcs_data"><code class="xref py py-meth docutils literal notranslate"><span class="pre">CeedMCSDataMerger.parse_mcs_data()</span></code></a>.</p>
+<p>Typically a Ceed and MCS file will contain multiple experiments.
+Using <a class="reference internal" href="#ceed.analysis.merge_data.CeedMCSDataMerger.get_experiment_numbers" title="ceed.analysis.merge_data.CeedMCSDataMerger.get_experiment_numbers"><code class="xref py py-meth docutils literal notranslate"><span class="pre">CeedMCSDataMerger.get_experiment_numbers()</span></code></a> you’d get all the
+experiments in the Ceed file, ignoring any experiment which are not in the
+MCS file, or bad experiments. For each of the experiments we’d
+<a class="reference internal" href="#ceed.analysis.merge_data.CeedMCSDataMerger.read_ceed_experiment_data" title="ceed.analysis.merge_data.CeedMCSDataMerger.read_ceed_experiment_data"><code class="xref py py-meth docutils literal notranslate"><span class="pre">CeedMCSDataMerger.read_ceed_experiment_data()</span></code></a> and
+<a class="reference internal" href="#ceed.analysis.merge_data.CeedMCSDataMerger.parse_ceed_experiment_data" title="ceed.analysis.merge_data.CeedMCSDataMerger.parse_ceed_experiment_data"><code class="xref py py-meth docutils literal notranslate"><span class="pre">CeedMCSDataMerger.parse_ceed_experiment_data()</span></code></a> for that experiment.</p>
+<p>Once parsed we can get the alignment with
+<a class="reference internal" href="#ceed.analysis.merge_data.CeedMCSDataMerger.get_alignment" title="ceed.analysis.merge_data.CeedMCSDataMerger.get_alignment"><code class="xref py py-meth docutils literal notranslate"><span class="pre">CeedMCSDataMerger.get_alignment()</span></code></a> and save it in a dict. Finally,
+once we have the alignment for all the experiments we can create the output
+file with all the data using <a class="reference internal" href="#ceed.analysis.merge_data.CeedMCSDataMerger.merge_data" title="ceed.analysis.merge_data.CeedMCSDataMerger.merge_data"><code class="xref py py-meth docutils literal notranslate"><span class="pre">CeedMCSDataMerger.merge_data()</span></code></a>.</p>
+<p>Following is a worked example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">logging</span>
+<span class="n">ceed_file</span> <span class="o">=</span> <span class="s1">&#39;ceed_data.h5&#39;</span>
+<span class="n">mcs_file</span> <span class="o">=</span> <span class="s1">&#39;mcs_data.h5&#39;</span>
+<span class="n">output_file</span> <span class="o">=</span> <span class="s1">&#39;ceed_mcs_merged.h5&#39;</span>
+<span class="n">notes</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+<span class="n">notes_filename</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># no notes</span>
+<span class="n">debug</span> <span class="o">=</span> <span class="kc">False</span>
+
+<span class="c1"># create merge object</span>
+<span class="n">merger</span> <span class="o">=</span> <span class="n">CeedMCSDataMerger</span><span class="p">(</span>
+    <span class="n">ceed_filename</span><span class="o">=</span><span class="n">ceed_file</span><span class="p">,</span> <span class="n">mcs_filename</span><span class="o">=</span><span class="n">mcs_file</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="n">debug</span><span class="p">)</span>
+
+<span class="c1"># read ceed and MCS data and parse MCS metadata</span>
+<span class="n">merger</span><span class="o">.</span><span class="n">read_mcs_data</span><span class="p">()</span>
+<span class="n">merger</span><span class="o">.</span><span class="n">read_ceed_data</span><span class="p">()</span>
+<span class="n">merger</span><span class="o">.</span><span class="n">parse_mcs_data</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">merger</span><span class="o">.</span><span class="n">get_skipped_frames_summary_header</span><span class="p">)</span>
+
+<span class="n">alignment</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="c1"># get alignment for all interesting experiments</span>
+<span class="k">for</span> <span class="n">experiment</span> <span class="ow">in</span> <span class="n">merger</span><span class="o">.</span><span class="n">get_experiment_numbers</span><span class="p">(</span><span class="n">ignore_list</span><span class="o">=</span><span class="p">[]):</span>
+    <span class="c1"># read and parse the data</span>
+    <span class="n">merger</span><span class="o">.</span><span class="n">read_ceed_experiment_data</span><span class="p">(</span><span class="n">experiment</span><span class="p">)</span>
+    <span class="n">merger</span><span class="o">.</span><span class="n">parse_ceed_experiment_data</span><span class="p">()</span>
+
+    <span class="c1"># try to get the Ceed-MCS alignment</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">align</span> <span class="o">=</span> <span class="n">alignment</span><span class="p">[</span><span class="n">experiment</span><span class="p">]</span> <span class="o">=</span> <span class="n">merger</span><span class="o">.</span><span class="n">get_alignment</span><span class="p">(</span>
+            <span class="n">ignore_additional_ceed_frames</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># print experiment summary, see method for column meaning</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">merger</span><span class="o">.</span><span class="n">get_skipped_frames_summary</span><span class="p">(</span><span class="n">align</span><span class="p">,</span> <span class="n">experiment</span><span class="p">))</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span>
+            <span class="s2">&quot;Couldn&#39;t align MCS and ceed data for experiment &quot;</span>
+            <span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> (</span><span class="si">{}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">experiment</span><span class="p">,</span> <span class="n">e</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">debug</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+
+<span class="c1"># finally create new file from alignment and existing files</span>
+<span class="n">merger</span><span class="o">.</span><span class="n">merge_data</span><span class="p">(</span>
+    <span class="n">output_file</span><span class="p">,</span> <span class="n">alignment</span><span class="p">,</span> <span class="n">notes</span><span class="o">=</span><span class="n">notes</span><span class="p">,</span> <span class="n">notes_filename</span><span class="o">=</span><span class="n">notes_filename</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.CeedMCSDataMerger">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.analysis.merge_data.</span></span><span class="sig-name descname"><span class="pre">CeedMCSDataMerger</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ceed_filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mcs_filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.analysis.merge_data.CeedMCSDataMerger" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Merges a MCS file containing electrode and digital data recorded during
+a Ceed experiment into a new Ceed file that contains both the original
+Ceed and MCS data.</p>
+<p>See <a class="reference internal" href="#merging-ceed-mcs"><span class="std std-ref">Parsing Ceed data</span></a> for an example.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.CeedMCSDataMerger.ceed_global_config">
+<span class="sig-name descname"><span class="pre">ceed_global_config</span></span><em class="property"> <span class="pre">=</span> <span class="pre">{}</span></em><a class="headerlink" href="#ceed.analysis.merge_data.CeedMCSDataMerger.ceed_global_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dict containing the global <code class="docutils literal notranslate"><span class="pre">app_settings</span></code> found in the Ceed file.</p>
+<p>This the global app config as present when the file was last saved as
+opposed to the app settings of a specific experiment as stored in
+<a class="reference internal" href="#ceed.analysis.merge_data.CeedMCSDataMerger.ceed_config_orig" title="ceed.analysis.merge_data.CeedMCSDataMerger.ceed_config_orig"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ceed_config_orig</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.CeedMCSDataMerger.ceed_version">
+<span class="sig-name descname"><span class="pre">ceed_version</span></span><em class="property"><span class="pre">:</span> <span class="pre">str</span></em><em class="property"> <span class="pre">=</span> <span class="pre">''</span></em><a class="headerlink" href="#ceed.analysis.merge_data.CeedMCSDataMerger.ceed_version" title="Permalink to this definition">¶</a></dt>
+<dd><p>The Ceed version string read from the Ceed file.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.CeedMCSDataMerger.ceed_config_orig">
+<span class="sig-name descname"><span class="pre">ceed_config_orig</span></span><em class="property"> <span class="pre">=</span> <span class="pre">{}</span></em><a class="headerlink" href="#ceed.analysis.merge_data.CeedMCSDataMerger.ceed_config_orig" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dict of the <code class="docutils literal notranslate"><span class="pre">app_settings</span></code> used for the opened experiment.</p>
+<p>It is updated for each experiment read with
+<a class="reference internal" href="#ceed.analysis.merge_data.CeedMCSDataMerger.read_ceed_experiment_data" title="ceed.analysis.merge_data.CeedMCSDataMerger.read_ceed_experiment_data"><code class="xref py py-meth docutils literal notranslate"><span class="pre">read_ceed_experiment_data()</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.CeedMCSDataMerger.ceed_data">
+<span class="sig-name descname"><span class="pre">ceed_data</span></span><em class="property"> <span class="pre">=</span> <span class="pre">{}</span></em><a class="headerlink" href="#ceed.analysis.merge_data.CeedMCSDataMerger.ceed_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dict with the raw Ceed data for the opened experiment.</p>
+<p>It is updated for each experiment read with
+<a class="reference internal" href="#ceed.analysis.merge_data.CeedMCSDataMerger.read_ceed_experiment_data" title="ceed.analysis.merge_data.CeedMCSDataMerger.read_ceed_experiment_data"><code class="xref py py-meth docutils literal notranslate"><span class="pre">read_ceed_experiment_data()</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.CeedMCSDataMerger.ceed_data_container">
+<span class="sig-name descname"><span class="pre">ceed_data_container</span></span><em class="property"><span class="pre">:</span> <span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#ceed.analysis.merge_data.CeedDigitalData" title="ceed.analysis.merge_data.CeedDigitalData"><span class="pre">ceed.analysis.merge_data.CeedDigitalData</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.analysis.merge_data.CeedMCSDataMerger.ceed_data_container" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="#ceed.analysis.merge_data.CeedDigitalData" title="ceed.analysis.merge_data.CeedDigitalData"><code class="xref py py-class docutils literal notranslate"><span class="pre">CeedDigitalData</span></code></a> used to parse the Ceed data.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.CeedMCSDataMerger.mcs_dig_data">
+<span class="sig-name descname"><span class="pre">mcs_dig_data</span></span><em class="property"><span class="pre">:</span> <span class="pre">numpy.ndarray</span></em><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.analysis.merge_data.CeedMCSDataMerger.mcs_dig_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>The raw array containing the digital (16-bits) data recorded by MCS
+at the same frequency and time as the electrode data.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.CeedMCSDataMerger.mcs_dig_config">
+<span class="sig-name descname"><span class="pre">mcs_dig_config</span></span><em class="property"> <span class="pre">=</span> <span class="pre">{}</span></em><a class="headerlink" href="#ceed.analysis.merge_data.CeedMCSDataMerger.mcs_dig_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>MCS configuration data read from the MCS H5 file.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.CeedMCSDataMerger.mcs_data_container">
+<span class="sig-name descname"><span class="pre">mcs_data_container</span></span><em class="property"><span class="pre">:</span> <span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#ceed.analysis.merge_data.MCSDigitalData" title="ceed.analysis.merge_data.MCSDigitalData"><span class="pre">ceed.analysis.merge_data.MCSDigitalData</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.analysis.merge_data.CeedMCSDataMerger.mcs_data_container" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="#ceed.analysis.merge_data.MCSDigitalData" title="ceed.analysis.merge_data.MCSDigitalData"><code class="xref py py-class docutils literal notranslate"><span class="pre">MCSDigitalData</span></code></a> used to parse the MCS data.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.CeedMCSDataMerger.ceed_filename">
+<span class="sig-name descname"><span class="pre">ceed_filename</span></span><em class="property"><span class="pre">:</span> <span class="pre">str</span></em><em class="property"> <span class="pre">=</span> <span class="pre">''</span></em><a class="headerlink" href="#ceed.analysis.merge_data.CeedMCSDataMerger.ceed_filename" title="Permalink to this definition">¶</a></dt>
+<dd><p>The H5 filename of the file containing the Ceed data.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.CeedMCSDataMerger.mcs_filename">
+<span class="sig-name descname"><span class="pre">mcs_filename</span></span><em class="property"><span class="pre">:</span> <span class="pre">str</span></em><em class="property"> <span class="pre">=</span> <span class="pre">''</span></em><a class="headerlink" href="#ceed.analysis.merge_data.CeedMCSDataMerger.mcs_filename" title="Permalink to this definition">¶</a></dt>
+<dd><p>The H5 filename of the file containing the MCS data.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.CeedMCSDataMerger.debug">
+<span class="sig-name descname"><span class="pre">debug</span></span><em class="property"> <span class="pre">=</span> <span class="pre">False</span></em><a class="headerlink" href="#ceed.analysis.merge_data.CeedMCSDataMerger.debug" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether to print full traces when alignment or other merging related
+events fail. By default it just drops the failed alignment and tries the
+next alignment.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.CeedMCSDataMerger.n_sub_frames">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">n_sub_frames</span></span><a class="headerlink" href="#ceed.analysis.merge_data.CeedMCSDataMerger.n_sub_frames" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of sub-frames in each Ceed frame (e.g. for quad modes
+it’s 4 or 12).</p>
+<p>It’s specific to the current experiment.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.CeedMCSDataMerger.get_experiment_numbers">
+<span class="sig-name descname"><span class="pre">get_experiment_numbers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ignore_list</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ceed.analysis.merge_data.CeedMCSDataMerger.get_experiment_numbers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns list of experiments in the <a class="reference internal" href="#ceed.analysis.merge_data.CeedMCSDataMerger.ceed_filename" title="ceed.analysis.merge_data.CeedMCSDataMerger.ceed_filename"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ceed_filename</span></code></a>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">ignore_list</span></code>, if provided, is a list of experiment numbers to skip.</p>
+<p>Each experiment name is a number, represented as a str.</p>
+<p>This method is very light and does not load the data, so it can be
+called before <a class="reference internal" href="#ceed.analysis.merge_data.CeedMCSDataMerger.read_ceed_data" title="ceed.analysis.merge_data.CeedMCSDataMerger.read_ceed_data"><code class="xref py py-meth docutils literal notranslate"><span class="pre">read_ceed_data()</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.CeedMCSDataMerger.read_mcs_data">
+<span class="sig-name descname"><span class="pre">read_mcs_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.analysis.merge_data.CeedMCSDataMerger.read_mcs_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads the MCS digital data and metadata from the file and updates the
+corresponding properties.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.CeedMCSDataMerger.read_ceed_data">
+<span class="sig-name descname"><span class="pre">read_ceed_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.analysis.merge_data.CeedMCSDataMerger.read_ceed_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads the overall Ceed metadata from the file and updates the
+corresponding properties.</p>
+<p>After loading the overall data, use <a class="reference internal" href="#ceed.analysis.merge_data.CeedMCSDataMerger.read_ceed_experiment_data" title="ceed.analysis.merge_data.CeedMCSDataMerger.read_ceed_experiment_data"><code class="xref py py-meth docutils literal notranslate"><span class="pre">read_ceed_experiment_data()</span></code></a>
+to load a specific experiment.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.CeedMCSDataMerger.read_ceed_experiment_data">
+<span class="sig-name descname"><span class="pre">read_ceed_experiment_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">experiment</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.analysis.merge_data.CeedMCSDataMerger.read_ceed_experiment_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads the data and metadata for the experiment and updates the
+corresponding properties.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>experiment</strong> – The experiment to read. It’s a number (or string
+representing the number) for the experiment, as would be returned
+by <a class="reference internal" href="#ceed.analysis.merge_data.CeedMCSDataMerger.get_experiment_numbers" title="ceed.analysis.merge_data.CeedMCSDataMerger.get_experiment_numbers"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_experiment_numbers()</span></code></a>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.CeedMCSDataMerger.create_or_reuse_ceed_data_container">
+<span class="sig-name descname"><span class="pre">create_or_reuse_ceed_data_container</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#ceed.analysis.merge_data.CeedDigitalData" title="ceed.analysis.merge_data.CeedDigitalData"><span class="pre">ceed.analysis.merge_data.CeedDigitalData</span></a></span></span><a class="headerlink" href="#ceed.analysis.merge_data.CeedMCSDataMerger.create_or_reuse_ceed_data_container" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ensures that the <a class="reference internal" href="#ceed.analysis.merge_data.CeedMCSDataMerger.ceed_data_container" title="ceed.analysis.merge_data.CeedMCSDataMerger.ceed_data_container"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ceed_data_container</span></code></a> is ready to be used
+to parse the data.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.CeedMCSDataMerger.create_or_reuse_mcs_data_container">
+<span class="sig-name descname"><span class="pre">create_or_reuse_mcs_data_container</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#ceed.analysis.merge_data.MCSDigitalData" title="ceed.analysis.merge_data.MCSDigitalData"><span class="pre">ceed.analysis.merge_data.MCSDigitalData</span></a></span></span><a class="headerlink" href="#ceed.analysis.merge_data.CeedMCSDataMerger.create_or_reuse_mcs_data_container" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ensures that the <a class="reference internal" href="#ceed.analysis.merge_data.CeedMCSDataMerger.mcs_data_container" title="ceed.analysis.merge_data.CeedMCSDataMerger.mcs_data_container"><code class="xref py py-attr docutils literal notranslate"><span class="pre">mcs_data_container</span></code></a> is ready to be used
+to parse the data.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.CeedMCSDataMerger.parse_ceed_experiment_data">
+<span class="sig-name descname"><span class="pre">parse_ceed_experiment_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.analysis.merge_data.CeedMCSDataMerger.parse_ceed_experiment_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses the Ceed experiment data previously read with
+<a class="reference internal" href="#ceed.analysis.merge_data.CeedMCSDataMerger.read_ceed_experiment_data" title="ceed.analysis.merge_data.CeedMCSDataMerger.read_ceed_experiment_data"><code class="xref py py-meth docutils literal notranslate"><span class="pre">read_ceed_experiment_data()</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.CeedMCSDataMerger.parse_mcs_data">
+<span class="sig-name descname"><span class="pre">parse_mcs_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">find_start_from_ceed_time</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pre_estimated_start</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">estimated_start</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">datetime.datetime</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.analysis.merge_data.CeedMCSDataMerger.parse_mcs_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses the MCS data previously read with <a class="reference internal" href="#ceed.analysis.merge_data.CeedMCSDataMerger.read_mcs_data" title="ceed.analysis.merge_data.CeedMCSDataMerger.read_mcs_data"><code class="xref py py-meth docutils literal notranslate"><span class="pre">read_mcs_data()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>find_start_from_ceed_time</strong> – Whether to locate the Ceed experiment
+in the MCS data using a Ceed time estimate or by finding the
+handshaking pattern in the digital data. The time based approach
+is not well tested, but can tuned if handshaking is not working.</p></li>
+<li><p><strong>estimated_start</strong> – The estimated time when the Ceed experiment
+started. You can get this with <code class="docutils literal notranslate"><span class="pre">self.ceed_data['start_t']</span></code>.</p></li>
+<li><p><strong>pre_estimated_start</strong> – A fudge factor for <code class="docutils literal notranslate"><span class="pre">estimated_start</span></code>. We
+look for the experiment by <code class="docutils literal notranslate"><span class="pre">pre_estimated_start</span></code> before
+<code class="docutils literal notranslate"><span class="pre">estimated_start</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.CeedMCSDataMerger.get_alignment">
+<span class="sig-name descname"><span class="pre">get_alignment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ignore_additional_ceed_frames</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#ceed.analysis.merge_data.CeedMCSDataMerger.get_alignment" title="Permalink to this definition">¶</a></dt>
+<dd><p>After reading and parsing the Ceed and MCS data you can compute
+the alignment between the current Ceed experiment and the MCS file.</p>
+<p>This returns an array of indices, where each item in the array is an
+index into the raw MCS electrode data and corresponds to a Ceed frame.
+The index is the start index in the electrode data corresponding to when
+the ith Ceed frame was beginning to be displayed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>ignore_additional_ceed_frames</strong> – Whether to chop OFF the Ceed data
+to the MCS data. I.e. if There are more Ceed frames than recorded
+in the MCS data, e.g. because MCS was stopped recording while Ceed
+was still projecting frames, then those final Ceed frames will not
+be recorded by MCS in the digital stream. By default we will drop
+these remaining Ceed frames as not rendered, but if False we will
+raise an exception instead.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.CeedMCSDataMerger.estimate_skipped_frames">
+<span class="sig-name descname"><span class="pre">estimate_skipped_frames</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ceed_mcs_alignment</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.analysis.merge_data.CeedMCSDataMerger.estimate_skipped_frames" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given an alignment from <a class="reference internal" href="#ceed.analysis.merge_data.CeedMCSDataMerger.get_alignment" title="ceed.analysis.merge_data.CeedMCSDataMerger.get_alignment"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_alignment()</span></code></a>, it returns
+information about the Ceed frames to help compute whether Ceed dropped
+any frames, as observed by the recorded MCS data.</p>
+<p>See <a class="reference internal" href="#ceed.analysis.merge_data.CeedMCSDataMerger.get_skipped_frames_summary" title="ceed.analysis.merge_data.CeedMCSDataMerger.get_skipped_frames_summary"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_skipped_frames_summary()</span></code></a> and
+<a class="reference internal" href="analysis.html#ceed.analysis.CeedDataReader.compute_long_and_skipped_frames" title="ceed.analysis.CeedDataReader.compute_long_and_skipped_frames"><code class="xref py py-meth docutils literal notranslate"><span class="pre">compute_long_and_skipped_frames()</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.CeedMCSDataMerger.get_skipped_frames_summary">
+<span class="sig-name descname"><span class="pre">get_skipped_frames_summary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ceed_mcs_alignment</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">experiment_num</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.analysis.merge_data.CeedMCSDataMerger.get_skipped_frames_summary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given an alignment from <a class="reference internal" href="#ceed.analysis.merge_data.CeedMCSDataMerger.get_alignment" title="ceed.analysis.merge_data.CeedMCSDataMerger.get_alignment"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_alignment()</span></code></a> and the experiment
+number, it returns a string that when printed will display some
+information about any dropped Ceed frames as well as overall information
+about the alignment.</p>
+<p>There are 8 numbers in the summary.</p>
+<ol class="arabic simple">
+<li><p>The experiment number.</p></li>
+<li><p>The start index index in the MCS electrode data
+corresponding to the experiment.</p></li>
+<li><p>The end index in the MCS electrode data.</p></li>
+<li><p>The number of electrode data samples during the experiment.</p></li>
+<li><p>The number of Ceed frames that went long (i.e. the number of frames
+whose data was not the next frame, but an older frame that the GPU
+displayed again because the CPU didn’t update in time.</p></li>
+<li><p>The number of major frames Ceed dropped.</p></li>
+<li><p>In parenthesis, the number of total frames, including sub-frames
+Ceed dropped.</p></li>
+<li><p>The maximum delay in terms of frames between Ceed repeating a frame
+because the CPU was too slow, until Ceed realized it needs to drop
+a frame to compensate. I.e. this is the largest number of bad
+frames Ceed ever displayed before correcting.</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.CeedMCSDataMerger.merge_data">
+<span class="sig-name descname"><span class="pre">merge_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alignment_indices</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">notes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">notes_filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.analysis.merge_data.CeedMCSDataMerger.merge_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes the Ceed and MCS data files and copies them over to a new
+Ceed H5 file. It also adds the alignment data for all the experiments
+as computed with <a class="reference internal" href="#ceed.analysis.merge_data.CeedMCSDataMerger.get_alignment" title="ceed.analysis.merge_data.CeedMCSDataMerger.get_alignment"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_alignment()</span></code></a> and optional notes and stores it
+in the new file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> – The target file to create.</p></li>
+<li><p><strong>alignment_indices</strong> – Dict whose keys are experiment numbers and
+whose values is the alignment for that experiment as computed by
+<a class="reference internal" href="#ceed.analysis.merge_data.CeedMCSDataMerger.get_alignment" title="ceed.analysis.merge_data.CeedMCSDataMerger.get_alignment"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_alignment()</span></code></a>.</p></li>
+<li><p><strong>notes</strong> – Optional notes string to be added to the new file.</p></li>
+<li><p><strong>notes_filename</strong> – A optional filename, which if provided contains
+more notes that is appended to <code class="docutils literal notranslate"><span class="pre">notes</span></code> and added to the file.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.AlignmentException">
+<em class="property"><span class="pre">exception</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.analysis.merge_data.</span></span><span class="sig-name descname"><span class="pre">AlignmentException</span></span><a class="headerlink" href="#ceed.analysis.merge_data.AlignmentException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+<p>Raised if the Ceed-MCS data cannot be aligned.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.BitMapping32">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.analysis.merge_data.</span></span><span class="sig-name descname"><span class="pre">BitMapping32</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bits</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.analysis.merge_data.BitMapping32" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Maps 32-bit integers to other 32-bit integers, assuming each bit of the
+input is in the output, but perhaps at a different index.</p>
+<p>E.g. if we have a 32-bit int whose bits at indices 5 and 8 are exchanged,
+or if bit 5 should be moved to bit 0, and all other bits ignored, this can
+achieve it.</p>
+<p>As input it takes a list of indices that are less than 32, the bit index
+represented by each item in the list is mapped to the bit-index represented
+by the index of the item in the input list.</p>
+<p>E.g. to shift all bits upto 10 to the right by two bits (chopping off the
+first two bits which don’t get mapped):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mapping</span> <span class="o">=</span> <span class="n">BitMapping32</span><span class="p">([</span><span class="n">i</span> <span class="o">+</span> <span class="mi">2</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">16</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mapping</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+<span class="go">array([0, 0, 0, 1, 2, 4], dtype=uint32)</span>
+</pre></div>
+</div>
+<p>This mapped bits 0-1 to nothing (they are not on the list), bit 2 to 0,
+3 to 1 etc.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This computes the mapping as 4 16-bit int arrays, each containing
+<code class="docutils literal notranslate"><span class="pre">2</span> <span class="pre">^</span> <span class="pre">16</span></code> items (stored internally). This could be aproblem on low
+memory devices.</p>
+</div>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.BitMapping32.l_to_l">
+<span class="sig-name descname"><span class="pre">l_to_l</span></span><em class="property"><span class="pre">:</span> <span class="pre">numpy.ndarray</span></em><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.analysis.merge_data.BitMapping32.l_to_l" title="Permalink to this definition">¶</a></dt>
+<dd><p>Maps the lower 16-bits of the input to the lower 16-bits of the output.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.BitMapping32.h_to_l">
+<span class="sig-name descname"><span class="pre">h_to_l</span></span><em class="property"><span class="pre">:</span> <span class="pre">numpy.ndarray</span></em><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.analysis.merge_data.BitMapping32.h_to_l" title="Permalink to this definition">¶</a></dt>
+<dd><p>Maps the upper 16-bits of the input to the lower 16-bits of the output.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.BitMapping32.l_to_h">
+<span class="sig-name descname"><span class="pre">l_to_h</span></span><em class="property"><span class="pre">:</span> <span class="pre">numpy.ndarray</span></em><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.analysis.merge_data.BitMapping32.l_to_h" title="Permalink to this definition">¶</a></dt>
+<dd><p>Maps the lower 16-bits of the input to the upper 16-bits of the output.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.BitMapping32.h_to_h">
+<span class="sig-name descname"><span class="pre">h_to_h</span></span><em class="property"><span class="pre">:</span> <span class="pre">numpy.ndarray</span></em><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.analysis.merge_data.BitMapping32.h_to_h" title="Permalink to this definition">¶</a></dt>
+<dd><p>Maps the upper 16-bits of the input to the upper 16-bits of the output.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.BitMapping32.map">
+<span class="sig-name descname"><span class="pre">map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="headerlink" href="#ceed.analysis.merge_data.BitMapping32.map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Maps the 32-bit integer input data to the 32-bit integer output data
+according to the given mapping. See <a class="reference internal" href="#ceed.analysis.merge_data.BitMapping32" title="ceed.analysis.merge_data.BitMapping32"><code class="xref py py-class docutils literal notranslate"><span class="pre">BitMapping32</span></code></a>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.DigitalDataStore">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.analysis.merge_data.</span></span><span class="sig-name descname"><span class="pre">DigitalDataStore</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">short_count_indices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">count_indices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clock_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">counter_bit_width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.analysis.merge_data.DigitalDataStore" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>The class that can parse the MCS and Ceed upto 24-bit data pattern
+associated with each Ceed frame.</p>
+<p>It takes the recorded data and parses and decomposes it into the clock bit,
+the <a class="reference internal" href="../storage/controller.html#ceed.storage.controller.DataSerializerBase.short_count_indices" title="ceed.storage.controller.DataSerializerBase.short_count_indices"><code class="xref py py-attr docutils literal notranslate"><span class="pre">short_count_indices</span></code></a>
+bits, and the
+<a class="reference internal" href="../storage/controller.html#ceed.storage.controller.DataSerializerBase.count_indices" title="ceed.storage.controller.DataSerializerBase.count_indices"><code class="xref py py-attr docutils literal notranslate"><span class="pre">count_indices</span></code></a>.</p>
+<p>This lets us then compare the decomposed data between the Ceed data output
+through the Propixx system and recorded by Ceed for each frame and the MCS
+data recorded through the Propixx-MCS data link. Then we can align each
+frame to its location in the MCS data by comparing them (especially since
+Ceed sends frame numbers over the counter bits).</p>
+<p>The indices passed in to <code class="docutils literal notranslate"><span class="pre">__init__</span></code> should have first been mapped through
+<a class="reference internal" href="../storage/controller.html#ceed.storage.controller.DataSerializerBase.projector_to_aquisition_map" title="ceed.storage.controller.DataSerializerBase.projector_to_aquisition_map"><code class="xref py py-attr docutils literal notranslate"><span class="pre">projector_to_aquisition_map</span></code></a> when creating the class, if this is the MCS store.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.DigitalDataStore.short_count_data">
+<span class="sig-name descname"><span class="pre">short_count_data</span></span><em class="property"><span class="pre">:</span> <span class="pre">numpy.ndarray</span></em><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.analysis.merge_data.DigitalDataStore.short_count_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>The short counter data parsed and mapped so it’s represented
+as a correct number that can just be read for its value.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.DigitalDataStore.count_data">
+<span class="sig-name descname"><span class="pre">count_data</span></span><em class="property"><span class="pre">:</span> <span class="pre">numpy.ndarray</span></em><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.analysis.merge_data.DigitalDataStore.count_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>The long counter data parsed and mapped so it’s represented
+as a correct number that can just be read for its value.</p>
+<p>Keep in mind, that although it has been mapped to the lower n-bits,
+the long counter is a <a class="reference internal" href="#ceed.analysis.merge_data.DigitalDataStore.counter_bit_width" title="ceed.analysis.merge_data.DigitalDataStore.counter_bit_width"><code class="xref py py-attr docutils literal notranslate"><span class="pre">counter_bit_width</span></code></a> integer split over multiple
+frames so this value is not quite a complete number.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.DigitalDataStore.clock_data">
+<span class="sig-name descname"><span class="pre">clock_data</span></span><em class="property"><span class="pre">:</span> <span class="pre">numpy.ndarray</span></em><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.analysis.merge_data.DigitalDataStore.clock_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>The clock data parsed and mapped so it is represented as either zero or
+one, depending on the state of the clock.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.DigitalDataStore.data">
+<span class="sig-name descname"><span class="pre">data</span></span><em class="property"><span class="pre">:</span> <span class="pre">numpy.ndarray</span></em><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.analysis.merge_data.DigitalDataStore.data" title="Permalink to this definition">¶</a></dt>
+<dd><p>The raw input data that contains the clock, short, and long counter data
+across its various bits.</p>
+<p>When frames are dropped by Ceed, the
+<a class="reference internal" href="../storage/controller.html#ceed.storage.controller.DataSerializerBase" title="ceed.storage.controller.DataSerializerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataSerializerBase</span></code></a> will be correctly
+incremented. This means the long counter will skip those frames. But the
+data will not be corrupt because we split the long counter over multiple
+frames and we still correctly send each count even if frames are globally
+skipped. The only difference is that when the next count value is split
+over the frames, that value will have incremented more than normal.</p>
+<p>The short counter’s behavior doesn’t change when frames are dropped
+because it increments for each frame displayed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.DigitalDataStore.expected_handshake_len">
+<span class="sig-name descname"><span class="pre">expected_handshake_len</span></span><em class="property"><span class="pre">:</span> <span class="pre">int</span></em><em class="property"> <span class="pre">=</span> <span class="pre">0</span></em><a class="headerlink" href="#ceed.analysis.merge_data.DigitalDataStore.expected_handshake_len" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of bytes required to send the full handshake as described
+in <a class="reference internal" href="../storage/controller.html#ceed.storage.controller.DataSerializerBase" title="ceed.storage.controller.DataSerializerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataSerializerBase</span></code></a>.</p>
+<p>The handshake always begins with the number of ints of size
+<a class="reference internal" href="#ceed.analysis.merge_data.DigitalDataStore.counter_bit_width" title="ceed.analysis.merge_data.DigitalDataStore.counter_bit_width"><code class="xref py py-attr docutils literal notranslate"><span class="pre">counter_bit_width</span></code></a> that will make up the handshake (see
+<a class="reference internal" href="#handshake-protocol"><span class="std std-ref">Temporal alignment protocol</span></a>). This stores the
+number of bytes and is computed from that (assuming we were able to parse
+the first handshake int).</p>
+<p>It is automatically set.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.DigitalDataStore.handshake_data">
+<span class="sig-name descname"><span class="pre">handshake_data</span></span><em class="property"><span class="pre">:</span> <span class="pre">bytes</span></em><em class="property"> <span class="pre">=</span> <span class="pre">b''</span></em><a class="headerlink" href="#ceed.analysis.merge_data.DigitalDataStore.handshake_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>The parsed handshake (config_bytes) data sent at the start of each
+experiment as described in
+<a class="reference internal" href="../storage/controller.html#ceed.storage.controller.DataSerializerBase.get_bits" title="ceed.storage.controller.DataSerializerBase.get_bits"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_bits()</span></code></a>.</p>
+<p>It is automatically parsed from the data.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.DigitalDataStore.counter">
+<span class="sig-name descname"><span class="pre">counter</span></span><em class="property"><span class="pre">:</span> <span class="pre">numpy.ndarray</span></em><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.analysis.merge_data.DigitalDataStore.counter" title="Permalink to this definition">¶</a></dt>
+<dd><p>The long counter value associated with each frame. This is provided in
+the Ceed data, since Ceed knows this as it records it for each frame.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.DigitalDataStore.short_count_indices">
+<span class="sig-name descname"><span class="pre">short_count_indices</span></span><em class="property"><span class="pre">:</span> <span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.analysis.merge_data.DigitalDataStore.short_count_indices" title="Permalink to this definition">¶</a></dt>
+<dd><p>See
+<a class="reference internal" href="../storage/controller.html#ceed.storage.controller.DataSerializerBase.short_count_indices" title="ceed.storage.controller.DataSerializerBase.short_count_indices"><code class="xref py py-attr docutils literal notranslate"><span class="pre">short_count_indices</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.DigitalDataStore.count_indices">
+<span class="sig-name descname"><span class="pre">count_indices</span></span><em class="property"><span class="pre">:</span> <span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.analysis.merge_data.DigitalDataStore.count_indices" title="Permalink to this definition">¶</a></dt>
+<dd><p>See
+<a class="reference internal" href="../storage/controller.html#ceed.storage.controller.DataSerializerBase.count_indices" title="ceed.storage.controller.DataSerializerBase.count_indices"><code class="xref py py-attr docutils literal notranslate"><span class="pre">count_indices</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.DigitalDataStore.clock_index">
+<span class="sig-name descname"><span class="pre">clock_index</span></span><em class="property"><span class="pre">:</span> <span class="pre">int</span></em><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.analysis.merge_data.DigitalDataStore.clock_index" title="Permalink to this definition">¶</a></dt>
+<dd><p>See
+<a class="reference internal" href="../storage/controller.html#ceed.storage.controller.DataSerializerBase.clock_idx" title="ceed.storage.controller.DataSerializerBase.clock_idx"><code class="xref py py-attr docutils literal notranslate"><span class="pre">clock_idx</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.DigitalDataStore.counter_bit_width">
+<span class="sig-name descname"><span class="pre">counter_bit_width</span></span><em class="property"><span class="pre">:</span> <span class="pre">int</span></em><em class="property"> <span class="pre">=</span> <span class="pre">32</span></em><a class="headerlink" href="#ceed.analysis.merge_data.DigitalDataStore.counter_bit_width" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of bits in the counter sent over the long counter.
+See <a class="reference internal" href="../storage/controller.html#ceed.storage.controller.DataSerializerBase.counter_bit_width" title="ceed.storage.controller.DataSerializerBase.counter_bit_width"><code class="xref py py-attr docutils literal notranslate"><span class="pre">counter_bit_width</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.DigitalDataStore.debug">
+<span class="sig-name descname"><span class="pre">debug</span></span><em class="property"> <span class="pre">=</span> <span class="pre">False</span></em><a class="headerlink" href="#ceed.analysis.merge_data.DigitalDataStore.debug" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether to print debug traces or ignore alignment issues. Automatically
+set from <a class="reference internal" href="#ceed.analysis.merge_data.CeedMCSDataMerger.debug" title="ceed.analysis.merge_data.CeedMCSDataMerger.debug"><code class="xref py py-attr docutils literal notranslate"><span class="pre">CeedMCSDataMerger.debug</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.DigitalDataStore.short_map">
+<span class="sig-name descname"><span class="pre">short_map</span></span><em class="property"><span class="pre">:</span> <a class="reference internal" href="#ceed.analysis.merge_data.BitMapping32" title="ceed.analysis.merge_data.BitMapping32"><span class="pre">ceed.analysis.merge_data.BitMapping32</span></a></em><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.analysis.merge_data.DigitalDataStore.short_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>The mapping that maps the
+<a class="reference internal" href="../storage/controller.html#ceed.storage.controller.DataSerializerBase.short_count_indices" title="ceed.storage.controller.DataSerializerBase.short_count_indices"><code class="xref py py-attr docutils literal notranslate"><span class="pre">short_count_indices</span></code></a>
+of the recorded data to a contiguous bit pattern representing the number.</p>
+<p>I.e. the recorded data could store the n-bit counter (e.g. 4-bits) over
+some random bit arrangement (e.g. bits 5, 7, 2, 9). This will map it to
+the lower n-bits in the correct order (e.g. bits 0-3) so the value can just
+be read off.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.DigitalDataStore.count_map">
+<span class="sig-name descname"><span class="pre">count_map</span></span><em class="property"><span class="pre">:</span> <a class="reference internal" href="#ceed.analysis.merge_data.BitMapping32" title="ceed.analysis.merge_data.BitMapping32"><span class="pre">ceed.analysis.merge_data.BitMapping32</span></a></em><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.analysis.merge_data.DigitalDataStore.count_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Same as <a class="reference internal" href="#ceed.analysis.merge_data.DigitalDataStore.short_map" title="ceed.analysis.merge_data.DigitalDataStore.short_map"><code class="xref py py-attr docutils literal notranslate"><span class="pre">short_map</span></code></a>, but for
+<a class="reference internal" href="../storage/controller.html#ceed.storage.controller.DataSerializerBase.count_indices" title="ceed.storage.controller.DataSerializerBase.count_indices"><code class="xref py py-attr docutils literal notranslate"><span class="pre">count_indices</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.DigitalDataStore.compare">
+<span class="sig-name descname"><span class="pre">compare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">short_count_indices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">count_indices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clock_index</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.analysis.merge_data.DigitalDataStore.compare" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compares the similarly named properties of this instance to
+thee given values and returns if they are the same.</p>
+<p>If it is the same, we assume we can just re-use this instance and
+its mappings (which are expensive to compute).</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.DigitalDataStore.n_parts_per_int">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">n_parts_per_int</span></span><a class="headerlink" href="#ceed.analysis.merge_data.DigitalDataStore.n_parts_per_int" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of parts into which a complete int of the long
+counter (of size <a class="reference internal" href="#ceed.analysis.merge_data.DigitalDataStore.counter_bit_width" title="ceed.analysis.merge_data.DigitalDataStore.counter_bit_width"><code class="xref py py-attr docutils literal notranslate"><span class="pre">counter_bit_width</span></code></a>) will have to be split into
+so we can send it over the bits available for the long counter.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.DigitalDataStore.n_bytes_per_int">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">n_bytes_per_int</span></span><a class="headerlink" href="#ceed.analysis.merge_data.DigitalDataStore.n_bytes_per_int" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of bytes (rounded down) required to represent the
+long counter <a class="reference internal" href="#ceed.analysis.merge_data.DigitalDataStore.counter_bit_width" title="ceed.analysis.merge_data.DigitalDataStore.counter_bit_width"><code class="xref py py-attr docutils literal notranslate"><span class="pre">counter_bit_width</span></code></a> bits.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.DigitalDataStore.get_count_ints">
+<span class="sig-name descname"><span class="pre">get_count_ints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">count_data</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contains_sub_frames</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_sub_frames</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.analysis.merge_data.DigitalDataStore.get_count_ints" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes raw <a class="reference internal" href="#ceed.analysis.merge_data.DigitalDataStore.count_data" title="ceed.analysis.merge_data.DigitalDataStore.count_data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">count_data</span></code></a>, bool indicating whether the count data
+contains sub-frames data as well as the number of sub-frames and
+it parses it into complete counter data.</p>
+<p>In quad mode, Ceed can generate 4 or 12 frames for each GPU frame.
+However, the count data may contain data for each whole frame only, or
+for all frames, including sub-frames. <code class="docutils literal notranslate"><span class="pre">contains_sub_frames</span></code> is True
+for the latter and <code class="docutils literal notranslate"><span class="pre">n_sub_frames</span></code> indicates the number of sub-frames
+per frame (1 if there are no sub-frames). See
+<a class="reference internal" href="#serializer-sub-frames"><span class="std std-ref">Sub-frames</span></a>.</p>
+<p>It returns a three tuple, <code class="docutils literal notranslate"><span class="pre">(count,</span> <span class="pre">count_2d,</span> <span class="pre">count_inverted_2d)</span></code>.
+As explained in <a class="reference internal" href="#handshake-protocol"><span class="std std-ref">Temporal alignment protocol</span></a>, each long counter int is sent
+broken across multiple frames, in addition to being sent inverted
+(except for handshake that is not inverted).
+So each int is sent in parts as k1, k1_inv, k2, k2_inv, …, kn, kn_inv.</p>
+<p>Defining <code class="docutils literal notranslate"><span class="pre">M</span> <span class="pre">=</span> <span class="pre">len(count_data)</span> <span class="pre">//</span> <span class="pre">n</span> <span class="pre">//</span> <span class="pre">2</span></code> (the number of whole ints).
+<code class="docutils literal notranslate"><span class="pre">count</span></code> is the collated up-to 64-bit int that contains all the 1..n
+components and is size M. <code class="docutils literal notranslate"><span class="pre">count_2d</span></code> is a 2D array of Mxn containing
+all the parts. <code class="docutils literal notranslate"><span class="pre">count_inverted_2d</span></code> similarly of size Mxn contains only
+the inverted parts.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.DigitalDataStore.check_counter_consistency">
+<span class="sig-name descname"><span class="pre">check_counter_consistency</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">count_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">count_2d</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">count_inverted_2d</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_handshake_ints</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contains_sub_frames</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_sub_frames</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude_last_value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.analysis.merge_data.DigitalDataStore.check_counter_consistency" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes the parsed data and verifies that the data is consistent and
+doesn’t contain errors as best as it can.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.DigitalDataStore.get_handshake">
+<span class="sig-name descname"><span class="pre">get_handshake</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">count</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contains_sub_frames</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_sub_frames</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.analysis.merge_data.DigitalDataStore.get_handshake" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes the <code class="docutils literal notranslate"><span class="pre">count</span></code> data as returned by <a class="reference internal" href="#ceed.analysis.merge_data.DigitalDataStore.get_count_ints" title="ceed.analysis.merge_data.DigitalDataStore.get_count_ints"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_count_ints()</span></code></a> and
+extracts the handshake bytes from it.</p>
+<p>It returns a 4-tuple of <code class="docutils literal notranslate"><span class="pre">(handshake_data,</span> <span class="pre">handshake_len,</span>
+<span class="pre">n_handshake_ints,</span> <span class="pre">n_config_frames)</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">handshake_data</span></code> is like <a class="reference internal" href="#ceed.analysis.merge_data.DigitalDataStore.handshake_data" title="ceed.analysis.merge_data.DigitalDataStore.handshake_data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">handshake_data</span></code></a>, <code class="docutils literal notranslate"><span class="pre">handshake_len</span></code>
+is like <a class="reference internal" href="#ceed.analysis.merge_data.DigitalDataStore.expected_handshake_len" title="ceed.analysis.merge_data.DigitalDataStore.expected_handshake_len"><code class="xref py py-attr docutils literal notranslate"><span class="pre">expected_handshake_len</span></code></a>, <code class="docutils literal notranslate"><span class="pre">n_handshake_ints</span></code> is the
+number of ints in the handshake, <code class="docutils literal notranslate"><span class="pre">n_config_frames</span></code> is the total number
+of configuration frames including the initial count and the handshake.</p>
+<p>If handshake is incomplete it returns empty bytes and all zeros for the
+numbers.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.DigitalDataStore.check_missing_frames">
+<span class="sig-name descname"><span class="pre">check_missing_frames</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">short_count_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contains_sub_frames</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_sub_frames</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.analysis.merge_data.DigitalDataStore.check_missing_frames" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given the short counter data it checks that no frames was missed
+since it should be contiguous.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.MCSDigitalData">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.analysis.merge_data.</span></span><span class="sig-name descname"><span class="pre">MCSDigitalData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">short_count_indices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">count_indices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clock_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">counter_bit_width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.analysis.merge_data.MCSDigitalData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ceed.analysis.merge_data.DigitalDataStore" title="ceed.analysis.merge_data.DigitalDataStore"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.analysis.merge_data.DigitalDataStore</span></code></a></p>
+<p>Parses the MCS data recorded into the MCS file.</p>
+<p>In addition to parsing the 24-bits for each frame, for the MCS we first need
+to collapse the data because it’s sampling at a much higher rate than the
+Ceed (projector) is generating data (see <a class="reference internal" href="#ceed.analysis.merge_data.MCSDigitalData.reduce_samples" title="ceed.analysis.merge_data.MCSDigitalData.reduce_samples"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reduce_samples()</span></code></a>).</p>
+<p>Finally, as opposed to the Ceed data that is separately stored for each
+experiment, the MCS data contains data for many experiments, which needs to
+be individually parsed (see <a class="reference internal" href="#parse-ceed-mcs"><span class="std std-ref">Parsing MCS data</span></a>).</p>
+<p>The per-experiment parsed data is stored in <a class="reference internal" href="#ceed.analysis.merge_data.MCSDigitalData.experiments" title="ceed.analysis.merge_data.MCSDigitalData.experiments"><code class="xref py py-attr docutils literal notranslate"><span class="pre">experiments</span></code></a>.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.MCSDigitalData.data_indices_start">
+<span class="sig-name descname"><span class="pre">data_indices_start</span></span><em class="property"><span class="pre">:</span> <span class="pre">numpy.ndarray</span></em><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.analysis.merge_data.MCSDigitalData.data_indices_start" title="Permalink to this definition">¶</a></dt>
+<dd><p>An array of indices into the raw <a class="reference internal" href="#ceed.analysis.merge_data.DigitalDataStore.data" title="ceed.analysis.merge_data.DigitalDataStore.data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">DigitalDataStore.data</span></code></a>
+indicating the start of each (potential) projector frame. We use the clock
+signal to compute this.</p>
+<p>This lets us find align the start of a frame with e-phys data for the frame.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.MCSDigitalData.data_indices_end">
+<span class="sig-name descname"><span class="pre">data_indices_end</span></span><em class="property"><span class="pre">:</span> <span class="pre">numpy.ndarray</span></em><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.analysis.merge_data.MCSDigitalData.data_indices_end" title="Permalink to this definition">¶</a></dt>
+<dd><p>The same as <a class="reference internal" href="#ceed.analysis.merge_data.MCSDigitalData.data_indices_start" title="ceed.analysis.merge_data.MCSDigitalData.data_indices_start"><code class="xref py py-attr docutils literal notranslate"><span class="pre">data_indices_start</span></code></a>, but it’s the index of the last
+sample of the (potential) frame.</p>
+<p>It is the same length as <a class="reference internal" href="#ceed.analysis.merge_data.MCSDigitalData.data_indices_start" title="ceed.analysis.merge_data.MCSDigitalData.data_indices_start"><code class="xref py py-attr docutils literal notranslate"><span class="pre">data_indices_start</span></code></a>, because each start
+index has a end index, even if it’s single sample long, in which case they
+point to the same index.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.MCSDigitalData.experiments">
+<span class="sig-name descname"><span class="pre">experiments</span></span><em class="property"><span class="pre">:</span> <span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">bytes</span><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">,</span> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">,</span> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">,</span> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">=</span> <span class="pre">{}</span></em><a class="headerlink" href="#ceed.analysis.merge_data.MCSDigitalData.experiments" title="Permalink to this definition">¶</a></dt>
+<dd><p>A dict of potential experiments found in the MCS parsed
+<a class="reference internal" href="#ceed.analysis.merge_data.DigitalDataStore.data" title="ceed.analysis.merge_data.DigitalDataStore.data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">DigitalDataStore.data</span></code></a>.</p>
+<p>Each experiment is uniquely identified by the handshake key Ceed sends
+at the start of that experiment. This key is parsed from
+<a class="reference internal" href="#ceed.analysis.merge_data.DigitalDataStore.data" title="ceed.analysis.merge_data.DigitalDataStore.data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">DigitalDataStore.data</span></code></a> for each experiment found in the data,
+ignoring experiments that are too short (a couple of frames).</p>
+<p>Typically the handshake is 16 bytes of data. When
+<a class="reference internal" href="../view/controller.html#ceed.view.controller.ViewControllerBase.pad_to_stage_handshake" title="ceed.view.controller.ViewControllerBase.pad_to_stage_handshake"><code class="xref py py-attr docutils literal notranslate"><span class="pre">pad_to_stage_handshake</span></code></a> is
+False or if the experiment was ended early, an experiment could still be
+short enough so that the full handshake was not transmitted. So, e.g.
+you may have two experiments whose unique keys are <cite>“ABCD”</cite> and <cite>“ABGH”</cite>,
+respectively, but only <cite>“AB”</cite> was transmitted before the experiment ended.</p>
+<p>Therefore, each key in the dict maps to a list of experiments, in case
+a single key (<cite>“AB”</cite>) maps to multiple experiments in the MCS data. The
+user would then need to disambiguate between them.</p>
+<p>Each item in the value is a 5-tuple of <code class="docutils literal notranslate"><span class="pre">(start,</span> <span class="pre">end,</span> <span class="pre">handshake_len,</span>
+<span class="pre">count_data,</span> <span class="pre">count)</span></code> specific to the experiment. <code class="docutils literal notranslate"><span class="pre">start</span></code> and <code class="docutils literal notranslate"><span class="pre">end</span></code>
+are the slice from <a class="reference internal" href="#ceed.analysis.merge_data.MCSDigitalData.data_indices_start" title="ceed.analysis.merge_data.MCSDigitalData.data_indices_start"><code class="xref py py-attr docutils literal notranslate"><span class="pre">data_indices_start</span></code></a> and <a class="reference internal" href="#ceed.analysis.merge_data.MCSDigitalData.data_indices_end" title="ceed.analysis.merge_data.MCSDigitalData.data_indices_end"><code class="xref py py-attr docutils literal notranslate"><span class="pre">data_indices_end</span></code></a>
+for the experiment. <code class="docutils literal notranslate"><span class="pre">count_data</span></code> is the slice from
+<a class="reference internal" href="#ceed.analysis.merge_data.DigitalDataStore.count_data" title="ceed.analysis.merge_data.DigitalDataStore.count_data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">DigitalDataStore.count_data</span></code></a> for the experiment and <code class="docutils literal notranslate"><span class="pre">count</span></code> is the
+<a class="reference internal" href="#ceed.analysis.merge_data.DigitalDataStore.get_count_ints" title="ceed.analysis.merge_data.DigitalDataStore.get_count_ints"><code class="xref py py-meth docutils literal notranslate"><span class="pre">DigitalDataStore.get_count_ints()</span></code></a> parsed <code class="docutils literal notranslate"><span class="pre">count</span></code> from that.
+<code class="docutils literal notranslate"><span class="pre">handshake_len</span></code> is the the corresponding value from
+<a class="reference internal" href="#ceed.analysis.merge_data.DigitalDataStore.get_handshake" title="ceed.analysis.merge_data.DigitalDataStore.get_handshake"><code class="xref py py-meth docutils literal notranslate"><span class="pre">DigitalDataStore.get_handshake()</span></code></a>, parsed from <code class="docutils literal notranslate"><span class="pre">count</span></code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This is only populated for experiments created by Ceed versions
+greater than <code class="docutils literal notranslate"><span class="pre">1.0.0.dev0</span></code>.</p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.MCSDigitalData.parse">
+<span class="sig-name descname"><span class="pre">parse</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ceed_version</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_start</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">datetime.datetime</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">find_start_from_ceed_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">estimated_start</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">datetime.datetime</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pre_estimated_start</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.analysis.merge_data.MCSDigitalData.parse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses the MCS data into the individual experiments.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ceed_version</strong> – The file’s Ceed version string.</p></li>
+<li><p><strong>data</strong> – the upto 24-bit digital data recorded by MCS at the MCS
+sampling rate (&gt;&gt; the Ced rate) along with the electrode data.
+It is saved as <a class="reference internal" href="#ceed.analysis.merge_data.DigitalDataStore.data" title="ceed.analysis.merge_data.DigitalDataStore.data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">DigitalDataStore.data</span></code></a>.</p></li>
+<li><p><strong>t_start</strong> – The date/time that corresponds to the first data sample
+index in <code class="docutils literal notranslate"><span class="pre">data</span></code>. That’s when the MCS data recording started.</p></li>
+<li><p><strong>f</strong> – The MCS recording sampling rate.</p></li>
+<li><p><strong>find_start_from_ceed_time</strong> – Whether to locate the Ceed experiment
+in the MCS data using a Ceed time estimate or by finding the
+handshaking pattern in the digital data. The time based approach
+is not well tested, but can tuned if handshaking is not working.</p></li>
+<li><p><strong>estimated_start</strong> – The estimated time when the Ceed experiment
+started.</p></li>
+<li><p><strong>pre_estimated_start</strong> – A fudge factor for <code class="docutils literal notranslate"><span class="pre">estimated_start</span></code>. We
+look for the experiment by <code class="docutils literal notranslate"><span class="pre">pre_estimated_start</span></code> before
+<code class="docutils literal notranslate"><span class="pre">estimated_start</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.MCSDigitalData.reduce_samples">
+<span class="sig-name descname"><span class="pre">reduce_samples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_start</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">datetime.datetime</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">find_start_from_ceed_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">estimated_start</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">datetime.datetime</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pre_estimated_start</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.analysis.merge_data.MCSDigitalData.reduce_samples" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reduces the data from multiple samples per-frame, to one sample per
+frame, using the clock. See <a class="reference internal" href="#ceed.analysis.merge_data.MCSDigitalData.parse" title="ceed.analysis.merge_data.MCSDigitalData.parse"><code class="xref py py-meth docutils literal notranslate"><span class="pre">parse()</span></code></a>.</p>
+<p>Ceed (projector) generates data at about 120Hz, while MCS records data
+at many thousands of hertz. So each Ceed frame is saved repeatedly over
+many samples. This collapses it into a single sample per frame.</p>
+<p>We can do this because Ceed toggles the clock for each frame.</p>
+<p>Once reduced, it extracts the clock, short and long counter data and
+saves them into the class properties ready for use by the super class
+methods.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.MCSDigitalData.parse_experiments">
+<span class="sig-name descname"><span class="pre">parse_experiments</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.analysis.merge_data.MCSDigitalData.parse_experiments" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given the data that has been reduced and split into the components
+with <a class="reference internal" href="#ceed.analysis.merge_data.MCSDigitalData.reduce_samples" title="ceed.analysis.merge_data.MCSDigitalData.reduce_samples"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reduce_samples()</span></code></a>, it extracts the individual experiments
+into <a class="reference internal" href="#ceed.analysis.merge_data.MCSDigitalData.experiments" title="ceed.analysis.merge_data.MCSDigitalData.experiments"><code class="xref py py-attr docutils literal notranslate"><span class="pre">experiments</span></code></a>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.CeedDigitalData">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.analysis.merge_data.</span></span><span class="sig-name descname"><span class="pre">CeedDigitalData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">short_count_indices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">count_indices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clock_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">counter_bit_width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.analysis.merge_data.CeedDigitalData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ceed.analysis.merge_data.DigitalDataStore" title="ceed.analysis.merge_data.DigitalDataStore"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.analysis.merge_data.DigitalDataStore</span></code></a></p>
+<p>Parses the Ceed data for an individual experiment as recorded in the
+Ceed H5 file.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.CeedDigitalData.parse">
+<span class="sig-name descname"><span class="pre">parse</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ceed_version</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame_bits</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame_counter</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_t</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">datetime.datetime</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_sub_frames</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rendered_frames</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#ceed.analysis.merge_data.CeedDigitalData.parse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses the Ceed data into the class properties from the raw data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ceed_version</strong> – The Ceed version string.</p></li>
+<li><p><strong>frame_bits</strong> – Array containing the 24 bits sent to MCS for each
+Ceed frame.</p></li>
+<li><p><strong>frame_counter</strong> – Array containing the global Ceed counter
+corresponding to each frame. This array includes frames that are
+not actually rendered but dropped by Ceed.</p></li>
+<li><p><strong>start_t</strong> – The date/time when the experiment started.</p></li>
+<li><p><strong>n_sub_frames</strong> – The number of sub-frames in each frame (e.g. for
+quad modes it’s 4 or 12).</p></li>
+<li><p><strong>rendered_frames</strong> – Logical array of the same size as
+<code class="docutils literal notranslate"><span class="pre">frame_counter</span></code> but only those frames that were rendered are True.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.CeedDigitalData.parse_data_v1_0_0_dev0">
+<span class="sig-name descname"><span class="pre">parse_data_v1_0_0_dev0</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#ceed.analysis.merge_data.CeedDigitalData.parse_data_v1_0_0_dev0" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses the data (from <a class="reference internal" href="#ceed.analysis.merge_data.CeedDigitalData.parse" title="ceed.analysis.merge_data.CeedDigitalData.parse"><code class="xref py py-meth docutils literal notranslate"><span class="pre">parse()</span></code></a>) for Ceed version <code class="docutils literal notranslate"><span class="pre">1.0.0.dev0</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.merge_data.CeedDigitalData.parse_data">
+<span class="sig-name descname"><span class="pre">parse_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frame_bits</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame_counter</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_t</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">datetime.datetime</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_sub_frames</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rendered_frames</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#ceed.analysis.merge_data.CeedDigitalData.parse_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses the data (from <a class="reference internal" href="#ceed.analysis.merge_data.CeedDigitalData.parse" title="ceed.analysis.merge_data.CeedDigitalData.parse"><code class="xref py py-meth docutils literal notranslate"><span class="pre">parse()</span></code></a>) for Ceed versions greater than
+<code class="docutils literal notranslate"><span class="pre">1.0.0.dev0</span></code>.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="../function/api.html" class="btn btn-neutral float-right" title="Function API" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="analysis.html" class="btn btn-neutral float-left" title="Ceed data analysis" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2019, Matthew Einhorn.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

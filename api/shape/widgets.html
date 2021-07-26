@@ -1,0 +1,677 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Shape Widgets &mdash; Ceed  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Stage API" href="../stage/api.html" />
+    <link rel="prev" title="Shapes" href="shape.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Ceed
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../blueprint.html">System Blueprint</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../guide/guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../config.html">CEED Config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../example_code/example_code.html">Example Analysis Code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../apps/apps.html">Ceed Apps</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">The Ceed API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../ceed.html">Ceed</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../analysis/api.html">Analysis API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../function/api.html">Function API</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="api.html">Shape API</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="shape.html">Shapes</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Shape Widgets</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../stage/api.html">Stage API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../view/api.html">Experiment API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../storage/api.html">Storage API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../player.html">Video Player</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils.html">Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../graphics/api.html">Graphics API</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../optics/optics.html">Microscope optics</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Ceed</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../api.html">The Ceed API</a> &raquo;</li>
+        
+          <li><a href="api.html">Shape API</a> &raquo;</li>
+        
+      <li>Shape Widgets</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../../_sources/api/shape/widgets.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <span class="target" id="module-ceed.shape.shape_widgets"></span><div class="section" id="shape-widgets">
+<h1>Shape Widgets<a class="headerlink" href="#shape-widgets" title="Permalink to this headline">¶</a></h1>
+<p>Defines the GUI components used with <a class="reference internal" href="shape.html#module-ceed.shape" title="ceed.shape"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ceed.shape</span></code></a>.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.CeedPainter">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.shape.shape_widgets.</span></span><span class="sig-name descname"><span class="pre">CeedPainter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.shape.shape_widgets.CeedPainter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="shape.html#ceed.shape.CeedPaintCanvasBehavior" title="ceed.shape.CeedPaintCanvasBehavior"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.shape.CeedPaintCanvasBehavior</span></code></a>, <a class="reference external" href="https://kivy.org/doc/stable/api-kivy.uix.widget.html#kivy.uix.widget.Widget" title="(in Kivy v2.0.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">kivy.uix.widget.Widget</span></code></a></p>
+<p>The shapes controller used in the GUI. It is the
+canvas widget upon which the shapes are drawn.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.CeedPainter.show_label">
+<span class="sig-name descname"><span class="pre">show_label</span></span><a class="headerlink" href="#ceed.shape.shape_widgets.CeedPainter.show_label" title="Permalink to this definition">¶</a></dt>
+<dd><p>If True, a label showing the current mouse position is displayed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.CeedPainter.shape_widgets_list">
+<span class="sig-name descname"><span class="pre">shape_widgets_list</span></span><em class="property"><span class="pre">:</span> <a class="reference internal" href="#ceed.shape.shape_widgets.ShapeList" title="ceed.shape.shape_widgets.ShapeList"><span class="pre">ceed.shape.shape_widgets.ShapeList</span></a></em><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.shape.shape_widgets.CeedPainter.shape_widgets_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="#ceed.shape.shape_widgets.ShapeList" title="ceed.shape.shape_widgets.ShapeList"><code class="xref py py-class docutils literal notranslate"><span class="pre">ShapeList</span></code></a> that contains the shape widgets.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.CeedPainter.pos_label">
+<span class="sig-name descname"><span class="pre">pos_label</span></span><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.shape.shape_widgets.CeedPainter.pos_label" title="Permalink to this definition">¶</a></dt>
+<dd><p>The label instance that shows the mouse position.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.CeedPainter.selected_groups">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">selected_groups</span></span><em class="property"><span class="pre">:</span> <span class="pre">List[ceed.shape.CeedShapeGroup]</span></em><a class="headerlink" href="#ceed.shape.shape_widgets.CeedPainter.selected_groups" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the list of <code class="xref py py-class docutils literal notranslate"><span class="pre">CeedShapeGroup</span></code> that are currently
+selected in the GUI.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.CeedPainter.create_shape_with_touch">
+<span class="sig-name descname"><span class="pre">create_shape_with_touch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">touch</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.shape.shape_widgets.CeedPainter.create_shape_with_touch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called internally whenever the user has done something with a
+touch such that the controller wants to create a new
+<code class="xref py py-class docutils literal notranslate"><span class="pre">PaintShape</span></code> to be added to the painter.</p>
+<p>This should return a new <code class="xref py py-class docutils literal notranslate"><span class="pre">PaintShape</span></code> instance that will be
+added to the painter.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>touch</strong> – The touch that caused this call.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A new <code class="xref py py-class docutils literal notranslate"><span class="pre">PaintShape</span></code> instance to be added.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.CeedPainter.reorder_shape">
+<span class="sig-name descname"><span class="pre">reorder_shape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">before_shape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.shape.shape_widgets.CeedPainter.reorder_shape" title="Permalink to this definition">¶</a></dt>
+<dd><p>Move the shape up or down in depth, in terms of the shape order in
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">shapes</span></code> and in the canvas.</p>
+<p>This effect whether a shape will obscure another.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>shape</strong> – <code class="xref py py-class docutils literal notranslate"><span class="pre">PaintShape</span></code> instance to move from it’s current
+position.</p></li>
+<li><p><strong>before_shape</strong> – Where to add it. If <cite>None</cite>, it is moved at the
+end, otherwise it is moved after the given <code class="xref py py-class docutils literal notranslate"><span class="pre">PaintShape</span></code> in
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">shapes</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.CeedPainter.add_shape">
+<span class="sig-name descname"><span class="pre">add_shape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.shape.shape_widgets.CeedPainter.add_shape" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add the shape to <code class="xref py py-attr docutils literal notranslate"><span class="pre">shapes</span></code> and to the painter.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>shape</strong> – <code class="xref py py-class docutils literal notranslate"><span class="pre">PaintShape</span></code> instance to add.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A bool indicating whether the shape was successfully added.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.CeedPainter.remove_shape">
+<span class="sig-name descname"><span class="pre">remove_shape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.shape.shape_widgets.CeedPainter.remove_shape" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes the shape from the painter and from <code class="xref py py-attr docutils literal notranslate"><span class="pre">shapes</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>shape</strong> – <code class="xref py py-class docutils literal notranslate"><span class="pre">PaintShape</span></code> instance to remove.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A bool indicating whether the shape was successfully removed.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.CeedPainter.add_group">
+<span class="sig-name descname"><span class="pre">add_group</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">group</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.shape.shape_widgets.CeedPainter.add_group" title="Permalink to this definition">¶</a></dt>
+<dd><p>Similar to <a class="reference internal" href="#ceed.shape.shape_widgets.CeedPainter.add_shape" title="ceed.shape.shape_widgets.CeedPainter.add_shape"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_shape()</span></code></a> but for a <code class="xref py py-class docutils literal notranslate"><span class="pre">CeedShapeGroup</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Params</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><cite>group</cite>: <code class="xref py py-class docutils literal notranslate"><span class="pre">CeedShapeGroup</span></code></dt><dd><p>The group to add. If None, the default, a new
+<code class="xref py py-class docutils literal notranslate"><span class="pre">CeedShapeGroup</span></code> is created and added.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The <code class="xref py py-class docutils literal notranslate"><span class="pre">CeedShapeGroup</span></code> added.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.CeedPainter.remove_group">
+<span class="sig-name descname"><span class="pre">remove_group</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">group</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.shape.shape_widgets.CeedPainter.remove_group" title="Permalink to this definition">¶</a></dt>
+<dd><p>Similar to <a class="reference internal" href="#ceed.shape.shape_widgets.CeedPainter.remove_shape" title="ceed.shape.shape_widgets.CeedPainter.remove_shape"><code class="xref py py-meth docutils literal notranslate"><span class="pre">remove_shape()</span></code></a> but for a <code class="xref py py-class docutils literal notranslate"><span class="pre">CeedShapeGroup</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Params</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><cite>group</cite>: <code class="xref py py-class docutils literal notranslate"><span class="pre">CeedShapeGroup</span></code></dt><dd><p>The group to remove.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if the group was removed, False otherwise.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.CeedPainter.on_show_label">
+<span class="sig-name descname"><span class="pre">on_show_label</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">largs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.shape.shape_widgets.CeedPainter.on_show_label" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shows/hides the <a class="reference internal" href="#ceed.shape.shape_widgets.CeedPainter.pos_label" title="ceed.shape.shape_widgets.CeedPainter.pos_label"><code class="xref py py-attr docutils literal notranslate"><span class="pre">pos_label</span></code></a> label depending on the value
+of <a class="reference internal" href="#ceed.shape.shape_widgets.CeedPainter.show_label" title="ceed.shape.shape_widgets.CeedPainter.show_label"><code class="xref py py-attr docutils literal notranslate"><span class="pre">show_label</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.CeedPainter.add_enclosing_polygon">
+<span class="sig-name descname"><span class="pre">add_enclosing_polygon</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.shape.shape_widgets.CeedPainter.add_enclosing_polygon" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a polygon shape named <code class="docutils literal notranslate"><span class="pre">'enclosed'</span></code> that encloses the whole
+drawing area.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.CeedPainter.select_shape">
+<span class="sig-name descname"><span class="pre">select_shape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.shape.shape_widgets.CeedPainter.select_shape" title="Permalink to this definition">¶</a></dt>
+<dd><p>Selects the shape and adds it to <code class="xref py py-attr docutils literal notranslate"><span class="pre">selected_shapes</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>shape</strong> – <code class="xref py py-class docutils literal notranslate"><span class="pre">PaintShape</span></code> instance to select.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A bool indicating whether the shape was successfully selected.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.CeedPainter.deselect_shape">
+<span class="sig-name descname"><span class="pre">deselect_shape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.shape.shape_widgets.CeedPainter.deselect_shape" title="Permalink to this definition">¶</a></dt>
+<dd><p>De-selects the shape and removes it from <code class="xref py py-attr docutils literal notranslate"><span class="pre">selected_shapes</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>shape</strong> – <code class="xref py py-class docutils literal notranslate"><span class="pre">PaintShape</span></code> instance to de-select.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A bool indicating whether the shape was successfully
+de-selected.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.ShapeGroupList">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.shape.shape_widgets.</span></span><span class="sig-name descname"><span class="pre">ShapeGroupList</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.shape.shape_widgets.ShapeGroupList" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://kivy-garden.github.io/drag_n_drop/flower.html#kivy_garden.drag_n_drop.DraggableLayoutBehavior" title="(in Drag-N-Drop)"><code class="xref py py-class docutils literal notranslate"><span class="pre">kivy_garden.drag_n_drop.DraggableLayoutBehavior</span></code></a>, <a class="reference internal" href="../graphics/graphics.html#ceed.graphics.ShowMoreSelection" title="ceed.graphics.ShowMoreSelection"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.graphics.ShowMoreSelection</span></code></a>, <a class="reference internal" href="../graphics/graphics.html#ceed.graphics.WidgetList" title="ceed.graphics.WidgetList"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.graphics.WidgetList</span></code></a>, <a class="reference external" href="https://kivy.org/doc/stable/api-kivy.uix.boxlayout.html#kivy.uix.boxlayout.BoxLayout" title="(in Kivy v2.0.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">kivy.uix.boxlayout.BoxLayout</span></code></a></p>
+<p>Container widget that shows all the groups.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.ShapeGroupList.add_selected_shapes">
+<span class="sig-name descname"><span class="pre">add_selected_shapes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.shape.shape_widgets.ShapeGroupList.add_selected_shapes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds all the shapes currently selected in the painter to the
+currently selected group. If no group is selected, a new one is
+created.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.ShapeGroupList.handle_drag_release">
+<span class="sig-name descname"><span class="pre">handle_drag_release</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drag_widget</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.shape.shape_widgets.ShapeGroupList.handle_drag_release" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is called when a widget is dropped in the layout.
+<code class="docutils literal notranslate"><span class="pre">index</span></code> is the index in <cite>children</cite> where the widget should be added.
+<code class="docutils literal notranslate"><span class="pre">drag_widget</span></code> is the <code class="xref py py-class docutils literal notranslate"><span class="pre">DraggableObjectBehavior</span></code> that was dropped
+there.</p>
+<p>This must be overwritten by the inherited class to actually do the
+<code class="docutils literal notranslate"><span class="pre">add_widget</span></code> or something else.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.WidgetShapeGroup">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.shape.shape_widgets.</span></span><span class="sig-name descname"><span class="pre">WidgetShapeGroup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.shape.shape_widgets.WidgetShapeGroup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../graphics/graphics.html#ceed.graphics.ShowMoreBehavior" title="ceed.graphics.ShowMoreBehavior"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.graphics.ShowMoreBehavior</span></code></a>, <a class="reference external" href="https://kivy.org/doc/stable/api-kivy.uix.boxlayout.html#kivy.uix.boxlayout.BoxLayout" title="(in Kivy v2.0.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">kivy.uix.boxlayout.BoxLayout</span></code></a></p>
+<p>The widget that is displayed for a <a class="reference internal" href="shape.html#ceed.shape.CeedShapeGroup" title="ceed.shape.CeedShapeGroup"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.shape.CeedShapeGroup</span></code></a>
+instance.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.WidgetShapeGroup.selected">
+<span class="sig-name descname"><span class="pre">selected</span></span><a class="headerlink" href="#ceed.shape.shape_widgets.WidgetShapeGroup.selected" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the group is <code class="xref py py-attr docutils literal notranslate"><span class="pre">selected</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.WidgetShapeGroup.group">
+<span class="sig-name descname"><span class="pre">group</span></span><em class="property"><span class="pre">:</span> <a class="reference internal" href="shape.html#ceed.shape.CeedShapeGroup" title="ceed.shape.CeedShapeGroup"><span class="pre">ceed.shape.CeedShapeGroup</span></a></em><a class="headerlink" href="#ceed.shape.shape_widgets.WidgetShapeGroup.group" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="shape.html#ceed.shape.CeedShapeGroup" title="ceed.shape.CeedShapeGroup"><code class="xref py py-class docutils literal notranslate"><span class="pre">CeedShapeGroup</span></code></a> this widget represents.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.WidgetShapeGroup.expand_widget">
+<span class="sig-name descname"><span class="pre">expand_widget</span></span><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.shape.shape_widgets.WidgetShapeGroup.expand_widget" title="Permalink to this definition">¶</a></dt>
+<dd><p>The ExpandWidget that when hit wil show the list of shapes of the group.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.WidgetShapeGroup.name">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#ceed.shape.shape_widgets.WidgetShapeGroup.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="shape.html#ceed.shape.CeedShapeGroup.name" title="ceed.shape.CeedShapeGroup.name"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ceed.shape.CeedShapeGroup.name</span></code></a> of the group.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.WidgetShapeGroup.show_widget">
+<span class="sig-name descname"><span class="pre">show_widget</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.shape.shape_widgets.WidgetShapeGroup.show_widget" title="Permalink to this definition">¶</a></dt>
+<dd><p>Displays this widget group in the GUI.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.WidgetShapeGroup.hide_widget">
+<span class="sig-name descname"><span class="pre">hide_widget</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.shape.shape_widgets.WidgetShapeGroup.hide_widget" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hides this widget group from the GUI.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.WidgetShapeGroup.shape_widgets">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">shape_widgets</span></span><em class="property"><span class="pre">:</span> <span class="pre">List[ceed.shape.shape_widgets.ShapeGroupItem]</span></em><a class="headerlink" href="#ceed.shape.shape_widgets.WidgetShapeGroup.shape_widgets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the <a class="reference internal" href="#ceed.shape.shape_widgets.ShapeGroupItem" title="ceed.shape.shape_widgets.ShapeGroupItem"><code class="xref py py-class docutils literal notranslate"><span class="pre">ShapeGroupItem</span></code></a> instances representing the
+shapes in this group.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.WidgetShapeGroup.add_shape">
+<span class="sig-name descname"><span class="pre">add_shape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.shape.shape_widgets.WidgetShapeGroup.add_shape" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds and displays a <a class="reference internal" href="#ceed.shape.shape_widgets.ShapeGroupItem" title="ceed.shape.shape_widgets.ShapeGroupItem"><code class="xref py py-class docutils literal notranslate"><span class="pre">ShapeGroupItem</span></code></a> widget representing the
+<a class="reference internal" href="shape.html#ceed.shape.CeedShape" title="ceed.shape.CeedShape"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.shape.CeedShape</span></code></a>, to this group’s widget.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.WidgetShapeGroup.remove_shape">
+<span class="sig-name descname"><span class="pre">remove_shape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.shape.shape_widgets.WidgetShapeGroup.remove_shape" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes the <a class="reference internal" href="#ceed.shape.shape_widgets.ShapeGroupItem" title="ceed.shape.shape_widgets.ShapeGroupItem"><code class="xref py py-class docutils literal notranslate"><span class="pre">ShapeGroupItem</span></code></a> associated with the
+<a class="reference internal" href="shape.html#ceed.shape.CeedShape" title="ceed.shape.CeedShape"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.shape.CeedShape</span></code></a> from this group’s widget.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.ShapeGroupItem">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.shape.shape_widgets.</span></span><span class="sig-name descname"><span class="pre">ShapeGroupItem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.shape.shape_widgets.ShapeGroupItem" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://kivy.org/doc/stable/api-kivy.uix.boxlayout.html#kivy.uix.boxlayout.BoxLayout" title="(in Kivy v2.0.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">kivy.uix.boxlayout.BoxLayout</span></code></a></p>
+<p>The shape’s widget, displayed in the <a class="reference internal" href="#ceed.shape.shape_widgets.WidgetShapeGroup" title="ceed.shape.shape_widgets.WidgetShapeGroup"><code class="xref py py-class docutils literal notranslate"><span class="pre">WidgetShapeGroup</span></code></a> widget
+tree, for a shape from that group.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.ShapeGroupItem.shape">
+<span class="sig-name descname"><span class="pre">shape</span></span><em class="property"><span class="pre">:</span> <a class="reference internal" href="shape.html#ceed.shape.CeedShape" title="ceed.shape.CeedShape"><span class="pre">ceed.shape.CeedShape</span></a></em><a class="headerlink" href="#ceed.shape.shape_widgets.ShapeGroupItem.shape" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="shape.html#ceed.shape.CeedShape" title="ceed.shape.CeedShape"><code class="xref py py-class docutils literal notranslate"><span class="pre">CeedShape</span></code></a> with which this widget is associated.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.ShapeGroupItem.group">
+<span class="sig-name descname"><span class="pre">group</span></span><em class="property"><span class="pre">:</span> <a class="reference internal" href="shape.html#ceed.shape.CeedShapeGroup" title="ceed.shape.CeedShapeGroup"><span class="pre">ceed.shape.CeedShapeGroup</span></a></em><a class="headerlink" href="#ceed.shape.shape_widgets.ShapeGroupItem.group" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="shape.html#ceed.shape.CeedShapeGroup" title="ceed.shape.CeedShapeGroup"><code class="xref py py-class docutils literal notranslate"><span class="pre">CeedShapeGroup</span></code></a> to which this shape belongs.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.ShapeGroupItem.name">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#ceed.shape.shape_widgets.ShapeGroupItem.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="shape.html#ceed.shape.CeedShape.name" title="ceed.shape.CeedShape.name"><code class="xref py py-attr docutils literal notranslate"><span class="pre">name</span></code></a> of the shape.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.ShapeList">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.shape.shape_widgets.</span></span><span class="sig-name descname"><span class="pre">ShapeList</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.shape.shape_widgets.ShapeList" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://kivy-garden.github.io/drag_n_drop/flower.html#kivy_garden.drag_n_drop.DraggableLayoutBehavior" title="(in Drag-N-Drop)"><code class="xref py py-class docutils literal notranslate"><span class="pre">kivy_garden.drag_n_drop.DraggableLayoutBehavior</span></code></a>, <a class="reference internal" href="../graphics/graphics.html#ceed.graphics.ShowMoreSelection" title="ceed.graphics.ShowMoreSelection"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.graphics.ShowMoreSelection</span></code></a>, <a class="reference internal" href="../graphics/graphics.html#ceed.graphics.WidgetList" title="ceed.graphics.WidgetList"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.graphics.WidgetList</span></code></a>, <a class="reference external" href="https://kivy.org/doc/stable/api-kivy.uix.boxlayout.html#kivy.uix.boxlayout.BoxLayout" title="(in Kivy v2.0.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">kivy.uix.boxlayout.BoxLayout</span></code></a></p>
+<p>Container widget that shows all the shapes.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.ShapeList.select_node">
+<span class="sig-name descname"><span class="pre">select_node</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.shape.shape_widgets.ShapeList.select_node" title="Permalink to this definition">¶</a></dt>
+<dd><p>Selects a node.</p>
+<p>It is called by the controller when it selects a node and can be
+called from the outside to select a node directly. The derived widget
+should overwrite this method and change the node state to selected
+when called.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><cite>node</cite></dt><dd><p>The node to be selected.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>bool, True if the node was selected, False otherwise.</p>
+</dd>
+</dl>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This method must be called by the derived widget using super if it
+is overwritten.</p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.ShapeList.deselect_node">
+<span class="sig-name descname"><span class="pre">deselect_node</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.shape.shape_widgets.ShapeList.deselect_node" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deselects a possibly selected node.</p>
+<p>It is called by the controller when it deselects a node and can also
+be called from the outside to deselect a node directly. The derived
+widget should overwrite this method and change the node to its
+unselected state when this is called</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><cite>node</cite></dt><dd><p>The node to be deselected.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This method must be called by the derived widget using super if it
+is overwritten.</p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.ShapeList.handle_drag_release">
+<span class="sig-name descname"><span class="pre">handle_drag_release</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drag_widget</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.shape.shape_widgets.ShapeList.handle_drag_release" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is called when a widget is dropped in the layout.
+<code class="docutils literal notranslate"><span class="pre">index</span></code> is the index in <cite>children</cite> where the widget should be added.
+<code class="docutils literal notranslate"><span class="pre">drag_widget</span></code> is the <code class="xref py py-class docutils literal notranslate"><span class="pre">DraggableObjectBehavior</span></code> that was dropped
+there.</p>
+<p>This must be overwritten by the inherited class to actually do the
+<code class="docutils literal notranslate"><span class="pre">add_widget</span></code> or something else.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.WidgetShape">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.shape.shape_widgets.</span></span><span class="sig-name descname"><span class="pre">WidgetShape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.shape.shape_widgets.WidgetShape" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../graphics/graphics.html#ceed.graphics.ShowMoreBehavior" title="ceed.graphics.ShowMoreBehavior"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.graphics.ShowMoreBehavior</span></code></a>, <a class="reference external" href="https://kivy.org/doc/stable/api-kivy.uix.boxlayout.html#kivy.uix.boxlayout.BoxLayout" title="(in Kivy v2.0.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">kivy.uix.boxlayout.BoxLayout</span></code></a></p>
+<p>The widget displayed for and associated with a
+<a class="reference internal" href="shape.html#ceed.shape.CeedShape" title="ceed.shape.CeedShape"><code class="xref py py-class docutils literal notranslate"><span class="pre">CeedShape</span></code></a> instance.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.WidgetShape.painter">
+<span class="sig-name descname"><span class="pre">painter</span></span><em class="property"><span class="pre">:</span> <a class="reference internal" href="#ceed.shape.shape_widgets.CeedPainter" title="ceed.shape.shape_widgets.CeedPainter"><span class="pre">ceed.shape.shape_widgets.CeedPainter</span></a></em><a class="headerlink" href="#ceed.shape.shape_widgets.WidgetShape.painter" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="#ceed.shape.shape_widgets.CeedPainter" title="ceed.shape.shape_widgets.CeedPainter"><code class="xref py py-class docutils literal notranslate"><span class="pre">CeedPainter</span></code></a> this shape belongs to.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.WidgetShape.shape">
+<span class="sig-name descname"><span class="pre">shape</span></span><em class="property"><span class="pre">:</span> <a class="reference internal" href="shape.html#ceed.shape.CeedShape" title="ceed.shape.CeedShape"><span class="pre">ceed.shape.CeedShape</span></a></em><a class="headerlink" href="#ceed.shape.shape_widgets.WidgetShape.shape" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="shape.html#ceed.shape.CeedShape" title="ceed.shape.CeedShape"><code class="xref py py-class docutils literal notranslate"><span class="pre">CeedShape</span></code></a> instance associated with the widget.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.WidgetShape.centroid_x">
+<span class="sig-name descname"><span class="pre">centroid_x</span></span><a class="headerlink" href="#ceed.shape.shape_widgets.WidgetShape.centroid_x" title="Permalink to this definition">¶</a></dt>
+<dd><p>The x center of the shape (e.g. the x-center of the polygon).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.WidgetShape.centroid_y">
+<span class="sig-name descname"><span class="pre">centroid_y</span></span><a class="headerlink" href="#ceed.shape.shape_widgets.WidgetShape.centroid_y" title="Permalink to this definition">¶</a></dt>
+<dd><p>The y center of the shape (e.g. the y-center of the polygon).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.WidgetShape.area">
+<span class="sig-name descname"><span class="pre">area</span></span><a class="headerlink" href="#ceed.shape.shape_widgets.WidgetShape.area" title="Permalink to this definition">¶</a></dt>
+<dd><p>The enclosed area of the shape (e.g. the area of the polygon).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.WidgetShape.selected">
+<span class="sig-name descname"><span class="pre">selected</span></span><a class="headerlink" href="#ceed.shape.shape_widgets.WidgetShape.selected" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether the shape is <a class="reference external" href="https://kivy-garden.github.io/painter/flower.html#kivy_garden.painter.PaintShape.selected" title="(in Painter)"><code class="xref py py-attr docutils literal notranslate"><span class="pre">kivy_garden.painter.PaintShape.selected</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.WidgetShape.show_label">
+<span class="sig-name descname"><span class="pre">show_label</span></span><a class="headerlink" href="#ceed.shape.shape_widgets.WidgetShape.show_label" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether <a class="reference internal" href="#ceed.shape.shape_widgets.WidgetShape.label" title="ceed.shape.shape_widgets.WidgetShape.label"><code class="xref py py-attr docutils literal notranslate"><span class="pre">label</span></code></a> is currently displayed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.WidgetShape.label">
+<span class="sig-name descname"><span class="pre">label</span></span><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.shape.shape_widgets.WidgetShape.label" title="Permalink to this definition">¶</a></dt>
+<dd><p>The label widget that displays the name of the shape in the center
+of the shape, in the drawing area, when enabled.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.WidgetShape.name">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#ceed.shape.shape_widgets.WidgetShape.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <code class="xref py py-attr docutils literal notranslate"><span class="pre">kivy_garden.painter.PaintShape.name</span></code> of the shape.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.WidgetShape.show_widget">
+<span class="sig-name descname"><span class="pre">show_widget</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.shape.shape_widgets.WidgetShape.show_widget" title="Permalink to this definition">¶</a></dt>
+<dd><p>Displays this widget in the list of shape widgets at the given
+index. The index is in the same order as the shapes, i.e. zero is shape
+zero etc.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.shape.shape_widgets.WidgetShape.hide_widget">
+<span class="sig-name descname"><span class="pre">hide_widget</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.shape.shape_widgets.WidgetShape.hide_widget" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hides this widget from the list of shape widgets.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="../stage/api.html" class="btn btn-neutral float-right" title="Stage API" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="shape.html" class="btn btn-neutral float-left" title="Shapes" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2019, Matthew Einhorn.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

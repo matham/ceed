@@ -1,0 +1,483 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Ceed functions &mdash; Ceed  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Ceed shapes" href="shape.html" />
+    <link rel="prev" title="User Guide" href="guide.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Ceed
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../blueprint.html">System Blueprint</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="guide.html">User Guide</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Ceed functions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#creating-functions">Creating functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#customizing-functions">Customizing functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#function-groups">Function groups</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#randomizing-functions">Randomizing functions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#looping">Looping</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#lock-after-forking">Lock after forking</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#function-timebase">Function timebase</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#function-plugin">Function plugin</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="shape.html">Ceed shapes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="stage.html">Ceed stages</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html">Ceed camera player</a></li>
+<li class="toctree-l2"><a class="reference internal" href="experiment.html">Ceed experiment</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../config.html">CEED Config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../example_code/example_code.html">Example Analysis Code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../apps/apps.html">Ceed Apps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/api.html">The Ceed API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../optics/optics.html">Microscope optics</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Ceed</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="guide.html">User Guide</a> &raquo;</li>
+        
+      <li>Ceed functions</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/guide/function.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="ceed-functions">
+<h1>Ceed functions<a class="headerlink" href="#ceed-functions" title="Permalink to this headline">¶</a></h1>
+<p>A Ceed <a class="reference internal" href="../api/function/function.html#function-api"><span class="std std-ref">function</span></a> is how a stage attaches a time-varying intensity
+to its shapes.</p>
+<p>The stage calls the function or sequence of functions for every video frame with
+the current global time and the function returns a scalar value between 0-1, inclusive.
+This intensity is used for that stage’s shapes for that frame.</p>
+<p>See the <a class="reference internal" href="../api/function/function.html#function-api"><span class="std std-ref">function API</span></a> for in-depth function details.</p>
+<div class="section" id="creating-functions">
+<h2>Creating functions<a class="headerlink" href="#creating-functions" title="Permalink to this headline">¶</a></h2>
+<p>Ceed comes with <a class="reference internal" href="../api/function/function.html#function-factory-plugin"><span class="std std-ref">pre-defined</span></a> functions, but a
+<a class="reference internal" href="../api/function/function_plugin.html#func-plugin"><span class="std std-ref">plugin</span></a> can add to the available functions.
+Additionally, you can customize functions in the function pane to make it available for
+re-use in other function groups or stages.</p>
+<p>This video shows multiple ways to create a customized global cosine function from
+existing cosine functions.</p>
+
+    <video loop   controls autoplay title="Open in tab for original size" style="max-width: 100%;">
+    <source src="../_videos/function_creating.webm" type="video/webm">
+    function_creating
+    </video>
+    </div>
+<div class="section" id="customizing-functions">
+<h2>Customizing functions<a class="headerlink" href="#customizing-functions" title="Permalink to this headline">¶</a></h2>
+<p>Each function has parameters that describe its output as a function of time. All
+functions have these basic parameters:</p>
+<ol class="arabic simple">
+<li><p><strong>Duration</strong> (<a class="reference internal" href="../api/function/function.html#ceed.function.FuncBase.duration" title="ceed.function.FuncBase.duration"><code class="xref py py-attr docutils literal notranslate"><span class="pre">duration</span></code></a>) - the time
+<a class="reference internal" href="../api/function/function.html#func-domain"><span class="std std-ref">domain where it’s valid.</span></a>. See also <a class="reference internal" href="#func-precision"><span class="std std-ref">Function timebase</span></a>.</p></li>
+<li><p><strong>Loop</strong> (<a class="reference internal" href="../api/function/function.html#ceed.function.FuncBase.loop" title="ceed.function.FuncBase.loop"><code class="xref py py-attr docutils literal notranslate"><span class="pre">loop</span></code></a>) - the number of times to loop.
+The function restarts as many times over its domain until done.</p></li>
+<li><p><strong>TB num/denom</strong> (<a class="reference internal" href="../api/function/function.html#ceed.function.FuncBase.timebase" title="ceed.function.FuncBase.timebase"><code class="xref py py-attr docutils literal notranslate"><span class="pre">timebase</span></code></a>) see <a class="reference internal" href="#func-precision"><span class="std std-ref">Function timebase</span></a>.</p></li>
+<li><p><strong>Offset</strong> (<a class="reference internal" href="../api/function/function.html#ceed.function.CeedFunc.t_offset" title="ceed.function.CeedFunc.t_offset"><code class="xref py py-attr docutils literal notranslate"><span class="pre">t_offset</span></code></a>) - an offset to the time
+parameter. E.g. if the function is <code class="docutils literal notranslate"><span class="pre">y</span> <span class="pre">=</span> <span class="pre">m</span> <span class="pre">*</span> <span class="pre">t</span> <span class="pre">+</span> <span class="pre">b</span></code>, specifying a non-zero value
+for offset will compute <code class="docutils literal notranslate"><span class="pre">y</span> <span class="pre">=</span> <span class="pre">m</span> <span class="pre">*</span> <span class="pre">(t</span> <span class="pre">+</span> <span class="pre">t_offset)</span> <span class="pre">+</span> <span class="pre">b</span></code>.</p></li>
+</ol>
+
+    <video loop   controls autoplay title="Open in tab for original size" style="max-width: 100%;">
+    <source src="../_videos/function_customize.webm" type="video/webm">
+    function_customize
+    </video>
+    </div>
+<div class="section" id="function-groups">
+<span id="func-group-tut"></span><h2>Function groups<a class="headerlink" href="#function-groups" title="Permalink to this headline">¶</a></h2>
+<p>Functions groups enable iterating through a sequence of functions as if it was a single
+function whose duration is the sum of its children functions, recursively.</p>
+<p>Initially, when adding or dragging a global function into a group, only a reference to
+the function is added. So changing the original function will change the reference
+function as well, and the original function cannot be deleted. A reference function is
+indicated with the T-junction icon in the video. Clicking it will break the reference
+and convert it to a independent function.</p>
+<p>Ceed guards from adding a group function to itself or its children, to prevent
+infinite recursion as shown at the end of video.</p>
+
+    <video loop   controls autoplay title="Open in tab for original size" style="max-width: 100%;">
+    <source src="../_videos/function_group.webm" type="video/webm">
+    function_group
+    </video>
+    </div>
+<div class="section" id="randomizing-functions">
+<h2>Randomizing functions<a class="headerlink" href="#randomizing-functions" title="Permalink to this headline">¶</a></h2>
+<p>Function parameters can be <a class="reference internal" href="../api/function/function.html#func-random-param"><span class="std std-ref">randomized</span></a> so it is resampled before
+each experiment. As seen in the video, there are multiple distributions to choose from
+and more can be added by <a class="reference internal" href="../api/function/function_plugin.html#func-plugin"><span class="std std-ref">plugins.</span></a></p>
+
+    <video loop   controls autoplay title="Open in tab for original size" style="max-width: 100%;">
+    <source src="../_videos/function_random.webm" type="video/webm">
+    function_random
+    </video>
+    <div class="section" id="looping">
+<h3>Looping<a class="headerlink" href="#looping" title="Permalink to this headline">¶</a></h3>
+<p>When a function or <a class="reference internal" href="stage.html#mod-stage"><span class="std std-ref">stage</span></a> is looped, randomized parameters can be
+resampled once and the value used for all loop iterations, or it can be resampled
+once for each loop iteration.</p>
+<p>In Ceed, the “Resample each loop”
+(<a class="reference internal" href="../api/function/param_noise.html#ceed.function.param_noise.NoiseBase.sample_each_loop" title="ceed.function.param_noise.NoiseBase.sample_each_loop"><code class="xref py py-attr docutils literal notranslate"><span class="pre">sample_each_loop</span></code></a>) option controls
+this behavior. For example, this protocol contains a function of constant intensity
+of 5 sec duration. Additionally, the function loops twice and the stage loops 3 times
+for a total of 6 loops. The intensity parameter is randomized from a Gaussian and
+is not resampled for each loop. So its <a class="reference internal" href="stage.html#preview-stage"><span class="std std-ref">graph</span></a> is constant.</p>
+<img alt="../_images/function_random.png" src="../_images/function_random.png" />
+<p><a class="reference download internal" download="" href="../_downloads/b2ffc5f20f4869fe009323313dd81a8b/function_random.yml"><code class="xref download docutils literal notranslate"><span class="pre">Ceed</span> <span class="pre">config</span></code></a></p>
+<p>This protocol however does resample each loop iteration, which is reflected in its
+graph.</p>
+<img alt="../_images/function_random_per_loop.png" src="../_images/function_random_per_loop.png" />
+<p><a class="reference download internal" download="" href="../_downloads/811535ff2775d0a0c0cc7901da74b71d/function_random_per_loop.yml"><code class="xref download docutils literal notranslate"><span class="pre">Ceed</span> <span class="pre">config</span></code></a></p>
+</div>
+<div class="section" id="lock-after-forking">
+<h3>Lock after forking<a class="headerlink" href="#lock-after-forking" title="Permalink to this headline">¶</a></h3>
+<p>Before an experiment, functions with random parameters are re-sampled and then
+copied; that’s so the original prototype functions are not directly used by an
+experiment. After the copy, Ceed again re-samples the functions because of the
+following.</p>
+<p>As shown <a class="reference internal" href="#func-group-tut"><span class="std std-ref">above</span></a>, Ceed supports reference functions that can
+be re-used in multiple places, allowing them to share parameters. These references
+are individually cloned from the prototype at the copying step into unique functions.
+The randomized parameters of the cloned functions support two options with regards to
+re-sampling, controlled by “Lock after fork”
+(<a class="reference internal" href="../api/function/param_noise.html#ceed.function.param_noise.NoiseBase.lock_after_forked" title="ceed.function.param_noise.NoiseBase.lock_after_forked"><code class="xref py py-attr docutils literal notranslate"><span class="pre">lock_after_forked</span></code></a>).</p>
+<p>If <strong>False</strong>, Ceed will resample the parameter again after cloning. This ensures that
+each cloned copy will not share the same random values as the original and sibling
+functions. If <strong>True</strong>, the cloned functions will not be re-sampled so they will
+share the original re-sampled parameters.</p>
+<p>The following protocol contains 3 functions; a reference to a constant function that
+loops 5 times and its intensity is randomized, it’s followed by a short cosine, that is
+followed again by a reference to the same constant function.</p>
+<p>Here we set “Lock after fork” to False. You can see how both references to the
+constant function have different values.</p>
+<img alt="../_images/function_random_fork.png" src="../_images/function_random_fork.png" />
+<p><a class="reference download internal" download="" href="../_downloads/c871a152652587ebf94d2cee828f79b5/function_random_fork.yml"><code class="xref download docutils literal notranslate"><span class="pre">Ceed</span> <span class="pre">config</span></code></a></p>
+<p>Here we set “Lock after fork” to True. You can see how both reference functions
+repeat the same pattern because they share the same random values for each loop
+iteration.</p>
+<img alt="../_images/function_random_fork_lock.png" src="../_images/function_random_fork_lock.png" />
+<p><a class="reference download internal" download="" href="../_downloads/010c30488143844015caf186ca159f48/function_random_fork_lock.yml"><code class="xref download docutils literal notranslate"><span class="pre">Ceed</span> <span class="pre">config</span></code></a></p>
+</div>
+</div>
+<div class="section" id="function-timebase">
+<span id="func-precision"></span><h2>Function timebase<a class="headerlink" href="#function-timebase" title="Permalink to this headline">¶</a></h2>
+<p>Functions are sampled by the stage at integer multiples of the video frame rate period.
+As function <a class="reference internal" href="../api/function/function.html#ceed.function.FuncBase.duration" title="ceed.function.FuncBase.duration"><code class="xref py py-attr docutils literal notranslate"><span class="pre">duration</span></code></a> approaches the period,
+specifying duration using time in decimal
+leads to inaccuracy and rounding. Functions therefore support specifying duration as
+integer multiple of video frames. E.g. it can be set to be exactly one frame long.</p>
+<p>When the function <a class="reference internal" href="../api/function/function.html#func-timebase"><span class="std std-ref">timebase</span></a> is specified and non-zero, the duration
+is multiplied by the <a class="reference internal" href="../api/function/function.html#ceed.function.FuncBase.timebase" title="ceed.function.FuncBase.timebase"><code class="xref py py-attr docutils literal notranslate"><span class="pre">timebase</span></code></a> to get the duration
+in seconds. So when the timebase is exactly one over the frame rate - the period,
+a duration of one means one frame.</p>
+<p>E.g. in the video, the frame rate is 59.94, or 2997 / 50. Setting the timebase fraction
+to 50 / 2997 will allow use to set the duration of each constant function in the group
+to one frame. Then, setting the intensity (<code class="docutils literal notranslate"><span class="pre">a</span></code>) of the first child function to zero,
+the second one to one, and the group to loop over them 500 times will create a
+function that alternates between zero and one intensity for each frame.</p>
+<p>The stages and preview graph are explained in the <a class="reference internal" href="stage.html#stage-guide"><span class="std std-ref">stage guide</span></a>.</p>
+
+    <video loop   controls autoplay title="Open in tab for original size" style="max-width: 100%;">
+    <source src="../_videos/function_precision.webm" type="video/webm">
+    function_precision
+    </video>
+    <p><a class="reference download internal" download="" href="../_downloads/22edb6a6393a75a2e4ba2cd2cd240c13/function_precision.yml"><code class="xref download docutils literal notranslate"><span class="pre">Ceed</span> <span class="pre">config</span> <span class="pre">of</span> <span class="pre">the</span> <span class="pre">video</span></code></a></p>
+<p>Children of function groups (recursively) inherit their timebase from their parents,
+if it’s not explicitly overwritten by the child.</p>
+</div>
+<div class="section" id="function-plugin">
+<h2>Function plugin<a class="headerlink" href="#function-plugin" title="Permalink to this headline">¶</a></h2>
+<p>Ceed comes with a few functions, however using <a class="reference internal" href="../api/function/function_plugin.html#func-plugin"><span class="std std-ref">plugins</span></a>
+Ceed can support any custom function.</p>
+<p>It is fully explained in <a class="reference internal" href="../api/function/function_plugin.html#func-plugin"><span class="std std-ref">Function plugins</span></a>, but you can make your plugin available to
+Ceed by copying your Python file to the <code class="docutils literal notranslate"><span class="pre">ceed/function/plugin</span></code> directory
+under where Ceed is installed, or register your external plugin package
+using <a class="reference internal" href="../apps/main.html#ceed.main.CeedApp.external_function_plugin_package" title="ceed.main.CeedApp.external_function_plugin_package"><code class="xref py py-attr docutils literal notranslate"><span class="pre">external_function_plugin_package</span></code></a>.</p>
+<p>Ceed gets your function classes using a <code class="docutils literal notranslate"><span class="pre">get_ceed_functions</span></code> function in the
+plugin and similarly it uses <code class="docutils literal notranslate"><span class="pre">get_ceed_distributions</span></code> to get the probability
+distribution classes.</p>
+<p>To write a plugin, it helps to become familiar with the
+<a class="reference internal" href="../api/function/function.html#function-api"><span class="std std-ref">function API</span></a> and the <a class="reference internal" href="../api/function/function.html#ceed.function.FuncBase" title="ceed.function.FuncBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">FuncBase</span></code></a>
+class that all functions inherit from.</p>
+<p>A very simple function plugin file that computes <code class="docutils literal notranslate"><span class="pre">1</span> <span class="pre">/</span> <span class="pre">(max(t,</span> <span class="pre">1)</span> <span class="pre">^</span> <span class="pre">2)</span></code>,
+where <code class="docutils literal notranslate"><span class="pre">t</span></code> is the elapsed time is:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">kivy.properties</span> <span class="kn">import</span> <span class="n">NumericProperty</span>
+<span class="kn">from</span> <span class="nn">ceed.function</span> <span class="kn">import</span> <span class="n">CeedFunc</span>
+
+
+<span class="k">class</span> <span class="nc">DecayFunc</span><span class="p">(</span><span class="n">CeedFunc</span><span class="p">):</span>
+
+    <span class="c1"># The parameter must be a Kivy property, so the GUI can update from it</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="n">NumericProperty</span><span class="p">(</span><span class="mf">1.</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;Decay&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">description</span> <span class="o">=</span> <span class="s1">&#39;y(t) = m / (t + t_offset) ^ 2&#39;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+        <span class="c1"># super handles checking whether function is finished</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__call__</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_relative_time</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">c</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+
+    <span class="k">def</span> <span class="nf">get_gui_props</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># makes sure c is editable from the GUI</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">get_gui_props</span><span class="p">()</span>
+        <span class="n">d</span><span class="p">[</span><span class="s1">&#39;c&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">d</span>
+
+    <span class="k">def</span> <span class="nf">get_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">largs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c1"># makes sure c is included in config</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">get_state</span><span class="p">(</span><span class="o">*</span><span class="n">largs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">d</span><span class="p">[</span><span class="s1">&#39;c&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">c</span>
+        <span class="k">return</span> <span class="n">d</span>
+
+    <span class="k">def</span> <span class="nf">get_noise_supported_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># enables c to be randomized</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">get_noise_supported_parameters</span><span class="p">()</span>
+        <span class="n">val</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s1">&#39;c&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">val</span>
+
+
+<span class="k">def</span> <span class="nf">get_ceed_functions</span><span class="p">(</span><span class="n">function_factory</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">DecayFunc</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Simply copy the above code into your python file and place it in your external
+package or in Ceed’s plugin directory, e.g. <code class="docutils literal notranslate"><span class="pre">ceed/function/plugin/my_plugin.py</span></code>
+and <code class="docutils literal notranslate"><span class="pre">DecayFunc</span></code> will be listed in the GUI.</p>
+<p>Similarly, you can add a simple random distribution that returns one of two numbers
+and make it available to randomize parameters, by copying the following code into
+your function plugin file:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">random</span> <span class="kn">import</span> <span class="n">random</span>
+<span class="kn">from</span> <span class="nn">kivy.properties</span> <span class="kn">import</span> <span class="n">NumericProperty</span>
+<span class="kn">from</span> <span class="nn">ceed.function.param_noise</span> <span class="kn">import</span> <span class="n">NoiseBase</span>
+
+
+<span class="k">class</span> <span class="nc">BinaryNoise</span><span class="p">(</span><span class="n">NoiseBase</span><span class="p">):</span>
+
+    <span class="c1"># The parameters must be a Kivy property, so the GUI can update from it</span>
+    <span class="c1"># The type of the default value (0.0 - float here) is the type the user</span>
+    <span class="c1"># can enter in the GUI. E.g. if it was an int, only ints could be entered</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">NumericProperty</span><span class="p">(</span><span class="mf">0.</span><span class="p">)</span>
+
+    <span class="n">b</span> <span class="o">=</span> <span class="n">NumericProperty</span><span class="p">(</span><span class="mf">0.</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">a</span> <span class="k">if</span> <span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mf">.5</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">b</span>
+
+    <span class="k">def</span> <span class="nf">get_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># makes sure c is included in config and editable from the GUI</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">get_config</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">):</span>
+            <span class="n">config</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">config</span>
+
+    <span class="k">def</span> <span class="nf">get_prop_pretty_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># the user friendly name to display in the GUI</span>
+        <span class="n">names</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">get_prop_pretty_name</span><span class="p">()</span>
+        <span class="n">names</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;First value&#39;</span>
+        <span class="n">names</span><span class="p">[</span><span class="s1">&#39;b&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Second value&#39;</span>
+        <span class="k">return</span> <span class="n">names</span>
+
+
+<span class="k">def</span> <span class="nf">get_ceed_distributions</span><span class="p">(</span><span class="n">function_factory</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">BinaryNoise</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="shape.html" class="btn btn-neutral float-right" title="Ceed shapes" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="guide.html" class="btn btn-neutral float-left" title="User Guide" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2019, Matthew Einhorn.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

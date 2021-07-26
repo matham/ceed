@@ -1,0 +1,1124 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Function plugins &mdash; Ceed  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Function Widgets" href="widgets.html" />
+    <link rel="prev" title="Parameter randomization" href="param_noise.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Ceed
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../blueprint.html">System Blueprint</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../guide/guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../config.html">CEED Config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../example_code/example_code.html">Example Analysis Code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../apps/apps.html">Ceed Apps</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">The Ceed API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../ceed.html">Ceed</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../analysis/api.html">Analysis API</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="api.html">Function API</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="function.html">Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="param_noise.html">Parameter randomization</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Function plugins</a></li>
+<li class="toctree-l3"><a class="reference internal" href="widgets.html">Function Widgets</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../shape/api.html">Shape API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../stage/api.html">Stage API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../view/api.html">Experiment API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../storage/api.html">Storage API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../player.html">Video Player</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils.html">Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../graphics/api.html">Graphics API</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../optics/optics.html">Microscope optics</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Ceed</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../api.html">The Ceed API</a> &raquo;</li>
+        
+          <li><a href="api.html">Function API</a> &raquo;</li>
+        
+      <li>Function plugins</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../../_sources/api/function/function_plugin.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <span class="target" id="module-ceed.function.plugin"></span><div class="section" id="function-plugins">
+<span id="func-plugin"></span><h1>Function plugins<a class="headerlink" href="#function-plugins" title="Permalink to this headline">¶</a></h1>
+<p>Defines a plugin architecture so that new functions can be defined at runtime
+and made available to the <a class="reference internal" href="function.html#ceed.function.FunctionFactoryBase" title="ceed.function.FunctionFactoryBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">FunctionFactoryBase</span></code></a>
+used in the GUI to list available functions, and for <code class="xref py py-mod docutils literal notranslate"><span class="pre">analysis</span></code>.</p>
+<p><a class="reference internal" href="function.html#ceed.function.register_all_functions" title="ceed.function.register_all_functions"><code class="xref py py-func docutils literal notranslate"><span class="pre">ceed.function.register_all_functions()</span></code></a> is called by the GUI and it
+registers any plugin functions with the
+<a class="reference internal" href="function.html#ceed.function.FunctionFactoryBase" title="ceed.function.FunctionFactoryBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.function.FunctionFactoryBase</span></code></a> used by the GUI for managing
+functions. <a class="reference internal" href="function.html#ceed.function.register_all_functions" title="ceed.function.register_all_functions"><code class="xref py py-func docutils literal notranslate"><span class="pre">ceed.function.register_all_functions()</span></code></a> internally calls
+<a class="reference internal" href="#ceed.function.plugin.get_plugin_functions" title="ceed.function.plugin.get_plugin_functions"><code class="xref py py-func docutils literal notranslate"><span class="pre">get_plugin_functions()</span></code></a> to get all the functions exported by all the
+Python plugin module files in the <code class="docutils literal notranslate"><span class="pre">ceed/function/plugin</span></code> directory and
+registers them with the <a class="reference internal" href="function.html#ceed.function.FunctionFactoryBase" title="ceed.function.FunctionFactoryBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.function.FunctionFactoryBase</span></code></a>.</p>
+<p>Additionally, if the user provides a package name in the
+<a class="reference internal" href="../../apps/main.html#ceed.main.CeedApp.external_function_plugin_package" title="ceed.main.CeedApp.external_function_plugin_package"><code class="xref py py-attr docutils literal notranslate"><span class="pre">external_function_plugin_package</span></code></a> configuration
+variable, the GUI will similarly import and register the plugins in
+that package with <a class="reference internal" href="function.html#ceed.function.register_external_functions" title="ceed.function.register_external_functions"><code class="xref py py-func docutils literal notranslate"><span class="pre">ceed.function.register_external_functions()</span></code></a>.
+The package must however be a proper python package that can be imported.
+E.g. if <a class="reference internal" href="../../apps/main.html#ceed.main.CeedApp.external_function_plugin_package" title="ceed.main.CeedApp.external_function_plugin_package"><code class="xref py py-attr docutils literal notranslate"><span class="pre">external_function_plugin_package</span></code></a>
+is <code class="docutils literal notranslate"><span class="pre">my_ceed_plugin.func</span></code>, Ceed will try something roughly like
+<code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">my_ceed_plugin.func</span> <span class="pre">import</span> <span class="pre">get_ceed_functions</span></code>.</p>
+<p>Files in <code class="docutils literal notranslate"><span class="pre">ceed/function/plugin</span></code> that want to define new function or function
+distribution classes should define a function in the file called
+<code class="docutils literal notranslate"><span class="pre">get_ceed_functions</span></code> or <code class="docutils literal notranslate"><span class="pre">get_ceed_distributions</span></code>, respectively, that
+returns a list of functions or function distributions that will be
+automatically registered with the function factory
+<a class="reference internal" href="function.html#ceed.function.FunctionFactoryBase" title="ceed.function.FunctionFactoryBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">FunctionFactoryBase</span></code></a> or
+<a class="reference internal" href="function.html#ceed.function.FunctionFactoryBase.param_noise_factory" title="ceed.function.FunctionFactoryBase.param_noise_factory"><code class="xref py py-attr docutils literal notranslate"><span class="pre">param_noise_factory</span></code></a>, respectively,
+using <a class="reference internal" href="function.html#ceed.function.FunctionFactoryBase.register" title="ceed.function.FunctionFactoryBase.register"><code class="xref py py-meth docutils literal notranslate"><span class="pre">register()</span></code></a> or
+<a class="reference internal" href="param_noise.html#ceed.function.param_noise.ParameterNoiseFactory.register_class" title="ceed.function.param_noise.ParameterNoiseFactory.register_class"><code class="xref py py-meth docutils literal notranslate"><span class="pre">register_class()</span></code></a>.</p>
+<p>To write a plugin, familiarize yourself with
+<a class="reference internal" href="function.html#ceed.function.FuncBase" title="ceed.function.FuncBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">FuncBase</span></code></a>, it’s properties, and relevant methods that
+need to be overridden. <a class="reference internal" href="function.html#ceed.function.CeedFunc" title="ceed.function.CeedFunc"><code class="xref py py-class docutils literal notranslate"><span class="pre">CeedFunc</span></code></a> is the actual class
+to inherit from. Some relevant methods are
+<a class="reference internal" href="function.html#ceed.function.FuncBase.get_gui_props" title="ceed.function.FuncBase.get_gui_props"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_gui_props()</span></code></a>,
+<a class="reference internal" href="function.html#ceed.function.FuncBase.get_state" title="ceed.function.FuncBase.get_state"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_state()</span></code></a>,
+<a class="reference internal" href="function.html#ceed.function.FuncBase.get_noise_supported_parameters" title="ceed.function.FuncBase.get_noise_supported_parameters"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_noise_supported_parameters()</span></code></a>,
+<a class="reference internal" href="function.html#ceed.function.FuncBase.get_prop_pretty_name" title="ceed.function.FuncBase.get_prop_pretty_name"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_prop_pretty_name()</span></code></a>,
+<a class="reference internal" href="function.html#ceed.function.FuncBase.init_func_tree" title="ceed.function.FuncBase.init_func_tree"><code class="xref py py-meth docutils literal notranslate"><span class="pre">init_func_tree()</span></code></a>,
+<a class="reference internal" href="function.html#ceed.function.FuncBase.init_func" title="ceed.function.FuncBase.init_func"><code class="xref py py-meth docutils literal notranslate"><span class="pre">init_func()</span></code></a>,
+<a class="reference internal" href="function.html#ceed.function.FuncBase.init_loop_iteration" title="ceed.function.FuncBase.init_loop_iteration"><code class="xref py py-meth docutils literal notranslate"><span class="pre">init_loop_iteration()</span></code></a>,
+<a class="reference internal" href="function.html#ceed.function.FuncBase.get_relative_time" title="ceed.function.FuncBase.get_relative_time"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_relative_time()</span></code></a>, and
+<a class="reference internal" href="function.html#ceed.function.FuncBase.resample_parameters" title="ceed.function.FuncBase.resample_parameters"><code class="xref py py-meth docutils literal notranslate"><span class="pre">resample_parameters()</span></code></a>.</p>
+<p><code class="xref py py-meth docutils literal notranslate"><span class="pre">__call__()</span></code> is how the function is called. It
+takes the time in global time so it should convert it to function local time
+with <a class="reference internal" href="function.html#ceed.function.FuncBase.get_relative_time" title="ceed.function.FuncBase.get_relative_time"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_relative_time()</span></code></a> and then return the
+function value.</p>
+<p>See the <code class="docutils literal notranslate"><span class="pre">ceed/function/plugin/__init__.py</span></code> file and
+<a class="reference internal" href="#ceed.function.plugin.get_ceed_functions" title="ceed.function.plugin.get_ceed_functions"><code class="xref py py-func docutils literal notranslate"><span class="pre">get_ceed_functions()</span></code></a> and <a class="reference internal" href="#ceed.function.plugin.get_ceed_distributions" title="ceed.function.plugin.get_ceed_distributions"><code class="xref py py-func docutils literal notranslate"><span class="pre">get_ceed_distributions()</span></code></a> for an example
+plugin.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="ceed.function.plugin.get_plugin_functions">
+<span class="sig-prename descclassname"><span class="pre">ceed.function.plugin.</span></span><span class="sig-name descname"><span class="pre">get_plugin_functions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">function_factory</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="function.html#ceed.function.FunctionFactoryBase" title="ceed.function.FunctionFactoryBase"><span class="pre">ceed.function.FunctionFactoryBase</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_package</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">root</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">pathlib.Path</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="function.html#ceed.function.FuncType" title="ceed.function.FuncType"><span class="pre">ceed.function.FuncType</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="param_noise.html#ceed.function.param_noise.NoiseType" title="ceed.function.param_noise.NoiseType"><span class="pre">ceed.function.param_noise.NoiseType</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span> </span><span class="pre">bytes</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ceed.function.plugin.get_plugin_functions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Imports all the <code class="docutils literal notranslate"><span class="pre">.py</span></code> files in the given directory and sub-directories
+for the named package that don’t start with a underscore (except for
+<code class="docutils literal notranslate"><span class="pre">__init__.py</span></code> of course, which is imported). For each imported module,
+it calls its <code class="docutils literal notranslate"><span class="pre">get_ceed_functions</span></code> and <code class="docutils literal notranslate"><span class="pre">get_ceed_distributions</span></code>
+function (if they are defined in the module) which should return a list
+(that can be empty) of all the function and function distribution classes,
+respectively, exported by the module.</p>
+<p>It then returns all these exported functions, distributions, and all the
+file contents in the folder.</p>
+<p>Ceed will automatically import all the plugins under
+<code class="docutils literal notranslate"><span class="pre">ceed/function/plugin</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>function_factory</strong> – The
+<a class="reference internal" href="function.html#ceed.function.FunctionFactoryBase" title="ceed.function.FunctionFactoryBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">FunctionFactoryBase</span></code></a> instance with which the
+returned plugin functions will be registered.</p></li>
+<li><p><strong>base_package</strong> – The package name from which the plugins will be
+imported. E.g. to import the plugins in <code class="docutils literal notranslate"><span class="pre">ceed/function/plugin</span></code>,
+<code class="docutils literal notranslate"><span class="pre">base_package</span></code> is <code class="docutils literal notranslate"><span class="pre">ceed.function.plugin</span></code> because that’s the package
+containing name for the <code class="docutils literal notranslate"><span class="pre">plugin</span></code> directory. Then, they are imported
+as <code class="docutils literal notranslate"><span class="pre">ceed.function.plugin</span></code> and <code class="docutils literal notranslate"><span class="pre">ceed.function.plugin.xyz</span></code>, if
+the plugin directory also contains a <code class="docutils literal notranslate"><span class="pre">xyz.py</span></code> plugin file.</p></li>
+<li><p><strong>root</strong> – The full directory path that contains the plugins. E.g.
+for <code class="docutils literal notranslate"><span class="pre">ceed.function.plugin</span></code> it is <code class="docutils literal notranslate"><span class="pre">ceed/function/plugin</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p>A tuple with three values containing: a list of function classes
+exported by all the modules, a list of distribution classes exported by
+all the modules, and a list containing all the python files contents
+encountered in the directory.</p>
+<p>The python files contents are returned so that Ceed can store it in the
+data files in case the plugins are changed between experimental runs.</p>
+<p>See <a class="reference internal" href="#ceed.function.plugin.get_ceed_functions" title="ceed.function.plugin.get_ceed_functions"><code class="xref py py-func docutils literal notranslate"><span class="pre">get_ceed_functions()</span></code></a>, <a class="reference internal" href="#ceed.function.plugin.get_ceed_distributions" title="ceed.function.plugin.get_ceed_distributions"><code class="xref py py-func docutils literal notranslate"><span class="pre">get_ceed_distributions()</span></code></a>, and
+<a class="reference internal" href="function.html#ceed.function.register_all_functions" title="ceed.function.register_all_functions"><code class="xref py py-func docutils literal notranslate"><span class="pre">register_all_functions()</span></code></a> for an example how it’s
+used.</p>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.function.plugin.ConstFunc">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.function.plugin.</span></span><span class="sig-name descname"><span class="pre">ConstFunc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Const'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'y(t)</span> <span class="pre">=</span> <span class="pre">a'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.plugin.ConstFunc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="function.html#ceed.function.CeedFunc" title="ceed.function.CeedFunc"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.function.CeedFunc</span></code></a></p>
+<p>Defines a function which returns a constant value.</p>
+<p>The function is defined as <code class="docutils literal notranslate"><span class="pre">y(t)</span> <span class="pre">=</span> <span class="pre">a</span></code>.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.function.plugin.ConstFunc.a">
+<span class="sig-name descname"><span class="pre">a</span></span><a class="headerlink" href="#ceed.function.plugin.ConstFunc.a" title="Permalink to this definition">¶</a></dt>
+<dd><p>The amplitude value of the function.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.plugin.ConstFunc.get_gui_props">
+<span class="sig-name descname"><span class="pre">get_gui_props</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.plugin.ConstFunc.get_gui_props" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called internally by the GUI to get the properties of the function
+that should be displayed to the user to be customized.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><p>A dict that contains all properties that should be displayed. The
+values of the property is as follows:</p>
+<ul>
+<li><p>If it’s the string int, float, str or it’s the python type
+int, float, or str then the GUI will show a editable property
+for this type.</p></li>
+<li><p>If it’s None, we look at the value of the property
+in the instance and display accordingly (e.g. if it’s a str type
+property, a string property is displayed to the user).</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The default value determines the type. So if the default value
+is <code class="docutils literal notranslate"><span class="pre">0</span></code>, the type will be int and a user won’t be able to
+enter a float. Use e.g. <code class="docutils literal notranslate"><span class="pre">0.0</span></code> in the latter case.</p>
+</div>
+</li>
+</ul>
+</p>
+</dd>
+</dl>
+<p>E.g.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Cos</span> <span class="o">=</span> <span class="n">function_factory</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CosFunc&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cos</span> <span class="o">=</span> <span class="n">Cos</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cos</span><span class="o">.</span><span class="n">get_gui_props</span><span class="p">()</span>
+<span class="go">{&#39;A&#39;: None,</span>
+<span class="go"> &#39;duration&#39;: None,</span>
+<span class="go"> &#39;f&#39;: None,</span>
+<span class="go"> &#39;loop&#39;: None,</span>
+<span class="go"> &#39;name&#39;: None,</span>
+<span class="go"> &#39;t_offset&#39;: None,</span>
+<span class="go"> &#39;th0&#39;: None}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.plugin.ConstFunc.get_state">
+<span class="sig-name descname"><span class="pre">get_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">largs</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.plugin.ConstFunc.get_state" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a dict representation of the function so that it can be
+reconstructed later with <code class="xref py py-meth docutils literal notranslate"><span class="pre">apply_state()</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Params</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><cite>recurse</cite>: bool</dt><dd><p>When the function has children functions, e.g. a
+<code class="xref py py-class docutils literal notranslate"><span class="pre">FuncGroup</span></code>, if True all the children functions’
+states will also be returned, otherwise, only this function’s
+state is returned. See the example.</p>
+</dd>
+<dt><cite>expand_ref</cite>: bool</dt><dd><p>If True, if any sub-functions (or this function itself) are
+<code class="xref py py-class docutils literal notranslate"><span class="pre">CeedFuncRef</span></code> instances, they will be expanded to
+contain the state of the actual underlying function. Otherwise,
+it is returned as being a function reference.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A dict with all the configuration data.</p>
+</dd>
+</dl>
+<p>E.g.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Cos</span> <span class="o">=</span> <span class="n">function_factory</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CosFunc&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cos</span> <span class="o">=</span> <span class="n">Cos</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cos</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span>
+<span class="go">{&#39;A&#39;: 1.0,</span>
+<span class="go"> &#39;cls&#39;: &#39;CosFunc&#39;,</span>
+<span class="go"> &#39;duration&#39;: 0,</span>
+<span class="go"> &#39;f&#39;: 1.0,</span>
+<span class="go"> &#39;loop&#39;: 1,</span>
+<span class="go"> &#39;name&#39;: &#39;Cos&#39;,</span>
+<span class="go"> &#39;t_offset&#39;: 0,</span>
+<span class="go"> &#39;th0&#39;: 0.0}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Group</span> <span class="o">=</span> <span class="n">function_factory</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;FuncGroup&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span> <span class="o">=</span> <span class="n">Group</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span>
+<span class="go">&lt;ceed.function.FuncGroup at 0x4f85800&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span><span class="o">.</span><span class="n">add_func</span><span class="p">(</span><span class="n">cos</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span><span class="o">.</span><span class="n">get_state</span><span class="p">(</span><span class="n">recurse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="go">{&#39;cls&#39;: &#39;FuncGroup&#39;,</span>
+<span class="go"> &#39;funcs&#39;: [{&#39;A&#39;: 1.0,</span>
+<span class="go">   &#39;cls&#39;: &#39;CosFunc&#39;,</span>
+<span class="go">   &#39;duration&#39;: 0,</span>
+<span class="go">   &#39;f&#39;: 1.0,</span>
+<span class="go">   &#39;loop&#39;: 1,</span>
+<span class="go">   &#39;name&#39;: &#39;Cos&#39;,</span>
+<span class="go">   &#39;t_offset&#39;: 0,</span>
+<span class="go">   &#39;th0&#39;: 0.0}],</span>
+<span class="go"> &#39;loop&#39;: 1,</span>
+<span class="go"> &#39;name&#39;: &#39;Group&#39;}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span><span class="o">.</span><span class="n">get_state</span><span class="p">(</span><span class="n">recurse</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="go">{&#39;cls&#39;: &#39;FuncGroup&#39;,</span>
+<span class="go"> &#39;loop&#39;: 1,</span>
+<span class="go"> &#39;name&#39;: &#39;Group&#39;}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.plugin.ConstFunc.get_noise_supported_parameters">
+<span class="sig-name descname"><span class="pre">get_noise_supported_parameters</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.plugin.ConstFunc.get_noise_supported_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the set of property names of this function that supports
+randomness and may have an
+<a class="reference internal" href="param_noise.html#ceed.function.param_noise.NoiseBase" title="ceed.function.param_noise.NoiseBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.function.param_noise.NoiseBase</span></code></a> instance associated with
+it.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.function.plugin.LinearFunc">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.function.plugin.</span></span><span class="sig-name descname"><span class="pre">LinearFunc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.plugin.LinearFunc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="function.html#ceed.function.CeedFunc" title="ceed.function.CeedFunc"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.function.CeedFunc</span></code></a></p>
+<p>Defines a linearly increasing function.</p>
+<p>The function is defined as <code class="docutils literal notranslate"><span class="pre">y(t_in)</span> <span class="pre">=</span> <span class="pre">mt</span> <span class="pre">+</span> <span class="pre">b</span></code>, where
+<code class="docutils literal notranslate"><span class="pre">t</span> <span class="pre">=</span> <span class="pre">(t_in</span> <span class="pre">-</span> <span class="pre">t_start</span> <span class="pre">+</span> <span class="pre">t_offset)</span></code>.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.function.plugin.LinearFunc.m">
+<span class="sig-name descname"><span class="pre">m</span></span><a class="headerlink" href="#ceed.function.plugin.LinearFunc.m" title="Permalink to this definition">¶</a></dt>
+<dd><p>The line’s slope.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.function.plugin.LinearFunc.b">
+<span class="sig-name descname"><span class="pre">b</span></span><a class="headerlink" href="#ceed.function.plugin.LinearFunc.b" title="Permalink to this definition">¶</a></dt>
+<dd><p>The line’s zero intercept.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.plugin.LinearFunc.get_gui_props">
+<span class="sig-name descname"><span class="pre">get_gui_props</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.plugin.LinearFunc.get_gui_props" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called internally by the GUI to get the properties of the function
+that should be displayed to the user to be customized.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><p>A dict that contains all properties that should be displayed. The
+values of the property is as follows:</p>
+<ul>
+<li><p>If it’s the string int, float, str or it’s the python type
+int, float, or str then the GUI will show a editable property
+for this type.</p></li>
+<li><p>If it’s None, we look at the value of the property
+in the instance and display accordingly (e.g. if it’s a str type
+property, a string property is displayed to the user).</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The default value determines the type. So if the default value
+is <code class="docutils literal notranslate"><span class="pre">0</span></code>, the type will be int and a user won’t be able to
+enter a float. Use e.g. <code class="docutils literal notranslate"><span class="pre">0.0</span></code> in the latter case.</p>
+</div>
+</li>
+</ul>
+</p>
+</dd>
+</dl>
+<p>E.g.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Cos</span> <span class="o">=</span> <span class="n">function_factory</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CosFunc&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cos</span> <span class="o">=</span> <span class="n">Cos</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cos</span><span class="o">.</span><span class="n">get_gui_props</span><span class="p">()</span>
+<span class="go">{&#39;A&#39;: None,</span>
+<span class="go"> &#39;duration&#39;: None,</span>
+<span class="go"> &#39;f&#39;: None,</span>
+<span class="go"> &#39;loop&#39;: None,</span>
+<span class="go"> &#39;name&#39;: None,</span>
+<span class="go"> &#39;t_offset&#39;: None,</span>
+<span class="go"> &#39;th0&#39;: None}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.plugin.LinearFunc.get_state">
+<span class="sig-name descname"><span class="pre">get_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">largs</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.plugin.LinearFunc.get_state" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a dict representation of the function so that it can be
+reconstructed later with <code class="xref py py-meth docutils literal notranslate"><span class="pre">apply_state()</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Params</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><cite>recurse</cite>: bool</dt><dd><p>When the function has children functions, e.g. a
+<code class="xref py py-class docutils literal notranslate"><span class="pre">FuncGroup</span></code>, if True all the children functions’
+states will also be returned, otherwise, only this function’s
+state is returned. See the example.</p>
+</dd>
+<dt><cite>expand_ref</cite>: bool</dt><dd><p>If True, if any sub-functions (or this function itself) are
+<code class="xref py py-class docutils literal notranslate"><span class="pre">CeedFuncRef</span></code> instances, they will be expanded to
+contain the state of the actual underlying function. Otherwise,
+it is returned as being a function reference.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A dict with all the configuration data.</p>
+</dd>
+</dl>
+<p>E.g.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Cos</span> <span class="o">=</span> <span class="n">function_factory</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CosFunc&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cos</span> <span class="o">=</span> <span class="n">Cos</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cos</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span>
+<span class="go">{&#39;A&#39;: 1.0,</span>
+<span class="go"> &#39;cls&#39;: &#39;CosFunc&#39;,</span>
+<span class="go"> &#39;duration&#39;: 0,</span>
+<span class="go"> &#39;f&#39;: 1.0,</span>
+<span class="go"> &#39;loop&#39;: 1,</span>
+<span class="go"> &#39;name&#39;: &#39;Cos&#39;,</span>
+<span class="go"> &#39;t_offset&#39;: 0,</span>
+<span class="go"> &#39;th0&#39;: 0.0}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Group</span> <span class="o">=</span> <span class="n">function_factory</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;FuncGroup&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span> <span class="o">=</span> <span class="n">Group</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span>
+<span class="go">&lt;ceed.function.FuncGroup at 0x4f85800&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span><span class="o">.</span><span class="n">add_func</span><span class="p">(</span><span class="n">cos</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span><span class="o">.</span><span class="n">get_state</span><span class="p">(</span><span class="n">recurse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="go">{&#39;cls&#39;: &#39;FuncGroup&#39;,</span>
+<span class="go"> &#39;funcs&#39;: [{&#39;A&#39;: 1.0,</span>
+<span class="go">   &#39;cls&#39;: &#39;CosFunc&#39;,</span>
+<span class="go">   &#39;duration&#39;: 0,</span>
+<span class="go">   &#39;f&#39;: 1.0,</span>
+<span class="go">   &#39;loop&#39;: 1,</span>
+<span class="go">   &#39;name&#39;: &#39;Cos&#39;,</span>
+<span class="go">   &#39;t_offset&#39;: 0,</span>
+<span class="go">   &#39;th0&#39;: 0.0}],</span>
+<span class="go"> &#39;loop&#39;: 1,</span>
+<span class="go"> &#39;name&#39;: &#39;Group&#39;}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span><span class="o">.</span><span class="n">get_state</span><span class="p">(</span><span class="n">recurse</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="go">{&#39;cls&#39;: &#39;FuncGroup&#39;,</span>
+<span class="go"> &#39;loop&#39;: 1,</span>
+<span class="go"> &#39;name&#39;: &#39;Group&#39;}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.plugin.LinearFunc.get_noise_supported_parameters">
+<span class="sig-name descname"><span class="pre">get_noise_supported_parameters</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.plugin.LinearFunc.get_noise_supported_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the set of property names of this function that supports
+randomness and may have an
+<a class="reference internal" href="param_noise.html#ceed.function.param_noise.NoiseBase" title="ceed.function.param_noise.NoiseBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.function.param_noise.NoiseBase</span></code></a> instance associated with
+it.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.function.plugin.ExponentialFunc">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.function.plugin.</span></span><span class="sig-name descname"><span class="pre">ExponentialFunc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.plugin.ExponentialFunc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="function.html#ceed.function.CeedFunc" title="ceed.function.CeedFunc"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.function.CeedFunc</span></code></a></p>
+<p>Defines a double exponential function.</p>
+<p>The function is defined as <code class="docutils literal notranslate"><span class="pre">y(t_in)</span> <span class="pre">=</span> <span class="pre">Ae^-t/tau1</span> <span class="pre">+</span> <span class="pre">Be^-t/tau2</span></code>, where
+<code class="docutils literal notranslate"><span class="pre">t</span> <span class="pre">=</span> <span class="pre">(t_in</span> <span class="pre">-</span> <span class="pre">t_start</span> <span class="pre">+</span> <span class="pre">t_offset)</span></code>.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.function.plugin.ExponentialFunc.A">
+<span class="sig-name descname"><span class="pre">A</span></span><a class="headerlink" href="#ceed.function.plugin.ExponentialFunc.A" title="Permalink to this definition">¶</a></dt>
+<dd><p>The amplitude of the first exponential.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.function.plugin.ExponentialFunc.B">
+<span class="sig-name descname"><span class="pre">B</span></span><a class="headerlink" href="#ceed.function.plugin.ExponentialFunc.B" title="Permalink to this definition">¶</a></dt>
+<dd><p>The amplitude of the second exponential.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.function.plugin.ExponentialFunc.tau1">
+<span class="sig-name descname"><span class="pre">tau1</span></span><a class="headerlink" href="#ceed.function.plugin.ExponentialFunc.tau1" title="Permalink to this definition">¶</a></dt>
+<dd><p>The time constant of the first exponential.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.function.plugin.ExponentialFunc.tau2">
+<span class="sig-name descname"><span class="pre">tau2</span></span><a class="headerlink" href="#ceed.function.plugin.ExponentialFunc.tau2" title="Permalink to this definition">¶</a></dt>
+<dd><p>The time constant of the second exponential.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.plugin.ExponentialFunc.get_gui_props">
+<span class="sig-name descname"><span class="pre">get_gui_props</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.plugin.ExponentialFunc.get_gui_props" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called internally by the GUI to get the properties of the function
+that should be displayed to the user to be customized.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><p>A dict that contains all properties that should be displayed. The
+values of the property is as follows:</p>
+<ul>
+<li><p>If it’s the string int, float, str or it’s the python type
+int, float, or str then the GUI will show a editable property
+for this type.</p></li>
+<li><p>If it’s None, we look at the value of the property
+in the instance and display accordingly (e.g. if it’s a str type
+property, a string property is displayed to the user).</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The default value determines the type. So if the default value
+is <code class="docutils literal notranslate"><span class="pre">0</span></code>, the type will be int and a user won’t be able to
+enter a float. Use e.g. <code class="docutils literal notranslate"><span class="pre">0.0</span></code> in the latter case.</p>
+</div>
+</li>
+</ul>
+</p>
+</dd>
+</dl>
+<p>E.g.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Cos</span> <span class="o">=</span> <span class="n">function_factory</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CosFunc&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cos</span> <span class="o">=</span> <span class="n">Cos</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cos</span><span class="o">.</span><span class="n">get_gui_props</span><span class="p">()</span>
+<span class="go">{&#39;A&#39;: None,</span>
+<span class="go"> &#39;duration&#39;: None,</span>
+<span class="go"> &#39;f&#39;: None,</span>
+<span class="go"> &#39;loop&#39;: None,</span>
+<span class="go"> &#39;name&#39;: None,</span>
+<span class="go"> &#39;t_offset&#39;: None,</span>
+<span class="go"> &#39;th0&#39;: None}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.plugin.ExponentialFunc.get_state">
+<span class="sig-name descname"><span class="pre">get_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">largs</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.plugin.ExponentialFunc.get_state" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a dict representation of the function so that it can be
+reconstructed later with <code class="xref py py-meth docutils literal notranslate"><span class="pre">apply_state()</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Params</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><cite>recurse</cite>: bool</dt><dd><p>When the function has children functions, e.g. a
+<code class="xref py py-class docutils literal notranslate"><span class="pre">FuncGroup</span></code>, if True all the children functions’
+states will also be returned, otherwise, only this function’s
+state is returned. See the example.</p>
+</dd>
+<dt><cite>expand_ref</cite>: bool</dt><dd><p>If True, if any sub-functions (or this function itself) are
+<code class="xref py py-class docutils literal notranslate"><span class="pre">CeedFuncRef</span></code> instances, they will be expanded to
+contain the state of the actual underlying function. Otherwise,
+it is returned as being a function reference.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A dict with all the configuration data.</p>
+</dd>
+</dl>
+<p>E.g.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Cos</span> <span class="o">=</span> <span class="n">function_factory</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CosFunc&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cos</span> <span class="o">=</span> <span class="n">Cos</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cos</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span>
+<span class="go">{&#39;A&#39;: 1.0,</span>
+<span class="go"> &#39;cls&#39;: &#39;CosFunc&#39;,</span>
+<span class="go"> &#39;duration&#39;: 0,</span>
+<span class="go"> &#39;f&#39;: 1.0,</span>
+<span class="go"> &#39;loop&#39;: 1,</span>
+<span class="go"> &#39;name&#39;: &#39;Cos&#39;,</span>
+<span class="go"> &#39;t_offset&#39;: 0,</span>
+<span class="go"> &#39;th0&#39;: 0.0}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Group</span> <span class="o">=</span> <span class="n">function_factory</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;FuncGroup&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span> <span class="o">=</span> <span class="n">Group</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span>
+<span class="go">&lt;ceed.function.FuncGroup at 0x4f85800&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span><span class="o">.</span><span class="n">add_func</span><span class="p">(</span><span class="n">cos</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span><span class="o">.</span><span class="n">get_state</span><span class="p">(</span><span class="n">recurse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="go">{&#39;cls&#39;: &#39;FuncGroup&#39;,</span>
+<span class="go"> &#39;funcs&#39;: [{&#39;A&#39;: 1.0,</span>
+<span class="go">   &#39;cls&#39;: &#39;CosFunc&#39;,</span>
+<span class="go">   &#39;duration&#39;: 0,</span>
+<span class="go">   &#39;f&#39;: 1.0,</span>
+<span class="go">   &#39;loop&#39;: 1,</span>
+<span class="go">   &#39;name&#39;: &#39;Cos&#39;,</span>
+<span class="go">   &#39;t_offset&#39;: 0,</span>
+<span class="go">   &#39;th0&#39;: 0.0}],</span>
+<span class="go"> &#39;loop&#39;: 1,</span>
+<span class="go"> &#39;name&#39;: &#39;Group&#39;}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span><span class="o">.</span><span class="n">get_state</span><span class="p">(</span><span class="n">recurse</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="go">{&#39;cls&#39;: &#39;FuncGroup&#39;,</span>
+<span class="go"> &#39;loop&#39;: 1,</span>
+<span class="go"> &#39;name&#39;: &#39;Group&#39;}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.plugin.ExponentialFunc.get_noise_supported_parameters">
+<span class="sig-name descname"><span class="pre">get_noise_supported_parameters</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.plugin.ExponentialFunc.get_noise_supported_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the set of property names of this function that supports
+randomness and may have an
+<a class="reference internal" href="param_noise.html#ceed.function.param_noise.NoiseBase" title="ceed.function.param_noise.NoiseBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.function.param_noise.NoiseBase</span></code></a> instance associated with
+it.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.function.plugin.CosFunc">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.function.plugin.</span></span><span class="sig-name descname"><span class="pre">CosFunc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.plugin.CosFunc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="function.html#ceed.function.CeedFunc" title="ceed.function.CeedFunc"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.function.CeedFunc</span></code></a></p>
+<p>Defines a cosine function.</p>
+<p>The function is defined as <code class="docutils literal notranslate"><span class="pre">y(t_in)</span> <span class="pre">=</span> <span class="pre">Acos(2pi*f*t</span> <span class="pre">+</span> <span class="pre">th0*pi/180)</span> <span class="pre">+</span> <span class="pre">b</span></code>,
+where <code class="docutils literal notranslate"><span class="pre">t</span> <span class="pre">=</span> <span class="pre">(t_in</span> <span class="pre">-</span> <span class="pre">t_start</span> <span class="pre">+</span> <span class="pre">t_offset)</span></code>.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.function.plugin.CosFunc.f">
+<span class="sig-name descname"><span class="pre">f</span></span><a class="headerlink" href="#ceed.function.plugin.CosFunc.f" title="Permalink to this definition">¶</a></dt>
+<dd><p>The function’s frequency in Hz.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.function.plugin.CosFunc.A">
+<span class="sig-name descname"><span class="pre">A</span></span><a class="headerlink" href="#ceed.function.plugin.CosFunc.A" title="Permalink to this definition">¶</a></dt>
+<dd><p>The function’s amplitude.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.function.plugin.CosFunc.th0">
+<span class="sig-name descname"><span class="pre">th0</span></span><a class="headerlink" href="#ceed.function.plugin.CosFunc.th0" title="Permalink to this definition">¶</a></dt>
+<dd><p>The function’s angle offset in degrees.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.function.plugin.CosFunc.b">
+<span class="sig-name descname"><span class="pre">b</span></span><a class="headerlink" href="#ceed.function.plugin.CosFunc.b" title="Permalink to this definition">¶</a></dt>
+<dd><p>The function’s y offset.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.plugin.CosFunc.get_gui_props">
+<span class="sig-name descname"><span class="pre">get_gui_props</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.plugin.CosFunc.get_gui_props" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called internally by the GUI to get the properties of the function
+that should be displayed to the user to be customized.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><p>A dict that contains all properties that should be displayed. The
+values of the property is as follows:</p>
+<ul>
+<li><p>If it’s the string int, float, str or it’s the python type
+int, float, or str then the GUI will show a editable property
+for this type.</p></li>
+<li><p>If it’s None, we look at the value of the property
+in the instance and display accordingly (e.g. if it’s a str type
+property, a string property is displayed to the user).</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The default value determines the type. So if the default value
+is <code class="docutils literal notranslate"><span class="pre">0</span></code>, the type will be int and a user won’t be able to
+enter a float. Use e.g. <code class="docutils literal notranslate"><span class="pre">0.0</span></code> in the latter case.</p>
+</div>
+</li>
+</ul>
+</p>
+</dd>
+</dl>
+<p>E.g.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Cos</span> <span class="o">=</span> <span class="n">function_factory</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CosFunc&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cos</span> <span class="o">=</span> <span class="n">Cos</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cos</span><span class="o">.</span><span class="n">get_gui_props</span><span class="p">()</span>
+<span class="go">{&#39;A&#39;: None,</span>
+<span class="go"> &#39;duration&#39;: None,</span>
+<span class="go"> &#39;f&#39;: None,</span>
+<span class="go"> &#39;loop&#39;: None,</span>
+<span class="go"> &#39;name&#39;: None,</span>
+<span class="go"> &#39;t_offset&#39;: None,</span>
+<span class="go"> &#39;th0&#39;: None}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.plugin.CosFunc.get_state">
+<span class="sig-name descname"><span class="pre">get_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">largs</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.plugin.CosFunc.get_state" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a dict representation of the function so that it can be
+reconstructed later with <code class="xref py py-meth docutils literal notranslate"><span class="pre">apply_state()</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Params</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><cite>recurse</cite>: bool</dt><dd><p>When the function has children functions, e.g. a
+<code class="xref py py-class docutils literal notranslate"><span class="pre">FuncGroup</span></code>, if True all the children functions’
+states will also be returned, otherwise, only this function’s
+state is returned. See the example.</p>
+</dd>
+<dt><cite>expand_ref</cite>: bool</dt><dd><p>If True, if any sub-functions (or this function itself) are
+<code class="xref py py-class docutils literal notranslate"><span class="pre">CeedFuncRef</span></code> instances, they will be expanded to
+contain the state of the actual underlying function. Otherwise,
+it is returned as being a function reference.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A dict with all the configuration data.</p>
+</dd>
+</dl>
+<p>E.g.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Cos</span> <span class="o">=</span> <span class="n">function_factory</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;CosFunc&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cos</span> <span class="o">=</span> <span class="n">Cos</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cos</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span>
+<span class="go">{&#39;A&#39;: 1.0,</span>
+<span class="go"> &#39;cls&#39;: &#39;CosFunc&#39;,</span>
+<span class="go"> &#39;duration&#39;: 0,</span>
+<span class="go"> &#39;f&#39;: 1.0,</span>
+<span class="go"> &#39;loop&#39;: 1,</span>
+<span class="go"> &#39;name&#39;: &#39;Cos&#39;,</span>
+<span class="go"> &#39;t_offset&#39;: 0,</span>
+<span class="go"> &#39;th0&#39;: 0.0}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Group</span> <span class="o">=</span> <span class="n">function_factory</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;FuncGroup&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span> <span class="o">=</span> <span class="n">Group</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span>
+<span class="go">&lt;ceed.function.FuncGroup at 0x4f85800&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span><span class="o">.</span><span class="n">add_func</span><span class="p">(</span><span class="n">cos</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span><span class="o">.</span><span class="n">get_state</span><span class="p">(</span><span class="n">recurse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="go">{&#39;cls&#39;: &#39;FuncGroup&#39;,</span>
+<span class="go"> &#39;funcs&#39;: [{&#39;A&#39;: 1.0,</span>
+<span class="go">   &#39;cls&#39;: &#39;CosFunc&#39;,</span>
+<span class="go">   &#39;duration&#39;: 0,</span>
+<span class="go">   &#39;f&#39;: 1.0,</span>
+<span class="go">   &#39;loop&#39;: 1,</span>
+<span class="go">   &#39;name&#39;: &#39;Cos&#39;,</span>
+<span class="go">   &#39;t_offset&#39;: 0,</span>
+<span class="go">   &#39;th0&#39;: 0.0}],</span>
+<span class="go"> &#39;loop&#39;: 1,</span>
+<span class="go"> &#39;name&#39;: &#39;Group&#39;}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span><span class="o">.</span><span class="n">get_state</span><span class="p">(</span><span class="n">recurse</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="go">{&#39;cls&#39;: &#39;FuncGroup&#39;,</span>
+<span class="go"> &#39;loop&#39;: 1,</span>
+<span class="go"> &#39;name&#39;: &#39;Group&#39;}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.plugin.CosFunc.get_noise_supported_parameters">
+<span class="sig-name descname"><span class="pre">get_noise_supported_parameters</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.plugin.CosFunc.get_noise_supported_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the set of property names of this function that supports
+randomness and may have an
+<a class="reference internal" href="param_noise.html#ceed.function.param_noise.NoiseBase" title="ceed.function.param_noise.NoiseBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.function.param_noise.NoiseBase</span></code></a> instance associated with
+it.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.function.plugin.GaussianNoise">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.function.plugin.</span></span><span class="sig-name descname"><span class="pre">GaussianNoise</span></span><a class="headerlink" href="#ceed.function.plugin.GaussianNoise" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="param_noise.html#ceed.function.param_noise.NoiseBase" title="ceed.function.param_noise.NoiseBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.function.param_noise.NoiseBase</span></code></a></p>
+<p>Represents a Gaussian distribution.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.function.plugin.GaussianNoise.min_val">
+<span class="sig-name descname"><span class="pre">min_val</span></span><a class="headerlink" href="#ceed.function.plugin.GaussianNoise.min_val" title="Permalink to this definition">¶</a></dt>
+<dd><p>The minimum value to clip the sampled value before returning it.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.function.plugin.GaussianNoise.max_val">
+<span class="sig-name descname"><span class="pre">max_val</span></span><a class="headerlink" href="#ceed.function.plugin.GaussianNoise.max_val" title="Permalink to this definition">¶</a></dt>
+<dd><p>The maximum value to clip the sampled value before returning it.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.function.plugin.GaussianNoise.mean_val">
+<span class="sig-name descname"><span class="pre">mean_val</span></span><a class="headerlink" href="#ceed.function.plugin.GaussianNoise.mean_val" title="Permalink to this definition">¶</a></dt>
+<dd><p>The mean of the distribution,</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.function.plugin.GaussianNoise.stdev">
+<span class="sig-name descname"><span class="pre">stdev</span></span><a class="headerlink" href="#ceed.function.plugin.GaussianNoise.stdev" title="Permalink to this definition">¶</a></dt>
+<dd><p>The standard deviation of the distribution,</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.plugin.GaussianNoise.sample">
+<span class="sig-name descname"><span class="pre">sample</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#ceed.function.plugin.GaussianNoise.sample" title="Permalink to this definition">¶</a></dt>
+<dd><p>Samples the distribution and returns a new value.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.plugin.GaussianNoise.get_config">
+<span class="sig-name descname"><span class="pre">get_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#ceed.function.plugin.GaussianNoise.get_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a dict representation of the instance that can be then
+be used to reconstruct it with
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">ParameterNoiseFactory.make_instance()</span></code>.</p>
+<p>This is also used to display the instance parameters to the user.
+We infer the type of each parameter from the property value.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.plugin.GaussianNoise.get_prop_pretty_name">
+<span class="sig-name descname"><span class="pre">get_prop_pretty_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ceed.function.plugin.GaussianNoise.get_prop_pretty_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a dict mapping names of the parameters used by the class
+to a nicer representation shown to the user.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.function.plugin.UniformNoise">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.function.plugin.</span></span><span class="sig-name descname"><span class="pre">UniformNoise</span></span><a class="headerlink" href="#ceed.function.plugin.UniformNoise" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="param_noise.html#ceed.function.param_noise.NoiseBase" title="ceed.function.param_noise.NoiseBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.function.param_noise.NoiseBase</span></code></a></p>
+<p>Represents a uniform distribution.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.function.plugin.UniformNoise.min_val">
+<span class="sig-name descname"><span class="pre">min_val</span></span><a class="headerlink" href="#ceed.function.plugin.UniformNoise.min_val" title="Permalink to this definition">¶</a></dt>
+<dd><p>The minimum value of the range (inclusive).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.function.plugin.UniformNoise.max_val">
+<span class="sig-name descname"><span class="pre">max_val</span></span><a class="headerlink" href="#ceed.function.plugin.UniformNoise.max_val" title="Permalink to this definition">¶</a></dt>
+<dd><p>The maximum value of the range (inclusive depending on the system).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.plugin.UniformNoise.sample">
+<span class="sig-name descname"><span class="pre">sample</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#ceed.function.plugin.UniformNoise.sample" title="Permalink to this definition">¶</a></dt>
+<dd><p>Samples the distribution and returns a new value.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.plugin.UniformNoise.get_config">
+<span class="sig-name descname"><span class="pre">get_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#ceed.function.plugin.UniformNoise.get_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a dict representation of the instance that can be then
+be used to reconstruct it with
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">ParameterNoiseFactory.make_instance()</span></code>.</p>
+<p>This is also used to display the instance parameters to the user.
+We infer the type of each parameter from the property value.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.plugin.UniformNoise.get_prop_pretty_name">
+<span class="sig-name descname"><span class="pre">get_prop_pretty_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ceed.function.plugin.UniformNoise.get_prop_pretty_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a dict mapping names of the parameters used by the class
+to a nicer representation shown to the user.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.function.plugin.DiscreteNoise">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.function.plugin.</span></span><span class="sig-name descname"><span class="pre">DiscreteNoise</span></span><a class="headerlink" href="#ceed.function.plugin.DiscreteNoise" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="param_noise.html#ceed.function.param_noise.NoiseBase" title="ceed.function.param_noise.NoiseBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.function.param_noise.NoiseBase</span></code></a></p>
+<p>Represents a uniform distribution from equally spaced discrete values.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.function.plugin.DiscreteNoise.start_value">
+<span class="sig-name descname"><span class="pre">start_value</span></span><a class="headerlink" href="#ceed.function.plugin.DiscreteNoise.start_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>The first value in the list of values (inclusive).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.function.plugin.DiscreteNoise.step">
+<span class="sig-name descname"><span class="pre">step</span></span><a class="headerlink" href="#ceed.function.plugin.DiscreteNoise.step" title="Permalink to this definition">¶</a></dt>
+<dd><p>The distance between values (e.g. if it’s 1 and <a class="reference internal" href="#ceed.function.plugin.DiscreteNoise.start_value" title="ceed.function.plugin.DiscreteNoise.start_value"><code class="xref py py-attr docutils literal notranslate"><span class="pre">start_value</span></code></a> is
+0 and <a class="reference internal" href="#ceed.function.plugin.DiscreteNoise.num_values" title="ceed.function.plugin.DiscreteNoise.num_values"><code class="xref py py-attr docutils literal notranslate"><span class="pre">num_values</span></code></a> is 5, we have <code class="docutils literal notranslate"><span class="pre">0,</span> <span class="pre">1,</span> <span class="pre">2,</span> <span class="pre">3,</span> <span class="pre">4</span></code>).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.function.plugin.DiscreteNoise.num_values">
+<span class="sig-name descname"><span class="pre">num_values</span></span><a class="headerlink" href="#ceed.function.plugin.DiscreteNoise.num_values" title="Permalink to this definition">¶</a></dt>
+<dd><p>The total number of values (e.g. if it’s 5 and <a class="reference internal" href="#ceed.function.plugin.DiscreteNoise.start_value" title="ceed.function.plugin.DiscreteNoise.start_value"><code class="xref py py-attr docutils literal notranslate"><span class="pre">start_value</span></code></a> is
+0 and <a class="reference internal" href="#ceed.function.plugin.DiscreteNoise.step" title="ceed.function.plugin.DiscreteNoise.step"><code class="xref py py-attr docutils literal notranslate"><span class="pre">step</span></code></a> is 1, we have <code class="docutils literal notranslate"><span class="pre">0,</span> <span class="pre">1,</span> <span class="pre">2,</span> <span class="pre">3,</span> <span class="pre">4</span></code>).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.function.plugin.DiscreteNoise.with_replacement">
+<span class="sig-name descname"><span class="pre">with_replacement</span></span><a class="headerlink" href="#ceed.function.plugin.DiscreteNoise.with_replacement" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether, when sampling the distribution, to sample with replacement.</p>
+<p>If False, then <a class="reference internal" href="#ceed.function.plugin.DiscreteNoise.num_values" title="ceed.function.plugin.DiscreteNoise.num_values"><code class="xref py py-attr docutils literal notranslate"><span class="pre">num_values</span></code></a> must be at least as large as <code class="docutils literal notranslate"><span class="pre">n</span></code> of
+<a class="reference internal" href="#ceed.function.plugin.DiscreteNoise.sample_seq" title="ceed.function.plugin.DiscreteNoise.sample_seq"><code class="xref py py-meth docutils literal notranslate"><span class="pre">sample_seq()</span></code></a>, if the distribution is used to sample more than once,
+e.g. if each loop iteration is sampled.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.plugin.DiscreteNoise.sample">
+<span class="sig-name descname"><span class="pre">sample</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#ceed.function.plugin.DiscreteNoise.sample" title="Permalink to this definition">¶</a></dt>
+<dd><p>Samples the distribution and returns a new value.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.plugin.DiscreteNoise.sample_seq">
+<span class="sig-name descname"><span class="pre">sample_seq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ceed.function.plugin.DiscreteNoise.sample_seq" title="Permalink to this definition">¶</a></dt>
+<dd><p>Samples the distribution <code class="docutils literal notranslate"><span class="pre">n</span></code> times and returns a list of values.</p>
+<p>By default it just calls <a class="reference internal" href="#ceed.function.plugin.DiscreteNoise.sample" title="ceed.function.plugin.DiscreteNoise.sample"><code class="xref py py-meth docutils literal notranslate"><span class="pre">sample()</span></code></a> <code class="docutils literal notranslate"><span class="pre">n</span></code> times to get the samples.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.plugin.DiscreteNoise.get_config">
+<span class="sig-name descname"><span class="pre">get_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#ceed.function.plugin.DiscreteNoise.get_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a dict representation of the instance that can be then
+be used to reconstruct it with
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">ParameterNoiseFactory.make_instance()</span></code>.</p>
+<p>This is also used to display the instance parameters to the user.
+We infer the type of each parameter from the property value.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.plugin.DiscreteNoise.get_prop_pretty_name">
+<span class="sig-name descname"><span class="pre">get_prop_pretty_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ceed.function.plugin.DiscreteNoise.get_prop_pretty_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a dict mapping names of the parameters used by the class
+to a nicer representation shown to the user.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.function.plugin.DiscreteListNoise">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.function.plugin.</span></span><span class="sig-name descname"><span class="pre">DiscreteListNoise</span></span><a class="headerlink" href="#ceed.function.plugin.DiscreteListNoise" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="param_noise.html#ceed.function.param_noise.NoiseBase" title="ceed.function.param_noise.NoiseBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.function.param_noise.NoiseBase</span></code></a></p>
+<p>Represents a uniform distribution from a list of discrete values.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.function.plugin.DiscreteListNoise.csv_list">
+<span class="sig-name descname"><span class="pre">csv_list</span></span><em class="property"><span class="pre">:</span> <span class="pre">str</span></em><a class="headerlink" href="#ceed.function.plugin.DiscreteListNoise.csv_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>A comma-separated list of float or integers representing the items from
+from which to sample. It may have optional spaces between the items, in
+addition to the required commas.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.function.plugin.DiscreteListNoise.with_replacement">
+<span class="sig-name descname"><span class="pre">with_replacement</span></span><em class="property"><span class="pre">:</span> <span class="pre">bool</span></em><a class="headerlink" href="#ceed.function.plugin.DiscreteListNoise.with_replacement" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether, when sampling the distribution, to sample with replacement.</p>
+<p>If False, then the number of items in <a class="reference internal" href="#ceed.function.plugin.DiscreteListNoise.csv_list" title="ceed.function.plugin.DiscreteListNoise.csv_list"><code class="xref py py-attr docutils literal notranslate"><span class="pre">csv_list</span></code></a> must be at least as
+large as <code class="docutils literal notranslate"><span class="pre">n</span></code> of <a class="reference internal" href="#ceed.function.plugin.DiscreteListNoise.sample_seq" title="ceed.function.plugin.DiscreteListNoise.sample_seq"><code class="xref py py-meth docutils literal notranslate"><span class="pre">sample_seq()</span></code></a>, if the distribution is used to
+sample more than once, e.g. if each loop iteration is sampled.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.plugin.DiscreteListNoise.sample">
+<span class="sig-name descname"><span class="pre">sample</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#ceed.function.plugin.DiscreteListNoise.sample" title="Permalink to this definition">¶</a></dt>
+<dd><p>Samples the distribution and returns a new value.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.plugin.DiscreteListNoise.sample_seq">
+<span class="sig-name descname"><span class="pre">sample_seq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ceed.function.plugin.DiscreteListNoise.sample_seq" title="Permalink to this definition">¶</a></dt>
+<dd><p>Samples the distribution <code class="docutils literal notranslate"><span class="pre">n</span></code> times and returns a list of values.</p>
+<p>By default it just calls <a class="reference internal" href="#ceed.function.plugin.DiscreteListNoise.sample" title="ceed.function.plugin.DiscreteListNoise.sample"><code class="xref py py-meth docutils literal notranslate"><span class="pre">sample()</span></code></a> <code class="docutils literal notranslate"><span class="pre">n</span></code> times to get the samples.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.plugin.DiscreteListNoise.get_config">
+<span class="sig-name descname"><span class="pre">get_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#ceed.function.plugin.DiscreteListNoise.get_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a dict representation of the instance that can be then
+be used to reconstruct it with
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">ParameterNoiseFactory.make_instance()</span></code>.</p>
+<p>This is also used to display the instance parameters to the user.
+We infer the type of each parameter from the property value.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.plugin.DiscreteListNoise.get_prop_pretty_name">
+<span class="sig-name descname"><span class="pre">get_prop_pretty_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ceed.function.plugin.DiscreteListNoise.get_prop_pretty_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a dict mapping names of the parameters used by the class
+to a nicer representation shown to the user.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ceed.function.plugin.get_ceed_functions">
+<span class="sig-prename descclassname"><span class="pre">ceed.function.plugin.</span></span><span class="sig-name descname"><span class="pre">get_ceed_functions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">function_factory</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="function.html#ceed.function.FunctionFactoryBase" title="ceed.function.FunctionFactoryBase"><span class="pre">ceed.function.FunctionFactoryBase</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="function.html#ceed.function.FuncType" title="ceed.function.FuncType"><span class="pre">ceed.function.FuncType</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ceed.function.plugin.get_ceed_functions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns all the function classes defined and exported in this file
+(<a class="reference internal" href="#ceed.function.plugin.ConstFunc" title="ceed.function.plugin.ConstFunc"><code class="xref py py-class docutils literal notranslate"><span class="pre">ConstFunc</span></code></a>, <a class="reference internal" href="#ceed.function.plugin.LinearFunc" title="ceed.function.plugin.LinearFunc"><code class="xref py py-class docutils literal notranslate"><span class="pre">LinearFunc</span></code></a>, etc.).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>function_factory</strong> – The <a class="reference internal" href="function.html#ceed.function.FunctionFactoryBase" title="ceed.function.FunctionFactoryBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">FunctionFactoryBase</span></code></a>
+instance currently active in Ceed.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ceed.function.plugin.get_ceed_distributions">
+<span class="sig-prename descclassname"><span class="pre">ceed.function.plugin.</span></span><span class="sig-name descname"><span class="pre">get_ceed_distributions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">function_factory</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="function.html#ceed.function.FunctionFactoryBase" title="ceed.function.FunctionFactoryBase"><span class="pre">ceed.function.FunctionFactoryBase</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="param_noise.html#ceed.function.param_noise.NoiseType" title="ceed.function.param_noise.NoiseType"><span class="pre">ceed.function.param_noise.NoiseType</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ceed.function.plugin.get_ceed_distributions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns all the distribution classes defined and exported in this file
+(<a class="reference internal" href="#ceed.function.plugin.GaussianNoise" title="ceed.function.plugin.GaussianNoise"><code class="xref py py-class docutils literal notranslate"><span class="pre">GaussianNoise</span></code></a>, <a class="reference internal" href="#ceed.function.plugin.UniformNoise" title="ceed.function.plugin.UniformNoise"><code class="xref py py-class docutils literal notranslate"><span class="pre">UniformNoise</span></code></a>, etc.).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>function_factory</strong> – The <a class="reference internal" href="function.html#ceed.function.FunctionFactoryBase" title="ceed.function.FunctionFactoryBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">FunctionFactoryBase</span></code></a>
+instance currently active in Ceed.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="widgets.html" class="btn btn-neutral float-right" title="Function Widgets" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="param_noise.html" class="btn btn-neutral float-left" title="Parameter randomization" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2019, Matthew Einhorn.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

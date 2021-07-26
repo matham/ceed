@@ -1,0 +1,476 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Installation &mdash; Ceed  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="User Guide" href="guide/guide.html" />
+    <link rel="prev" title="System Blueprint" href="blueprint.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> Ceed
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="blueprint.html">System Blueprint</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#demo-install">Demo install</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#installation-on-ubuntu">Installation on Ubuntu</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#install-the-system-dependencies">Install the system dependencies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#make-a-virtual-env-for-the-project">Make a virtual env for the project</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#install-manual-python-dependencies">Install manual python dependencies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#install-ceed-linux">Install Ceed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#teensy-setup">Teensy setup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#network-setup">Network setup</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#shared-drive">Shared drive</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#camera-streaming">Camera streaming</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#installation-on-windows">Installation on Windows</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#install-venv-win">Make a virtual env for the project</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#install-dep-win">Install manual python dependencies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#install-ceed-win">Install Ceed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#thor-filers">Thor/Filers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mcs">MCS</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#ceed-mcs-hardware-link">Ceed-MCS hardware link</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="guide/guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="config.html">CEED Config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_code/example_code.html">Example Analysis Code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="apps/apps.html">Ceed Apps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/api.html">The Ceed API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="optics/optics.html">Microscope optics</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Ceed</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Installation</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/installation.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="installation">
+<span id="install-ceed"></span><h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
+<p><a class="reference external" href="https://github.com/matham/ceed">Ceed</a> requires Python 3.7+.</p>
+<div class="section" id="demo-install">
+<span id="id1"></span><h2>Demo install<a class="headerlink" href="#demo-install" title="Permalink to this headline">¶</a></h2>
+<p>For Windows you can download a pre-compiled Ceed executable (<code class="docutils literal notranslate"><span class="pre">Ceed.exe</span></code>) from the
+<a class="reference external" href="https://github.com/matham/ceed/releases">release page</a>.</p>
+<p>Alternatively, the most recent stable version of Ceed can be installed from
+source simply with:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">ceed</span>
+<span class="c1"># or if you want to install the most recent pre-release version</span>
+<span class="n">pip</span> <span class="n">install</span> <span class="n">ceed</span> <span class="o">--</span><span class="n">pre</span>
+</pre></div>
+</div>
+<p>This is sufficient to run Ceed as a demo on Windows/Linux without the connected hardware
+of the “real” system. See <a class="reference internal" href="getting_started.html#usage"><span class="std std-ref">Usage</span></a> for how to run Ceed.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>When running Ceed installed as above, you’ll likely get the following error logged to
+the log window: <code class="docutils literal notranslate"><span class="pre">ImportError:</span> <span class="pre">Cannot</span> <span class="pre">open</span> <span class="pre">PROPixx</span> <span class="pre">library</span></code> when starting Ceed.
+This is normal and happens because the projector control software is not installed.
+It can be safely ignored for demo purposes.</p>
+<p>Also, if the Teensy microcontroller is not connected but “Use Teensy” is enabled in the
+<a class="reference internal" href="guide/experiment.html#tut-config-window"><span class="std std-ref">Configuration window</span></a>, Ceed won’t run experiments. Turn it OFF for a demo install.</p>
+</div>
+</div>
+<div class="section" id="installation-on-ubuntu">
+<h2>Installation on Ubuntu<a class="headerlink" href="#installation-on-ubuntu" title="Permalink to this headline">¶</a></h2>
+<p>The following sets up Ceed and the computer to be able to run actual
+experiments and control the required external hardware. It was specifically
+tested on the Ubuntu 20.04 computer that is used to run Ceed for the experiments.</p>
+<div class="section" id="install-the-system-dependencies">
+<h3>Install the system dependencies<a class="headerlink" href="#install-the-system-dependencies" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">apt</span> <span class="n">update</span>
+<span class="n">sudo</span> <span class="n">apt</span> <span class="n">install</span> <span class="n">python3</span><span class="o">-</span><span class="n">pip</span> <span class="n">build</span><span class="o">-</span><span class="n">essential</span> <span class="n">git</span> <span class="n">python3</span> <span class="n">python3</span><span class="o">-</span><span class="n">dev</span> <span class="n">libusb</span><span class="o">-</span><span class="mf">1.0</span><span class="o">-</span><span class="mi">0</span>
+<span class="n">sudo</span> <span class="n">apt</span><span class="o">-</span><span class="n">get</span> <span class="n">install</span> <span class="o">-</span><span class="n">y</span> \
+    <span class="n">libsdl2</span><span class="o">-</span><span class="n">dev</span> \
+    <span class="n">libsdl2</span><span class="o">-</span><span class="n">image</span><span class="o">-</span><span class="n">dev</span> \
+    <span class="n">libsdl2</span><span class="o">-</span><span class="n">mixer</span><span class="o">-</span><span class="n">dev</span> \
+    <span class="n">libsdl2</span><span class="o">-</span><span class="n">ttf</span><span class="o">-</span><span class="n">dev</span> \
+    <span class="n">libportmidi</span><span class="o">-</span><span class="n">dev</span> \
+    <span class="n">libswscale</span><span class="o">-</span><span class="n">dev</span> \
+    <span class="n">libavformat</span><span class="o">-</span><span class="n">dev</span> \
+    <span class="n">libavcodec</span><span class="o">-</span><span class="n">dev</span> \
+    <span class="n">zlib1g</span><span class="o">-</span><span class="n">dev</span> \
+    <span class="n">xclip</span>
+</pre></div>
+</div>
+<p>Once the system is updated, check in the additional drivers that the correct Nvidia drivers are installed.
+Then verify by starting nvidia-server and inspect that the frame-rate of the GPU is 119.96.</p>
+<p>Also, turn OFF the screensaver and set notifications to OFF to prevent any interruptions during the experiment.</p>
+</div>
+<div class="section" id="make-a-virtual-env-for-the-project">
+<span id="install-venv-linux"></span><h3>Make a virtual env for the project<a class="headerlink" href="#make-a-virtual-env-for-the-project" title="Permalink to this headline">¶</a></h3>
+<p>We’ll make the virtual env in home. This will self-contain all the packages needed for Ceed:</p>
+<ul class="simple">
+<li><p>Install update pip/virtualenv <code class="docutils literal notranslate"><span class="pre">python3</span> <span class="pre">-m</span> <span class="pre">pip</span> <span class="pre">install</span> <span class="pre">--upgrade</span> <span class="pre">--user</span> <span class="pre">pip</span> <span class="pre">virtualenv</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cd</span> <span class="pre">~</span></code>.</p></li>
+<li><p>Make the virtualenv <code class="docutils literal notranslate"><span class="pre">python3</span> <span class="pre">-m</span> <span class="pre">virtualenv</span> <span class="pre">venv_ceed</span></code>.</p></li>
+<li><p>Activate it <code class="docutils literal notranslate"><span class="pre">source</span> <span class="pre">venv_ceed/bin/activate</span></code>. You’ll have to do this every time you start a new terminal.</p></li>
+</ul>
+</div>
+<div class="section" id="install-manual-python-dependencies">
+<span id="install-dep-linux"></span><h3>Install manual python dependencies<a class="headerlink" href="#install-manual-python-dependencies" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p>Install <strong>kivy</strong> from source. We cannot use a pre-compiled kivy from pip because it doesn’t work as well in
+full-screen.
+* Install kivy: <code class="docutils literal notranslate"><span class="pre">python3</span> <span class="pre">-m</span> <span class="pre">pip</span> <span class="pre">install</span> <span class="pre">kivy[full]==2.0.0</span> <span class="pre">--no-binary</span> <span class="pre">kivy</span></code> - it’ll take a couple of minutes.</p></li>
+<li><p>If using a <strong>PointGray camera</strong>, on linux we must manually install its libraries</p>
+<ul>
+<li><p>Get it from <a class="reference external" href="https://www.flir.com/products/flycapture-sdk">here</a>, extract it and install by running <code class="docutils literal notranslate"><span class="pre">install_flycapture.sh</span></code>.</p></li>
+<li><p>Figure out your python version, find the appropriate linux wheel of the last release
+<a class="reference external" href="https://github.com/matham/pyflycap2/releases">here</a> and install e.g. with
+<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">https://github.com/matham/pyflycap2/releases/download/v0.3.0/pyflycap2-0.3.0-cp36-cp36m-linux_x86_64.whl</span></code>.</p></li>
+<li><p>If successful, you should be able to run
+<code class="docutils literal notranslate"><span class="pre">python3</span> <span class="pre">-c</span> <span class="pre">'from</span> <span class="pre">pyflycap2.interface</span> <span class="pre">import</span> <span class="pre">CameraContext;</span> <span class="pre">cc</span> <span class="pre">=</span> <span class="pre">CameraContext();</span> <span class="pre">cc.rescan_bus();</span> <span class="pre">print(cc.get_gige_cams())'</span></code>
+and it’ll print a list of the serial numbers of all the connected cameras.</p></li>
+</ul>
+</li>
+<li><p>Install <strong>VPixx</strong> control software as well as <code class="docutils literal notranslate"><span class="pre">pypixxlib</span></code></p>
+<ul>
+<li><p>Go to their <a class="reference external" href="https://vpixx.com/">site</a> and download the vpixx debian package for ubuntu named e.g. <code class="docutils literal notranslate"><span class="pre">vpixx-software-tools.deb</span></code>.</p></li>
+<li><p>Install it with <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">apt</span> <span class="pre">install</span> <span class="pre">./vpixx-software-tools.deb</span></code> from the download directory.</p></li>
+<li><p>To install <code class="docutils literal notranslate"><span class="pre">pypixxlib</span></code> you’ll need to locate <code class="docutils literal notranslate"><span class="pre">pypixxlib-xxx.tar.gz</span></code>, likely under <code class="docutils literal notranslate"><span class="pre">/usr/share/VPixx</span> <span class="pre">Software</span> <span class="pre">Tools/Software</span> <span class="pre">Tools/pypixxlib</span></code>
+and install it with e.g. <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">&quot;/usr/share/VPixx</span> <span class="pre">Software</span> <span class="pre">Tools/Software</span> <span class="pre">Tools/pypixxlib/pypixxlib-3.8.9279.tar.gz&quot;</span></code>.</p></li>
+<li><p>To test if it is installed successfully, run <code class="docutils literal notranslate"><span class="pre">python3</span> <span class="pre">-c</span> <span class="pre">&quot;from</span> <span class="pre">pypixxlib</span> <span class="pre">import</span> <span class="pre">_libdpx</span> <span class="pre">as</span> <span class="pre">libdpx&quot;</span></code>.</p></li>
+<li><p>Using the vputil program installed with the vpixx package, from the command line update the projector and controller
+firmware (they are named ppx and ppc).</p></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="install-ceed-linux">
+<span id="id2"></span><h3>Install Ceed<a class="headerlink" href="#install-ceed-linux" title="Permalink to this headline">¶</a></h3>
+<p>Manually clone and install <strong>Ceed</strong>.
+We’ll clone it into PycharmProjects (assuming this folder exists, otherwise create it):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span>  <span class="o">~/</span><span class="n">PycharmProjects</span><span class="o">/</span>
+<span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">matham</span><span class="o">/</span><span class="n">ceed</span><span class="o">.</span><span class="n">git</span>
+<span class="n">cd</span> <span class="n">ceed</span>
+<span class="n">python3</span> <span class="o">-</span><span class="n">m</span> <span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">e</span> <span class="o">.</span><span class="p">[</span><span class="n">dev</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Once installed, you can start Ceed by simply typing <code class="docutils literal notranslate"><span class="pre">ceed</span></code> in the terminal.
+Or, you can run it directly from the ceed directory with <code class="docutils literal notranslate"><span class="pre">python3</span> <span class="pre">ceed/run_app.py</span></code>.</p>
+<p>To use the installed projects from PyCharm, in PyCharm create a “new
+project”, point to the ceed directory and create it from the existing
+folder. When selecting a python installation, make sure to select/add the
+virtual environment Python previously created.</p>
+<p>The first time running Ceed, make sure the LED idle mode is set to <code class="docutils literal notranslate"><span class="pre">none</span></code> and that the frame rate
+is set to <code class="docutils literal notranslate"><span class="pre">119.96</span></code>.</p>
+</div>
+<div class="section" id="teensy-setup">
+<h3>Teensy setup<a class="headerlink" href="#teensy-setup" title="Permalink to this headline">¶</a></h3>
+<p>Before the Teensy can be used by Ceed, the USB device must be correctly set up.
+Do the following:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span># in the terminal start nano with the file to be created.
+sudo nano /etc/udev/rules.d/10-local.rules
+# paste the following line into the file
+ACTION==&quot;add&quot;, SUBSYSTEMS==&quot;usb&quot;, ATTR{idVendor}==&quot;16c0&quot;, ATTR{idProduct}==&quot;0486&quot;, MODE=&quot;660&quot;, GROUP=&quot;plugdev&quot;
+# now save the file and back in the terminal run the following
+sudo adduser $USER plugdev
+</pre></div>
+</div>
+<p>To program the Teensy if it’s a new device, please follow the <a class="reference external" href="https://github.com/matham/ceed/blob/master/ceed/view/teensy_estimation/readme.md">instructions in the repo</a>.</p>
+</div>
+<div class="section" id="network-setup">
+<span id="linux-network"></span><h3>Network setup<a class="headerlink" href="#network-setup" title="Permalink to this headline">¶</a></h3>
+<p>In order to send the large camera images quickly between the Windows to Ubuntu PC, we need to increase the
+packet sizes of the Network. First list the network devices with <code class="docutils literal notranslate"><span class="pre">ip</span> <span class="pre">link</span> <span class="pre">show</span></code>. This will print something like:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">2</span><span class="p">:</span> <span class="n">enp0s31f6</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">BROADCAST</span><span class="p">,</span><span class="n">MULTICAST</span><span class="p">,</span><span class="n">UP</span><span class="p">,</span><span class="n">LOWER_UP</span><span class="o">&gt;</span> <span class="n">mtu</span> <span class="mi">1500</span> <span class="n">qdisc</span> <span class="n">fq_codel</span> <span class="n">state</span> <span class="n">UP</span> <span class="n">mode</span> <span class="n">DEFAULT</span> <span class="n">group</span> <span class="n">default</span> <span class="n">qlen</span> <span class="mi">1000</span>
+    <span class="n">link</span><span class="o">/</span><span class="n">ether</span> <span class="o">...</span>
+<span class="mi">3</span><span class="p">:</span> <span class="n">wlp5s0</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">NO</span><span class="o">-</span><span class="n">CARRIER</span><span class="p">,</span><span class="n">BROADCAST</span><span class="p">,</span><span class="n">MULTICAST</span><span class="p">,</span><span class="n">UP</span><span class="o">&gt;</span> <span class="n">mtu</span> <span class="mi">1500</span> <span class="n">qdisc</span> <span class="n">noqueue</span> <span class="n">state</span> <span class="n">DOWN</span> <span class="n">mode</span> <span class="n">DORMANT</span> <span class="n">group</span> <span class="n">default</span> <span class="n">qlen</span> <span class="mi">1000</span>
+    <span class="n">link</span><span class="o">/</span><span class="n">ether</span> <span class="o">...</span>
+</pre></div>
+</div>
+<p>Notice that <code class="docutils literal notranslate"><span class="pre">MTU</span></code> is set to 1500. We need to increase it to the max, 9000 as follows. In the terminal
+run <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">nano</span> <span class="pre">/etc/init.d/cam_mtu.sh</span></code>. This will open the nano text editor with the given file. In there paste in the
+following (change the network name as needed):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ip</span> <span class="n">link</span> <span class="nb">set</span> <span class="n">enp0s31f6</span> <span class="n">mtu</span> <span class="mi">9000</span>
+<span class="n">ip</span> <span class="n">link</span> <span class="nb">set</span> <span class="n">wlp5s0</span> <span class="n">mtu</span> <span class="mi">9000</span>
+</pre></div>
+</div>
+<p>Restart the computer and check that the <code class="docutils literal notranslate"><span class="pre">MTU</span></code> is 9000.</p>
+<div class="section" id="shared-drive">
+<h4>Shared drive<a class="headerlink" href="#shared-drive" title="Permalink to this headline">¶</a></h4>
+<p>We also need to share a directory over the network between the Windows and Ubuntu computer. Once the appropriate
+directory on Windows was set to be shared (e.g. <code class="docutils literal notranslate"><span class="pre">D:\MC_Rack</span> <span class="pre">data</span></code>), from e.g. the login screen
+get the Windows computer’s name and username. In Ubuntu in Files, under “connect to server” enter <a class="reference external" href="smb://computer_name">smb://computer_name</a>
+and when prompted enter the Windows username, workgroup name and password to connect. Select to remember pass forever.
+Then find the shared folder and right-click -&gt; mount to show it.</p>
+</div>
+<div class="section" id="camera-streaming">
+<h4>Camera streaming<a class="headerlink" href="#camera-streaming" title="Permalink to this headline">¶</a></h4>
+<p>When you have Filers configured on the Windows computer, in Ceed you have to select the appropriate IP and port to be
+able to stream the camera images from Windows to it. In the player, select network, then enter the IP of the
+Windows computer and use 10000 for the port. It should be able to connect if the Filers server is running.</p>
+</div>
+</div>
+</div>
+<div class="section" id="installation-on-windows">
+<h2>Installation on Windows<a class="headerlink" href="#installation-on-windows" title="Permalink to this headline">¶</a></h2>
+<p>Following installs Ceed on the Windows computer that runs the camera and MCS. It’s not strictly needed, but can be used
+for testing if desired. However, the Filers and MCS step are necessary to be able to run experiments.</p>
+<p>First ensure that power mode is set to never put the computer to sleep and that the screensaver is OFF.</p>
+<div class="section" id="install-venv-win">
+<span id="id3"></span><h3>Make a virtual env for the project<a class="headerlink" href="#install-venv-win" title="Permalink to this headline">¶</a></h3>
+<p>Starting with Python (install it if needed) available on the terminal, we’ll first make the virtual env
+in the home directory. The terminal should be in the home directory</p>
+<ul class="simple">
+<li><p>Install update pip/virtualenv <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">pip</span> <span class="pre">install</span> <span class="pre">--upgrade</span> <span class="pre">pip</span> <span class="pre">virtualenv</span></code>.</p></li>
+<li><p>Make the virtualenv <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">virtualenv</span> <span class="pre">ceed_venv</span></code>.</p></li>
+<li><p>Activate it <code class="docutils literal notranslate"><span class="pre">ceed_venv\Scripts\activate</span></code>. You’ll have to do this every time you start a new terminal.</p></li>
+</ul>
+</div>
+<div class="section" id="install-dep-win">
+<span id="id4"></span><h3>Install manual python dependencies<a class="headerlink" href="#install-dep-win" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p>If using a <strong>PointGray camera</strong> install with <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">pyflycap2</span></code>.</p>
+<ul>
+<li><p>If successful, you should be able to run
+<code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-c</span> <span class="pre">&quot;from</span> <span class="pre">pyflycap2.interface</span> <span class="pre">import</span> <span class="pre">CameraContext;</span> <span class="pre">cc</span> <span class="pre">=</span> <span class="pre">CameraContext();</span> <span class="pre">cc.rescan_bus();</span> <span class="pre">print(cc.get_gige_cams())&quot;</span></code>
+and it’ll print a list of the serial numbers of all the connected cameras.</p></li>
+</ul>
+</li>
+<li><p>If using a <strong>Thor camera</strong> install with <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">thorcam</span></code>.</p></li>
+<li><p>Install <strong>VPixx</strong> control software as well as <code class="docutils literal notranslate"><span class="pre">pypixxlib</span></code>. Although we’re not typically running ceed on this computer,
+it can be tested here.</p>
+<ul>
+<li><p>Go to their <a class="reference external" href="https://vpixx.com/">site</a> and download the vpixx Windows executable for Windows named e.g.
+<code class="docutils literal notranslate"><span class="pre">setup.exe</span></code> and install it.</p></li>
+<li><p>To install <code class="docutils literal notranslate"><span class="pre">pypixxlib</span></code> you’ll need to locate <code class="docutils literal notranslate"><span class="pre">pypixxlib-xxx.tar.gz</span></code>, likely under <code class="docutils literal notranslate"><span class="pre">C:\Program</span> <span class="pre">Files\VPixx</span> <span class="pre">Technologies\Software</span> <span class="pre">Tools\pypixxlib</span></code>
+and install it with e.g. <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">&quot;C:\Program</span> <span class="pre">Files\VPixx</span> <span class="pre">Technologies\Software</span> <span class="pre">Tools\pypixxlib\pypixxlib-3.5.5428.tar.gz&quot;</span></code>.</p></li>
+<li><p>To test if it is installed successfully, run <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-c</span> <span class="pre">&quot;from</span> <span class="pre">pypixxlib</span> <span class="pre">import</span> <span class="pre">_libdpx</span> <span class="pre">as</span> <span class="pre">libdpx&quot;</span></code>.</p></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="install-ceed-win">
+<span id="id5"></span><h3>Install Ceed<a class="headerlink" href="#install-ceed-win" title="Permalink to this headline">¶</a></h3>
+<p>Ceed can simply be installed with:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">ceed</span><span class="p">[</span><span class="n">dev</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Once installed, you can start Ceed by simply typing <code class="docutils literal notranslate"><span class="pre">ceed</span></code> in the terminal.
+Or, you can run it directly using <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">ceed/run_app.py</span></code>.</p>
+<p>You can alternatively clone it and install it in-place like in the Ubuntu instructions.</p>
+</div>
+<div class="section" id="thor-filers">
+<span id="win-filers"></span><h3>Thor/Filers<a class="headerlink" href="#thor-filers" title="Permalink to this headline">¶</a></h3>
+<p>To be able to play the images from the Thor camera, first download and <a class="reference external" href="https://www.thorlabs.com/software_pages/ViewSoftwarePage.cfm?Code=ThorCam">install the Thor drivers</a>. Then power the
+camera and ensure it works in the Thor camera software.</p>
+<p>Next, download the <a class="reference external" href="https://github.com/matham/filers2/releases">Filers</a> exe, run and pin to taskbar.
+Within filers, with the camera powered, select the thor as the player and Network as the recorder.
+In the recorder settings enter the ip address of the Windows computer and use 10000 for the port.
+To test start playing, start the server and press the record button to stream to the network.
+On the Ubuntu computer similarly connect to the server from Ceed and you should see the camera images
+in Ceed.</p>
+<p>To be able to efficiently stream the images, in device manager for all the network adapters used,
+locate advanced settings and set Jumbo packet (possibly listed as MTU) value to 9014 bytes, the maximum.</p>
+</div>
+<div class="section" id="mcs">
+<h3>MCS<a class="headerlink" href="#mcs" title="Permalink to this headline">¶</a></h3>
+<p>To control the MCS hardware, ensure the following MCS software are installed and updated: MC Experimenter,
+MC Data manager, and MC Analyzer. Then, in Experimenter, double clock on the MEA (while it’s powered)
+and update all firmware.</p>
+</div>
+</div>
+<div class="section" id="ceed-mcs-hardware-link">
+<h2>Ceed-MCS hardware link<a class="headerlink" href="#ceed-mcs-hardware-link" title="Permalink to this headline">¶</a></h2>
+<p>Once the projector and controllers are all connected to the appropriate computers, we must use the DB-to-BNC cable to
+connect the Projector controller corner pixel port to the MCS digital input. In the ceed configuration file
+locate the <code class="docutils literal notranslate"><span class="pre">projector_to_aquisition_map</span></code> setting. That indicates the mapping from vpixx port to MCS port.
+E.g. <code class="docutils literal notranslate"><span class="pre">2:</span> <span class="pre">0</span></code> means vpixx bit/port 2 should be connected to the port 0 of the MCS digital input breakout box.</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="guide/guide.html" class="btn btn-neutral float-right" title="User Guide" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="blueprint.html" class="btn btn-neutral float-left" title="System Blueprint" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2019, Matthew Einhorn.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

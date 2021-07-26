@@ -1,0 +1,1111 @@
+CEED Config
+===========
+
+The following are the configuration options provided by the app. It can be configured by changing appropriate values in the ``config.yaml`` settings file. The options default to the default value of the classes for each of the options.
+
+`external_function_plugin_package`:
+ Default value::
+
+  ''
+
+ The name of an external function plugin package that contains additional
+ functions to be displayed in the GUI to the user.
+ See :mod:`~ceed.function.plugin` for details.
+
+`external_stage_plugin_package`:
+ Default value::
+
+  ''
+
+ The name of an external stage plugin package that contains additional
+ stages to be displayed in the GUI to the user.
+ See :mod:`~ceed.stage.plugin` for details.
+
+`inspect`:
+ Default value::
+
+  false
+
+ Enables GUI inspection. If True, it is activated by hitting ctrl-e in
+ the GUI.
+
+`last_directory`:
+ Default value::
+
+  '~'
+
+ The last directory opened in the GUI.
+
+
+view
+----
+
+`LED_mode`:
+ Default value::
+
+  RGB
+
+ The LED mode the projector will be set to during the experiment.
+ Its value is from the :attr:`led_modes`.
+
+`LED_mode_idle`:
+ Default value::
+
+  none
+
+ The LED mode the projector will be set to before/after the experiment.
+ This is used to turn OFF the projector LEDs in between experiments so that
+ light is not projected on the tissue while stages are designed.
+ Its value is from the :attr:`led_modes`.
+
+`cam_transform`:
+ Default value::
+
+  - - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  - - 0.0
+    - 1.0
+    - 0.0
+    - 0.0
+  - - 0.0
+    - 0.0
+    - 1.0
+    - 0.0
+  - - 0.0
+    - 0.0
+    - 0.0
+    - 1.0
+
+ A 4x4 matrix that controls the rotation, offset, and scaling of the
+ camera images relative to the projector.
+ In the Ceed GUI, a user can transform the camera image, in addition to
+ :attr:`flip_camera` until it fully aligns with the projector output.
+ See also :ref:`view-flip`.
+
+`experiment_uuid`:
+ Default value::
+
+  !!binary ""
+
+ A unique uuid that is re-generated before each experiment and sent along
+ over the corner pixel as the initial uniquely-identifying handshake-pattern.
+ It allows us to locate this experiment in the MCS data post-hoc.
+ See :class:`~ceed.storage.controller.DataSerializerBase`.
+
+`flip_camera`:
+ Default value::
+
+  false
+
+ Whether to flip the camera images horizontally, around the center.
+ See also :ref:`view-flip`.
+
+`flip_projector`:
+ Default value::
+
+  true
+
+ Whether to flip the projector output horizontally, around the center.
+ See also :ref:`view-flip`.
+
+`frame_rate`:
+ Default value::
+
+  null
+
+ The frame-rate of the GPU that plays the experiment.
+ This should be set to the exact refresh rate of the GPU, as can be found in
+ e.g. the nvidia control panel. Otherwise, the experiment will be out of sync
+ and played incorrectly.
+ This is internally converted to a fraction (:attr:`frame_rate_numerator`,
+ :attr:`frame_rate_denominator`), so the number must be such
+ that it can be converted to a fraction. E.g. 119.96 or 59.94 can be
+ represented correctly as fractions.
+
+`frame_rate_denominator`:
+ Default value::
+
+  null
+
+ The denominator of the :attr:`frame_rate` fraction.
+
+`frame_rate_numerator`:
+ Default value::
+
+  null
+
+ The numerator of the :attr:`frame_rate` fraction.
+
+`fullscreen`:
+ Default value::
+
+  true
+
+ Whether the second Ceed window that runs the "real experiment" is run
+ in fullscreen mode.
+ In fullscreen mode the window has no borders and takes over the whole
+ screen.
+
+`log_debug_timing`:
+ Default value::
+
+  false
+
+ Whether to log the times that frames are drawn and rendered to a debug
+ section in the h5 file.
+ If True, this will additionally be logged for each displayed frame in a
+ special section in the file.
+
+`mea_diameter`:
+ Default value::
+
+  3
+
+ The diameter in pixels of the displayed electrode circles in the grid.
+ See :attr:`mea_transform` also.
+
+`mea_num_cols`:
+ Default value::
+
+  12
+
+ The number of electrode columns in the array. See :attr:`mea_transform`
+ also.
+
+`mea_num_rows`:
+ Default value::
+
+  12
+
+ The number of electrode rows in the array. See :attr:`mea_transform`
+ also.
+
+`mea_pitch`:
+ Default value::
+
+  20
+
+ The distance in pixels, center-to-center, between neighboring
+ rows/columns. It is assumed that it is the same for columns and rows.
+ See :attr:`mea_transform` also.
+
+`mea_transform`:
+ Default value::
+
+  - - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  - - 0.0
+    - 1.0
+    - 0.0
+    - 0.0
+  - - 0.0
+    - 0.0
+    - 1.0
+    - 0.0
+  - - 0.0
+    - 0.0
+    - 0.0
+    - 1.0
+
+ A 4x4 matrix that controls the rotation, offset, and scaling of the
+ mea array relative to the camera.
+ This is a grid that corresponds to the electrodes in the electrode array.
+ In the Ceed GUI, a user can transform this grid, in addition to
+ :attr:`mirror_mea` until it fully aligns with a camera image of the grid
+ from the actual array.
+ See also :ref:`view-flip` and the other ``mea_`` properties of this class.
+
+`mirror_mea`:
+ Default value::
+
+  true
+
+ When True, the MEA grid is mirrored vertically around the center.
+ See :attr:`mea_transform` also.
+
+`output_count`:
+ Default value::
+
+  true
+
+ Whether the corner pixel is used to output frame information on the
+ PROPixx controller IO pot as described in
+ :class:`~ceed.storage.controller.DataSerializerBase`.
+ If True, :class:`ceed.storage.controller.DataSerializerBase` is used to set
+ the 24 bits of the corner pixel. Otherwise, that pixel is treated like the
+ other normal pixels.
+
+`pad_to_stage_handshake`:
+ Default value::
+
+  true
+
+ Ad described in :class:`~ceed.storage.controller.DataSerializerBase`,
+ Ceed sends handshaking data to the MCS system at the start of each
+ experiment. This helps us align the Ceed and MCS data afterwards. If the
+ root stage of the experiment is too short, it's possible the full handshake
+ would not be sent, preventing alignment afterwards.
+ If :attr:`pad_to_stage_handshake`, then the root stage will be padded
+ so it goes for the minimum number of clock frames required to finish
+ the handshake, if it's too short. The shapes will be black for those
+ padded frames.
+
+`pre_compute_stages`:
+ Default value::
+
+  false
+
+ Whether the stage run by the experiment should be pre-computed. See
+ :ref:`pre-compute` for details.
+
+`screen_height`:
+ Default value::
+
+  1080
+
+ The screen height in pixels on which the data is played. This is the
+ full-screen height.
+
+`screen_offset_x`:
+ Default value::
+
+  0
+
+ When there are multiple monitors, the monitor on which the experiment is
+ shown in full-screen mode is controlled by the x-position of the displayed
+ window.
+ E.g. to show it on the right monitor of two monitors each 1920 pixel wide,
+ and with the main monitor being on the left. Then the
+ :attr:`screen_offset_x` should be set to ``1920``.
+
+`screen_width`:
+ Default value::
+
+  1920
+
+ The screen width in pixels on which the data is played. This is the
+ full-screen width.
+
+`skip_estimated_missed_frames`:
+ Default value::
+
+  true
+
+ Whether to drop frames to compensate when we detect that a previous
+ frame was displayed for longer than a single GPU frame duration. Then, we
+ may want to drop an equivalent number of frames, rather than
+ displaying all the subsequent frames at a delay.
+ See :class:`FrameEstimation` and :class:`TeensyFrameEstimation` for how
+ we detect these long frames. Use :attr:`TeensyFrameEstimation.use_teensy`
+ to control which estimator is used.
+
+`use_software_frame_rate`:
+ Default value::
+
+  false
+
+ Depending on the CPU/GPU, the software may be unable to render faster
+ than the GPU refresh rate. In that case, the GPU limits us to the GPU frame
+ rate and :attr:`frame_rate` should be set to match the GPU refresh rate
+ and this should be False.
+ If the GPU isn't forcing a frame rate. Then this should be True and
+ :attr:`frame_rate` should be the desired frame rate. That will restrict us
+ the given frame rate. However, the actual frame rate will be wildly
+ inaccurate in this mode, so it's only useful for testing.
+ One can tell whether the GPU is forcing a frame rate by setting
+ :attr:`frame_rate` to a large value and setting
+ :attr:`use_software_frame_rate` to False and seeing what the resultant
+ frame rate is. If it isn't capped at some value constant, e.g. 120Hz, it
+ means that the GPU isn't forcing a rate.
+
+`video_mode`:
+ Default value::
+
+  RGB
+
+ The current video mode from among the :attr:`video_modes`.
+ See also :ref:`view-video-mode`.
+
+
+teensy_frame_estimation
+```````````````````````
+
+`usb_product_id`:
+ Default value::
+
+  1158
+
+ The Teensy product ID. This is how we find the attached Teensy on the
+ bus. If there's more than one, this needs to be modified.
+
+`usb_vendor_id`:
+ Default value::
+
+  5824
+
+ The Teensy vendor ID. This is how we find the attached Teensy on the
+ bus. If there's more than one, this needs to be modified.
+
+`use_teensy`:
+ Default value::
+
+  true
+
+ Whether to use the Teensy.
+ If it's not attached, set this to False. When False, it falls back on
+ :class:`FrameEstimation`.
+
+
+frame_estimation
+````````````````
+
+`skip_detection_smoothing_n_frames`:
+ Default value::
+
+  4
+
+ How many frames ot average to detect when a frame needs to be skipped.
+ See class description.
+
+
+serializer
+----------
+
+`clock_idx`:
+ Default value::
+
+  2
+
+ The bit index to use for the clock.
+ A number between 0-23, inclusive.
+
+`count_indices`:
+ Default value::
+
+  - 19
+  - 20
+
+ A list of bit indices to use for the long counter as explained in
+ :class:`DataSerializerBase`.
+ Each item is a number between 0-23, inclusive. Their order is the order of
+ the counter bit pattern. The first index is for the first (least
+ significant) bit of the counter etc.
+ If the length of :attr:`count_indices` doesn't divide
+ :attr:`counter_bit_width` exactly, the ends are padded with zeros for those
+ bits.
+
+`counter_bit_width`:
+ Default value::
+
+  32
+
+ The number of bits in the long counter, as described in
+ :class:`DataSerializerBase`.
+ Must be a multiple of 8 (to align with a byte).
+
+`projector_to_aquisition_map`:
+ Default value::
+
+  2: 0
+  3: 1
+  4: 2
+  10: 3
+  11: 4
+  12: 5
+  18: 6
+  19: 7
+  20: 8
+
+ Maps the bit indices used by Ceed to the corresponding bit indices used
+ by MCS. It is required to be able to align the two systems.
+ I.e. if port zero of the projector is connected to port 3 of the MCS
+ controller, then this would be ``{0: 3}``.
+
+`short_count_indices`:
+ Default value::
+
+  - 3
+  - 4
+  - 10
+  - 11
+  - 12
+  - 18
+
+ A list of bit indices to use for the short counter as explained in
+ :class:`DataSerializerBase`.
+ Each item is a number between 0-23, inclusive. Their order is the order of
+ the counter bit pattern. E.g. if it was ``[1, 3]``, the the bit pattern for
+ just the counter would look like: 0b0000, 0b0010, 0b1000, 0b1010, 0b0000,
+ 0b0010, 0b1000...
+
+
+player
+------
+
+`player_name`:
+ Default value::
+
+  ffmpeg
+
+ The name of the currently selected video player. It is one of "ffmpeg",
+ "thor", "ptgray", or "client".
+
+
+video_recorder
+``````````````
+
+`estimate_record_rate`:
+ Default value::
+
+  false
+
+ Whether to use :attr:`cpl_media.player.BasePlayer.real_rate` for the
+ recorder frame rate, as opposed to the one initially provided by the
+ player.
+
+`metadata_record`:
+ Default value::
+
+  null
+
+ (internal) Describes the video metadata of the recorder. This is
+ the requested format, or best guess of the metadata.
+ Read only.
+
+`record_directory`:
+ Default value::
+
+  /home/runner
+
+ The directory into which videos should be saved.
+
+`record_fname`:
+ Default value::
+
+  video{}.mkv
+
+ The filename to be used to record the next video.
+ If ``{}`` is present in the filename, it'll be replaced with the value of
+ :attr:`record_fname_count` which auto increments after every video, when
+ used. We use Python's ``format`` machinery for this.
+
+`record_fname_count`:
+ Default value::
+
+  0
+
+ A counter that auto increments by one after every recorded video.
+ Used to give unique filenames for each video file. See
+ :attr:`record_fname`.
+
+
+thor
+````
+
+`binning_x`:
+ Default value::
+
+  0
+
+ The x binning value to use.
+
+`binning_x_range`:
+ Default value::
+
+  - 0
+  - 0
+
+ The supported exposure range.
+
+`binning_y`:
+ Default value::
+
+  0
+
+ The y binning value to use.
+
+`binning_y_range`:
+ Default value::
+
+  - 0
+  - 0
+
+ The supported exposure range.
+
+`black_level`:
+ Default value::
+
+  0
+
+ The black level value to use.
+
+`black_level_range`:
+ Default value::
+
+  - 0
+  - 100
+
+ The supported exposure range.
+
+`color_gain`:
+ Default value::
+
+  - 1
+  - 1
+  - 1
+
+ The color gain for each red, green, and blue channel.
+
+`exposure_ms`:
+ Default value::
+
+  0
+
+ The exposure value in ms to use.
+
+`exposure_range`:
+ Default value::
+
+  - 0
+  - 100
+
+ The supported exposure range in ms.
+
+`frame_queue_size`:
+ Default value::
+
+  1
+
+ The max number of image frames to be allowed on the camera's hardware
+ queue. Once exceeded, the frames are dropped.
+
+`freq`:
+ Default value::
+
+  20 MHz
+
+ The frequency to use.
+
+`gain`:
+ Default value::
+
+  0
+
+ The gain value to use.
+
+`gain_range`:
+ Default value::
+
+  - 0
+  - 100
+
+ The supported exposure range.
+
+`metadata_play`:
+ Default value::
+
+  null
+
+ (internal) Describes the video metadata of the video player. This is
+ the requested format, or best guess of the metadata.
+ Read only.
+
+`metadata_play_used`:
+ Default value::
+
+  null
+
+ (internal) Describes the video metadata of the video player that is
+ actually used by the player. This must be set before recorders may allow
+ recording the player.
+ Depending on the metadata needed by the recorder, it may refuse to
+ record until the needed metadata is given.
+ Read only.
+
+`num_queued_frames`:
+ Default value::
+
+  0
+
+ The number of image frames currently on the camera's hardware queue.
+
+`roi_height`:
+ Default value::
+
+  0
+
+ The height after the y start position of the ROI in pixels, to use.
+
+`roi_width`:
+ Default value::
+
+  0
+
+ The width after the x start position of the ROI in pixels, to use.
+
+`roi_x`:
+ Default value::
+
+  0
+
+ The x start position of the ROI in pixels.
+
+`roi_y`:
+ Default value::
+
+  0
+
+ The y start position of the ROI in pixels.
+
+`sensor_size`:
+ Default value::
+
+  - 0
+  - 0
+
+ The size of the sensor in pixels.
+
+`serial`:
+ Default value::
+
+  ''
+
+ The serial number of the camera that will be opened.
+
+`serials`:
+ Default value::
+
+  []
+
+ The list of serial numbers representing the cameras available.
+
+`supported_freqs`:
+ Default value::
+
+  - 20 MHz
+
+ The supported frequencies.
+
+`supported_taps`:
+ Default value::
+
+  - '1'
+
+ The supported taps.
+
+`supported_triggers`:
+ Default value::
+
+  - SW Trigger
+  - HW Trigger
+
+ The trigger types supported by the camera.
+
+`supports_color`:
+ Default value::
+
+  false
+
+ Whether the camera supports color.
+
+`taps`:
+ Default value::
+
+  '1'
+
+ The tap to use.
+
+`trigger_count`:
+ Default value::
+
+  0
+
+ The number of frames to capture in response to the trigger.
+
+`trigger_type`:
+ Default value::
+
+  SW Trigger
+
+ The trigger type of the camera to use.
+
+
+ptgray
+``````
+
+`brightness`:
+ Default value::
+
+  {}
+
+ The camera options for the brightness setting.
+ This may only be set by calling :meth:`ask_cam_option_config`, not
+ set directly.
+
+`cam_config_opts`:
+ Default value::
+
+  fmt: yuv422
+
+ The configuration options used to configure the camera after opening.
+ This are internal and can only be set by the internal thread once
+ initially set by config.
+
+`exposure`:
+ Default value::
+
+  {}
+
+ The camera options for the exposure setting.
+ This may only be set by calling :meth:`ask_cam_option_config`, not
+ set directly.
+
+`frame_rate`:
+ Default value::
+
+  {}
+
+ The camera options for the frame_rate setting.
+ This may only be set by calling :meth:`ask_cam_option_config`, not
+ set directly.
+
+`gain`:
+ Default value::
+
+  {}
+
+ The camera options for the gain setting.
+ This may only be set by calling :meth:`ask_cam_option_config`, not
+ set directly.
+
+`gamma`:
+ Default value::
+
+  {}
+
+ The camera options for the gamma setting.
+ This may only be set by calling :meth:`ask_cam_option_config`, not
+ set directly.
+
+`hue`:
+ Default value::
+
+  {}
+
+ The camera options for the hue setting.
+ This may only be set by calling :meth:`ask_cam_option_config`, not
+ set directly.
+
+`ip`:
+ Default value::
+
+  ''
+
+ The IP address of the camera to open. Either :attr:`ip` or
+ :attr:`serial` must be provided.
+
+`iris`:
+ Default value::
+
+  {}
+
+ The camera options for the iris setting.
+ This may only be set by calling :meth:`ask_cam_option_config`, not
+ set directly.
+
+`metadata_play`:
+ Default value::
+
+  null
+
+ (internal) Describes the video metadata of the video player. This is
+ the requested format, or best guess of the metadata.
+ Read only.
+
+`metadata_play_used`:
+ Default value::
+
+  null
+
+ (internal) Describes the video metadata of the video player that is
+ actually used by the player. This must be set before recorders may allow
+ recording the player.
+ Depending on the metadata needed by the recorder, it may refuse to
+ record until the needed metadata is given.
+ Read only.
+
+`mirror`:
+ Default value::
+
+  false
+
+ Whether the camera is mirrored. Read only.
+
+`pan`:
+ Default value::
+
+  {}
+
+ The camera options for the pan setting.
+ This may only be set by calling :meth:`ask_cam_option_config`, not
+ set directly.
+
+`saturation`:
+ Default value::
+
+  {}
+
+ The camera options for the saturation setting.
+ This may only be set by calling :meth:`ask_cam_option_config`, not
+ set directly.
+
+`serial`:
+ Default value::
+
+  0
+
+ The serial number of the camera to open. Either :attr:`ip` or
+ :attr:`serial` must be provided.
+
+`sharpness`:
+ Default value::
+
+  {}
+
+ The camera options for the sharpness setting.
+ This may only be set by calling :meth:`ask_cam_option_config`, not
+ set directly.
+
+`shutter`:
+ Default value::
+
+  {}
+
+ The camera options for the shutter setting.
+ This may only be set by calling :meth:`ask_cam_option_config`, not
+ set directly.
+
+`tilt`:
+ Default value::
+
+  {}
+
+ The camera options for the tilt setting.
+ This may only be set by calling :meth:`ask_cam_option_config`, not
+ set directly.
+
+
+network_client
+``````````````
+
+`metadata_play`:
+ Default value::
+
+  null
+
+ (internal) Describes the video metadata of the video player. This is
+ the requested format, or best guess of the metadata.
+ Read only.
+
+`metadata_play_used`:
+ Default value::
+
+  null
+
+ (internal) Describes the video metadata of the video player that is
+ actually used by the player. This must be set before recorders may allow
+ recording the player.
+ Depending on the metadata needed by the recorder, it may refuse to
+ record until the needed metadata is given.
+ Read only.
+
+`port`:
+ Default value::
+
+  0
+
+ The server port that broadcasts the data.
+
+`server`:
+ Default value::
+
+  ''
+
+ The server address that broadcasts the data.
+
+`timeout`:
+ Default value::
+
+  0.01
+
+ How long to wait before timing out when reading data before checking the
+ queue for other requests.
+
+
+image_file_recorder
+```````````````````
+
+`compression`:
+ Default value::
+
+  raw
+
+ Whether to compress when :attr:`extension` is `tiff`. Can be one of
+ ``'raw', 'lzw', 'zip'``.
+
+`extension`:
+ Default value::
+
+  tiff
+
+ The extension of the images being saved.
+
+`metadata_record`:
+ Default value::
+
+  null
+
+ (internal) Describes the video metadata of the recorder. This is
+ the requested format, or best guess of the metadata.
+ Read only.
+
+`record_directory`:
+ Default value::
+
+  /home/runner
+
+ The directory into which videos should be saved.
+
+`record_prefix`:
+ Default value::
+
+  image_
+
+ The prefix to the filename of the images being saved.
+
+
+ffmpeg
+``````
+
+`dshow_filename`:
+ Default value::
+
+  ''
+
+ The name of the dshow camera to open.
+
+`dshow_opt`:
+ Default value::
+
+  ''
+
+ The camera options associated with :attr:`dshow_true_filename` when
+ dshow is used.
+
+`dshow_rate`:
+ Default value::
+
+  0
+
+ The frame rate to request from the dshow camera.
+
+`dshow_true_filename`:
+ Default value::
+
+  ''
+
+ The real and complete filename of the direct show (webcam) device.
+
+`file_fmt`:
+ Default value::
+
+  ''
+
+ The format used to play the video. Can be empty or a format e.g.
+ ``mjpeg`` for webcams.
+
+`icodec`:
+ Default value::
+
+  ''
+
+ The codec used to open the video stream with if it needs to be
+ specified for the camera.
+
+`metadata_play`:
+ Default value::
+
+  null
+
+ (internal) Describes the video metadata of the video player. This is
+ the requested format, or best guess of the metadata.
+ Read only.
+
+`metadata_play_used`:
+ Default value::
+
+  null
+
+ (internal) Describes the video metadata of the video player that is
+ actually used by the player. This must be set before recorders may allow
+ recording the player.
+ Depending on the metadata needed by the recorder, it may refuse to
+ record until the needed metadata is given.
+ Read only.
+
+`play_filename`:
+ Default value::
+
+  ''
+
+ The filename of the media being played. Can be e.g. a filename etc.
+
+`use_dshow`:
+ Default value::
+
+  true
+
+ Whether we use dshow - i.e. USB webcams, or normal media sources.
+
+
+function
+--------
+
+
+data
+----
+
+`backup_interval`:
+ Default value::
+
+  5.0
+
+ How frequently the backup file is flushed to disk.
+ The backup file is the one into which all new data is written to
+ until saved explicitly in the GUI to the current data file. Until that
+ happens, we write date to the backup file.
+
+`compression`:
+ Default value::
+
+  Auto
+
+ Whether the h5 data file should internally compress the data that it
+ writes.
+ This is handled internally by the H5 library, with no external difference
+ in how the file is loaded/saved/accessed, except that the file size may be
+ smaller when compressed. Additionally, it may take a little more CPU when
+ saving experiment data if compressions is enabled.
+ Valid values are ``"ZIP"``, ``"None"``, or ``"Auto"``.
+
+`root_path`:
+ Default value::
+
+  ''
+
+ The directory part of the path where the data is saved.
+

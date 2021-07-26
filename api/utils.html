@@ -1,0 +1,335 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Utilities &mdash; Ceed  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Graphics API" href="graphics/api.html" />
+    <link rel="prev" title="Video Player" href="player.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Ceed
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../blueprint.html">System Blueprint</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../config.html">CEED Config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../example_code/example_code.html">Example Analysis Code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../apps/apps.html">Ceed Apps</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="api.html">The Ceed API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="ceed.html">Ceed</a></li>
+<li class="toctree-l2"><a class="reference internal" href="analysis/api.html">Analysis API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="function/api.html">Function API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shape/api.html">Shape API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="stage/api.html">Stage API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="view/api.html">Experiment API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="storage/api.html">Storage API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html">Video Player</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="graphics/api.html">Graphics API</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../optics/optics.html">Microscope optics</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Ceed</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="api.html">The Ceed API</a> &raquo;</li>
+        
+      <li>Utilities</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/api/utils.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <span class="target" id="module-ceed.utils"></span><div class="section" id="utilities">
+<h1>Utilities<a class="headerlink" href="#utilities" title="Permalink to this headline">¶</a></h1>
+<p>Various tools used in <a class="reference internal" href="ceed.html#module-ceed" title="ceed"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ceed</span></code></a>.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="ceed.utils.fix_name">
+<span class="sig-prename descclassname"><span class="pre">ceed.utils.</span></span><span class="sig-name descname"><span class="pre">fix_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">names</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.utils.fix_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fixes the name so that it is unique among the names in <code class="docutils literal notranslate"><span class="pre">names</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Params</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><cite>name</cite>: str</dt><dd><p>A name of something</p>
+</dd>
+<dt><cite>*names</cite>: iterables of strings</dt><dd><p>Positional argument, where each is a iterable of strings among
+which we ensure that the returned name is unique.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A string that is unique among all the <code class="docutils literal notranslate"><span class="pre">names</span></code>, but is similar to
+<code class="docutils literal notranslate"><span class="pre">name</span></code>. We append a integer to make it unique.</p>
+</dd>
+</dl>
+<p>E.g.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">fix_name</span><span class="p">(</span><span class="s1">&#39;troll&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;toll&#39;</span><span class="p">,</span> <span class="s1">&#39;foll&#39;</span><span class="p">],</span> <span class="p">[</span><span class="s1">&#39;bole&#39;</span><span class="p">,</span> <span class="s1">&#39;cole&#39;</span><span class="p">])</span>
+<span class="go">&#39;troll&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fix_name</span><span class="p">(</span><span class="s1">&#39;troll&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;troll&#39;</span><span class="p">,</span> <span class="s1">&#39;toll&#39;</span><span class="p">,</span> <span class="s1">&#39;foll&#39;</span><span class="p">],</span> <span class="p">[</span><span class="s1">&#39;bole&#39;</span><span class="p">,</span> <span class="s1">&#39;cole&#39;</span><span class="p">])</span>
+<span class="go">&#39;troll-2&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fix_name</span><span class="p">(</span><span class="s1">&#39;troll&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;troll-2&#39;</span><span class="p">,</span> <span class="s1">&#39;toll&#39;</span><span class="p">,</span> <span class="s1">&#39;foll&#39;</span><span class="p">],</span> <span class="p">[</span><span class="s1">&#39;bole&#39;</span><span class="p">,</span> <span class="s1">&#39;cole&#39;</span><span class="p">])</span>
+<span class="go">&#39;troll&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fix_name</span><span class="p">(</span><span class="s1">&#39;troll&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;troll&#39;</span><span class="p">,</span> <span class="s1">&#39;troll-2&#39;</span><span class="p">,</span> <span class="s1">&#39;toll&#39;</span><span class="p">,</span> <span class="s1">&#39;foll&#39;</span><span class="p">],</span> <span class="p">[</span><span class="s1">&#39;bole&#39;</span><span class="p">,</span> <span class="s1">&#39;cole&#39;</span><span class="p">])</span>
+<span class="go">&#39;troll-3&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ceed.utils.update_key_if_other_key">
+<span class="sig-prename descclassname"><span class="pre">ceed.utils.</span></span><span class="sig-name descname"><span class="pre">update_key_if_other_key</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">items</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">other_key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key_map</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.utils.update_key_if_other_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a dict, or list/tuple of dicts (recursively), it goes through all
+the dicts and updates the keys who match.</p>
+<p>Specifically, if a key matches <code class="docutils literal notranslate"><span class="pre">key</span></code>, its value matches <code class="docutils literal notranslate"><span class="pre">value</span></code>,
+there’s another key named <code class="docutils literal notranslate"><span class="pre">other_key</span></code> in the dict, and the <code class="docutils literal notranslate"><span class="pre">value</span></code> of
+<code class="docutils literal notranslate"><span class="pre">other_key</span></code> is in <code class="docutils literal notranslate"><span class="pre">key_map</span></code>, then the value of <code class="docutils literal notranslate"><span class="pre">other_key</span></code> is
+updated to that value from <code class="docutils literal notranslate"><span class="pre">key_map</span></code>.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ceed.utils.collapse_list_to_counts">
+<span class="sig-prename descclassname"><span class="pre">ceed.utils.</span></span><span class="sig-name descname"><span class="pre">collapse_list_to_counts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">values</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">list</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ceed.utils.collapse_list_to_counts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts a sequence of items to tuples of the item and count of
+sequential items.</p>
+<p>E.g.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">collapse_list_to_counts</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,])</span>
+<span class="go">[(1, 2), (2, 1), (3, 1), (1, 3), (3, 1)]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ceed.utils.get_plugin_modules">
+<span class="sig-prename descclassname"><span class="pre">ceed.utils.</span></span><span class="sig-name descname"><span class="pre">get_plugin_modules</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_package</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">root</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">pathlib.Path</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span> </span><span class="pre">bytes</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ceed.utils.get_plugin_modules" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes a package name and it’s corresponding root path and returns a list
+of the modules recursively within this package, as well as the source files
+in bytes.</p>
+<p>Only <code class="docutils literal notranslate"><span class="pre">*.py</span></code> files are considered, and although included with the source
+bytes, the <code class="docutils literal notranslate"><span class="pre">packages</span></code> list skips any files that start with a underscore
+(except <code class="docutils literal notranslate"><span class="pre">__init__.py</span></code> of course).</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.utils.CeedWithID">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.utils.</span></span><span class="sig-name descname"><span class="pre">CeedWithID</span></span><a class="headerlink" href="#ceed.utils.CeedWithID" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Adds <a class="reference internal" href="#ceed.utils.CeedWithID.ceed_id" title="ceed.utils.CeedWithID.ceed_id"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ceed_id</span></code></a> to the class so that any inheriting class instance
+can be associated with a unique integer ID for logging purposes.</p>
+<p>The ID is not automatically set for every object, it is manually set
+when <a class="reference internal" href="#ceed.utils.CeedWithID.set_ceed_id" title="ceed.utils.CeedWithID.set_ceed_id"><code class="xref py py-meth docutils literal notranslate"><span class="pre">set_ceed_id()</span></code></a> is called. See stage/function for when it’s called.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.utils.CeedWithID.ceed_id">
+<span class="sig-name descname"><span class="pre">ceed_id</span></span><em class="property"><span class="pre">:</span> <span class="pre">int</span></em><em class="property"> <span class="pre">=</span> <span class="pre">0</span></em><a class="headerlink" href="#ceed.utils.CeedWithID.ceed_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>The integer id of the object.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.utils.CeedWithID.set_ceed_id">
+<span class="sig-name descname"><span class="pre">set_ceed_id</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">min_available</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#ceed.utils.CeedWithID.set_ceed_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the ID of this and any sub objects, each to a number equal or
+greater than <code class="docutils literal notranslate"><span class="pre">min_available</span></code> and returns the next minimum number
+available to be used.</p>
+<p>See <a class="reference internal" href="analysis/analysis.html#ceed.analysis.CeedDataReader.event_data" title="ceed.analysis.CeedDataReader.event_data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">event_data</span></code></a> for more details.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>min_available</strong> – The minimum number available to be used for the
+ID so it is unique.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The next minimum available number that can be used. Any number
+larger or equal to it is free to be used.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="graphics/api.html" class="btn btn-neutral float-right" title="Graphics API" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="player.html" class="btn btn-neutral float-left" title="Video Player" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2019, Matthew Einhorn.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

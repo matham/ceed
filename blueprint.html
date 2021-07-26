@@ -1,0 +1,319 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>System Blueprint &mdash; Ceed  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Installation" href="installation.html" />
+    <link rel="prev" title="Getting Started" href="getting_started.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> Ceed
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">System Blueprint</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#ceed">Ceed</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#vpixx">VPixx</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#multichannel-systems-mcs">Multichannel Systems (MCS)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#camera">Camera</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#data-alignment">Data alignment</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#networked-pcs">Networked PCs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#teensy">Teensy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#microscope">Microscope</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="guide/guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="config.html">CEED Config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_code/example_code.html">Example Analysis Code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="apps/apps.html">Ceed Apps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/api.html">The Ceed API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="optics/optics.html">Microscope optics</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Ceed</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>System Blueprint</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/blueprint.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="system-blueprint">
+<span id="ceed-blueprint"></span><h1>System Blueprint<a class="headerlink" href="#system-blueprint" title="Permalink to this headline">¶</a></h1>
+<p>The goal of the system mostly controlled by Ceed is to:</p>
+<ol class="arabic simple">
+<li><p>visually locate neurons in the brain tissue,</p></li>
+<li><p>optically stimulate the tissue with temporal-spatial precision,</p></li>
+<li><p>simultaneously record the voltage of the neurons in the tissue
+being stimulated with a dense electrode array (e.g. 256 electrodes),</p></li>
+<li><p>temporally align the optical stimulation with electrode activity in a single data file post-hoc.</p></li>
+</ol>
+<p>The overall system looks as follows</p>
+<img alt="_images/physical_drawing.svg" src="_images/physical_drawing.svg" /><div class="section" id="ceed">
+<span id="blueprint-ceed"></span><h2>Ceed<a class="headerlink" href="#ceed" title="Permalink to this headline">¶</a></h2>
+<p>In the diagram, Ceed is the software responsible for the spatial temporal stimulation.
+Users create spatial patterns in ceed, and associate temporal functions with the shapes.
+E.g. we may want to stimulate a single neuron with a sine wave, so we draw a circle around
+it and vary the circle’s intensity temporally using a sine function.</p>
+<p>Ceed generates the projector RGB output, as well as a synchronization signal recorded by MCS.
+After the experiment, Ceed temporally aligns and merges the MCS electrode data with the
+spacial-temporal patterns it generated.</p>
+<p>Ceed uses Python 3 and Kivy for the GUI. We have a dedicated Ubuntu computer that runs
+ceed.</p>
+</div>
+<div class="section" id="vpixx">
+<h2>VPixx<a class="headerlink" href="#vpixx" title="Permalink to this headline">¶</a></h2>
+<p>To stimulate the tissue, we use a <a class="reference external" href="https://vpixx.com/">VPixx projector</a> that can output
+frames upto 1440 Hz in greyscale or 500 Hz in RGB. Ceed generates the frames, which is sent
+to the projector, and then through the lenses until it reaches the tissue.</p>
+<p>The VPixx controller is responsible for converting the corner pixel RGB 24-bit value of each
+frame into a 5v 24-bit port logic output. Upto 16 of the ports are connected to and recorded
+by the MCS controller. Ceed especially generates a pattern that it subsequently uses to
+temporally align the two systems.</p>
+</div>
+<div class="section" id="multichannel-systems-mcs">
+<h2>Multichannel Systems (MCS)<a class="headerlink" href="#multichannel-systems-mcs" title="Permalink to this headline">¶</a></h2>
+<p>The <a class="reference external" href="https://www.multichannelsystems.com/">MCS system</a> is the electrode recording system
+and is responsible for recording any brain activity in the tissue. This is a dense electrode
+array, recording from many cells simultaneously.</p>
+<p>This system is controlled by MCS provided software that controls the electrode arrays
+and records the electrode data to ultimately HDF5 files.</p>
+</div>
+<div class="section" id="camera">
+<h2>Camera<a class="headerlink" href="#camera" title="Permalink to this headline">¶</a></h2>
+<p>We use a <a class="reference external" href="https://www.thorlabs.com">Thor camera</a> to capture light emitted by the tissue.
+In a typical experiment, first we broadly stimulate the tissue with light to see where
+the cells are present as captured by the camera. Then, we design stimulus in Ceed to
+stimulate the desired cells and observe the resulting electrical activity with MCS.</p>
+</div>
+<div class="section" id="data-alignment">
+<h2>Data alignment<a class="headerlink" href="#data-alignment" title="Permalink to this headline">¶</a></h2>
+<p>To temporally align the light stimulation data with the electrode recording system,
+Ceed uses a single pixel in each frame to provide a temporal pattern of upto 16-bit
+in each frame (there’s 24 bits available in a single pixel - RGB). VPixx doesn’t
+display this pixel, but instead sends it as a digital output
+on its controller for each frame. This signal is physically patched to the MCS system and is
+used for precise alignment between the stimulation and electrode recording system after
+the experiment.</p>
+</div>
+<div class="section" id="networked-pcs">
+<h2>Networked PCs<a class="headerlink" href="#networked-pcs" title="Permalink to this headline">¶</a></h2>
+<p>Because the linux PC is used to generate the Ceed frames which is output to the projector,
+we cannot use that computer to view the camera images. When we tried attaching multiple
+screens, the GPU periodically missed frames, we suspect because the the two screens may not
+have supported the precise frame rate. Consequently, we use the Windows computer, already
+running the MCS software to control the Thor camera, display the images to the user and then
+pass them over the network to the Linux/Ceed PC for drawing.</p>
+</div>
+<div class="section" id="teensy">
+<h2>Teensy<a class="headerlink" href="#teensy" title="Permalink to this headline">¶</a></h2>
+<p>Although Ceed takes special care to reduce per-frame CPU, sometimes the CPU-GPU results in a
+frame taking two or more render cycles to render. E.g. at 120Hz, a single frame lasts 8.33ms.
+Sometimes the computer will miss the 8.33ms deadline and display the current frame twice before
+displaying the next frame. This effectively shifts all subsequent frames forward by 8.33ms,
+potentially disrupting the stimulated circuitry temporal patterns.</p>
+<p>We can recognize such long frames based on internal timing with high confidence, but
+only after a few frames have passed. The <a class="reference external" href="https://www.pjrc.com/teensy/">Teensy</a>,
+running in USB-interrupt mode at 8+ kHz, reduces the number of bad frames (typically to 2,
+the number of frames buffered) by giving Ceed quick feedback when it drops a frame. It
+notices the dropped frames by monitoring the above-mentioned VPixx 24-bits.</p>
+<p>Additionally, Ceed uses the Tennsy built-in LED to indicate the experiment status since
+the PC monitor is used entirely to project the patterns and cannot provide such feedback.</p>
+<p>The Teensy is optional and can be turned OFF within Ceed if it’s not available.</p>
+</div>
+<div class="section" id="microscope">
+<h2>Microscope<a class="headerlink" href="#microscope" title="Permalink to this headline">¶</a></h2>
+<p>The microscope, including the dichroic mirror controls the flow of light from the projector
+to the issue and from the tissue to the camera.</p>
+<p>The dichroic mirror reflects down the colors of light emitted by the projector onto the
+tissue. The tissue also emits different color wavelengths, which is passed through by the
+mirror to the camera.</p>
+<p>See <a class="reference internal" href="optics/optics.html#microscope-optics"><span class="std std-ref">Microscope optics</span></a> for a full specification of the Microscope.</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="installation.html" class="btn btn-neutral float-right" title="Installation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="getting_started.html" class="btn btn-neutral float-left" title="Getting Started" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2019, Matthew Einhorn.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

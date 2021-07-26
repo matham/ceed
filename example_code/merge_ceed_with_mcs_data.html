@@ -1,0 +1,313 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Merging Ceed Data with MCS Data &mdash; Ceed  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Reading Ceed Experiment Data" href="read_merged_data.html" />
+    <link rel="prev" title="Example Analysis Code" href="example_code.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Ceed
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../blueprint.html">System Blueprint</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../config.html">CEED Config</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="example_code.html">Example Analysis Code</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Merging Ceed Data with MCS Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="read_merged_data.html">Reading Ceed Experiment Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="show_merged_data.html">Plotting Ceed Experiment Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generate_movie.html">Generating Movie from Ceed Experiment Data</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../apps/apps.html">Ceed Apps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/api.html">The Ceed API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../optics/optics.html">Microscope optics</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Ceed</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="example_code.html">Example Analysis Code</a> &raquo;</li>
+        
+      <li>Merging Ceed Data with MCS Data</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/example_code/merge_ceed_with_mcs_data.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="merging-ceed-data-with-mcs-data">
+<span id="merge-example"></span><h1>Merging Ceed Data with MCS Data<a class="headerlink" href="#merging-ceed-data-with-mcs-data" title="Permalink to this headline">¶</a></h1>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="linenos"> 2</span><span class="sd">Merging Ceed Data with MCS Data</span>
+<span class="linenos"> 3</span><span class="sd">================================</span>
+<span class="linenos"> 4</span>
+<span class="linenos"> 5</span><span class="sd">The following script shows how to merge the ceed h5 data file that contains all</span>
+<span class="linenos"> 6</span><span class="sd">the experimental data from the projector stimulation side, with the multi-array</span>
+<span class="linenos"> 7</span><span class="sd">electrode (MEA) data recorded by the MCS system.</span>
+<span class="linenos"> 8</span>
+<span class="linenos"> 9</span><span class="sd">The MCS data must be first exported from the native MCS format to the h5</span>
+<span class="linenos">10</span><span class="sd">format.</span>
+<span class="linenos">11</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="linenos">12</span><span class="kn">import</span> <span class="nn">logging</span>
+<span class="linenos">13</span><span class="kn">import</span> <span class="nn">os.path</span>
+<span class="linenos">14</span>
+<span class="linenos">15</span><span class="kn">from</span> <span class="nn">ceed.analysis.merge_data</span> <span class="kn">import</span> <span class="n">CeedMCSDataMerger</span>
+<span class="linenos">16</span>
+<span class="linenos">17</span><span class="c1"># The ceed file with the projector experimental data</span>
+<span class="linenos">18</span><span class="n">ceed_file</span> <span class="o">=</span> <span class="s1">&#39;../data/experiment_data_ceed.h5&#39;</span>
+<span class="linenos">19</span><span class="c1"># The h5 file exported by MCS containing the MEA data</span>
+<span class="linenos">20</span><span class="n">mcs_file</span> <span class="o">=</span> <span class="s1">&#39;../data/experiment_data_mcs.h5&#39;</span>
+<span class="linenos">21</span><span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">ceed_file</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">mcs_file</span><span class="p">):</span>
+<span class="linenos">22</span>    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+<span class="linenos">23</span>        <span class="s1">&#39;Data not found, please manually extract ceed/examples/data/experiment&#39;</span>
+<span class="linenos">24</span>        <span class="s1">&#39;_data.zip to ceed/examples/data/&#39;</span><span class="p">)</span>
+<span class="linenos">25</span>
+<span class="linenos">26</span><span class="c1"># The ceed file that will be generated containing the time aligned and merged</span>
+<span class="linenos">27</span><span class="c1"># ceed data and MEA data between the two systems</span>
+<span class="linenos">28</span><span class="n">output_file</span> <span class="o">=</span> <span class="s1">&#39;../data/experiment_data_merged.h5&#39;</span>
+<span class="linenos">29</span><span class="c1"># Optional text notes that will be integrated into the merged file</span>
+<span class="linenos">30</span><span class="n">notes</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="linenos">31</span><span class="s2">At time x, the slice woke up</span>
+<span class="linenos">32</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="linenos">33</span><span class="c1"># Optional full filename of a text file containing notes that will be</span>
+<span class="linenos">34</span><span class="c1"># integrated into the merged file. This will be appended to the notes above</span>
+<span class="linenos">35</span><span class="n">notes_filename</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="linenos">36</span>
+<span class="linenos">37</span><span class="c1"># whether to skip failed alignments quietly or to print the exceptions</span>
+<span class="linenos">38</span><span class="n">debug</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="linenos">39</span>
+<span class="linenos">40</span><span class="c1"># class that actually merges the two files</span>
+<span class="linenos">41</span><span class="n">merger</span> <span class="o">=</span> <span class="n">CeedMCSDataMerger</span><span class="p">(</span>
+<span class="linenos">42</span>    <span class="n">ceed_filename</span><span class="o">=</span><span class="n">ceed_file</span><span class="p">,</span> <span class="n">mcs_filename</span><span class="o">=</span><span class="n">mcs_file</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="n">debug</span><span class="p">)</span>
+<span class="linenos">43</span>
+<span class="linenos">44</span><span class="c1"># read the MCS data - MCS data is one long file containing the data for all the</span>
+<span class="linenos">45</span><span class="c1"># ceed experiments that played. Ceed however, splits the data into experiments</span>
+<span class="linenos">46</span><span class="n">merger</span><span class="o">.</span><span class="n">read_mcs_data</span><span class="p">()</span>
+<span class="linenos">47</span><span class="c1"># read the overall data from this file, including the Ceed-MCS data link</span>
+<span class="linenos">48</span><span class="c1"># configuration required to be able to align the two files</span>
+<span class="linenos">49</span><span class="n">merger</span><span class="o">.</span><span class="n">read_ceed_data</span><span class="p">()</span>
+<span class="linenos">50</span><span class="c1"># this parses the Ceed-MCS data-link data adn tries to break the MCS data into</span>
+<span class="linenos">51</span><span class="c1"># experiments so we can later locate individual experiments for alignment</span>
+<span class="linenos">52</span><span class="n">merger</span><span class="o">.</span><span class="n">parse_mcs_data</span><span class="p">()</span>
+<span class="linenos">53</span>
+<span class="linenos">54</span><span class="c1"># print header for alignment logs</span>
+<span class="linenos">55</span><span class="nb">print</span><span class="p">(</span><span class="n">merger</span><span class="o">.</span><span class="n">get_skipped_frames_summary_header</span><span class="p">)</span>
+<span class="linenos">56</span>
+<span class="linenos">57</span><span class="c1"># this dictionary will accumulate the alignment metadata for all the</span>
+<span class="linenos">58</span><span class="c1"># experiments in the data files. Each item is an experiment</span>
+<span class="linenos">59</span><span class="n">alignment</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="linenos">60</span><span class="c1"># `get_experiment_numbers` lists all the experiments in the ceed file</span>
+<span class="linenos">61</span><span class="c1"># bad experiments to be ignored can be added to the `ignore_list`</span>
+<span class="linenos">62</span><span class="k">for</span> <span class="n">experiment</span> <span class="ow">in</span> <span class="n">merger</span><span class="o">.</span><span class="n">get_experiment_numbers</span><span class="p">(</span><span class="n">ignore_list</span><span class="o">=</span><span class="p">[]):</span>
+<span class="linenos">63</span>    <span class="c1"># read and parse the ceed data for this experiment</span>
+<span class="linenos">64</span>    <span class="n">merger</span><span class="o">.</span><span class="n">read_ceed_experiment_data</span><span class="p">(</span><span class="n">experiment</span><span class="p">)</span>
+<span class="linenos">65</span>    <span class="n">merger</span><span class="o">.</span><span class="n">parse_ceed_experiment_data</span><span class="p">()</span>
+<span class="linenos">66</span>
+<span class="linenos">67</span>    <span class="k">try</span><span class="p">:</span>
+<span class="linenos">68</span>        <span class="c1"># compute the alignment, ignore remaining frame if Ceed projected more</span>
+<span class="linenos">69</span>        <span class="c1"># frames than recorded in MCS file, e.g. if MCS stopped recording</span>
+<span class="linenos">70</span>        <span class="c1"># during experiment</span>
+<span class="linenos">71</span>        <span class="n">align</span> <span class="o">=</span> <span class="n">alignment</span><span class="p">[</span><span class="n">experiment</span><span class="p">]</span> <span class="o">=</span> <span class="n">merger</span><span class="o">.</span><span class="n">get_alignment</span><span class="p">(</span>
+<span class="linenos">72</span>            <span class="n">ignore_additional_ceed_frames</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="linenos">73</span>        <span class="c1"># see get_skipped_frames_summary for meaning of the printed values</span>
+<span class="linenos">74</span>        <span class="nb">print</span><span class="p">(</span><span class="n">merger</span><span class="o">.</span><span class="n">get_skipped_frames_summary</span><span class="p">(</span><span class="n">align</span><span class="p">,</span> <span class="n">experiment</span><span class="p">))</span>
+<span class="linenos">75</span>    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+<span class="linenos">76</span>        <span class="nb">print</span><span class="p">(</span>
+<span class="linenos">77</span>            <span class="s2">&quot;Couldn&#39;t align MCS and ceed data for experiment &quot;</span>
+<span class="linenos">78</span>            <span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> (</span><span class="si">{}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">experiment</span><span class="p">,</span> <span class="n">e</span><span class="p">))</span>
+<span class="linenos">79</span>        <span class="k">if</span> <span class="n">debug</span><span class="p">:</span>
+<span class="linenos">80</span>            <span class="n">logging</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="linenos">81</span>
+<span class="linenos">82</span><span class="c1"># now actually merge the files and include the alignment metadata</span>
+<span class="linenos">83</span><span class="n">merger</span><span class="o">.</span><span class="n">merge_data</span><span class="p">(</span>
+<span class="linenos">84</span>    <span class="n">output_file</span><span class="p">,</span> <span class="n">alignment</span><span class="p">,</span> <span class="n">notes</span><span class="o">=</span><span class="n">notes</span><span class="p">,</span> <span class="n">notes_filename</span><span class="o">=</span><span class="n">notes_filename</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="read_merged_data.html" class="btn btn-neutral float-right" title="Reading Ceed Experiment Data" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="example_code.html" class="btn btn-neutral float-left" title="Example Analysis Code" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2019, Matthew Einhorn.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

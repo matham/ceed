@@ -1,0 +1,385 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Parameter randomization &mdash; Ceed  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Function plugins" href="function_plugin.html" />
+    <link rel="prev" title="Function" href="function.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Ceed
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../blueprint.html">System Blueprint</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../guide/guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../config.html">CEED Config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../example_code/example_code.html">Example Analysis Code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../apps/apps.html">Ceed Apps</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">The Ceed API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../ceed.html">Ceed</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../analysis/api.html">Analysis API</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="api.html">Function API</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="function.html">Function</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Parameter randomization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="function_plugin.html">Function plugins</a></li>
+<li class="toctree-l3"><a class="reference internal" href="widgets.html">Function Widgets</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../shape/api.html">Shape API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../stage/api.html">Stage API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../view/api.html">Experiment API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../storage/api.html">Storage API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../player.html">Video Player</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils.html">Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../graphics/api.html">Graphics API</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../optics/optics.html">Microscope optics</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Ceed</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../api.html">The Ceed API</a> &raquo;</li>
+        
+          <li><a href="api.html">Function API</a> &raquo;</li>
+        
+      <li>Parameter randomization</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../../_sources/api/function/param_noise.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <span class="target" id="module-ceed.function.param_noise"></span><div class="section" id="parameter-randomization">
+<h1>Parameter randomization<a class="headerlink" href="#parameter-randomization" title="Permalink to this headline">¶</a></h1>
+<p>Provides the optional randomization for the parameters of a
+<a class="reference internal" href="function.html#ceed.function.FuncBase" title="ceed.function.FuncBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">FuncBase</span></code></a>. Each parameter of the function may be
+randomized according to <a class="reference internal" href="function.html#ceed.function.FuncBase.noisy_parameters" title="ceed.function.FuncBase.noisy_parameters"><code class="xref py py-attr docutils literal notranslate"><span class="pre">noisy_parameters</span></code></a>, that
+attaches a distribution to the parameter.</p>
+<p>This module provides a <a class="reference internal" href="#ceed.function.param_noise.ParameterNoiseFactory" title="ceed.function.param_noise.ParameterNoiseFactory"><code class="xref py py-class docutils literal notranslate"><span class="pre">ParameterNoiseFactory</span></code></a> used to register
+random distribution classes and it provides some built in distributions.</p>
+<p>Distributions can also be extended using the <a class="reference internal" href="function_plugin.html#module-ceed.function.plugin" title="ceed.function.plugin"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plugin</span></code></a>
+interface.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.function.param_noise.ParameterNoiseFactory">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.function.param_noise.</span></span><span class="sig-name descname"><span class="pre">ParameterNoiseFactory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.param_noise.ParameterNoiseFactory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">kivy._event.EventDispatcher</span></code></p>
+<p>Factory where distributions are registered and accessed by name.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.function.param_noise.ParameterNoiseFactory.noise_classes">
+<span class="sig-name descname"><span class="pre">noise_classes</span></span><em class="property"><span class="pre">:</span> <span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#ceed.function.param_noise.NoiseType" title="ceed.function.param_noise.NoiseType"><span class="pre">ceed.function.param_noise.NoiseType</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">=</span> <span class="pre">{}</span></em><a class="headerlink" href="#ceed.function.param_noise.ParameterNoiseFactory.noise_classes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Keeps all classes registered with <a class="reference internal" href="#ceed.function.param_noise.ParameterNoiseFactory.register_class" title="ceed.function.param_noise.ParameterNoiseFactory.register_class"><code class="xref py py-meth docutils literal notranslate"><span class="pre">register_class()</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.param_noise.ParameterNoiseFactory.register_class">
+<span class="sig-name descname"><span class="pre">register_class</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cls</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#ceed.function.param_noise.NoiseType" title="ceed.function.param_noise.NoiseType"><span class="pre">ceed.function.param_noise.NoiseType</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.function.param_noise.ParameterNoiseFactory.register_class" title="Permalink to this definition">¶</a></dt>
+<dd><p>Registers a <a class="reference internal" href="#ceed.function.param_noise.NoiseBase" title="ceed.function.param_noise.NoiseBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">NoiseBase</span></code></a> subclass, with the name of the class
+in <a class="reference internal" href="#ceed.function.param_noise.ParameterNoiseFactory.noise_classes" title="ceed.function.param_noise.ParameterNoiseFactory.noise_classes"><code class="xref py py-attr docutils literal notranslate"><span class="pre">noise_classes</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.param_noise.ParameterNoiseFactory.get_cls">
+<span class="sig-name descname"><span class="pre">get_cls</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#ceed.function.param_noise.NoiseType" title="ceed.function.param_noise.NoiseType"><span class="pre">ceed.function.param_noise.NoiseType</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ceed.function.param_noise.ParameterNoiseFactory.get_cls" title="Permalink to this definition">¶</a></dt>
+<dd><p>Looks up a noise class by name and returns it.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.param_noise.ParameterNoiseFactory.make_instance">
+<span class="sig-name descname"><span class="pre">make_instance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#ceed.function.param_noise.NoiseBase" title="ceed.function.param_noise.NoiseBase"><span class="pre">ceed.function.param_noise.NoiseBase</span></a></span></span><a class="headerlink" href="#ceed.function.param_noise.ParameterNoiseFactory.make_instance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes a noise distribution instance’s config, as returned by
+<a class="reference internal" href="#ceed.function.param_noise.NoiseBase.get_config" title="ceed.function.param_noise.NoiseBase.get_config"><code class="xref py py-meth docutils literal notranslate"><span class="pre">NoiseBase.get_config()</span></code></a>, and creates a noise distribution instance
+of that class and config, and returns it.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.function.param_noise.NoiseBase">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.function.param_noise.</span></span><span class="sig-name descname"><span class="pre">NoiseBase</span></span><a class="headerlink" href="#ceed.function.param_noise.NoiseBase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">kivy._event.EventDispatcher</span></code></p>
+<p>Base class that can be used to randomize a function parameter with
+<a class="reference internal" href="function.html#ceed.function.FuncBase.noisy_parameters" title="ceed.function.FuncBase.noisy_parameters"><code class="xref py py-attr docutils literal notranslate"><span class="pre">noisy_parameters</span></code></a>.</p>
+<p>Instances have a <a class="reference internal" href="#ceed.function.param_noise.NoiseBase.sample" title="ceed.function.param_noise.NoiseBase.sample"><code class="xref py py-meth docutils literal notranslate"><span class="pre">sample()</span></code></a> method that returns a random value when
+called. This is used to sample a new value for function parameters.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.function.param_noise.NoiseBase.lock_after_forked">
+<span class="sig-name descname"><span class="pre">lock_after_forked</span></span><em class="property"><span class="pre">:</span> <span class="pre">bool</span></em><a class="headerlink" href="#ceed.function.param_noise.NoiseBase.lock_after_forked" title="Permalink to this definition">¶</a></dt>
+<dd><p>Functions can reference other function. After the reference functions
+are expanded and copied before running the stage as an experiment, all
+randomized parameters whose <a class="reference internal" href="#ceed.function.param_noise.NoiseBase.lock_after_forked" title="ceed.function.param_noise.NoiseBase.lock_after_forked"><code class="xref py py-attr docutils literal notranslate"><span class="pre">lock_after_forked</span></code></a> is False are
+resampled.</p>
+<p>This allows the parameters with <a class="reference internal" href="#ceed.function.param_noise.NoiseBase.lock_after_forked" title="ceed.function.param_noise.NoiseBase.lock_after_forked"><code class="xref py py-attr docutils literal notranslate"><span class="pre">lock_after_forked</span></code></a> set to True to
+share the same random value as the original referenced function’s
+randomized value.</p>
+<p>See <a class="reference internal" href="../stage/stage.html#ceed.stage.CeedStage.copy_and_resample" title="ceed.stage.CeedStage.copy_and_resample"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ceed.stage.CeedStage.copy_and_resample()</span></code></a> for details.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.function.param_noise.NoiseBase.sample_each_loop">
+<span class="sig-name descname"><span class="pre">sample_each_loop</span></span><a class="headerlink" href="#ceed.function.param_noise.NoiseBase.sample_each_loop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether the parameter should be resampled for each loop iteration
+(True) or whether we sample once and use that sample for all loop
+iterations.</p>
+<p>The values are pre-sampled before the function is executed. If True, using
+<a class="reference internal" href="#ceed.function.param_noise.NoiseBase.sample_seq" title="ceed.function.param_noise.NoiseBase.sample_seq"><code class="xref py py-meth docutils literal notranslate"><span class="pre">sample_seq()</span></code></a>, otherwise, it’s sampled once with <a class="reference internal" href="#ceed.function.param_noise.NoiseBase.sample" title="ceed.function.param_noise.NoiseBase.sample"><code class="xref py py-meth docutils literal notranslate"><span class="pre">sample()</span></code></a>.</p>
+<p>For example, for the following function structure contained in a Stage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">CeedStage</span><span class="p">:</span>
+    <span class="n">name</span><span class="p">:</span> <span class="s1">&#39;stage&#39;</span>
+    <span class="n">loop</span><span class="p">:</span> <span class="mi">2</span>
+    <span class="n">GroupFunc</span><span class="p">:</span>
+        <span class="n">name</span><span class="p">:</span> <span class="s1">&#39;root&#39;</span>
+        <span class="n">loop</span><span class="p">:</span> <span class="mi">5</span>
+        <span class="n">GroupFunc</span><span class="p">:</span>
+            <span class="n">name</span><span class="p">:</span> <span class="s1">&#39;child_a&#39;</span>
+            <span class="n">loop</span><span class="p">:</span> <span class="mi">2</span>
+            <span class="n">ConstFunc</span><span class="p">:</span>
+                <span class="n">name</span><span class="p">:</span> <span class="s1">&#39;child&#39;</span>
+                <span class="n">loop</span><span class="p">:</span> <span class="mi">3</span>
+</pre></div>
+</div>
+<p>where the <code class="docutils literal notranslate"><span class="pre">child</span></code> function’s <code class="docutils literal notranslate"><span class="pre">a</span></code> parameter is randomized and
+the <code class="docutils literal notranslate"><span class="pre">child</span></code> function is looped <code class="docutils literal notranslate"><span class="pre">2</span> <span class="pre">*</span> <span class="pre">5</span> <span class="pre">*</span> <span class="pre">2</span> <span class="pre">*</span> <span class="pre">3</span> <span class="pre">=</span> <span class="pre">60</span></code> times total across
+the whole experiment.</p>
+<p>Then, if <a class="reference internal" href="#ceed.function.param_noise.NoiseBase.sample_each_loop" title="ceed.function.param_noise.NoiseBase.sample_each_loop"><code class="xref py py-attr docutils literal notranslate"><span class="pre">sample_each_loop</span></code></a> is False, we <a class="reference internal" href="#ceed.function.param_noise.NoiseBase.sample" title="ceed.function.param_noise.NoiseBase.sample"><code class="xref py py-meth docutils literal notranslate"><span class="pre">sample()</span></code></a> the parameter
+once and the same value is used for all 60 loop iterations. Otherwise, we
+pre-compute 60 samples using <a class="reference internal" href="#ceed.function.param_noise.NoiseBase.sample_seq" title="ceed.function.param_noise.NoiseBase.sample_seq"><code class="xref py py-meth docutils literal notranslate"><span class="pre">sample_seq()</span></code></a> from
+<a class="reference internal" href="function.html#ceed.function.FuncBase.resample_parameters" title="ceed.function.FuncBase.resample_parameters"><code class="xref py py-meth docutils literal notranslate"><span class="pre">resample_parameters()</span></code></a> and then update the
+parameter with each corresponding sample when the function or loop
+iteration is initialized (<a class="reference internal" href="function.html#ceed.function.FuncBase.init_func" title="ceed.function.FuncBase.init_func"><code class="xref py py-meth docutils literal notranslate"><span class="pre">init_func()</span></code></a> and
+<a class="reference internal" href="function.html#ceed.function.FuncBase.init_loop_iteration" title="ceed.function.FuncBase.init_loop_iteration"><code class="xref py py-meth docutils literal notranslate"><span class="pre">init_loop_iteration()</span></code></a>).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.param_noise.NoiseBase.sample">
+<span class="sig-name descname"><span class="pre">sample</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#ceed.function.param_noise.NoiseBase.sample" title="Permalink to this definition">¶</a></dt>
+<dd><p>Samples the distribution and returns a new value.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.param_noise.NoiseBase.sample_seq">
+<span class="sig-name descname"><span class="pre">sample_seq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ceed.function.param_noise.NoiseBase.sample_seq" title="Permalink to this definition">¶</a></dt>
+<dd><p>Samples the distribution <code class="docutils literal notranslate"><span class="pre">n</span></code> times and returns a list of values.</p>
+<p>By default it just calls <a class="reference internal" href="#ceed.function.param_noise.NoiseBase.sample" title="ceed.function.param_noise.NoiseBase.sample"><code class="xref py py-meth docutils literal notranslate"><span class="pre">sample()</span></code></a> <code class="docutils literal notranslate"><span class="pre">n</span></code> times to get the samples.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ceed.function.param_noise.NoiseBase.name">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="pre">:</span> <span class="pre">str</span></em><a class="headerlink" href="#ceed.function.param_noise.NoiseBase.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>The name of the class.</p>
+<p>This is the name used with <a class="reference internal" href="#ceed.function.param_noise.ParameterNoiseFactory.get_cls" title="ceed.function.param_noise.ParameterNoiseFactory.get_cls"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ParameterNoiseFactory.get_cls</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.param_noise.NoiseBase.get_config">
+<span class="sig-name descname"><span class="pre">get_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#ceed.function.param_noise.NoiseBase.get_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a dict representation of the instance that can be then
+be used to reconstruct it with
+<a class="reference internal" href="#ceed.function.param_noise.ParameterNoiseFactory.make_instance" title="ceed.function.param_noise.ParameterNoiseFactory.make_instance"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ParameterNoiseFactory.make_instance()</span></code></a>.</p>
+<p>This is also used to display the instance parameters to the user.
+We infer the type of each parameter from the property value.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.function.param_noise.NoiseBase.get_prop_pretty_name">
+<span class="sig-name descname"><span class="pre">get_prop_pretty_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ceed.function.param_noise.NoiseBase.get_prop_pretty_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a dict mapping names of the parameters used by the class
+to a nicer representation shown to the user.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="ceed.function.param_noise.NoiseType">
+<span class="sig-prename descclassname"><span class="pre">ceed.function.param_noise.</span></span><span class="sig-name descname"><span class="pre">NoiseType</span></span><a class="headerlink" href="#ceed.function.param_noise.NoiseType" title="Permalink to this definition">¶</a></dt>
+<dd><p>The type-hint type for <a class="reference internal" href="#ceed.function.param_noise.NoiseBase" title="ceed.function.param_noise.NoiseBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">NoiseBase</span></code></a>.</p>
+<p>alias of TypeVar(‘NoiseType’, bound=<a class="reference internal" href="#ceed.function.param_noise.NoiseBase" title="ceed.function.param_noise.NoiseBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">NoiseBase</span></code></a>)</p>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="function_plugin.html" class="btn btn-neutral float-right" title="Function plugins" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="function.html" class="btn btn-neutral float-left" title="Function" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2019, Matthew Einhorn.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

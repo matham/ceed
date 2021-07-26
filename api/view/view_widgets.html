@@ -1,0 +1,404 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Viewer widgets &mdash; Ceed  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Ceed Viewer side App" href="main.html" />
+    <link rel="prev" title="Experiment Controller" href="controller.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Ceed
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../blueprint.html">System Blueprint</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../guide/guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../config.html">CEED Config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../example_code/example_code.html">Example Analysis Code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../apps/apps.html">Ceed Apps</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">The Ceed API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../ceed.html">Ceed</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../analysis/api.html">Analysis API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../function/api.html">Function API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../shape/api.html">Shape API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../stage/api.html">Stage API</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="api.html">Experiment API</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="view.html">Experiment Viewer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="controller.html">Experiment Controller</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Viewer widgets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="main.html">Ceed Viewer side App</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../storage/api.html">Storage API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../player.html">Video Player</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils.html">Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../graphics/api.html">Graphics API</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../optics/optics.html">Microscope optics</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Ceed</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../api.html">The Ceed API</a> &raquo;</li>
+        
+          <li><a href="api.html">Experiment API</a> &raquo;</li>
+        
+      <li>Viewer widgets</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../../_sources/api/view/view_widgets.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <span class="target" id="module-ceed.view.view_widgets"></span><div class="section" id="viewer-widgets">
+<h1>Viewer widgets<a class="headerlink" href="#viewer-widgets" title="Permalink to this headline">¶</a></h1>
+<p>Defines widgets used with the <a class="reference internal" href="view.html#module-ceed.view" title="ceed.view"><code class="xref py py-mod docutils literal notranslate"><span class="pre">view</span></code></a> module. These widgets are used
+to control and display the experiment on screen, both when playing the
+experiment for preview and when playing the experiment full-screen in a second
+process.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.view.view_widgets.ViewRootFocusBehavior">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.view.view_widgets.</span></span><span class="sig-name descname"><span class="pre">ViewRootFocusBehavior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.view.view_widgets.ViewRootFocusBehavior" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://kivy.org/doc/stable/api-kivy.uix.behaviors.focus.html#kivy.uix.behaviors.focus.FocusBehavior" title="(in Kivy v2.0.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">kivy.uix.behaviors.focus.FocusBehavior</span></code></a></p>
+<p>The root widget used for the second process when the experiment is
+played. It adds focus behavior to the viewer.</p>
+<p>Whenever a key is pressed in the second process it is passed on to the
+controller in the main process who handles it as needed (possibly sending
+a message back to the second process).</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.view.view_widgets.ViewRootFocusBehavior.keyboard_on_key_down">
+<span class="sig-name descname"><span class="pre">keyboard_on_key_down</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">window</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keycode</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">modifiers</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.view.view_widgets.ViewRootFocusBehavior.keyboard_on_key_down" title="Permalink to this definition">¶</a></dt>
+<dd><p>The method bound to the keyboard when the instance has focus.</p>
+<p>When the instance becomes focused, this method is bound to the
+keyboard and will be called for every input press. The parameters are
+the same as <a class="reference external" href="https://kivy.org/doc/stable/api-kivy.core.window.html#kivy.core.window.WindowBase.on_key_down" title="(in Kivy v2.0.0)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">kivy.core.window.WindowBase.on_key_down()</span></code></a>.</p>
+<p>When overwriting the method in the derived widget, super should be
+called to enable tab cycling. If the derived widget wishes to use tab
+for its own purposes, it can call super after it has processed the
+character (if it does not wish to consume the tab).</p>
+<p>Similar to other keyboard functions, it should return True if the
+key was consumed.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.view.view_widgets.ViewRootFocusBehavior.keyboard_on_key_up">
+<span class="sig-name descname"><span class="pre">keyboard_on_key_up</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">window</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keycode</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.view.view_widgets.ViewRootFocusBehavior.keyboard_on_key_up" title="Permalink to this definition">¶</a></dt>
+<dd><p>The method bound to the keyboard when the instance has focus.</p>
+<p>When the instance becomes focused, this method is bound to the
+keyboard and will be called for every input release. The parameters are
+the same as <a class="reference external" href="https://kivy.org/doc/stable/api-kivy.core.window.html#kivy.core.window.WindowBase.on_key_up" title="(in Kivy v2.0.0)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">kivy.core.window.WindowBase.on_key_up()</span></code></a>.</p>
+<p>When overwriting the method in the derived widget, super should be
+called to enable de-focusing on escape. If the derived widget wishes
+to use escape for its own purposes, it can call super after it has
+processed the character (if it does not wish to consume the escape).</p>
+<p>See <a class="reference internal" href="#ceed.view.view_widgets.ViewRootFocusBehavior.keyboard_on_key_down" title="ceed.view.view_widgets.ViewRootFocusBehavior.keyboard_on_key_down"><code class="xref py py-meth docutils literal notranslate"><span class="pre">keyboard_on_key_down()</span></code></a></p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.view.view_widgets.MEAArrayAlign">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.view.view_widgets.</span></span><span class="sig-name descname"><span class="pre">MEAArrayAlign</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.view.view_widgets.MEAArrayAlign" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://kivy.org/doc/stable/api-kivy.uix.scatter.html#kivy.uix.scatter.Scatter" title="(in Kivy v2.0.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">kivy.uix.scatter.Scatter</span></code></a></p>
+<p>The widget used during the experiment design to help align the MEA
+electrode array to the camera and projector.</p>
+<p>It displays a grid of points that you can align to the real-world camera
+acquired picture of the electrode grid. See <a class="reference internal" href="controller.html#module-ceed.view.controller" title="ceed.view.controller"><code class="xref py py-mod docutils literal notranslate"><span class="pre">controller</span></code></a>
+for more details.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.view_widgets.MEAArrayAlign.num_rows">
+<span class="sig-name descname"><span class="pre">num_rows</span></span><a class="headerlink" href="#ceed.view.view_widgets.MEAArrayAlign.num_rows" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of rows.</p>
+<p>See <a class="reference internal" href="controller.html#ceed.view.controller.ViewControllerBase.mea_num_rows" title="ceed.view.controller.ViewControllerBase.mea_num_rows"><code class="xref py py-attr docutils literal notranslate"><span class="pre">mea_num_rows</span></code></a></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.view_widgets.MEAArrayAlign.num_cols">
+<span class="sig-name descname"><span class="pre">num_cols</span></span><a class="headerlink" href="#ceed.view.view_widgets.MEAArrayAlign.num_cols" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of columns.</p>
+<p>See <a class="reference internal" href="controller.html#ceed.view.controller.ViewControllerBase.mea_num_cols" title="ceed.view.controller.ViewControllerBase.mea_num_cols"><code class="xref py py-attr docutils literal notranslate"><span class="pre">mea_num_cols</span></code></a></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.view_widgets.MEAArrayAlign.pitch">
+<span class="sig-name descname"><span class="pre">pitch</span></span><a class="headerlink" href="#ceed.view.view_widgets.MEAArrayAlign.pitch" title="Permalink to this definition">¶</a></dt>
+<dd><p>The distance in pixels between the rows/columns.</p>
+<p>See <a class="reference internal" href="controller.html#ceed.view.controller.ViewControllerBase.mea_pitch" title="ceed.view.controller.ViewControllerBase.mea_pitch"><code class="xref py py-attr docutils literal notranslate"><span class="pre">mea_pitch</span></code></a></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.view_widgets.MEAArrayAlign.diameter">
+<span class="sig-name descname"><span class="pre">diameter</span></span><a class="headerlink" href="#ceed.view.view_widgets.MEAArrayAlign.diameter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Diameter of each electrode circle in pixels..</p>
+<p>See <a class="reference internal" href="controller.html#ceed.view.controller.ViewControllerBase.mea_diameter" title="ceed.view.controller.ViewControllerBase.mea_diameter"><code class="xref py py-attr docutils literal notranslate"><span class="pre">mea_diameter</span></code></a></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.view_widgets.MEAArrayAlign.show">
+<span class="sig-name descname"><span class="pre">show</span></span><a class="headerlink" href="#ceed.view.view_widgets.MEAArrayAlign.show" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether the grid is currently shown.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.view_widgets.MEAArrayAlign.color">
+<span class="sig-name descname"><span class="pre">color</span></span><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.view.view_widgets.MEAArrayAlign.color" title="Permalink to this definition">¶</a></dt>
+<dd><p>The grid color.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.view_widgets.MEAArrayAlign.label">
+<span class="sig-name descname"><span class="pre">label</span></span><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.view.view_widgets.MEAArrayAlign.label" title="Permalink to this definition">¶</a></dt>
+<dd><p>The label that shows the “A1” corner electrode.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.view_widgets.MEAArrayAlign.label2">
+<span class="sig-name descname"><span class="pre">label2</span></span><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.view.view_widgets.MEAArrayAlign.label2" title="Permalink to this definition">¶</a></dt>
+<dd><p>The label that shows the “M1” corner electrode.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.view.view_widgets.MEAArrayAlign.update_graphics">
+<span class="sig-name descname"><span class="pre">update_graphics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">largs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.view.view_widgets.MEAArrayAlign.update_graphics" title="Permalink to this definition">¶</a></dt>
+<dd><p>Automatic callback that updates the graphics whenever any parameter
+changes.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.view.view_widgets.MEAArrayAlign.on_touch_down">
+<span class="sig-name descname"><span class="pre">on_touch_down</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">touch</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.view.view_widgets.MEAArrayAlign.on_touch_down" title="Permalink to this definition">¶</a></dt>
+<dd><p>Receive a touch down event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><cite>touch</cite>: <a class="reference external" href="https://kivy.org/doc/stable/api-kivy.input.motionevent.html#kivy.input.motionevent.MotionEvent" title="(in Kivy v2.0.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">MotionEvent</span></code></a> class</dt><dd><p>Touch received. The touch is in parent coordinates. See
+<a class="reference external" href="https://kivy.org/doc/stable/api-kivy.uix.relativelayout.html#module-kivy.uix.relativelayout" title="(in Kivy v2.0.0)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">relativelayout</span></code></a> for a discussion on
+coordinate systems.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>bool
+If True, the dispatching of the touch event will stop.
+If False, the event will continue to be dispatched to the rest
+of the widget tree.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.view.view_widgets.MEAArrayAlign.on_touch_move">
+<span class="sig-name descname"><span class="pre">on_touch_move</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">touch</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.view.view_widgets.MEAArrayAlign.on_touch_move" title="Permalink to this definition">¶</a></dt>
+<dd><p>Receive a touch move event. The touch is in parent coordinates.</p>
+<p>See <a class="reference internal" href="#ceed.view.view_widgets.MEAArrayAlign.on_touch_down" title="ceed.view.view_widgets.MEAArrayAlign.on_touch_down"><code class="xref py py-meth docutils literal notranslate"><span class="pre">on_touch_down()</span></code></a> for more information.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.view.view_widgets.MEAArrayAlign.on_touch_up">
+<span class="sig-name descname"><span class="pre">on_touch_up</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">touch</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.view.view_widgets.MEAArrayAlign.on_touch_up" title="Permalink to this definition">¶</a></dt>
+<dd><p>Receive a touch up event. The touch is in parent coordinates.</p>
+<p>See <a class="reference internal" href="#ceed.view.view_widgets.MEAArrayAlign.on_touch_down" title="ceed.view.view_widgets.MEAArrayAlign.on_touch_down"><code class="xref py py-meth docutils literal notranslate"><span class="pre">on_touch_down()</span></code></a> for more information.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.view.view_widgets.MEAArrayAlign.make_matrix">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">make_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elems</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://kivy.org/doc/stable/api-kivy.graphics.transformation.html#kivy.graphics.transformation.Matrix" title="(in Kivy v2.0.0)"><span class="pre">kivy.graphics.transformation.Matrix</span></a></span></span><a class="headerlink" href="#ceed.view.view_widgets.MEAArrayAlign.make_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts a matrix represented as a 2D list to a kivy Matrix.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.view.view_widgets.MEAArrayAlign.compare_mat">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">compare_mat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mat</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://kivy.org/doc/stable/api-kivy.graphics.transformation.html#kivy.graphics.transformation.Matrix" title="(in Kivy v2.0.0)"><span class="pre">kivy.graphics.transformation.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">mat_list</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#ceed.view.view_widgets.MEAArrayAlign.compare_mat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compares a matrix represented as a 2D list to a kivy Matrix object
+and returns whether they are equivalent.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="main.html" class="btn btn-neutral float-right" title="Ceed Viewer side App" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="controller.html" class="btn btn-neutral float-left" title="Experiment Controller" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2019, Matthew Einhorn.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

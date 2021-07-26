@@ -1,0 +1,1003 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Optics App &mdash; Ceed  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Projector test app" href="projector_io.html" />
+    <link rel="prev" title="Ceed App" href="main.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Ceed
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../blueprint.html">System Blueprint</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../config.html">CEED Config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../example_code/example_code.html">Example Analysis Code</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="apps.html">Ceed Apps</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="main.html">Ceed App</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Optics App</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#focal-length-mag-from-position">Focal length / mag from position</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#image-lens-pos-and-mag-from-lens-object-pos-and-focal-length">Image/lens pos and mag from lens/object pos and focal length</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#lens-system">4-lens system</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="projector_io.html">Projector test app</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../api/api.html">The Ceed API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../optics/optics.html">Microscope optics</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Ceed</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="apps.html">Ceed Apps</a> &raquo;</li>
+        
+      <li>Optics App</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/apps/optics_app.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <span class="target" id="module-ceed.tools.optics"></span><div class="section" id="optics-app">
+<span id="id1"></span><h1>Optics App<a class="headerlink" href="#optics-app" title="Permalink to this headline">¶</a></h1>
+<p>App used to help design the lens system used in the microscope. See
+<a class="reference internal" href="../optics/optics.html#microscope-optics"><span class="std std-ref">Microscope optics</span></a> for the full details of how the app is used to design
+and select all the lenses in the system.</p>
+<p>There are three model sections in the app:</p>
+<div class="section" id="focal-length-mag-from-position">
+<h2>Focal length / mag from position<a class="headerlink" href="#focal-length-mag-from-position" title="Permalink to this headline">¶</a></h2>
+<p>This section models how the focal length and mag changes given the positions
+of the lens, the object seen by the lens, and the image of the object
+on the other side of the lens.</p>
+<p>You can also add graphs to this section to visualize in 2D and 3D the effect of
+changing these parameters.</p>
+</div>
+<div class="section" id="image-lens-pos-and-mag-from-lens-object-pos-and-focal-length">
+<h2>Image/lens pos and mag from lens/object pos and focal length<a class="headerlink" href="#image-lens-pos-and-mag-from-lens-object-pos-and-focal-length" title="Permalink to this headline">¶</a></h2>
+<p>This section models how the image and les pos need to be given a desired
+lens and object position and focal length.</p>
+<p>You can also add graphs to this section to visualize in 2D and 3D the effect of
+changing these parameters.</p>
+</div>
+<div class="section" id="lens-system">
+<h2>4-lens system<a class="headerlink" href="#lens-system" title="Permalink to this headline">¶</a></h2>
+<p>This section lets you chain upto 4 lenses in a system and for each lens it lets
+you change its focal length, its position, and the object position and it
+estimates the image position and the mag for that and all subsequent lenses
+based on the previous lenses in the chain.</p>
+<p>The object position can only be given for the first lens, the others are
+computed from the previous lenses.</p>
+<p>For each lens in the chain you can also add 2D and 3D graphs that lets you
+explore how the output parameters may change, given input parameters.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.tools.optics.OpticsApp">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.tools.optics.</span></span><span class="sig-name descname"><span class="pre">OpticsApp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.tools.optics.OpticsApp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://kivy.org/doc/stable/api-kivy.app.html#kivy.app.App" title="(in Kivy v2.0.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">kivy.app.App</span></code></a></p>
+<p>The app that shows all the formula.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.OpticsApp.formula_container_widget">
+<span class="sig-name descname"><span class="pre">formula_container_widget</span></span><a class="headerlink" href="#ceed.tools.optics.OpticsApp.formula_container_widget" title="Permalink to this definition">¶</a></dt>
+<dd><p>Widget that contains all the formula.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.OpticsApp.theme">
+<span class="sig-name descname"><span class="pre">theme</span></span><a class="headerlink" href="#ceed.tools.optics.OpticsApp.theme" title="Permalink to this definition">¶</a></dt>
+<dd><p>The flat material design style theme to use.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.OpticsApp.focal_len_from_io_f">
+<span class="sig-name descname"><span class="pre">focal_len_from_io_f</span></span><em class="property"><span class="pre">:</span> <a class="reference internal" href="#ceed.tools.optics.LensFocalLengthFormula" title="ceed.tools.optics.LensFocalLengthFormula"><span class="pre">ceed.tools.optics.LensFocalLengthFormula</span></a></em><a class="headerlink" href="#ceed.tools.optics.OpticsApp.focal_len_from_io_f" title="Permalink to this definition">¶</a></dt>
+<dd><p>Formula that computes focal length and mag from the other
+parameters.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.OpticsApp.image_from_f">
+<span class="sig-name descname"><span class="pre">image_from_f</span></span><em class="property"><span class="pre">:</span> <a class="reference internal" href="#ceed.tools.optics.LensFixedObjectFormula" title="ceed.tools.optics.LensFixedObjectFormula"><span class="pre">ceed.tools.optics.LensFixedObjectFormula</span></a></em><a class="headerlink" href="#ceed.tools.optics.OpticsApp.image_from_f" title="Permalink to this definition">¶</a></dt>
+<dd><p>Formula that computes the parameters for a fixed object.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.OpticsApp.objective_lens">
+<span class="sig-name descname"><span class="pre">objective_lens</span></span><em class="property"><span class="pre">:</span> <a class="reference internal" href="#ceed.tools.optics.LensFixedObjectFormula" title="ceed.tools.optics.LensFixedObjectFormula"><span class="pre">ceed.tools.optics.LensFixedObjectFormula</span></a></em><a class="headerlink" href="#ceed.tools.optics.OpticsApp.objective_lens" title="Permalink to this definition">¶</a></dt>
+<dd><p>Formula that computes the parameters for a fixed object.</p>
+<p>This is the first lens in the 4-lens chain.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.OpticsApp.cam_lens_further">
+<span class="sig-name descname"><span class="pre">cam_lens_further</span></span><em class="property"><span class="pre">:</span> <a class="reference internal" href="#ceed.tools.optics.LensFixedObjectFormula" title="ceed.tools.optics.LensFixedObjectFormula"><span class="pre">ceed.tools.optics.LensFixedObjectFormula</span></a></em><a class="headerlink" href="#ceed.tools.optics.OpticsApp.cam_lens_further" title="Permalink to this definition">¶</a></dt>
+<dd><p>Formula that computes the parameters for a fixed object.</p>
+<p>This is the second lens in the 4-lens chain.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.OpticsApp.cam_lens_closer">
+<span class="sig-name descname"><span class="pre">cam_lens_closer</span></span><em class="property"><span class="pre">:</span> <a class="reference internal" href="#ceed.tools.optics.LensFixedObjectFormula" title="ceed.tools.optics.LensFixedObjectFormula"><span class="pre">ceed.tools.optics.LensFixedObjectFormula</span></a></em><a class="headerlink" href="#ceed.tools.optics.OpticsApp.cam_lens_closer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Formula that computes the parameters for a fixed object.</p>
+<p>This is the third lens in the 4-lens chain.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.OpticsApp.cam_lens_closer2">
+<span class="sig-name descname"><span class="pre">cam_lens_closer2</span></span><em class="property"><span class="pre">:</span> <a class="reference internal" href="#ceed.tools.optics.LensFixedObjectFormula" title="ceed.tools.optics.LensFixedObjectFormula"><span class="pre">ceed.tools.optics.LensFixedObjectFormula</span></a></em><a class="headerlink" href="#ceed.tools.optics.OpticsApp.cam_lens_closer2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Formula that computes the parameters for a fixed object.</p>
+<p>This is the forth and final lens in the 4-lens chain.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.tools.optics.OpticsApp.build">
+<span class="sig-name descname"><span class="pre">build</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.tools.optics.OpticsApp.build" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initializes the application; it will be called only once.
+If this method returns a widget (tree), it will be used as the root
+widget and added to the window.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>None or a root <a class="reference external" href="https://kivy.org/doc/stable/api-kivy.uix.widget.html#kivy.uix.widget.Widget" title="(in Kivy v2.0.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Widget</span></code></a> instance
+if no self.root exists.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.tools.optics.PlotWidget">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.tools.optics.</span></span><span class="sig-name descname"><span class="pre">PlotWidget</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.tools.optics.PlotWidget" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://kivy.org/doc/stable/api-kivy.uix.boxlayout.html#kivy.uix.boxlayout.BoxLayout" title="(in Kivy v2.0.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">kivy.uix.boxlayout.BoxLayout</span></code></a></p>
+<p>Widget that visualizes a plot for a formula.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.PlotWidget.plot">
+<span class="sig-name descname"><span class="pre">plot</span></span><em class="property"><span class="pre">:</span> <a class="reference internal" href="#ceed.tools.optics.FormulaPlot" title="ceed.tools.optics.FormulaPlot"><span class="pre">ceed.tools.optics.FormulaPlot</span></a></em><a class="headerlink" href="#ceed.tools.optics.PlotWidget.plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>The plot that visualizes the formula.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.PlotWidget.formula_widget">
+<span class="sig-name descname"><span class="pre">formula_widget</span></span><em class="property"><span class="pre">:</span> <a class="reference internal" href="#ceed.tools.optics.FormulaWidget" title="ceed.tools.optics.FormulaWidget"><span class="pre">ceed.tools.optics.FormulaWidget</span></a></em><a class="headerlink" href="#ceed.tools.optics.PlotWidget.formula_widget" title="Permalink to this definition">¶</a></dt>
+<dd><p>The formula to visualize.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.PlotWidget.mouse_x_val">
+<span class="sig-name descname"><span class="pre">mouse_x_val</span></span><a class="headerlink" href="#ceed.tools.optics.PlotWidget.mouse_x_val" title="Permalink to this definition">¶</a></dt>
+<dd><p>x-pos of the mouse in formula input domain.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.PlotWidget.mouse_x2_val">
+<span class="sig-name descname"><span class="pre">mouse_x2_val</span></span><a class="headerlink" href="#ceed.tools.optics.PlotWidget.mouse_x2_val" title="Permalink to this definition">¶</a></dt>
+<dd><p>x2-pos of the mouse in formula input domain.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.PlotWidget.mouse_y_val">
+<span class="sig-name descname"><span class="pre">mouse_y_val</span></span><a class="headerlink" href="#ceed.tools.optics.PlotWidget.mouse_y_val" title="Permalink to this definition">¶</a></dt>
+<dd><p>y value at the current mouse pos in formula output domain.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.PlotWidget.graph_min_height">
+<span class="sig-name descname"><span class="pre">graph_min_height</span></span><a class="headerlink" href="#ceed.tools.optics.PlotWidget.graph_min_height" title="Permalink to this definition">¶</a></dt>
+<dd><p>Smallest height for the graph.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.tools.optics.PlotWidget.select_x_variable">
+<span class="sig-name descname"><span class="pre">select_x_variable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_prop</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variable_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.tools.optics.PlotWidget.select_x_variable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the input variable to display on the horizontal/vertical.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.tools.optics.PlotWidget.populate_x_variables">
+<span class="sig-name descname"><span class="pre">populate_x_variables</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.tools.optics.PlotWidget.populate_x_variables" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates the list of input variables the user can select from in the
+GUI, when selecting the variable to show on an axis.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.tools.optics.FormulaVariableBehavior">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.tools.optics.</span></span><span class="sig-name descname"><span class="pre">FormulaVariableBehavior</span></span><a class="headerlink" href="#ceed.tools.optics.FormulaVariableBehavior" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">kivy._event.EventDispatcher</span></code></p>
+<p>Visualization for a formula variable with an attached name.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.FormulaVariableBehavior.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#ceed.tools.optics.FormulaVariableBehavior.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>The name of the property that is displayed to user.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.tools.optics.PropertyDisplayBinding">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.tools.optics.</span></span><span class="sig-name descname"><span class="pre">PropertyDisplayBinding</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.tools.optics.PropertyDisplayBinding" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">kivy._event.EventDispatcher</span></code></p>
+<p>Tracks a property (input/output variable) and updates the widget
+representing the property with the new value.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.PropertyDisplayBinding.prop_from_display_setter">
+<span class="sig-name descname"><span class="pre">prop_from_display_setter</span></span><a class="headerlink" href="#ceed.tools.optics.PropertyDisplayBinding.prop_from_display_setter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Lambda that can be used to convert the property from the displayed value
+in the GUI when that changes (that could e.g. be a string) to the correct
+type when setting the property value of the formula.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.PropertyDisplayBinding.display_from_prop_setter">
+<span class="sig-name descname"><span class="pre">display_from_prop_setter</span></span><a class="headerlink" href="#ceed.tools.optics.PropertyDisplayBinding.display_from_prop_setter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Like <a class="reference internal" href="#ceed.tools.optics.PropertyDisplayBinding.prop_from_display_setter" title="ceed.tools.optics.PropertyDisplayBinding.prop_from_display_setter"><code class="xref py py-attr docutils literal notranslate"><span class="pre">prop_from_display_setter</span></code></a>, but converts the property so it
+can be displayed in the GUI (e.g. to string from float).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.PropertyDisplayBinding.obj">
+<span class="sig-name descname"><span class="pre">obj</span></span><a class="headerlink" href="#ceed.tools.optics.PropertyDisplayBinding.obj" title="Permalink to this definition">¶</a></dt>
+<dd><p>The object to track.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.PropertyDisplayBinding.obj_prop">
+<span class="sig-name descname"><span class="pre">obj_prop</span></span><a class="headerlink" href="#ceed.tools.optics.PropertyDisplayBinding.obj_prop" title="Permalink to this definition">¶</a></dt>
+<dd><p>The property of <a class="reference internal" href="#ceed.tools.optics.PropertyDisplayBinding.obj" title="ceed.tools.optics.PropertyDisplayBinding.obj"><code class="xref py py-attr docutils literal notranslate"><span class="pre">obj</span></code></a> to track.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.PropertyDisplayBinding.read_only">
+<span class="sig-name descname"><span class="pre">read_only</span></span><a class="headerlink" href="#ceed.tools.optics.PropertyDisplayBinding.read_only" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether it’s read only and cannot be updated from the GUI.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.PropertyDisplayBinding.prop_value">
+<span class="sig-name descname"><span class="pre">prop_value</span></span><a class="headerlink" href="#ceed.tools.optics.PropertyDisplayBinding.prop_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Current value of the property as it’s shown in the GUI.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.tools.optics.PropertyDisplayBinding.set_obj_property">
+<span class="sig-name descname"><span class="pre">set_obj_property</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.tools.optics.PropertyDisplayBinding.set_obj_property" title="Permalink to this definition">¶</a></dt>
+<dd><p>Callback to set the from the GUI.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.tools.optics.FormulaWidget">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.tools.optics.</span></span><span class="sig-name descname"><span class="pre">FormulaWidget</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.tools.optics.FormulaWidget" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://kivy.org/doc/stable/api-kivy.uix.boxlayout.html#kivy.uix.boxlayout.BoxLayout" title="(in Kivy v2.0.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">kivy.uix.boxlayout.BoxLayout</span></code></a></p>
+<p>Widget that displays a formula, its inputs, outputs and graphs.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.FormulaWidget.formula">
+<span class="sig-name descname"><span class="pre">formula</span></span><em class="property"><span class="pre">:</span> <a class="reference internal" href="#ceed.tools.optics.CeedFormula" title="ceed.tools.optics.CeedFormula"><span class="pre">ceed.tools.optics.CeedFormula</span></a></em><a class="headerlink" href="#ceed.tools.optics.FormulaWidget.formula" title="Permalink to this definition">¶</a></dt>
+<dd><p>The formula visulized by the widget.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.FormulaWidget.props_container_x">
+<span class="sig-name descname"><span class="pre">props_container_x</span></span><a class="headerlink" href="#ceed.tools.optics.FormulaWidget.props_container_x" title="Permalink to this definition">¶</a></dt>
+<dd><p>Widget container for all the input values.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.FormulaWidget.props_container_y">
+<span class="sig-name descname"><span class="pre">props_container_y</span></span><a class="headerlink" href="#ceed.tools.optics.FormulaWidget.props_container_y" title="Permalink to this definition">¶</a></dt>
+<dd><p>Widget container for all the output values.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.FormulaWidget.plots_container">
+<span class="sig-name descname"><span class="pre">plots_container</span></span><a class="headerlink" href="#ceed.tools.optics.FormulaWidget.plots_container" title="Permalink to this definition">¶</a></dt>
+<dd><p>Widget container for all the graphs displayed for the formula.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.FormulaWidget.description">
+<span class="sig-name descname"><span class="pre">description</span></span><a class="headerlink" href="#ceed.tools.optics.FormulaWidget.description" title="Permalink to this definition">¶</a></dt>
+<dd><p>Description shown for the formula.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.FormulaWidget.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#ceed.tools.optics.FormulaWidget.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name shown for the formula.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.FormulaWidget.hidden_variables">
+<span class="sig-name descname"><span class="pre">hidden_variables</span></span><a class="headerlink" href="#ceed.tools.optics.FormulaWidget.hidden_variables" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of all the input/output variables that are not shown in the GUI.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.tools.optics.FormulaWidget.populate_widget">
+<span class="sig-name descname"><span class="pre">populate_widget</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.tools.optics.FormulaWidget.populate_widget" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds widgets for all the variables.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.tools.optics.FormulaWidget.add_plot">
+<span class="sig-name descname"><span class="pre">add_plot</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.tools.optics.FormulaWidget.add_plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a new plot for the formula.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.tools.optics.FormulaWidget.remove_plot">
+<span class="sig-name descname"><span class="pre">remove_plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">plot_widget</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.tools.optics.FormulaWidget.remove_plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes an existing plot from the formula.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.tools.optics.LensFocalLengthFormula">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.tools.optics.</span></span><span class="sig-name descname"><span class="pre">LensFocalLengthFormula</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.tools.optics.LensFocalLengthFormula" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ceed.tools.optics.CeedFormula" title="ceed.tools.optics.CeedFormula"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.tools.optics.CeedFormula</span></code></a></p>
+<p>Only valid when not a virtual image.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.LensFocalLengthFormula.lens_pos_src">
+<span class="sig-name descname"><span class="pre">lens_pos_src</span></span><em class="property"><span class="pre">:</span> <span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#ceed.tools.optics.CeedFormula" title="ceed.tools.optics.CeedFormula"><span class="pre">ceed.tools.optics.CeedFormula</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#ceed.tools.optics.LensFocalLengthFormula.lens_pos_src" title="Permalink to this definition">¶</a></dt>
+<dd><p>The previous formula in the chain, if any, that computes this input
+variable as its output.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.LensFocalLengthFormula.image_pos_src">
+<span class="sig-name descname"><span class="pre">image_pos_src</span></span><em class="property"><span class="pre">:</span> <span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#ceed.tools.optics.CeedFormula" title="ceed.tools.optics.CeedFormula"><span class="pre">ceed.tools.optics.CeedFormula</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#ceed.tools.optics.LensFocalLengthFormula.image_pos_src" title="Permalink to this definition">¶</a></dt>
+<dd><p>The previous formula in the chain, if any, that computes this input
+variable as its output.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.LensFocalLengthFormula.object_pos_src">
+<span class="sig-name descname"><span class="pre">object_pos_src</span></span><em class="property"><span class="pre">:</span> <span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#ceed.tools.optics.CeedFormula" title="ceed.tools.optics.CeedFormula"><span class="pre">ceed.tools.optics.CeedFormula</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#ceed.tools.optics.LensFocalLengthFormula.object_pos_src" title="Permalink to this definition">¶</a></dt>
+<dd><p>The previous formula in the chain, if any, that computes this input
+variable as its output.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.LensFocalLengthFormula.lens_pos">
+<span class="sig-name descname"><span class="pre">lens_pos</span></span><a class="headerlink" href="#ceed.tools.optics.LensFocalLengthFormula.lens_pos" title="Permalink to this definition">¶</a></dt>
+<dd><p>The value of the input variable (automatically set from <code class="docutils literal notranslate"><span class="pre">_src</span></code> if set).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.LensFocalLengthFormula.image_pos">
+<span class="sig-name descname"><span class="pre">image_pos</span></span><a class="headerlink" href="#ceed.tools.optics.LensFocalLengthFormula.image_pos" title="Permalink to this definition">¶</a></dt>
+<dd><p>The value of the input variable (automatically set from <code class="docutils literal notranslate"><span class="pre">_src</span></code> if set).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.LensFocalLengthFormula.object_pos">
+<span class="sig-name descname"><span class="pre">object_pos</span></span><a class="headerlink" href="#ceed.tools.optics.LensFocalLengthFormula.object_pos" title="Permalink to this definition">¶</a></dt>
+<dd><p>The value of the input variable (automatically set from <code class="docutils literal notranslate"><span class="pre">_src</span></code> if set).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.LensFocalLengthFormula.focal_length">
+<span class="sig-name descname"><span class="pre">focal_length</span></span><a class="headerlink" href="#ceed.tools.optics.LensFocalLengthFormula.focal_length" title="Permalink to this definition">¶</a></dt>
+<dd><p>The computed output variable value.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.LensFocalLengthFormula.magnification">
+<span class="sig-name descname"><span class="pre">magnification</span></span><a class="headerlink" href="#ceed.tools.optics.LensFocalLengthFormula.magnification" title="Permalink to this definition">¶</a></dt>
+<dd><p>The computed output variable value.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.tools.optics.LensFocalLengthFormula.compute_focal_length">
+<span class="sig-name descname"><span class="pre">compute_focal_length</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variables</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.tools.optics.LensFocalLengthFormula.compute_focal_length" title="Permalink to this definition">¶</a></dt>
+<dd><p>Similar to <a class="reference internal" href="#ceed.tools.optics.LensFixedObjectFormula.compute_image_pos" title="ceed.tools.optics.LensFixedObjectFormula.compute_image_pos"><code class="xref py py-meth docutils literal notranslate"><span class="pre">LensFixedObjectFormula.compute_image_pos()</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.tools.optics.LensFocalLengthFormula.compute_magnification">
+<span class="sig-name descname"><span class="pre">compute_magnification</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variables</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.tools.optics.LensFocalLengthFormula.compute_magnification" title="Permalink to this definition">¶</a></dt>
+<dd><p>Similar to <a class="reference internal" href="#ceed.tools.optics.LensFixedObjectFormula.compute_image_pos" title="ceed.tools.optics.LensFixedObjectFormula.compute_image_pos"><code class="xref py py-meth docutils literal notranslate"><span class="pre">LensFixedObjectFormula.compute_image_pos()</span></code></a>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.tools.optics.LensFixedObjectFormula">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.tools.optics.</span></span><span class="sig-name descname"><span class="pre">LensFixedObjectFormula</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.tools.optics.LensFixedObjectFormula" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ceed.tools.optics.CeedFormula" title="ceed.tools.optics.CeedFormula"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.tools.optics.CeedFormula</span></code></a></p>
+<p>Computes the properties of a lens, where the object (input distance)
+is fixed.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.LensFixedObjectFormula.lens_pos_src">
+<span class="sig-name descname"><span class="pre">lens_pos_src</span></span><em class="property"><span class="pre">:</span> <span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#ceed.tools.optics.CeedFormula" title="ceed.tools.optics.CeedFormula"><span class="pre">ceed.tools.optics.CeedFormula</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#ceed.tools.optics.LensFixedObjectFormula.lens_pos_src" title="Permalink to this definition">¶</a></dt>
+<dd><p>The previous formula in the chain, if any, that computes this input
+variable as its output.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.LensFixedObjectFormula.focal_length_src">
+<span class="sig-name descname"><span class="pre">focal_length_src</span></span><em class="property"><span class="pre">:</span> <span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#ceed.tools.optics.CeedFormula" title="ceed.tools.optics.CeedFormula"><span class="pre">ceed.tools.optics.CeedFormula</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#ceed.tools.optics.LensFixedObjectFormula.focal_length_src" title="Permalink to this definition">¶</a></dt>
+<dd><p>The previous formula in the chain, if any, that computes this input
+variable as its output.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.LensFixedObjectFormula.object_pos_src">
+<span class="sig-name descname"><span class="pre">object_pos_src</span></span><em class="property"><span class="pre">:</span> <span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#ceed.tools.optics.CeedFormula" title="ceed.tools.optics.CeedFormula"><span class="pre">ceed.tools.optics.CeedFormula</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#ceed.tools.optics.LensFixedObjectFormula.object_pos_src" title="Permalink to this definition">¶</a></dt>
+<dd><p>The previous formula in the chain, if any, that computes this input
+variable as its output.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.LensFixedObjectFormula.base_magnification_src">
+<span class="sig-name descname"><span class="pre">base_magnification_src</span></span><em class="property"><span class="pre">:</span> <span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#ceed.tools.optics.CeedFormula" title="ceed.tools.optics.CeedFormula"><span class="pre">ceed.tools.optics.CeedFormula</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#ceed.tools.optics.LensFixedObjectFormula.base_magnification_src" title="Permalink to this definition">¶</a></dt>
+<dd><p>The previous formula in the chain, if any, that computes this input
+variable as its output.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.LensFixedObjectFormula.lens_pos">
+<span class="sig-name descname"><span class="pre">lens_pos</span></span><a class="headerlink" href="#ceed.tools.optics.LensFixedObjectFormula.lens_pos" title="Permalink to this definition">¶</a></dt>
+<dd><p>The value of the input variable (automatically set from <code class="docutils literal notranslate"><span class="pre">_src</span></code> if set).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.LensFixedObjectFormula.focal_length">
+<span class="sig-name descname"><span class="pre">focal_length</span></span><a class="headerlink" href="#ceed.tools.optics.LensFixedObjectFormula.focal_length" title="Permalink to this definition">¶</a></dt>
+<dd><p>The value of the input variable (automatically set from <code class="docutils literal notranslate"><span class="pre">_src</span></code> if set).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.LensFixedObjectFormula.object_pos">
+<span class="sig-name descname"><span class="pre">object_pos</span></span><a class="headerlink" href="#ceed.tools.optics.LensFixedObjectFormula.object_pos" title="Permalink to this definition">¶</a></dt>
+<dd><p>The value of the input variable (automatically set from <code class="docutils literal notranslate"><span class="pre">_src</span></code> if set).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.LensFixedObjectFormula.base_magnification">
+<span class="sig-name descname"><span class="pre">base_magnification</span></span><a class="headerlink" href="#ceed.tools.optics.LensFixedObjectFormula.base_magnification" title="Permalink to this definition">¶</a></dt>
+<dd><p>The value of the input variable (automatically set from <code class="docutils literal notranslate"><span class="pre">_src</span></code> if set).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.LensFixedObjectFormula.image_pos">
+<span class="sig-name descname"><span class="pre">image_pos</span></span><a class="headerlink" href="#ceed.tools.optics.LensFixedObjectFormula.image_pos" title="Permalink to this definition">¶</a></dt>
+<dd><p>The computed output variable value.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.LensFixedObjectFormula.img_lens_pos">
+<span class="sig-name descname"><span class="pre">img_lens_pos</span></span><a class="headerlink" href="#ceed.tools.optics.LensFixedObjectFormula.img_lens_pos" title="Permalink to this definition">¶</a></dt>
+<dd><p>The computed output variable value.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.LensFixedObjectFormula.magnification">
+<span class="sig-name descname"><span class="pre">magnification</span></span><a class="headerlink" href="#ceed.tools.optics.LensFixedObjectFormula.magnification" title="Permalink to this definition">¶</a></dt>
+<dd><p>The computed output variable value.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.tools.optics.LensFixedObjectFormula.compute_image_pos">
+<span class="sig-name descname"><span class="pre">compute_image_pos</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variables</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.tools.optics.LensFixedObjectFormula.compute_image_pos" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes and returns this output variable.</p>
+<p>If the <code class="docutils literal notranslate"><span class="pre">variables</span></code> dict contains a formula for a input variable, that
+variable value is gotten from from <code class="docutils literal notranslate"><span class="pre">variables</span></code>. Otherwise it gets it
+from the variable property. THis allows us to support computing
+whole ranges for the input variables as their values can be an array.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.tools.optics.LensFixedObjectFormula.compute_magnification">
+<span class="sig-name descname"><span class="pre">compute_magnification</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variables</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.tools.optics.LensFixedObjectFormula.compute_magnification" title="Permalink to this definition">¶</a></dt>
+<dd><p>Similar to <a class="reference internal" href="#ceed.tools.optics.LensFixedObjectFormula.compute_image_pos" title="ceed.tools.optics.LensFixedObjectFormula.compute_image_pos"><code class="xref py py-meth docutils literal notranslate"><span class="pre">compute_image_pos()</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.tools.optics.LensFixedObjectFormula.compute_img_lens_pos">
+<span class="sig-name descname"><span class="pre">compute_img_lens_pos</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variables</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.tools.optics.LensFixedObjectFormula.compute_img_lens_pos" title="Permalink to this definition">¶</a></dt>
+<dd><p>Similar to <a class="reference internal" href="#ceed.tools.optics.LensFixedObjectFormula.compute_image_pos" title="ceed.tools.optics.LensFixedObjectFormula.compute_image_pos"><code class="xref py py-meth docutils literal notranslate"><span class="pre">compute_image_pos()</span></code></a>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.tools.optics.CeedFormula">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.tools.optics.</span></span><span class="sig-name descname"><span class="pre">CeedFormula</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.tools.optics.CeedFormula" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">kivy._event.EventDispatcher</span></code></p>
+<p>A formula that computes a output value(s), given some input value
+or input value range.</p>
+<p>The input value(s) can be formula themselves so that we can have a formula
+DAG, with some formula leaves. This allows the output of a leaf to be
+re-computed when any of the inputs or its parents change in the graph.</p>
+<p>The formula is computed from properties that are input parameters and it
+generates one or more output values that are also stored as properties.</p>
+<p>The input properties (e.g. <code class="docutils literal notranslate"><span class="pre">lens_pos</span></code>) can have a second, corresponding
+property with the <code class="docutils literal notranslate"><span class="pre">_src</span></code> suffix (e.g. <code class="docutils literal notranslate"><span class="pre">lens_pos_src</span></code>), which if set to
+a tuple of (<a class="reference internal" href="#ceed.tools.optics.CeedFormula" title="ceed.tools.optics.CeedFormula"><code class="xref py py-class docutils literal notranslate"><span class="pre">CeedFormula</span></code></a>, property_name), the given property of the
+formula will be used for the input value (<code class="docutils literal notranslate"><span class="pre">lens_pos_src</span></code>) instead of the
+property of this instance (<code class="docutils literal notranslate"><span class="pre">lens_pos</span></code>). This allows chaining.</p>
+<p>Additionally, each output property must have a corresponding method with
+a <code class="docutils literal notranslate"><span class="pre">compute_</span></code> prefix that when called returns the output given the
+inputs stored in the class properties. It can be given a set of
+<a class="reference internal" href="#ceed.tools.optics.CeedFormula" title="ceed.tools.optics.CeedFormula"><code class="xref py py-class docutils literal notranslate"><span class="pre">CeedFormula</span></code></a> that is used to look up values for any of the input
+properties, instead of using the value currently stored in the instance
+property for that input.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.CeedFormula.x_variables">
+<span class="sig-name descname"><span class="pre">x_variables</span></span><em class="property"><span class="pre">:</span> <span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#ceed.tools.optics.CeedFormula.x_variables" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of properties of this class (by name) whose values are used as
+inputs to the formula’s function.</p>
+<p>There must be a corresponding method with a <code class="docutils literal notranslate"><span class="pre">compute_</span></code> prefix for each
+variable.</p>
+<p>There may also be a corresponding property with a <cite>_src`</cite> suffix that
+contains a formula to use to look up the property value as the output of
+that formula, instead of using this property value directly.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.CeedFormula.y_variables">
+<span class="sig-name descname"><span class="pre">y_variables</span></span><em class="property"><span class="pre">:</span> <span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#ceed.tools.optics.CeedFormula.y_variables" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of properties of this class (by name) whose values are outputs of
+the formula’s function.</p>
+<p>Items in <a class="reference internal" href="#ceed.tools.optics.CeedFormula.y_variables" title="ceed.tools.optics.CeedFormula.y_variables"><code class="xref py py-attr docutils literal notranslate"><span class="pre">y_variables</span></code></a> may depend on other items in
+<a class="reference internal" href="#ceed.tools.optics.CeedFormula.y_variables" title="ceed.tools.optics.CeedFormula.y_variables"><code class="xref py py-attr docutils literal notranslate"><span class="pre">y_variables</span></code></a> as input to their calculation. See
+<a class="reference internal" href="#ceed.tools.optics.CeedFormula.y_dependency_ordered" title="ceed.tools.optics.CeedFormula.y_dependency_ordered"><code class="xref py py-attr docutils literal notranslate"><span class="pre">y_dependency_ordered</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.CeedFormula.plots">
+<span class="sig-name descname"><span class="pre">plots</span></span><a class="headerlink" href="#ceed.tools.optics.CeedFormula.plots" title="Permalink to this definition">¶</a></dt>
+<dd><p>All the plots that use this formula and need to be updated when the
+inputs change.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.CeedFormula.variable_descriptions">
+<span class="sig-name descname"><span class="pre">variable_descriptions</span></span><em class="property"><span class="pre">:</span> <span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#ceed.tools.optics.CeedFormula.variable_descriptions" title="Permalink to this definition">¶</a></dt>
+<dd><p>A mapping that gets a nicer description for each variable.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.CeedFormula.dependency_graph">
+<span class="sig-name descname"><span class="pre">dependency_graph</span></span><em class="property"><span class="pre">:</span> <span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">=</span> <span class="pre">{}</span></em><a class="headerlink" href="#ceed.tools.optics.CeedFormula.dependency_graph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Mapping that maps each y-variable to a list of all the y and x variables
+it depends on.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.CeedFormula.y_dependency_ordered">
+<span class="sig-name descname"><span class="pre">y_dependency_ordered</span></span><em class="property"><span class="pre">:</span> <span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">=</span> <span class="pre">[]</span></em><a class="headerlink" href="#ceed.tools.optics.CeedFormula.y_dependency_ordered" title="Permalink to this definition">¶</a></dt>
+<dd><p>As mentioned, y (output) variables may depend on other output variables.
+This orders y variables from leaf to dependant variables, such that
+any variable is only dependant on other y variables that are listed
+previously in <a class="reference internal" href="#ceed.tools.optics.CeedFormula.y_dependency_ordered" title="ceed.tools.optics.CeedFormula.y_dependency_ordered"><code class="xref py py-attr docutils literal notranslate"><span class="pre">y_dependency_ordered</span></code></a>.</p>
+<p>It is automatically computed.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.tools.optics.CeedFormula.bind_variable_to_src">
+<span class="sig-name descname"><span class="pre">bind_variable_to_src</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variable_src</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.tools.optics.CeedFormula.bind_variable_to_src" title="Permalink to this definition">¶</a></dt>
+<dd><p>For each x-variable, if there’s a corresponding <code class="docutils literal notranslate"><span class="pre">_src</span></code> suffixed
+variable that is set, this method will track that formula and update the
+our property when the source changes.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.tools.optics.CeedFormula.update_result">
+<span class="sig-name descname"><span class="pre">update_result</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variable</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">largs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.tools.optics.CeedFormula.update_result" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called automatically when a x-variable changes and it recomputes
+all the y-variables.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.tools.optics.CeedFormula.variables_in_subtree">
+<span class="sig-name descname"><span class="pre">variables_in_subtree</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">in_subtree</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_variables</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.tools.optics.CeedFormula.variables_in_subtree" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks whether the variable or its dependencies is a input variable.
+If so it’ll need to be computed over the range that the input is
+sampled on. If not, it’s a constant value that we can just get from
+the formula properties.</p>
+<p>We also check if the variable itself is a input variable.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.tools.optics.CeedFormula.infer_variable_value">
+<span class="sig-name descname"><span class="pre">infer_variable_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variables</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">in_subtree</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_variables</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.tools.optics.CeedFormula.infer_variable_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the value of variable for the range of values of the
+input variables.</p>
+<p>Variables accumulates the values of variables as they are computed in
+the graph, starting from the root.</p>
+<p>in_subtree stores whether a variable contains any of the
+input_variables in it’s dependency tree (it depends on it).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.tools.optics.CeedFormula.get_variable_dep_leaves">
+<span class="sig-name descname"><span class="pre">get_variable_dep_leaves</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variable</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.tools.optics.CeedFormula.get_variable_dep_leaves" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets set of all the (formula, variable) tuples that this variable
+depends on upto the root, but only those that are roots in the sense
+that the variables don’t depend on other variable themselves.</p>
+<p>This will let us start from them and compute the full graph until
+reaching the the variable.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.tools.optics.FormulaPlot">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.tools.optics.</span></span><span class="sig-name descname"><span class="pre">FormulaPlot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.tools.optics.FormulaPlot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">kivy._event.EventDispatcher</span></code></p>
+<p>Given a <a class="reference internal" href="#ceed.tools.optics.CeedFormula" title="ceed.tools.optics.CeedFormula"><code class="xref py py-class docutils literal notranslate"><span class="pre">CeedFormula</span></code></a>, it uses that to compute the the 2D/3D
+formula output, given the range of input values.</p>
+<p>It supports updating the plot from a formula whose input is the output of
+another formula in a chain. In which case it starts with the input to root
+formula and evaluates all the formula in the chain until the last one. Then
+uses that to evaluate the final formula on a range of values that is then
+displayed in the graph.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.FormulaPlot.graph">
+<span class="sig-name descname"><span class="pre">graph</span></span><em class="property"><span class="pre">:</span> <a class="reference internal" href="#ceed.tools.optics.FormulaGraph" title="ceed.tools.optics.FormulaGraph"><span class="pre">ceed.tools.optics.FormulaGraph</span></a></em><a class="headerlink" href="#ceed.tools.optics.FormulaPlot.graph" title="Permalink to this definition">¶</a></dt>
+<dd><p>The graph in which to display the formula outputs.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.FormulaPlot.plot">
+<span class="sig-name descname"><span class="pre">plot</span></span><a class="headerlink" href="#ceed.tools.optics.FormulaPlot.plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>The specific 2D/3D plot in the graph.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.FormulaPlot.start">
+<span class="sig-name descname"><span class="pre">start</span></span><a class="headerlink" href="#ceed.tools.optics.FormulaPlot.start" title="Permalink to this definition">¶</a></dt>
+<dd><p>The horizontal axis start value from which to evaluate.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.FormulaPlot.end">
+<span class="sig-name descname"><span class="pre">end</span></span><a class="headerlink" href="#ceed.tools.optics.FormulaPlot.end" title="Permalink to this definition">¶</a></dt>
+<dd><p>The horizontal axis end value until which to evaluate.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.FormulaPlot.x2_start">
+<span class="sig-name descname"><span class="pre">x2_start</span></span><a class="headerlink" href="#ceed.tools.optics.FormulaPlot.x2_start" title="Permalink to this definition">¶</a></dt>
+<dd><p>The vertical axis start value from which to evaluate/display.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.FormulaPlot.x2_end">
+<span class="sig-name descname"><span class="pre">x2_end</span></span><a class="headerlink" href="#ceed.tools.optics.FormulaPlot.x2_end" title="Permalink to this definition">¶</a></dt>
+<dd><p>The vertical axis end value until which to evaluate/display.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.FormulaPlot.y_start">
+<span class="sig-name descname"><span class="pre">y_start</span></span><a class="headerlink" href="#ceed.tools.optics.FormulaPlot.y_start" title="Permalink to this definition">¶</a></dt>
+<dd><p>The depth (z) axis start value from which to display, if 3D.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.FormulaPlot.y_end">
+<span class="sig-name descname"><span class="pre">y_end</span></span><a class="headerlink" href="#ceed.tools.optics.FormulaPlot.y_end" title="Permalink to this definition">¶</a></dt>
+<dd><p>The depth (z) axis end value until which to display, if 3D.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.FormulaPlot.num_points">
+<span class="sig-name descname"><span class="pre">num_points</span></span><a class="headerlink" href="#ceed.tools.optics.FormulaPlot.num_points" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of horizontal/vertical points at which to evaluate the
+formula.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.FormulaPlot.formula">
+<span class="sig-name descname"><span class="pre">formula</span></span><em class="property"><span class="pre">:</span> <a class="reference internal" href="#ceed.tools.optics.CeedFormula" title="ceed.tools.optics.CeedFormula"><span class="pre">ceed.tools.optics.CeedFormula</span></a></em><a class="headerlink" href="#ceed.tools.optics.FormulaPlot.formula" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="#ceed.tools.optics.CeedFormula" title="ceed.tools.optics.CeedFormula"><code class="xref py py-class docutils literal notranslate"><span class="pre">CeedFormula</span></code></a> that takes the x (and x2 if 3D) input values and
+computes the output values.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.FormulaPlot.x_variable">
+<span class="sig-name descname"><span class="pre">x_variable</span></span><a class="headerlink" href="#ceed.tools.optics.FormulaPlot.x_variable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name of the horizontal input variable.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.FormulaPlot.x2_variable">
+<span class="sig-name descname"><span class="pre">x2_variable</span></span><a class="headerlink" href="#ceed.tools.optics.FormulaPlot.x2_variable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name of the vertical input variable, if any (3D).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.FormulaPlot.x_variable_formula">
+<span class="sig-name descname"><span class="pre">x_variable_formula</span></span><em class="property"><span class="pre">:</span> <a class="reference internal" href="#ceed.tools.optics.CeedFormula" title="ceed.tools.optics.CeedFormula"><span class="pre">ceed.tools.optics.CeedFormula</span></a></em><a class="headerlink" href="#ceed.tools.optics.FormulaPlot.x_variable_formula" title="Permalink to this definition">¶</a></dt>
+<dd><p>The formula used to generate the horizontal input variable, if it is
+part of a lens chain and the variable is the result of a previous
+formula in the chain.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.FormulaPlot.x2_variable_formula">
+<span class="sig-name descname"><span class="pre">x2_variable_formula</span></span><em class="property"><span class="pre">:</span> <a class="reference internal" href="#ceed.tools.optics.CeedFormula" title="ceed.tools.optics.CeedFormula"><span class="pre">ceed.tools.optics.CeedFormula</span></a></em><a class="headerlink" href="#ceed.tools.optics.FormulaPlot.x2_variable_formula" title="Permalink to this definition">¶</a></dt>
+<dd><p>The formula used to generate the vertical input variable, if it is
+part of a lens chain and the variable is the result of a previous
+formula in the chain.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.FormulaPlot.y_variable">
+<span class="sig-name descname"><span class="pre">y_variable</span></span><a class="headerlink" href="#ceed.tools.optics.FormulaPlot.y_variable" title="Permalink to this definition">¶</a></dt>
+<dd><p>The name of the output (y) variable computed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.FormulaPlot.num_contours">
+<span class="sig-name descname"><span class="pre">num_contours</span></span><a class="headerlink" href="#ceed.tools.optics.FormulaPlot.num_contours" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of equal value contours to display for 3D plots.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.FormulaPlot.track_ylim">
+<span class="sig-name descname"><span class="pre">track_ylim</span></span><a class="headerlink" href="#ceed.tools.optics.FormulaPlot.track_ylim" title="Permalink to this definition">¶</a></dt>
+<dd><p>For 3D plots, whether to update the plot outout range as the output (y)
+range changes or if the leave it unchanged.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.FormulaPlot.colors">
+<span class="sig-name descname"><span class="pre">colors</span></span><em class="property"> <span class="pre">=</span> <span class="pre">&lt;itertools.cycle</span> <span class="pre">object&gt;</span></em><a class="headerlink" href="#ceed.tools.optics.FormulaPlot.colors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot colors to use.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.tools.optics.FormulaPlot.compute_contours">
+<span class="sig-name descname"><span class="pre">compute_contours</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.tools.optics.FormulaPlot.compute_contours" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the equal value contours for 3D plots.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.tools.optics.FormulaPlot.create_plot">
+<span class="sig-name descname"><span class="pre">create_plot</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.tools.optics.FormulaPlot.create_plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates and displays the plot for this formula/graph.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.tools.optics.FormulaPlot.refresh_plot">
+<span class="sig-name descname"><span class="pre">refresh_plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">from_variables</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.tools.optics.FormulaPlot.refresh_plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates plot when any of the variables or parameters change.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.tools.optics.FormulaPlot.reset_y_axis">
+<span class="sig-name descname"><span class="pre">reset_y_axis</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.tools.optics.FormulaPlot.reset_y_axis" title="Permalink to this definition">¶</a></dt>
+<dd><p>Resets the y (output)-axis to the previous value.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.tools.optics.FormulaGraph">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.tools.optics.</span></span><span class="sig-name descname"><span class="pre">FormulaGraph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.tools.optics.FormulaGraph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">kivy_garden.graph.Graph</span></code></p>
+<p>The graph on which the 2D/3D plots are drawn.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.tools.optics.FormulaGraph.plot_widget">
+<span class="sig-name descname"><span class="pre">plot_widget</span></span><em class="property"><span class="pre">:</span> <a class="reference internal" href="#ceed.tools.optics.PlotWidget" title="ceed.tools.optics.PlotWidget"><span class="pre">ceed.tools.optics.PlotWidget</span></a></em><a class="headerlink" href="#ceed.tools.optics.FormulaGraph.plot_widget" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="#ceed.tools.optics.PlotWidget" title="ceed.tools.optics.PlotWidget"><code class="xref py py-class docutils literal notranslate"><span class="pre">PlotWidget</span></code></a> that contains this graph.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.tools.optics.FormulaGraph.on_touch_down">
+<span class="sig-name descname"><span class="pre">on_touch_down</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">touch</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.tools.optics.FormulaGraph.on_touch_down" title="Permalink to this definition">¶</a></dt>
+<dd><p>Receive a touch down event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><cite>touch</cite>: <a class="reference external" href="https://kivy.org/doc/stable/api-kivy.input.motionevent.html#kivy.input.motionevent.MotionEvent" title="(in Kivy v2.0.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">MotionEvent</span></code></a> class</dt><dd><p>Touch received. The touch is in parent coordinates. See
+<a class="reference external" href="https://kivy.org/doc/stable/api-kivy.uix.relativelayout.html#module-kivy.uix.relativelayout" title="(in Kivy v2.0.0)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">relativelayout</span></code></a> for a discussion on
+coordinate systems.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>bool
+If True, the dispatching of the touch event will stop.
+If False, the event will continue to be dispatched to the rest
+of the widget tree.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="projector_io.html" class="btn btn-neutral float-right" title="Projector test app" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="main.html" class="btn btn-neutral float-left" title="Ceed App" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2019, Matthew Einhorn.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

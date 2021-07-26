@@ -1,0 +1,1242 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>CEED Config &mdash; Ceed  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Example Analysis Code" href="example_code/example_code.html" />
+    <link rel="prev" title="Ceed experiment" href="guide/experiment.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> Ceed
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="blueprint.html">System Blueprint</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="guide/guide.html">User Guide</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">CEED Config</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#view">view</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#teensy-frame-estimation">teensy_frame_estimation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#frame-estimation">frame_estimation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#serializer">serializer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#player">player</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#video-recorder">video_recorder</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#thor">thor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ptgray">ptgray</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#network-client">network_client</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#image-file-recorder">image_file_recorder</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ffmpeg">ffmpeg</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#function">function</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#data">data</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="example_code/example_code.html">Example Analysis Code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="apps/apps.html">Ceed Apps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/api.html">The Ceed API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="optics/optics.html">Microscope optics</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Ceed</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>CEED Config</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/config.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="ceed-config">
+<h1>CEED Config<a class="headerlink" href="#ceed-config" title="Permalink to this headline">¶</a></h1>
+<p>The following are the configuration options provided by the app. It can be configured by changing appropriate values in the <code class="docutils literal notranslate"><span class="pre">config.yaml</span></code> settings file. The options default to the default value of the classes for each of the options.</p>
+<dl>
+<dt><cite>external_function_plugin_package</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s1">&#39;&#39;</span>
+</pre></div>
+</div>
+<p>The name of an external function plugin package that contains additional
+functions to be displayed in the GUI to the user.
+See <a class="reference internal" href="api/function/function_plugin.html#module-ceed.function.plugin" title="ceed.function.plugin"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plugin</span></code></a> for details.</p>
+</dd>
+<dt><cite>external_stage_plugin_package</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s1">&#39;&#39;</span>
+</pre></div>
+</div>
+<p>The name of an external stage plugin package that contains additional
+stages to be displayed in the GUI to the user.
+See <a class="reference internal" href="api/stage/stage_plugin.html#module-ceed.stage.plugin" title="ceed.stage.plugin"><code class="xref py py-mod docutils literal notranslate"><span class="pre">plugin</span></code></a> for details.</p>
+</dd>
+<dt><cite>inspect</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">false</span>
+</pre></div>
+</div>
+<p>Enables GUI inspection. If True, it is activated by hitting ctrl-e in
+the GUI.</p>
+</dd>
+<dt><cite>last_directory</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s1">&#39;~&#39;</span>
+</pre></div>
+</div>
+<p>The last directory opened in the GUI.</p>
+</dd>
+</dl>
+<div class="section" id="view">
+<h2>view<a class="headerlink" href="#view" title="Permalink to this headline">¶</a></h2>
+<dl>
+<dt><cite>LED_mode</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">RGB</span>
+</pre></div>
+</div>
+<p>The LED mode the projector will be set to during the experiment.
+Its value is from the <code class="xref py py-attr docutils literal notranslate"><span class="pre">led_modes</span></code>.</p>
+</dd>
+<dt><cite>LED_mode_idle</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">none</span>
+</pre></div>
+</div>
+<p>The LED mode the projector will be set to before/after the experiment.
+This is used to turn OFF the projector LEDs in between experiments so that
+light is not projected on the tissue while stages are designed.
+Its value is from the <code class="xref py py-attr docutils literal notranslate"><span class="pre">led_modes</span></code>.</p>
+</dd>
+<dt><cite>cam_transform</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">-</span> <span class="o">-</span> <span class="mf">1.0</span>
+  <span class="o">-</span> <span class="mf">0.0</span>
+  <span class="o">-</span> <span class="mf">0.0</span>
+  <span class="o">-</span> <span class="mf">0.0</span>
+<span class="o">-</span> <span class="o">-</span> <span class="mf">0.0</span>
+  <span class="o">-</span> <span class="mf">1.0</span>
+  <span class="o">-</span> <span class="mf">0.0</span>
+  <span class="o">-</span> <span class="mf">0.0</span>
+<span class="o">-</span> <span class="o">-</span> <span class="mf">0.0</span>
+  <span class="o">-</span> <span class="mf">0.0</span>
+  <span class="o">-</span> <span class="mf">1.0</span>
+  <span class="o">-</span> <span class="mf">0.0</span>
+<span class="o">-</span> <span class="o">-</span> <span class="mf">0.0</span>
+  <span class="o">-</span> <span class="mf">0.0</span>
+  <span class="o">-</span> <span class="mf">0.0</span>
+  <span class="o">-</span> <span class="mf">1.0</span>
+</pre></div>
+</div>
+<p>A 4x4 matrix that controls the rotation, offset, and scaling of the
+camera images relative to the projector.
+In the Ceed GUI, a user can transform the camera image, in addition to
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">flip_camera</span></code> until it fully aligns with the projector output.
+See also <a class="reference internal" href="api/view/controller.html#view-flip"><span class="std std-ref">Camera-projector-array alignment</span></a>.</p>
+</dd>
+<dt><cite>experiment_uuid</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>!!binary &quot;&quot;
+</pre></div>
+</div>
+<p>A unique uuid that is re-generated before each experiment and sent along
+over the corner pixel as the initial uniquely-identifying handshake-pattern.
+It allows us to locate this experiment in the MCS data post-hoc.
+See <a class="reference internal" href="api/storage/controller.html#ceed.storage.controller.DataSerializerBase" title="ceed.storage.controller.DataSerializerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataSerializerBase</span></code></a>.</p>
+</dd>
+<dt><cite>flip_camera</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">false</span>
+</pre></div>
+</div>
+<p>Whether to flip the camera images horizontally, around the center.
+See also <a class="reference internal" href="api/view/controller.html#view-flip"><span class="std std-ref">Camera-projector-array alignment</span></a>.</p>
+</dd>
+<dt><cite>flip_projector</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">true</span>
+</pre></div>
+</div>
+<p>Whether to flip the projector output horizontally, around the center.
+See also <a class="reference internal" href="api/view/controller.html#view-flip"><span class="std std-ref">Camera-projector-array alignment</span></a>.</p>
+</dd>
+<dt><cite>frame_rate</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">null</span>
+</pre></div>
+</div>
+<p>The frame-rate of the GPU that plays the experiment.
+This should be set to the exact refresh rate of the GPU, as can be found in
+e.g. the nvidia control panel. Otherwise, the experiment will be out of sync
+and played incorrectly.
+This is internally converted to a fraction (<code class="xref py py-attr docutils literal notranslate"><span class="pre">frame_rate_numerator</span></code>,
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">frame_rate_denominator</span></code>), so the number must be such
+that it can be converted to a fraction. E.g. 119.96 or 59.94 can be
+represented correctly as fractions.</p>
+</dd>
+<dt><cite>frame_rate_denominator</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">null</span>
+</pre></div>
+</div>
+<p>The denominator of the <code class="xref py py-attr docutils literal notranslate"><span class="pre">frame_rate</span></code> fraction.</p>
+</dd>
+<dt><cite>frame_rate_numerator</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">null</span>
+</pre></div>
+</div>
+<p>The numerator of the <code class="xref py py-attr docutils literal notranslate"><span class="pre">frame_rate</span></code> fraction.</p>
+</dd>
+<dt><cite>fullscreen</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">true</span>
+</pre></div>
+</div>
+<p>Whether the second Ceed window that runs the “real experiment” is run
+in fullscreen mode.
+In fullscreen mode the window has no borders and takes over the whole
+screen.</p>
+</dd>
+<dt><cite>log_debug_timing</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">false</span>
+</pre></div>
+</div>
+<p>Whether to log the times that frames are drawn and rendered to a debug
+section in the h5 file.
+If True, this will additionally be logged for each displayed frame in a
+special section in the file.</p>
+</dd>
+<dt><cite>mea_diameter</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">3</span>
+</pre></div>
+</div>
+<p>The diameter in pixels of the displayed electrode circles in the grid.
+See <code class="xref py py-attr docutils literal notranslate"><span class="pre">mea_transform</span></code> also.</p>
+</dd>
+<dt><cite>mea_num_cols</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">12</span>
+</pre></div>
+</div>
+<p>The number of electrode columns in the array. See <code class="xref py py-attr docutils literal notranslate"><span class="pre">mea_transform</span></code>
+also.</p>
+</dd>
+<dt><cite>mea_num_rows</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">12</span>
+</pre></div>
+</div>
+<p>The number of electrode rows in the array. See <code class="xref py py-attr docutils literal notranslate"><span class="pre">mea_transform</span></code>
+also.</p>
+</dd>
+<dt><cite>mea_pitch</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">20</span>
+</pre></div>
+</div>
+<p>The distance in pixels, center-to-center, between neighboring
+rows/columns. It is assumed that it is the same for columns and rows.
+See <code class="xref py py-attr docutils literal notranslate"><span class="pre">mea_transform</span></code> also.</p>
+</dd>
+<dt><cite>mea_transform</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">-</span> <span class="o">-</span> <span class="mf">1.0</span>
+  <span class="o">-</span> <span class="mf">0.0</span>
+  <span class="o">-</span> <span class="mf">0.0</span>
+  <span class="o">-</span> <span class="mf">0.0</span>
+<span class="o">-</span> <span class="o">-</span> <span class="mf">0.0</span>
+  <span class="o">-</span> <span class="mf">1.0</span>
+  <span class="o">-</span> <span class="mf">0.0</span>
+  <span class="o">-</span> <span class="mf">0.0</span>
+<span class="o">-</span> <span class="o">-</span> <span class="mf">0.0</span>
+  <span class="o">-</span> <span class="mf">0.0</span>
+  <span class="o">-</span> <span class="mf">1.0</span>
+  <span class="o">-</span> <span class="mf">0.0</span>
+<span class="o">-</span> <span class="o">-</span> <span class="mf">0.0</span>
+  <span class="o">-</span> <span class="mf">0.0</span>
+  <span class="o">-</span> <span class="mf">0.0</span>
+  <span class="o">-</span> <span class="mf">1.0</span>
+</pre></div>
+</div>
+<p>A 4x4 matrix that controls the rotation, offset, and scaling of the
+mea array relative to the camera.
+This is a grid that corresponds to the electrodes in the electrode array.
+In the Ceed GUI, a user can transform this grid, in addition to
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">mirror_mea</span></code> until it fully aligns with a camera image of the grid
+from the actual array.
+See also <a class="reference internal" href="api/view/controller.html#view-flip"><span class="std std-ref">Camera-projector-array alignment</span></a> and the other <code class="docutils literal notranslate"><span class="pre">mea_</span></code> properties of this class.</p>
+</dd>
+<dt><cite>mirror_mea</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">true</span>
+</pre></div>
+</div>
+<p>When True, the MEA grid is mirrored vertically around the center.
+See <code class="xref py py-attr docutils literal notranslate"><span class="pre">mea_transform</span></code> also.</p>
+</dd>
+<dt><cite>output_count</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">true</span>
+</pre></div>
+</div>
+<p>Whether the corner pixel is used to output frame information on the
+PROPixx controller IO pot as described in
+<a class="reference internal" href="api/storage/controller.html#ceed.storage.controller.DataSerializerBase" title="ceed.storage.controller.DataSerializerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataSerializerBase</span></code></a>.
+If True, <a class="reference internal" href="api/storage/controller.html#ceed.storage.controller.DataSerializerBase" title="ceed.storage.controller.DataSerializerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.storage.controller.DataSerializerBase</span></code></a> is used to set
+the 24 bits of the corner pixel. Otherwise, that pixel is treated like the
+other normal pixels.</p>
+</dd>
+<dt><cite>pad_to_stage_handshake</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">true</span>
+</pre></div>
+</div>
+<p>Ad described in <a class="reference internal" href="api/storage/controller.html#ceed.storage.controller.DataSerializerBase" title="ceed.storage.controller.DataSerializerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataSerializerBase</span></code></a>,
+Ceed sends handshaking data to the MCS system at the start of each
+experiment. This helps us align the Ceed and MCS data afterwards. If the
+root stage of the experiment is too short, it’s possible the full handshake
+would not be sent, preventing alignment afterwards.
+If <code class="xref py py-attr docutils literal notranslate"><span class="pre">pad_to_stage_handshake</span></code>, then the root stage will be padded
+so it goes for the minimum number of clock frames required to finish
+the handshake, if it’s too short. The shapes will be black for those
+padded frames.</p>
+</dd>
+<dt><cite>pre_compute_stages</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">false</span>
+</pre></div>
+</div>
+<p>Whether the stage run by the experiment should be pre-computed. See
+<a class="reference internal" href="api/stage/stage.html#pre-compute"><span class="std std-ref">Pre-computing</span></a> for details.</p>
+</dd>
+<dt><cite>screen_height</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">1080</span>
+</pre></div>
+</div>
+<p>The screen height in pixels on which the data is played. This is the
+full-screen height.</p>
+</dd>
+<dt><cite>screen_offset_x</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">0</span>
+</pre></div>
+</div>
+<p>When there are multiple monitors, the monitor on which the experiment is
+shown in full-screen mode is controlled by the x-position of the displayed
+window.
+E.g. to show it on the right monitor of two monitors each 1920 pixel wide,
+and with the main monitor being on the left. Then the
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">screen_offset_x</span></code> should be set to <code class="docutils literal notranslate"><span class="pre">1920</span></code>.</p>
+</dd>
+<dt><cite>screen_width</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">1920</span>
+</pre></div>
+</div>
+<p>The screen width in pixels on which the data is played. This is the
+full-screen width.</p>
+</dd>
+<dt><cite>skip_estimated_missed_frames</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">true</span>
+</pre></div>
+</div>
+<p>Whether to drop frames to compensate when we detect that a previous
+frame was displayed for longer than a single GPU frame duration. Then, we
+may want to drop an equivalent number of frames, rather than
+displaying all the subsequent frames at a delay.
+See <code class="xref py py-class docutils literal notranslate"><span class="pre">FrameEstimation</span></code> and <code class="xref py py-class docutils literal notranslate"><span class="pre">TeensyFrameEstimation</span></code> for how
+we detect these long frames. Use <code class="xref py py-attr docutils literal notranslate"><span class="pre">TeensyFrameEstimation.use_teensy</span></code>
+to control which estimator is used.</p>
+</dd>
+<dt><cite>use_software_frame_rate</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">false</span>
+</pre></div>
+</div>
+<p>Depending on the CPU/GPU, the software may be unable to render faster
+than the GPU refresh rate. In that case, the GPU limits us to the GPU frame
+rate and <code class="xref py py-attr docutils literal notranslate"><span class="pre">frame_rate</span></code> should be set to match the GPU refresh rate
+and this should be False.
+If the GPU isn’t forcing a frame rate. Then this should be True and
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">frame_rate</span></code> should be the desired frame rate. That will restrict us
+the given frame rate. However, the actual frame rate will be wildly
+inaccurate in this mode, so it’s only useful for testing.
+One can tell whether the GPU is forcing a frame rate by setting
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">frame_rate</span></code> to a large value and setting
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">use_software_frame_rate</span></code> to False and seeing what the resultant
+frame rate is. If it isn’t capped at some value constant, e.g. 120Hz, it
+means that the GPU isn’t forcing a rate.</p>
+</dd>
+<dt><cite>video_mode</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">RGB</span>
+</pre></div>
+</div>
+<p>The current video mode from among the <code class="xref py py-attr docutils literal notranslate"><span class="pre">video_modes</span></code>.
+See also <a class="reference internal" href="api/view/controller.html#view-video-mode"><span class="std std-ref">Video mode</span></a>.</p>
+</dd>
+</dl>
+<div class="section" id="teensy-frame-estimation">
+<h3>teensy_frame_estimation<a class="headerlink" href="#teensy-frame-estimation" title="Permalink to this headline">¶</a></h3>
+<dl>
+<dt><cite>usb_product_id</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">1158</span>
+</pre></div>
+</div>
+<p>The Teensy product ID. This is how we find the attached Teensy on the
+bus. If there’s more than one, this needs to be modified.</p>
+</dd>
+<dt><cite>usb_vendor_id</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">5824</span>
+</pre></div>
+</div>
+<p>The Teensy vendor ID. This is how we find the attached Teensy on the
+bus. If there’s more than one, this needs to be modified.</p>
+</dd>
+<dt><cite>use_teensy</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">true</span>
+</pre></div>
+</div>
+<p>Whether to use the Teensy.
+If it’s not attached, set this to False. When False, it falls back on
+<code class="xref py py-class docutils literal notranslate"><span class="pre">FrameEstimation</span></code>.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="frame-estimation">
+<h3>frame_estimation<a class="headerlink" href="#frame-estimation" title="Permalink to this headline">¶</a></h3>
+<dl>
+<dt><cite>skip_detection_smoothing_n_frames</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">4</span>
+</pre></div>
+</div>
+<p>How many frames ot average to detect when a frame needs to be skipped.
+See class description.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="section" id="serializer">
+<h2>serializer<a class="headerlink" href="#serializer" title="Permalink to this headline">¶</a></h2>
+<dl>
+<dt><cite>clock_idx</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">2</span>
+</pre></div>
+</div>
+<p>The bit index to use for the clock.
+A number between 0-23, inclusive.</p>
+</dd>
+<dt><cite>count_indices</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">-</span> <span class="mi">19</span>
+<span class="o">-</span> <span class="mi">20</span>
+</pre></div>
+</div>
+<p>A list of bit indices to use for the long counter as explained in
+<code class="xref py py-class docutils literal notranslate"><span class="pre">DataSerializerBase</span></code>.
+Each item is a number between 0-23, inclusive. Their order is the order of
+the counter bit pattern. The first index is for the first (least
+significant) bit of the counter etc.
+If the length of <code class="xref py py-attr docutils literal notranslate"><span class="pre">count_indices</span></code> doesn’t divide
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">counter_bit_width</span></code> exactly, the ends are padded with zeros for those
+bits.</p>
+</dd>
+<dt><cite>counter_bit_width</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">32</span>
+</pre></div>
+</div>
+<p>The number of bits in the long counter, as described in
+<code class="xref py py-class docutils literal notranslate"><span class="pre">DataSerializerBase</span></code>.
+Must be a multiple of 8 (to align with a byte).</p>
+</dd>
+<dt><cite>projector_to_aquisition_map</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">2</span><span class="p">:</span> <span class="mi">0</span>
+<span class="mi">3</span><span class="p">:</span> <span class="mi">1</span>
+<span class="mi">4</span><span class="p">:</span> <span class="mi">2</span>
+<span class="mi">10</span><span class="p">:</span> <span class="mi">3</span>
+<span class="mi">11</span><span class="p">:</span> <span class="mi">4</span>
+<span class="mi">12</span><span class="p">:</span> <span class="mi">5</span>
+<span class="mi">18</span><span class="p">:</span> <span class="mi">6</span>
+<span class="mi">19</span><span class="p">:</span> <span class="mi">7</span>
+<span class="mi">20</span><span class="p">:</span> <span class="mi">8</span>
+</pre></div>
+</div>
+<p>Maps the bit indices used by Ceed to the corresponding bit indices used
+by MCS. It is required to be able to align the two systems.
+I.e. if port zero of the projector is connected to port 3 of the MCS
+controller, then this would be <code class="docutils literal notranslate"><span class="pre">{0:</span> <span class="pre">3}</span></code>.</p>
+</dd>
+<dt><cite>short_count_indices</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">-</span> <span class="mi">3</span>
+<span class="o">-</span> <span class="mi">4</span>
+<span class="o">-</span> <span class="mi">10</span>
+<span class="o">-</span> <span class="mi">11</span>
+<span class="o">-</span> <span class="mi">12</span>
+<span class="o">-</span> <span class="mi">18</span>
+</pre></div>
+</div>
+<p>A list of bit indices to use for the short counter as explained in
+<code class="xref py py-class docutils literal notranslate"><span class="pre">DataSerializerBase</span></code>.
+Each item is a number between 0-23, inclusive. Their order is the order of
+the counter bit pattern. E.g. if it was <code class="docutils literal notranslate"><span class="pre">[1,</span> <span class="pre">3]</span></code>, the the bit pattern for
+just the counter would look like: 0b0000, 0b0010, 0b1000, 0b1010, 0b0000,
+0b0010, 0b1000…</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="player">
+<h2>player<a class="headerlink" href="#player" title="Permalink to this headline">¶</a></h2>
+<dl>
+<dt><cite>player_name</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ffmpeg</span>
+</pre></div>
+</div>
+<p>The name of the currently selected video player. It is one of “ffmpeg”,
+“thor”, “ptgray”, or “client”.</p>
+</dd>
+</dl>
+<div class="section" id="video-recorder">
+<h3>video_recorder<a class="headerlink" href="#video-recorder" title="Permalink to this headline">¶</a></h3>
+<dl>
+<dt><cite>estimate_record_rate</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">false</span>
+</pre></div>
+</div>
+<p>Whether to use <a class="reference external" href="https://matham.github.io/cpl_media/api/player.html#cpl_media.player.BasePlayer.real_rate" title="(in CPL_Media)"><code class="xref py py-attr docutils literal notranslate"><span class="pre">cpl_media.player.BasePlayer.real_rate</span></code></a> for the
+recorder frame rate, as opposed to the one initially provided by the
+player.</p>
+</dd>
+<dt><cite>metadata_record</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">null</span>
+</pre></div>
+</div>
+<p>(internal) Describes the video metadata of the recorder. This is
+the requested format, or best guess of the metadata.
+Read only.</p>
+</dd>
+<dt><cite>record_directory</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">runner</span>
+</pre></div>
+</div>
+<p>The directory into which videos should be saved.</p>
+</dd>
+<dt><cite>record_fname</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">video</span><span class="p">{}</span><span class="o">.</span><span class="n">mkv</span>
+</pre></div>
+</div>
+<p>The filename to be used to record the next video.
+If <code class="docutils literal notranslate"><span class="pre">{}</span></code> is present in the filename, it’ll be replaced with the value of
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">record_fname_count</span></code> which auto increments after every video, when
+used. We use Python’s <code class="docutils literal notranslate"><span class="pre">format</span></code> machinery for this.</p>
+</dd>
+<dt><cite>record_fname_count</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">0</span>
+</pre></div>
+</div>
+<p>A counter that auto increments by one after every recorded video.
+Used to give unique filenames for each video file. See
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">record_fname</span></code>.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="thor">
+<h3>thor<a class="headerlink" href="#thor" title="Permalink to this headline">¶</a></h3>
+<dl>
+<dt><cite>binning_x</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">0</span>
+</pre></div>
+</div>
+<p>The x binning value to use.</p>
+</dd>
+<dt><cite>binning_x_range</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">-</span> <span class="mi">0</span>
+<span class="o">-</span> <span class="mi">0</span>
+</pre></div>
+</div>
+<p>The supported exposure range.</p>
+</dd>
+<dt><cite>binning_y</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">0</span>
+</pre></div>
+</div>
+<p>The y binning value to use.</p>
+</dd>
+<dt><cite>binning_y_range</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">-</span> <span class="mi">0</span>
+<span class="o">-</span> <span class="mi">0</span>
+</pre></div>
+</div>
+<p>The supported exposure range.</p>
+</dd>
+<dt><cite>black_level</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">0</span>
+</pre></div>
+</div>
+<p>The black level value to use.</p>
+</dd>
+<dt><cite>black_level_range</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">-</span> <span class="mi">0</span>
+<span class="o">-</span> <span class="mi">100</span>
+</pre></div>
+</div>
+<p>The supported exposure range.</p>
+</dd>
+<dt><cite>color_gain</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">-</span> <span class="mi">1</span>
+<span class="o">-</span> <span class="mi">1</span>
+<span class="o">-</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<p>The color gain for each red, green, and blue channel.</p>
+</dd>
+<dt><cite>exposure_ms</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">0</span>
+</pre></div>
+</div>
+<p>The exposure value in ms to use.</p>
+</dd>
+<dt><cite>exposure_range</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">-</span> <span class="mi">0</span>
+<span class="o">-</span> <span class="mi">100</span>
+</pre></div>
+</div>
+<p>The supported exposure range in ms.</p>
+</dd>
+<dt><cite>frame_queue_size</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">1</span>
+</pre></div>
+</div>
+<p>The max number of image frames to be allowed on the camera’s hardware
+queue. Once exceeded, the frames are dropped.</p>
+</dd>
+<dt><cite>freq</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">20</span> <span class="n">MHz</span>
+</pre></div>
+</div>
+<p>The frequency to use.</p>
+</dd>
+<dt><cite>gain</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">0</span>
+</pre></div>
+</div>
+<p>The gain value to use.</p>
+</dd>
+<dt><cite>gain_range</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">-</span> <span class="mi">0</span>
+<span class="o">-</span> <span class="mi">100</span>
+</pre></div>
+</div>
+<p>The supported exposure range.</p>
+</dd>
+<dt><cite>metadata_play</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">null</span>
+</pre></div>
+</div>
+<p>(internal) Describes the video metadata of the video player. This is
+the requested format, or best guess of the metadata.
+Read only.</p>
+</dd>
+<dt><cite>metadata_play_used</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">null</span>
+</pre></div>
+</div>
+<p>(internal) Describes the video metadata of the video player that is
+actually used by the player. This must be set before recorders may allow
+recording the player.
+Depending on the metadata needed by the recorder, it may refuse to
+record until the needed metadata is given.
+Read only.</p>
+</dd>
+<dt><cite>num_queued_frames</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">0</span>
+</pre></div>
+</div>
+<p>The number of image frames currently on the camera’s hardware queue.</p>
+</dd>
+<dt><cite>roi_height</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">0</span>
+</pre></div>
+</div>
+<p>The height after the y start position of the ROI in pixels, to use.</p>
+</dd>
+<dt><cite>roi_width</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">0</span>
+</pre></div>
+</div>
+<p>The width after the x start position of the ROI in pixels, to use.</p>
+</dd>
+<dt><cite>roi_x</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">0</span>
+</pre></div>
+</div>
+<p>The x start position of the ROI in pixels.</p>
+</dd>
+<dt><cite>roi_y</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">0</span>
+</pre></div>
+</div>
+<p>The y start position of the ROI in pixels.</p>
+</dd>
+<dt><cite>sensor_size</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">-</span> <span class="mi">0</span>
+<span class="o">-</span> <span class="mi">0</span>
+</pre></div>
+</div>
+<p>The size of the sensor in pixels.</p>
+</dd>
+<dt><cite>serial</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s1">&#39;&#39;</span>
+</pre></div>
+</div>
+<p>The serial number of the camera that will be opened.</p>
+</dd>
+<dt><cite>serials</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[]</span>
+</pre></div>
+</div>
+<p>The list of serial numbers representing the cameras available.</p>
+</dd>
+<dt><cite>supported_freqs</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">-</span> <span class="mi">20</span> <span class="n">MHz</span>
+</pre></div>
+</div>
+<p>The supported frequencies.</p>
+</dd>
+<dt><cite>supported_taps</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">-</span> <span class="s1">&#39;1&#39;</span>
+</pre></div>
+</div>
+<p>The supported taps.</p>
+</dd>
+<dt><cite>supported_triggers</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">-</span> <span class="n">SW</span> <span class="n">Trigger</span>
+<span class="o">-</span> <span class="n">HW</span> <span class="n">Trigger</span>
+</pre></div>
+</div>
+<p>The trigger types supported by the camera.</p>
+</dd>
+<dt><cite>supports_color</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">false</span>
+</pre></div>
+</div>
+<p>Whether the camera supports color.</p>
+</dd>
+<dt><cite>taps</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s1">&#39;1&#39;</span>
+</pre></div>
+</div>
+<p>The tap to use.</p>
+</dd>
+<dt><cite>trigger_count</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">0</span>
+</pre></div>
+</div>
+<p>The number of frames to capture in response to the trigger.</p>
+</dd>
+<dt><cite>trigger_type</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SW</span> <span class="n">Trigger</span>
+</pre></div>
+</div>
+<p>The trigger type of the camera to use.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="ptgray">
+<h3>ptgray<a class="headerlink" href="#ptgray" title="Permalink to this headline">¶</a></h3>
+<dl>
+<dt><cite>brightness</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{}</span>
+</pre></div>
+</div>
+<p>The camera options for the brightness setting.
+This may only be set by calling <code class="xref py py-meth docutils literal notranslate"><span class="pre">ask_cam_option_config()</span></code>, not
+set directly.</p>
+</dd>
+<dt><cite>cam_config_opts</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">fmt</span><span class="p">:</span> <span class="n">yuv422</span>
+</pre></div>
+</div>
+<p>The configuration options used to configure the camera after opening.
+This are internal and can only be set by the internal thread once
+initially set by config.</p>
+</dd>
+<dt><cite>exposure</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{}</span>
+</pre></div>
+</div>
+<p>The camera options for the exposure setting.
+This may only be set by calling <code class="xref py py-meth docutils literal notranslate"><span class="pre">ask_cam_option_config()</span></code>, not
+set directly.</p>
+</dd>
+<dt><cite>frame_rate</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{}</span>
+</pre></div>
+</div>
+<p>The camera options for the frame_rate setting.
+This may only be set by calling <code class="xref py py-meth docutils literal notranslate"><span class="pre">ask_cam_option_config()</span></code>, not
+set directly.</p>
+</dd>
+<dt><cite>gain</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{}</span>
+</pre></div>
+</div>
+<p>The camera options for the gain setting.
+This may only be set by calling <code class="xref py py-meth docutils literal notranslate"><span class="pre">ask_cam_option_config()</span></code>, not
+set directly.</p>
+</dd>
+<dt><cite>gamma</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{}</span>
+</pre></div>
+</div>
+<p>The camera options for the gamma setting.
+This may only be set by calling <code class="xref py py-meth docutils literal notranslate"><span class="pre">ask_cam_option_config()</span></code>, not
+set directly.</p>
+</dd>
+<dt><cite>hue</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{}</span>
+</pre></div>
+</div>
+<p>The camera options for the hue setting.
+This may only be set by calling <code class="xref py py-meth docutils literal notranslate"><span class="pre">ask_cam_option_config()</span></code>, not
+set directly.</p>
+</dd>
+<dt><cite>ip</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s1">&#39;&#39;</span>
+</pre></div>
+</div>
+<p>The IP address of the camera to open. Either <code class="xref py py-attr docutils literal notranslate"><span class="pre">ip</span></code> or
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">serial</span></code> must be provided.</p>
+</dd>
+<dt><cite>iris</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{}</span>
+</pre></div>
+</div>
+<p>The camera options for the iris setting.
+This may only be set by calling <code class="xref py py-meth docutils literal notranslate"><span class="pre">ask_cam_option_config()</span></code>, not
+set directly.</p>
+</dd>
+<dt><cite>metadata_play</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">null</span>
+</pre></div>
+</div>
+<p>(internal) Describes the video metadata of the video player. This is
+the requested format, or best guess of the metadata.
+Read only.</p>
+</dd>
+<dt><cite>metadata_play_used</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">null</span>
+</pre></div>
+</div>
+<p>(internal) Describes the video metadata of the video player that is
+actually used by the player. This must be set before recorders may allow
+recording the player.
+Depending on the metadata needed by the recorder, it may refuse to
+record until the needed metadata is given.
+Read only.</p>
+</dd>
+<dt><cite>mirror</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">false</span>
+</pre></div>
+</div>
+<p>Whether the camera is mirrored. Read only.</p>
+</dd>
+<dt><cite>pan</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{}</span>
+</pre></div>
+</div>
+<p>The camera options for the pan setting.
+This may only be set by calling <code class="xref py py-meth docutils literal notranslate"><span class="pre">ask_cam_option_config()</span></code>, not
+set directly.</p>
+</dd>
+<dt><cite>saturation</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{}</span>
+</pre></div>
+</div>
+<p>The camera options for the saturation setting.
+This may only be set by calling <code class="xref py py-meth docutils literal notranslate"><span class="pre">ask_cam_option_config()</span></code>, not
+set directly.</p>
+</dd>
+<dt><cite>serial</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">0</span>
+</pre></div>
+</div>
+<p>The serial number of the camera to open. Either <code class="xref py py-attr docutils literal notranslate"><span class="pre">ip</span></code> or
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">serial</span></code> must be provided.</p>
+</dd>
+<dt><cite>sharpness</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{}</span>
+</pre></div>
+</div>
+<p>The camera options for the sharpness setting.
+This may only be set by calling <code class="xref py py-meth docutils literal notranslate"><span class="pre">ask_cam_option_config()</span></code>, not
+set directly.</p>
+</dd>
+<dt><cite>shutter</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{}</span>
+</pre></div>
+</div>
+<p>The camera options for the shutter setting.
+This may only be set by calling <code class="xref py py-meth docutils literal notranslate"><span class="pre">ask_cam_option_config()</span></code>, not
+set directly.</p>
+</dd>
+<dt><cite>tilt</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{}</span>
+</pre></div>
+</div>
+<p>The camera options for the tilt setting.
+This may only be set by calling <code class="xref py py-meth docutils literal notranslate"><span class="pre">ask_cam_option_config()</span></code>, not
+set directly.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="network-client">
+<h3>network_client<a class="headerlink" href="#network-client" title="Permalink to this headline">¶</a></h3>
+<dl>
+<dt><cite>metadata_play</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">null</span>
+</pre></div>
+</div>
+<p>(internal) Describes the video metadata of the video player. This is
+the requested format, or best guess of the metadata.
+Read only.</p>
+</dd>
+<dt><cite>metadata_play_used</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">null</span>
+</pre></div>
+</div>
+<p>(internal) Describes the video metadata of the video player that is
+actually used by the player. This must be set before recorders may allow
+recording the player.
+Depending on the metadata needed by the recorder, it may refuse to
+record until the needed metadata is given.
+Read only.</p>
+</dd>
+<dt><cite>port</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">0</span>
+</pre></div>
+</div>
+<p>The server port that broadcasts the data.</p>
+</dd>
+<dt><cite>server</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s1">&#39;&#39;</span>
+</pre></div>
+</div>
+<p>The server address that broadcasts the data.</p>
+</dd>
+<dt><cite>timeout</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">0.01</span>
+</pre></div>
+</div>
+<p>How long to wait before timing out when reading data before checking the
+queue for other requests.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="image-file-recorder">
+<h3>image_file_recorder<a class="headerlink" href="#image-file-recorder" title="Permalink to this headline">¶</a></h3>
+<dl>
+<dt><cite>compression</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">raw</span>
+</pre></div>
+</div>
+<p>Whether to compress when <code class="xref py py-attr docutils literal notranslate"><span class="pre">extension</span></code> is <cite>tiff</cite>. Can be one of
+<code class="docutils literal notranslate"><span class="pre">'raw',</span> <span class="pre">'lzw',</span> <span class="pre">'zip'</span></code>.</p>
+</dd>
+<dt><cite>extension</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">tiff</span>
+</pre></div>
+</div>
+<p>The extension of the images being saved.</p>
+</dd>
+<dt><cite>metadata_record</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">null</span>
+</pre></div>
+</div>
+<p>(internal) Describes the video metadata of the recorder. This is
+the requested format, or best guess of the metadata.
+Read only.</p>
+</dd>
+<dt><cite>record_directory</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">runner</span>
+</pre></div>
+</div>
+<p>The directory into which videos should be saved.</p>
+</dd>
+<dt><cite>record_prefix</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">image_</span>
+</pre></div>
+</div>
+<p>The prefix to the filename of the images being saved.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="ffmpeg">
+<h3>ffmpeg<a class="headerlink" href="#ffmpeg" title="Permalink to this headline">¶</a></h3>
+<dl>
+<dt><cite>dshow_filename</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s1">&#39;&#39;</span>
+</pre></div>
+</div>
+<p>The name of the dshow camera to open.</p>
+</dd>
+<dt><cite>dshow_opt</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s1">&#39;&#39;</span>
+</pre></div>
+</div>
+<p>The camera options associated with <code class="xref py py-attr docutils literal notranslate"><span class="pre">dshow_true_filename</span></code> when
+dshow is used.</p>
+</dd>
+<dt><cite>dshow_rate</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">0</span>
+</pre></div>
+</div>
+<p>The frame rate to request from the dshow camera.</p>
+</dd>
+<dt><cite>dshow_true_filename</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s1">&#39;&#39;</span>
+</pre></div>
+</div>
+<p>The real and complete filename of the direct show (webcam) device.</p>
+</dd>
+<dt><cite>file_fmt</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s1">&#39;&#39;</span>
+</pre></div>
+</div>
+<p>The format used to play the video. Can be empty or a format e.g.
+<code class="docutils literal notranslate"><span class="pre">mjpeg</span></code> for webcams.</p>
+</dd>
+<dt><cite>icodec</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s1">&#39;&#39;</span>
+</pre></div>
+</div>
+<p>The codec used to open the video stream with if it needs to be
+specified for the camera.</p>
+</dd>
+<dt><cite>metadata_play</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">null</span>
+</pre></div>
+</div>
+<p>(internal) Describes the video metadata of the video player. This is
+the requested format, or best guess of the metadata.
+Read only.</p>
+</dd>
+<dt><cite>metadata_play_used</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">null</span>
+</pre></div>
+</div>
+<p>(internal) Describes the video metadata of the video player that is
+actually used by the player. This must be set before recorders may allow
+recording the player.
+Depending on the metadata needed by the recorder, it may refuse to
+record until the needed metadata is given.
+Read only.</p>
+</dd>
+<dt><cite>play_filename</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s1">&#39;&#39;</span>
+</pre></div>
+</div>
+<p>The filename of the media being played. Can be e.g. a filename etc.</p>
+</dd>
+<dt><cite>use_dshow</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">true</span>
+</pre></div>
+</div>
+<p>Whether we use dshow - i.e. USB webcams, or normal media sources.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="section" id="function">
+<h2>function<a class="headerlink" href="#function" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="data">
+<h2>data<a class="headerlink" href="#data" title="Permalink to this headline">¶</a></h2>
+<dl>
+<dt><cite>backup_interval</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">5.0</span>
+</pre></div>
+</div>
+<p>How frequently the backup file is flushed to disk.
+The backup file is the one into which all new data is written to
+until saved explicitly in the GUI to the current data file. Until that
+happens, we write date to the backup file.</p>
+</dd>
+<dt><cite>compression</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Auto</span>
+</pre></div>
+</div>
+<p>Whether the h5 data file should internally compress the data that it
+writes.
+This is handled internally by the H5 library, with no external difference
+in how the file is loaded/saved/accessed, except that the file size may be
+smaller when compressed. Additionally, it may take a little more CPU when
+saving experiment data if compressions is enabled.
+Valid values are <code class="docutils literal notranslate"><span class="pre">&quot;ZIP&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;None&quot;</span></code>, or <code class="docutils literal notranslate"><span class="pre">&quot;Auto&quot;</span></code>.</p>
+</dd>
+<dt><cite>root_path</cite>:</dt><dd><p>Default value:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s1">&#39;&#39;</span>
+</pre></div>
+</div>
+<p>The directory part of the path where the data is saved.</p>
+</dd>
+</dl>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="example_code/example_code.html" class="btn btn-neutral float-right" title="Example Analysis Code" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="guide/experiment.html" class="btn btn-neutral float-left" title="Ceed experiment" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2019, Matthew Einhorn.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

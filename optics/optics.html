@@ -1,0 +1,591 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Microscope optics &mdash; Ceed  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="Graphics" href="../api/graphics/graphics.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Ceed
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../blueprint.html">System Blueprint</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../config.html">CEED Config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../example_code/example_code.html">Example Analysis Code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../apps/apps.html">Ceed Apps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/api.html">The Ceed API</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Microscope optics</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#specs">Specs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#projector-to-tissue-light-path">Projector to tissue light path</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#static-optical-analysis">Static Optical Analysis</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#l1">L1</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#l2">L2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#l3">L3</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#l4">L4</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#dynamic-optical-analysis">Dynamic Optical Analysis</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#projector">Projector</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dynamic-l1">L1</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dynamic-l2">L2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dynamic-l3">L3</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dynamic-l4">L4</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#tissue-to-camera-light-path">Tissue to camera light path</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id6">Static Optical Analysis</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#static-cam-l4">L4</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#l5">L5</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#l6">L6</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#l7">L7</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#id8">Dynamic Optical Analysis</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dynamic-cam-l4">L4</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dynamic-cam-l5">L5</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dynamic-cam-l6">L6</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dynamic-cam-l7">L7</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Ceed</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Microscope optics</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/optics/optics.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="microscope-optics">
+<span id="id1"></span><h1>Microscope optics<a class="headerlink" href="#microscope-optics" title="Permalink to this headline">¶</a></h1>
+<p>This guide shows the current specification for all the lensing in the
+microscope.</p>
+<p>It lists all the lenses used in the microscope as well as the exact positioning
+for each of the lenses to achieve the desired projection and camera magnification.</p>
+<p>For each lens choice it estimated the best value using screenshots generated by running
+the <a class="reference internal" href="../apps/optics_app.html#optics-app"><span class="std std-ref">Optics App</span></a> with test values.</p>
+<div class="section" id="specs">
+<h2>Specs<a class="headerlink" href="#specs" title="Permalink to this headline">¶</a></h2>
+<p>Here’s a list of all the lenses used in the microscope.
+All distances are from the center of the dichroic cube.</p>
+<ol class="arabic simple">
+<li><p>Projector. <strong>PROPixx projector</strong>. Focal distance is 1.22 meters. <strong>&#64;32cm</strong>.</p></li>
+<li><p>L1<strong>. AC508-075-A-ML</strong>. f=75mm – 2”. <strong>&#64;27.5cm</strong>.</p></li>
+<li><p><strong>ND filter</strong>.</p></li>
+<li><p>L2. <strong>AC508-100-A-ML</strong>. f=100mm – 2”. <strong>&#64;21.2cm</strong>.</p></li>
+<li><p>L3. <strong>AC254-030-A-ML</strong>. f=30mm – 1”. <strong>&#64;3.5cm</strong>.</p></li>
+<li><p><strong>Dichroic</strong>.</p></li>
+<li><p>L4. <strong>Nikon Plan Fluor</strong>. F=41.3mm. 4x/0.13, WD17.2. <strong>&#64;16.15cm</strong>.</p></li>
+<li><p>Tissue. <strong>Tissue platform</strong>. <strong>&#64;21.55cm</strong>.</p></li>
+<li><p>L5. <strong>AC508-080-A-ML</strong>. f=80mm – 2”. <strong>&#64;4.5cm</strong>.</p></li>
+<li><p>L6. <strong>AC508-100-A-ML</strong>. f=100mm – 2”. <strong>&#64;17.2cm</strong>.</p></li>
+<li><p>L7. <strong>AC508-180-A-ML</strong>. f=180mm – 2”. <strong>&#64;21.2cm</strong>.</p></li>
+<li><p>Acquisition. <strong>4070C-USB</strong> <strong>Thor cam</strong>. Sensor plate <strong>&#64;30.427cm</strong>.</p></li>
+</ol>
+<p><img alt="image0" src="../_images/image1.png" /></p>
+<p><img alt="image1" src="../_images/image2.jpeg" /></p>
+<p><strong>Optics analysis</strong></p>
+</div>
+<div class="section" id="projector-to-tissue-light-path">
+<h2>Projector to tissue light path<a class="headerlink" href="#projector-to-tissue-light-path" title="Permalink to this headline">¶</a></h2>
+<p>For the projector to tissue path, the axis goes from the projector
+towards the tissue through the dichroic mirror. The center of the
+dichroic is the zero point, and the projector is on the negative part of
+the axis and the tissue is on the positive side.</p>
+<div class="section" id="static-optical-analysis">
+<h3>Static Optical Analysis<a class="headerlink" href="#static-optical-analysis" title="Permalink to this headline">¶</a></h3>
+<p>Following is the optical details of all the optical components in the
+path.</p>
+<div class="section" id="l1">
+<span id="static-l1"></span><h4>L1<a class="headerlink" href="#l1" title="Permalink to this headline">¶</a></h4>
+<p>L1 must sit close to the projector to get the full projector view. The
+“object” input to the lens is projected by the projector. The “object”
+is between 1.22m to 10m on the right of the projector, depending on the
+focal setting of the projector’s lens. Although it’s the right of L1, we
+use the provided “object” position. We assume it’s set at 1.22m.</p>
+<p><a class="reference internal" href="../_images/image3.png"><img alt="image2" src="../_images/image3.png" style="width: 1.87500in; height: 2.70833in;" /></a></p>
+<p>Figure 1 The characteristics of L1.</p>
+<p>The figure is read as follows, we input the focal length of the lens,
+the position of the lens and the object (as output by the projector).
+The output is the estimated image position (on the other side of the
+lens, if positive relative to the lens), the magnification, and the
+relative distance between the lens and the image.</p>
+</div>
+<div class="section" id="l2">
+<span id="static-l2"></span><h4>L2<a class="headerlink" href="#l2" title="Permalink to this headline">¶</a></h4>
+<p>L2 is the zoom lens, that we use to change the magnification of the
+final pattern projected on the tissue, without changing the position of
+the projected image.</p>
+<p><a class="reference internal" href="../_images/image4.png"><img alt="image3" src="../_images/image4.png" style="width: 1.87500in; height: 2.70833in;" /></a></p>
+<p>Figure 2 The characteristics of L2.</p>
+</div>
+<div class="section" id="l3">
+<span id="static-l3"></span><h4>L3<a class="headerlink" href="#l3" title="Permalink to this headline">¶</a></h4>
+<p>L3 is a smaller lens that sits on the dichroic. By being directly
+attached to the dichroic, it physically acts as an aperture, preventing
+any stray light from casting echoes on the tissue. If the lens is not
+directly attached to the dichroic cube cage, there is a circle of
+interfering reflections around the tissue.</p>
+<p><a class="reference internal" href="../_images/image5.png"><img alt="image4" src="../_images/image5.png" style="width: 1.84583in; height: 2.73333in;" /></a></p>
+<p>Figure 3 The characteristics of L3.</p>
+</div>
+<div class="section" id="l4">
+<span id="static-l4"></span><h4>L4<a class="headerlink" href="#l4" title="Permalink to this headline">¶</a></h4>
+<p>L4 is the final objective lens before the tissue. The position of the
+lens is dictated by the positions of all the previous lenses and the
+projector, as well as the position of the tissue. It is adjusted to get
+a clear projection on the tissue. The final magnification should be
+approximately 0.4% of the original object projected by the projector.
+The distance between the center of the objective and the tissue should
+be about 5.57cm.</p>
+<p><a class="reference internal" href="../_images/image6.png"><img alt="image5" src="../_images/image6.png" style="width: 1.86667in; height: 2.70000in;" /></a></p>
+<p>Figure 4 The characteristics of L4.</p>
+</div>
+</div>
+<div class="section" id="dynamic-optical-analysis">
+<h3>Dynamic Optical Analysis<a class="headerlink" href="#dynamic-optical-analysis" title="Permalink to this headline">¶</a></h3>
+<p>In the following, we explore how the lens values were chosen and how the
+lens values change the primary variables – the final position of the
+projected pattern and its magnification. In all of this, we were looking
+for an ideal magnification around 0.4% and the minimal image
+displacement as a function of lens position for the zoom lens (L2).</p>
+<div class="section" id="projector">
+<span id="dynamic-projector"></span><h4>Projector<a class="headerlink" href="#projector" title="Permalink to this headline">¶</a></h4>
+<p><a class="reference internal" href="../_images/image7.png"><img alt="image6" src="../_images/image7.png" style="width: 7.37849in; height: 2.20833in;" /></a></p>
+<p>This figure shows how the mag and position would change as we move the
+projector left 20cm, or upto 5cm to the right. The largest effect is on
+the mag, which varies between 0.38% - 0.5%. Moving to the left increases
+mag.</p>
+</div>
+<div class="section" id="dynamic-l1">
+<span id="id2"></span><h4>L1<a class="headerlink" href="#dynamic-l1" title="Permalink to this headline">¶</a></h4>
+<p><a class="reference internal" href="../_images/image8.png"><img alt="image7" src="../_images/image8.png" style="width: 7.40435in; height: 2.18333in;" /></a></p>
+<p>This figure shows how the position and mag would change as we change the
+focal length and position of L1. We chose <a class="reference external" href="mailto:7&#46;5mm&#37;&#52;&#48;-27&#46;5cm">7<span>&#46;</span>5mm<span>&#64;</span>-27<span>&#46;</span>5cm</a>.</p>
+<p>From the right graph, while keeping all the other lenses constant we can
+only increase or decrease the focal length (x-axis), by about +/- 20mm
+if we want to maintain the current mag. However, we’d also need to move
+the lens by a lot (+/- 7.5cm) to maintain the mag. On the other hand,
+from the right graph, the image position will not change much.</p>
+<p><a class="reference internal" href="../_images/image9.png"><img alt="image8" src="../_images/image9.png" style="width: 7.43242in; height: 2.19583in;" /></a></p>
+<p>Using a 75mm lens, this figure shows how the mag and positon change as
+the lens is moved +/- 7.5 cm. It does change the mag between 0.36% and
+0.5% and the image position by about 1mm. However, it’s not practical
+because the projector would also need to be moved as the lens is right
+next to the projector. In addition, this does not take into account the
+effect of moving the projector, as that will also affect the variables.</p>
+</div>
+<div class="section" id="dynamic-l2">
+<span id="id3"></span><h4>L2<a class="headerlink" href="#dynamic-l2" title="Permalink to this headline">¶</a></h4>
+<p><a class="reference internal" href="../_images/image10.png"><img alt="image9" src="../_images/image10.png" style="width: 7.34783in; height: 2.16667in;" /></a></p>
+<p>This lens is used as the primary zoom lens. We used a 100mm and zoom by
+changing its position. From the right image, the lens is moved up until
+the bottom of the curve and down to change the mag. If the lens is much
+larger than 100mm, then its range of mag of less (we only cross 5 or 6
+contours). If it’s much less than 100mm, the mag changes too quickly.
+Additionally, from the right graph, getting much less than 100mm, will
+result and much larger final image position change, which is
+undesirable. 100mm, seems a good tradeoff, although smaller lenses can
+be used to further reduce the mag if needed.</p>
+<p><a class="reference internal" href="../_images/image11.png"><img alt="image10" src="../_images/image11.png" style="width: 7.34496in; height: 2.16250in;" /></a></p>
+<p>Using a 100mm lens, we look at how changing its position changes the mag
+and final image position. If we limit ourselves to the -25cm - -13cm
+range, we transverse the mag range of 0.3% - 0.7%, without changing the
+final image position much.</p>
+<p><a class="reference internal" href="../_images/image12.png"><img alt="image11" src="../_images/image12.png" style="width: 7.37128in; height: 2.22083in;" /></a></p>
+<p>For completeness, the figure above shows the variables when using a 75mm
+lens.</p>
+<p><a class="reference internal" href="../_images/image13.png"><img alt="image12" src="../_images/image13.png" style="width: 7.37090in; height: 2.22500in;" /></a></p>
+<p>As well as when using a 15mm lens. 10mm seems pretty optimal.</p>
+</div>
+<div class="section" id="dynamic-l3">
+<span id="id4"></span><h4>L3<a class="headerlink" href="#dynamic-l3" title="Permalink to this headline">¶</a></h4>
+<p><a class="reference internal" href="../_images/image14.png"><img alt="image13" src="../_images/image14.png" style="width: 7.43381in; height: 2.21250in;" /></a></p>
+<p>We used a 30mm lens, that is attached to the dichroic cub. From the
+right figure we must stick to lenses less than 40mm because larger
+lenses will take us out of the required mag range. But, within the
+10mm-40mm range, changing the focal length changes mag quickly. But
+changing the position has little effect.</p>
+<p>On the other hand, the image position does change a lot when the lens
+position of focal length is changed.</p>
+<p><a class="reference internal" href="../_images/image15.png"><img alt="image14" src="../_images/image15.png" style="width: 7.35722in; height: 2.19583in;" /></a></p>
+<p>This figure shows how the mag and image position changes when the focal
+length is changed (very quickly).</p>
+<p><a class="reference internal" href="../_images/image16.png"><img alt="image15" src="../_images/image16.png" style="width: 7.37849in; height: 2.20833in;" /></a></p>
+<p>This figure similarly shows how the position and mag changes using a
+30mm lens and changing its position.</p>
+<p>Placing it right next to the cage, as required anyway to reduce
+reflections seems optimal.</p>
+</div>
+<div class="section" id="dynamic-l4">
+<span id="id5"></span><h4>L4<a class="headerlink" href="#dynamic-l4" title="Permalink to this headline">¶</a></h4>
+<p><a class="reference internal" href="../_images/image17.png"><img alt="image16" src="../_images/image17.png" style="width: 7.37403in; height: 2.20417in;" /></a></p>
+<p>This figure shows how the mag and position changes when changing the
+objective, L4, position. It seems to vary linearly for both variables.</p>
+</div>
+</div>
+</div>
+<div class="section" id="tissue-to-camera-light-path">
+<h2>Tissue to camera light path<a class="headerlink" href="#tissue-to-camera-light-path" title="Permalink to this headline">¶</a></h2>
+<p>For the tissue to camera path, the axis goes from the tissue towards the
+camera through the dichroic mirror. The center of the dichroic is the
+zero point, and the tissue is on the negative part of the axis and the
+camera is on the positive side.</p>
+<div class="section" id="id6">
+<h3>Static Optical Analysis<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h3>
+<p>Following is the optical details of all the optical components in the
+path.</p>
+<div class="section" id="static-cam-l4">
+<span id="id7"></span><h4>L4<a class="headerlink" href="#static-cam-l4" title="Permalink to this headline">¶</a></h4>
+<p>The position of L4 (objective lens) and the tissue location are
+predetermined by the projector light path and tissue location.</p>
+<p>Although in the last analysis we estimated that the image/tissue will be
+at -21.7161cm, we measured it to be around -21.55, likely due to
+imprecision of all the measurements. But we’ll use -21.55 as the object
+location for this light path.</p>
+<p><a class="reference internal" href="../_images/image18.png"><img alt="image17" src="../_images/image18.png" style="width: 1.84583in; height: 2.67917in;" /></a></p>
+</div>
+<div class="section" id="l5">
+<span id="static-cam-l5"></span><h4>L5<a class="headerlink" href="#l5" title="Permalink to this headline">¶</a></h4>
+<p>L5 is the first lens after the dichroic and sits as close to the
+dichroic cube cage as possible.</p>
+<p><a class="reference internal" href="../_images/image19.png"><img alt="image18" src="../_images/image19.png" style="width: 1.83333in; height: 2.70833in;" /></a></p>
+</div>
+<div class="section" id="l6">
+<span id="static-cam-l6"></span><h4>L6<a class="headerlink" href="#l6" title="Permalink to this headline">¶</a></h4>
+<p>L6 is our zoom lens, that we move up and down to zoom the camera image.</p>
+<p><a class="reference internal" href="../_images/image20.png"><img alt="image19" src="../_images/image20.png" style="width: 1.87500in; height: 2.66667in;" /></a></p>
+</div>
+<div class="section" id="l7">
+<span id="static-cam-l7"></span><h4>L7<a class="headerlink" href="#l7" title="Permalink to this headline">¶</a></h4>
+<p>L7 is the final lens before the camera. The final magnification is
+around 3.3x of the tissue and projected image. The distance between the
+center of the lens and the camera’s sensor plate is about 9.2cm.</p>
+<p><a class="reference internal" href="../_images/image21.png"><img alt="image20" src="../_images/image21.png" style="width: 1.83333in; height: 2.58333in;" /></a></p>
+</div>
+</div>
+<div class="section" id="id8">
+<h3>Dynamic Optical Analysis<a class="headerlink" href="#id8" title="Permalink to this headline">¶</a></h3>
+<p>In the following, we explore how the lens values were chosen and how the
+lens values change the primary variables – the final position of the
+image and therefore camera position and its magnification. In all of
+this, we were looking for an ideal magnification around 3.3x and the
+minimal image displacement as a function of lens position for the zoom
+lens (L6). Another limitation is that the distance between the final
+lens (L7) and the image cannot be much less than 5cm or 6cm because the
+lens and camera thickness prevent that.</p>
+<p>As a note, this light path has more server restrictions and degeneracies
+than the projector to tissue light path. We have no control over the
+position of the objective (L4) because that’s predetermined by the
+projector to tissue light path. Similarly, the minimum final lens to
+camera distance reduces the options significantly.</p>
+<div class="section" id="dynamic-cam-l4">
+<span id="id9"></span><h4>L4<a class="headerlink" href="#dynamic-cam-l4" title="Permalink to this headline">¶</a></h4>
+<p><a class="reference internal" href="../_images/image22.png"><img alt="image21" src="../_images/image22.png" style="width: 7.39894in; height: 2.22917in;" /></a></p>
+<p>This figure shows that as we change the object (tissue) position, if we
+change the objective position by the same amount in the same direction,
+both the mag and the final image position will remain generally
+unchanged. This is good, because as we saw earlier in the projector to
+tissue light path, if the objective is moved down, the projector will
+project the tissue image by about the same amount further. Therefore, if
+both the objective and the tissue are moved by the same amount, neither
+the projector nor the camera positions and lensing would need to be
+adjusted (perhaps by tiny amounts).</p>
+</div>
+<div class="section" id="dynamic-cam-l5">
+<span id="id10"></span><h4>L5<a class="headerlink" href="#dynamic-cam-l5" title="Permalink to this headline">¶</a></h4>
+<p><a class="reference internal" href="../_images/image23.png"><img alt="image22" src="../_images/image23.png" style="width: 7.33081in; height: 2.15833in;" /></a></p>
+<p>For L5, to have a good mag, we should prefer lower focal lengths. But
+too low will have too much mag. We picked 80mm. For image distance,
+focal length doesn’t have a significant impact.</p>
+<p><a class="reference internal" href="../_images/image24.png"><img alt="image23" src="../_images/image24.png" style="width: 7.32979in; height: 2.20833in;" /></a></p>
+<p>This figure shows how the lens position affects the mag and final image
+position when using a 80mm lens. As can be seen, increasing the lens
+position reduces the final image distance, which is a problem if it gets
+below the minimum final lens – camera distance. However, the mag
+increases. We placed it at 4.5cm, which the closest to the dichroic cube
+we could place it so that the final image will be as far from the final
+lens as possible.</p>
+</div>
+<div class="section" id="dynamic-cam-l6">
+<span id="id11"></span><h4>L6<a class="headerlink" href="#dynamic-cam-l6" title="Permalink to this headline">¶</a></h4>
+<p><a class="reference internal" href="../_images/image25.png"><img alt="image24" src="../_images/image25.png" style="width: 7.39682in; height: 2.17917in;" /></a></p>
+<p>The goal for this lens is to act as a zoom lens. Ideally, as we move it
+up and down the final image mag will change through our desired range,
+without changing the final image position by much. Looking at the left
+figure, we see that a 100mm lens is the most optimum because when it is
+moved up and down it will change final image position minimally.
+Similarly, from the right figure, when moved up and down it’ll go
+through a range of mag values quickly.</p>
+<p><a class="reference internal" href="../_images/image26.png"><img alt="image25" src="../_images/image26.png" style="width: 7.40975in; height: 2.19583in;" /></a></p>
+<p>This figure shows how the image position and mag will change when a
+100mm lens is moved up and down. We can see how the image position
+changes minimally, when the lens is moved through a range of mag values.</p>
+<p>We can also ask how the mag and position will change as the lens is
+moved up and down as a function of the focal length of L5 (the previous
+lens).</p>
+<p><a class="reference internal" href="../_images/image27.png"><img alt="image26" src="../_images/image27.png" style="width: 7.33081in; height: 2.15833in;" /></a></p>
+<p>Using 100mm for L6, this figure shows that as we change the focal length
+for L5, the image position doesn’t change much. But, by reducing the
+focal length, we can increase the baseline mag. So e.g. if we picked a
+75mm lens rather than 80mm for L5, we would get a higher magnification.</p>
+<p>Following we replicate the L6 figures using a 75mm lens for L5, rather
+than 80mm above.</p>
+<p><a class="reference internal" href="../_images/image28.png"><img alt="image27" src="../_images/image28.png" style="width: 7.30427in; height: 2.14583in;" /></a></p>
+<p><a class="reference internal" href="../_images/image29.png"><img alt="image28" src="../_images/image29.png" style="width: 7.31667in; height: 2.19453in;" /></a></p>
+<p>We can see that using 75mm, the image position change as a function of
+lens position is even flatter than with a 80mm lens and that the overall
+mag also increased. So choosing a 75mm vs 80mm for L5 can be changed
+depending on the desired mag, if we need to change it by a small amount.</p>
+<p><a class="reference internal" href="../_images/image30.png"><img alt="image29" src="../_images/image30.png" style="width: 7.36100in; height: 2.16250in;" /></a></p>
+<p>We can also ask how the mag and image position would change if we move
+L5 up away from the dichroic cage by a little. The right figure shows
+that increasing L5’s position will not change the mag range for L6 by
+much. It mostly serves to accentuate the change in the image position
+(left figure) as L5 is increased. But that can be traded against a mag
+increase if that’s desired.</p>
+</div>
+<div class="section" id="dynamic-cam-l7">
+<span id="id12"></span><h4>L7<a class="headerlink" href="#dynamic-cam-l7" title="Permalink to this headline">¶</a></h4>
+<p><a class="reference internal" href="../_images/image31.png"><img alt="image30" src="../_images/image31.png" style="width: 7.39764in; height: 2.18750in;" /></a></p>
+<p>For the final lens before the camera, we need to ensure that the image
+is not too close to the lens because otherwise the camera cannot get
+close enough to see it. This minimum distance is about 5cm. Therefore,
+for the right graph, instead of showing the image position as the
+intensity value, we shoe the distance between the lens and the image and
+threshold at 5cm.</p>
+<p>We observe that increasing the focal length will increase the final
+image position. On the other hand, increasing the final lens position
+will only decrease the image position. For the mag, increasing either
+the focal length or the lens position increases the mag. Therefore, this
+lens provides us some freedom to choose the baseline mag for the zoom
+lens.</p>
+<p><a class="reference internal" href="../_images/image32.png"><img alt="image31" src="../_images/image32.png" style="width: 7.36007in; height: 2.15417in;" /></a></p>
+<p>This figure shows the above observation more clearly, that for the
+selected lens position, increasing the focal length will increase the
+image position and mag.</p>
+<p><a class="reference internal" href="../_images/image33.png"><img alt="image32" src="../_images/image33.png" style="width: 7.38074in; height: 2.17917in;" /></a></p>
+<p>In the same vane it’s interesting to ask what the effect of increasing
+the focal length of the final lens (L7) will have on the mag range as L6
+is moved up and down. Similarly, how much is the final image position
+perturbed? The above figure shows that as we increase the focal length
+of L8, the baseline mag will increase. But, from the left figure it
+seems that as the focal length increases, the image position changes
+more. The following figure shows it clearly.</p>
+<p><a class="reference internal" href="../_images/image34.png"><img alt="image33" src="../_images/image34.png" style="width: 7.31475in; height: 2.19583in;" /></a></p>
+<p>This figure shows how the mag range and image position changes as L6 is
+moved up and down when L7 is 250mm, rather than 180mm above. We can see
+clearly that the baseline mag is larger on the right, but so is the
+image position deflection on the left. This suggests that 180mm is a
+overall good choice, except if higher mag is required.</p>
+<p><a class="reference internal" href="../_images/image35.png"><img alt="image34" src="../_images/image35.png" style="width: 7.37794in; height: 2.17500in;" /></a></p>
+<p>So far, we haven’t found a great way to increase the baseline mag by a
+lot. We saw earlier that as we increase the position of L7, the baseline
+mag increases, but the lens to image distance also decreases, which may
+be a problem. The above figure looks at the mag and image location range
+as the zoom lens is moved up and down for different L7 positions.
+Indeed, we can see that as L7 position increases, the overall mag
+increases.</p>
+<p><a class="reference internal" href="../_images/image36.png"><img alt="image35" src="../_images/image36.png" style="width: 7.37609in; height: 2.17500in;" /></a></p>
+<p>This figure shows the lens to image distance and mag values when we move
+L7 up to 27cm, rather than 21.2cm that we used earlier. We can see that
+indeed the overall mag increased, but so does the image position and
+that the image position is more variable.</p>
+</div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="../api/graphics/graphics.html" class="btn btn-neutral float-left" title="Graphics" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2019, Matthew Einhorn.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

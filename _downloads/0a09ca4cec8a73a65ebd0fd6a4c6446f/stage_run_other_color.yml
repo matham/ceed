@@ -1,0 +1,268 @@
+function:
+- A: 0.5
+  b: 0.2
+  cls: CosFunc
+  duration: 10.0
+  f: 12.0
+  loop: 3
+  name: Slow
+  noisy_parameter_samples: {}
+  noisy_parameters: {}
+  t_offset: 0.0
+  th0: 0.0
+  timebase_denominator: 1
+  timebase_numerator: 0
+- a: 0.05627246454096679
+  cls: ConstFunc
+  duration: 5.0
+  loop: 1
+  name: ConstRand
+  noisy_parameter_samples:
+    a:
+    - 0.5781763554132964
+    - 0.13841184660872252
+    - 0.8152149215809787
+    duration:
+    - 2.0
+    - 2.0
+    - 3.0
+  noisy_parameters:
+    a:
+      cls: UniformNoise
+      lock_after_forked: false
+      max_val: 1
+      min_val: 0
+      sample_each_loop: true
+    duration:
+      cls: DiscreteListNoise
+      csv_list: 2,3,5
+      lock_after_forked: false
+      sample_each_loop: true
+      with_replacement: true
+  t_offset: 0.0
+  timebase_denominator: 1
+  timebase_numerator: 0
+shape:
+  groups:
+  - name: Group1
+    shapes:
+    - Bunny
+    - Shape-2
+  - name: Group2
+    shapes:
+    - Shape-3
+    - Shape-4
+  - name: Group3
+    shapes:
+    - Shape-2
+    - Shape-4
+  shapes:
+  - cls: CeedPaintFreeformPolygon
+    is_valid: true
+    line_color: &id001
+    - 0
+    - 1
+    - 0
+    - 1
+    line_color_locked: &id002
+    - 0.4
+    - 0.56
+    - 0.36
+    - 1
+    line_width: 1.0
+    locked: false
+    name: Bunny
+    points:
+    - 962.5497787888569
+    - 982.6764256352185
+    - 883.0300509155874
+    - 1020.6559971567799
+    - 929.3176537074904
+    - 956.5654702141451
+    - 921.0096224371487
+    - 949.4443005538521
+    - 912.7015911668072
+    - 939.9494076734618
+    - 899.6461134562705
+    - 919.7727603026323
+    - 813.0052159227082
+    - 897.2223897117051
+    - 875.9088812552945
+    - 869.9245726805826
+    - 873.535158035197
+    - 834.3187243791187
+    - 878.282604475392
+    - 821.263246668582
+    - 885.4037741356848
+    - 808.2077689580453
+    - 898.4592518462216
+    - 795.1522912475085
+    - 903.2066982864166
+    - 791.591706417362
+    - 912.7015911668072
+    - 783.2836751470206
+    - 923.3833456572462
+    - 777.3493670967767
+    - 948.3074394682711
+    - 766.6676126063375
+    - 964.9235020089543
+    - 763.1070277761911
+    - 974.4183948893447
+    - 761.9201661661422
+    - 986.2870109898325
+    - 761.9201661661422
+    - 999.3424887003692
+    - 765.4807509962885
+    - 1008.8373815807599
+    - 772.6019206565813
+    - 1024.2665825113943
+    - 786.8442599771671
+    - 1030.2008905616378
+    - 791.591706417362
+    - 1044.4432298822235
+    - 805.8340457379478
+    - 1057.4987075927602
+    - 821.263246668582
+    - 1075.3016317434917
+    - 853.3085101398998
+    - 1085.98338623393
+    - 875.858880730827
+    - 1091.9176942841736
+    - 890.1012200514123
+    - 1099.0388639444673
+    - 912.6515906423393
+    - 1099.0388639444673
+    - 919.7727603026323
+    - 1101.4125871645645
+    - 930.4545147930714
+    - 1101.4125871645645
+    - 939.9494076734618
+    - 1101.4125871645645
+    - 943.5099925036083
+    - 1101.4125871645645
+    - 947.0705773337547
+    - 1101.4125871645645
+    - 951.81802377395
+    - 1097.852002334418
+    - 966.0603630945353
+    - 1091.9176942841736
+    - 975.5552559749257
+    - 1082.4228014037838
+    - 986.237010465365
+    - 1080.0490781836866
+    - 988.6107336854625
+    - 1074.1147701334423
+    - 993.3581801256578
+    - 1068.1804620831988
+    - 996.9187649558042
+    - 1055.124984372662
+    - 1005.2267962261457
+    - 1046.816953102321
+    - 1008.7873810562921
+    - 1044.4432298822235
+    - 1009.974242666341
+    - 1042.069506662126
+    - 1009.974242666341
+    - 1040.8826450520771
+    - 1009.974242666341
+    - 1039.6957834420284
+    - 1009.974242666341
+    selection_point:
+    - 962.5497787888569
+    - 982.6764256352185
+  - center:
+    - 472.37327716470463
+    - 875.8587847428909
+    cls: CeedPaintCircle
+    is_valid: true
+    line_color: *id001
+    line_color_locked: *id002
+    line_width: 1.0
+    locked: false
+    name: Shape-2
+    radius: 55.10096616145432
+  - angle: 0.08090409915522967
+    center:
+    - 681.2619625440715
+    - 671.7175694857823
+    cls: CeedPaintEllipse
+    is_valid: true
+    line_color: *id001
+    line_color_locked: *id002
+    line_width: 1.0
+    locked: false
+    name: Shape-3
+    radius_x: 68.21723109971273
+    radius_y: 37.21115647522902
+  - cls: CeedPaintPolygon
+    is_valid: true
+    line_color: *id001
+    line_color_locked: *id002
+    line_width: 1.0
+    locked: false
+    name: Shape-4
+    points:
+    - 588.6862951600341
+    - 956.5657768212826
+    - 556.6408718347902
+    - 815.3285406840971
+    - 766.7164247447217
+    - 815.3285406840971
+    - 794.0143779477071
+    - 1019.4697559412056
+    - 600.55497046568
+    - 1023.0303585328993
+    selection_point:
+    - 588.6862951600341
+    - 956.5657768212826
+  - cls: CeedPaintPolygon
+    is_valid: true
+    line_color: *id001
+    line_color_locked: *id002
+    line_width: 1.0
+    locked: false
+    name: enclosed
+    points:
+    - 0
+    - 0
+    - 1920
+    - 0
+    - 1920
+    - 1080
+    - 0
+    - 1080
+    selection_point:
+    - 0
+    - 0
+stage:
+- cls: CeedStage
+  color_b: true
+  color_g: false
+  color_r: true
+  complete_on: all
+  disable_pre_compute: false
+  functions:
+  - A: 0.5
+    b: 0.2
+    cls: CosFunc
+    duration: 2.0
+    f: 2.0
+    loop: 1
+    name: Cos
+    noisy_parameter_samples: {}
+    noisy_parameters: {}
+    t_offset: 0.0
+    th0: 0.0
+    timebase_denominator: 1
+    timebase_numerator: 0
+  - cls: CeedFuncRef
+    ref_name: ConstRand
+  loop: 3
+  name: RandStage
+  order: serial
+  shapes:
+  - keep_dark: false
+    name: Group1
+  - keep_dark: false
+    name: Shape-3
+  stages: []

@@ -1,0 +1,986 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Storage Controller &mdash; Ceed  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Storage widgets" href="storage_widgets.html" />
+    <link rel="prev" title="Storage" href="storage.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Ceed
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../blueprint.html">System Blueprint</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../guide/guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../config.html">CEED Config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../example_code/example_code.html">Example Analysis Code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../apps/apps.html">Ceed Apps</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">The Ceed API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../ceed.html">Ceed</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../analysis/api.html">Analysis API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../function/api.html">Function API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../shape/api.html">Shape API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../stage/api.html">Stage API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../view/api.html">Experiment API</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="api.html">Storage API</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="storage.html">Storage</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Storage Controller</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#experiment-lifecycle">Experiment lifecycle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#projector-electrode-synchronization">Projector-electrode synchronization</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="storage_widgets.html">Storage widgets</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../player.html">Video Player</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils.html">Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../graphics/api.html">Graphics API</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../optics/optics.html">Microscope optics</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Ceed</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../api.html">The Ceed API</a> &raquo;</li>
+        
+          <li><a href="api.html">Storage API</a> &raquo;</li>
+        
+      <li>Storage Controller</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../../_sources/api/storage/controller.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <span class="target" id="module-ceed.storage.controller"></span><div class="section" id="storage-controller">
+<h1>Storage Controller<a class="headerlink" href="#storage-controller" title="Permalink to this headline">¶</a></h1>
+<p>Handles all Ceed data aspects; file storage, loading and saving of configuration
+data, and acquisition and creation of experimental data.</p>
+<p>When the Ceed GUI starts, it creates an instances of
+<a class="reference internal" href="#ceed.storage.controller.CeedDataWriterBase" title="ceed.storage.controller.CeedDataWriterBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">CeedDataWriterBase</span></code></a> for storage management. Using the instance it loads,
+imports, and exports H5 and yaml files.</p>
+<div class="section" id="experiment-lifecycle">
+<h2>Experiment lifecycle<a class="headerlink" href="#experiment-lifecycle" title="Permalink to this headline">¶</a></h2>
+<p>When an experiment starts, <a class="reference internal" href="#ceed.storage.controller.CeedDataWriterBase.prepare_experiment" title="ceed.storage.controller.CeedDataWriterBase.prepare_experiment"><code class="xref py py-meth docutils literal notranslate"><span class="pre">CeedDataWriterBase.prepare_experiment()</span></code></a> is
+internally called to create a new section in the
+<a class="reference internal" href="#ceed.storage.controller.CeedDataWriterBase.nix_file" title="ceed.storage.controller.CeedDataWriterBase.nix_file"><code class="xref py py-attr docutils literal notranslate"><span class="pre">CeedDataWriterBase.nix_file</span></code></a> where the streamed experiment data will be
+saved. It also starts an internal thread that saves the streamed data.</p>
+<p>Then, during the experiment, Ceed sends data to be saved to that thread using
+a queue with the <a class="reference internal" href="#ceed.storage.controller.CeedDataWriterBase.add_frame" title="ceed.storage.controller.CeedDataWriterBase.add_frame"><code class="xref py py-meth docutils literal notranslate"><span class="pre">CeedDataWriterBase.add_frame()</span></code></a>,
+<a class="reference internal" href="#ceed.storage.controller.CeedDataWriterBase.add_frame_flip" title="ceed.storage.controller.CeedDataWriterBase.add_frame_flip"><code class="xref py py-meth docutils literal notranslate"><span class="pre">CeedDataWriterBase.add_frame_flip()</span></code></a>,
+<a class="reference internal" href="#ceed.storage.controller.CeedDataWriterBase.add_led_state" title="ceed.storage.controller.CeedDataWriterBase.add_led_state"><code class="xref py py-meth docutils literal notranslate"><span class="pre">CeedDataWriterBase.add_led_state()</span></code></a>,
+and <a class="reference internal" href="#ceed.storage.controller.CeedDataWriterBase.add_debug_data" title="ceed.storage.controller.CeedDataWriterBase.add_debug_data"><code class="xref py py-meth docutils literal notranslate"><span class="pre">CeedDataWriterBase.add_debug_data()</span></code></a> methods.</p>
+<p>When the experiment ends, <a class="reference internal" href="#ceed.storage.controller.CeedDataWriterBase.stop_experiment" title="ceed.storage.controller.CeedDataWriterBase.stop_experiment"><code class="xref py py-meth docutils literal notranslate"><span class="pre">CeedDataWriterBase.stop_experiment()</span></code></a> is called
+to finish writing any queued data and then stop the thread.</p>
+</div>
+<div class="section" id="projector-electrode-synchronization">
+<h2>Projector-electrode synchronization<a class="headerlink" href="#projector-electrode-synchronization" title="Permalink to this headline">¶</a></h2>
+<p>To support the temporal aligning of the projector data generated by Ceed with
+the electrode voltage data saved by MCS, Ceed stores some metadata with each
+frame that is recorded by MCS. See <a class="reference internal" href="#ceed.storage.controller.DataSerializerBase" title="ceed.storage.controller.DataSerializerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataSerializerBase</span></code></a> for details.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.storage.controller.</span></span><span class="sig-name descname"><span class="pre">CeedDataWriterBase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">kivy._event.EventDispatcher</span></code></p>
+<p>Handles the loading and saving of Ceed H5 data files, importing and
+exporting of the app settings/stages/functions/shapes, and streaming
+live experiment data to the H5 data files.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.root_path">
+<span class="sig-name descname"><span class="pre">root_path</span></span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.root_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>The directory part of the path where the data is saved.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.backup_interval">
+<span class="sig-name descname"><span class="pre">backup_interval</span></span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.backup_interval" title="Permalink to this definition">¶</a></dt>
+<dd><p>How frequently the backup file is flushed to disk.</p>
+<p>The backup file is the one into which all new data is written to
+until saved explicitly in the GUI to the current data file. Until that
+happens, we write date to the backup file.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.filename">
+<span class="sig-name descname"><span class="pre">filename</span></span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.filename" title="Permalink to this definition">¶</a></dt>
+<dd><p>The full filename of the h5 data file opened/saved in the GUI.</p>
+<p>If the user hasn’t yet saved the data it is blank.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.read_only_file">
+<span class="sig-name descname"><span class="pre">read_only_file</span></span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.read_only_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether the data file was opened in readonly mode.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.backup_filename">
+<span class="sig-name descname"><span class="pre">backup_filename</span></span><em class="property"> <span class="pre">=</span> <span class="pre">''</span></em><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.backup_filename" title="Permalink to this definition">¶</a></dt>
+<dd><p>The filename of the backup file where live data file is written to.</p>
+<p>The internal backup file always exists and all updates is done to this
+file, which is automatically created and managed by Ceed. When a user saves
+the data in the GUI, this file is flushed and copied to <a class="reference internal" href="#ceed.storage.controller.CeedDataWriterBase.filename" title="ceed.storage.controller.CeedDataWriterBase.filename"><code class="xref py py-attr docutils literal notranslate"><span class="pre">filename</span></code></a>.</p>
+<p>When the user discards the unsaved data in the GUI or if they open an
+existing file, <a class="reference internal" href="#ceed.storage.controller.CeedDataWriterBase.filename" title="ceed.storage.controller.CeedDataWriterBase.filename"><code class="xref py py-attr docutils literal notranslate"><span class="pre">filename</span></code></a> (if there’s one) is copied and used as a
+base for the <a class="reference internal" href="#ceed.storage.controller.CeedDataWriterBase.backup_filename" title="ceed.storage.controller.CeedDataWriterBase.backup_filename"><code class="xref py py-attr docutils literal notranslate"><span class="pre">backup_filename</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.nix_file">
+<span class="sig-name descname"><span class="pre">nix_file</span></span><em class="property"><span class="pre">:</span> <a class="reference external" href="https://nixpy.readthedocs.io/en/latest/api/nixio.html#nixio.file.File" title="(in Python reimplementation of NIXIO (http://g-node.github.io/nix/))"><span class="pre">nixio.file.File</span></a></em><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.nix_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <code class="docutils literal notranslate"><span class="pre">nix.File</span></code> object managing the open <a class="reference internal" href="#ceed.storage.controller.CeedDataWriterBase.backup_filename" title="ceed.storage.controller.CeedDataWriterBase.backup_filename"><code class="xref py py-attr docutils literal notranslate"><span class="pre">backup_filename</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.compression">
+<span class="sig-name descname"><span class="pre">compression</span></span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.compression" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether the h5 data file should internally compress the data that it
+writes.</p>
+<p>This is handled internally by the H5 library, with no external difference
+in how the file is loaded/saved/accessed, except that the file size may be
+smaller when compressed. Additionally, it may take a little more CPU when
+saving experiment data if compressions is enabled.</p>
+<p>Valid values are <code class="docutils literal notranslate"><span class="pre">&quot;ZIP&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;None&quot;</span></code>, or <code class="docutils literal notranslate"><span class="pre">&quot;Auto&quot;</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.has_unsaved">
+<span class="sig-name descname"><span class="pre">has_unsaved</span></span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.has_unsaved" title="Permalink to this definition">¶</a></dt>
+<dd><p>Indicates whether the file changed and needs to be saved or
+discarded by user before Ceed can exit.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.config_changed">
+<span class="sig-name descname"><span class="pre">config_changed</span></span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.config_changed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Indicates whether the app config changed and needs to be written again to
+the data file.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.data_queue">
+<span class="sig-name descname"><span class="pre">data_queue</span></span><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.data_queue" title="Permalink to this definition">¶</a></dt>
+<dd><p>Queue of incoming data to be saved by the data thread into the file.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.data_thread">
+<span class="sig-name descname"><span class="pre">data_thread</span></span><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.data_thread" title="Permalink to this definition">¶</a></dt>
+<dd><p>Second thread that is used to write live streamed experiment data to
+prevent main thread blocking.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.data_lock">
+<span class="sig-name descname"><span class="pre">data_lock</span></span><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.data_lock" title="Permalink to this definition">¶</a></dt>
+<dd><p>Lock used to safely write streamed experiment data to the file and to
+prevent the main thread from discarding the file while the second thread
+writes to it.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.func_display_callback">
+<span class="sig-name descname"><span class="pre">func_display_callback</span></span><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.func_display_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Callback called when functions are loaded from a config file.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.stage_display_callback">
+<span class="sig-name descname"><span class="pre">stage_display_callback</span></span><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.stage_display_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Callback called when stages are loaded from a config file.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.clear_all_callback">
+<span class="sig-name descname"><span class="pre">clear_all_callback</span></span><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.clear_all_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Callback called when all the functions/stages/shapes are cleared
+due to re-loading the config.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.backup_event">
+<span class="sig-name descname"><span class="pre">backup_event</span></span><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.backup_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clock trigger event that controls the periodic callback to
+<a class="reference internal" href="#ceed.storage.controller.CeedDataWriterBase.write_changes" title="ceed.storage.controller.CeedDataWriterBase.write_changes"><code class="xref py py-meth docutils literal notranslate"><span class="pre">write_changes()</span></code></a> due to <a class="reference internal" href="#ceed.storage.controller.CeedDataWriterBase.backup_interval" title="ceed.storage.controller.CeedDataWriterBase.backup_interval"><code class="xref py py-attr docutils literal notranslate"><span class="pre">backup_interval</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.nix_compression">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">nix_compression</span></span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.nix_compression" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the <code class="xref py py-attr docutils literal notranslate"><span class="pre">nix.Compression</span></code> enum value that corresponds to the
+user selected <a class="reference internal" href="#ceed.storage.controller.CeedDataWriterBase.compression" title="ceed.storage.controller.CeedDataWriterBase.compression"><code class="xref py py-attr docutils literal notranslate"><span class="pre">compression</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.get_function_plugin_contents">
+<span class="sig-name descname"><span class="pre">get_function_plugin_contents</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.get_function_plugin_contents" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns <a class="reference internal" href="../function/function.html#ceed.function.FunctionFactoryBase.plugin_sources" title="ceed.function.FunctionFactoryBase.plugin_sources"><code class="xref py py-attr docutils literal notranslate"><span class="pre">plugin_sources</span></code></a>
+from the app’s <a class="reference internal" href="../function/function.html#ceed.function.FunctionFactoryBase" title="ceed.function.FunctionFactoryBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">FunctionFactoryBase</span></code></a></p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.get_stage_plugin_contents">
+<span class="sig-name descname"><span class="pre">get_stage_plugin_contents</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.get_stage_plugin_contents" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns <a class="reference internal" href="../stage/stage.html#ceed.stage.StageFactoryBase.plugin_sources" title="ceed.stage.StageFactoryBase.plugin_sources"><code class="xref py py-attr docutils literal notranslate"><span class="pre">plugin_sources</span></code></a>
+from the app’s <a class="reference internal" href="../stage/stage.html#ceed.stage.StageFactoryBase" title="ceed.stage.StageFactoryBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">StageFactoryBase</span></code></a></p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.gather_config_data_dict">
+<span class="sig-name descname"><span class="pre">gather_config_data_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stages_only</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.gather_config_data_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Accumulates all the configuration data from all the classes into
+a single dict and returns it.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">stages_only</span></code>, it only returns the data required to be able to
+load the stages/functions/shapes, but not the app config,
+e.g. player config, mea/camera rotation etc.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.clear_existing_config_data">
+<span class="sig-name descname"><span class="pre">clear_existing_config_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.clear_existing_config_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clears and resets all the user added data such as stages, functions,
+and shapes.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.apply_config_data_dict">
+<span class="sig-name descname"><span class="pre">apply_config_data_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stages_only</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">requires_app_settings</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.apply_config_data_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies the data from a config dict generated with
+<a class="reference internal" href="#ceed.storage.controller.CeedDataWriterBase.gather_config_data_dict" title="ceed.storage.controller.CeedDataWriterBase.gather_config_data_dict"><code class="xref py py-meth docutils literal notranslate"><span class="pre">gather_config_data_dict()</span></code></a>.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">stages_only</span></code>, it’ll only import the data required to recreates the
+stages/functions/shapes but it won’t import the other app config.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">requires_app_settings</span></code>, but the data only contains
+stage/shape/function config, it raises an exception.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.get_filebrowser_callback">
+<span class="sig-name descname"><span class="pre">get_filebrowser_callback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clear_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ext</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.get_filebrowser_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called by the GUI when user browses for a file.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.ui_close">
+<span class="sig-name descname"><span class="pre">ui_close</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app_close</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.ui_close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called when the UI asked to close a file.</p>
+<p>We create a new backup file immediately if the app doesn’t close.</p>
+<p>If unsaved, will prompt if want to save</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.create_file">
+<span class="sig-name descname"><span class="pre">create_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.create_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a new h5 data file and initializes it.</p>
+<p>It creates the <a class="reference internal" href="#ceed.storage.controller.CeedDataWriterBase.backup_filename" title="ceed.storage.controller.CeedDataWriterBase.backup_filename"><code class="xref py py-attr docutils literal notranslate"><span class="pre">backup_filename</span></code></a> and also copies it over to
+<a class="reference internal" href="#ceed.storage.controller.CeedDataWriterBase.filename" title="ceed.storage.controller.CeedDataWriterBase.filename"><code class="xref py py-attr docutils literal notranslate"><span class="pre">filename</span></code></a> if one was specified.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.upgrade_file">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">upgrade_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nix_file</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.upgrade_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given an existing h5 data file, it’ll add any missing sections
+that have been added by newer Ceed versions since the file was created.</p>
+<p>They are added with default values.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.open_file">
+<span class="sig-name descname"><span class="pre">open_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">read_only</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.open_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loads the H5 file’s config and opens the file for usage.</p>
+<p>It creates a <a class="reference internal" href="#ceed.storage.controller.CeedDataWriterBase.backup_filename" title="ceed.storage.controller.CeedDataWriterBase.backup_filename"><code class="xref py py-attr docutils literal notranslate"><span class="pre">backup_filename</span></code></a> from on <code class="docutils literal notranslate"><span class="pre">filename</span></code> and
+saves <a class="reference internal" href="#ceed.storage.controller.CeedDataWriterBase.filename" title="ceed.storage.controller.CeedDataWriterBase.filename"><code class="xref py py-attr docutils literal notranslate"><span class="pre">filename</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.close_file">
+<span class="sig-name descname"><span class="pre">close_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">force_remove_autosave</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.close_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Closes the backup file without saving the data to the main file. But
+if data was unsaved it leaves the backup file, otherwise it removes
+it. If <code class="docutils literal notranslate"><span class="pre">force_remove_autosave</span></code>, it always removes it.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.import_file">
+<span class="sig-name descname"><span class="pre">import_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stages_only</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.import_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Imports and applies the config data from the H5 file.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">stages_only</span></code>, it only applies the stages/functions/shapes data,
+but not the app config, e.g. player config, mea/camera rotation etc.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.discard_file">
+<span class="sig-name descname"><span class="pre">discard_file</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.discard_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Closes and discards the <a class="reference internal" href="#ceed.storage.controller.CeedDataWriterBase.backup_filename" title="ceed.storage.controller.CeedDataWriterBase.backup_filename"><code class="xref py py-attr docutils literal notranslate"><span class="pre">backup_filename</span></code></a> and then re-opens
+the <a class="reference internal" href="#ceed.storage.controller.CeedDataWriterBase.filename" title="ceed.storage.controller.CeedDataWriterBase.filename"><code class="xref py py-attr docutils literal notranslate"><span class="pre">filename</span></code></a> (if any) and creates a new <a class="reference internal" href="#ceed.storage.controller.CeedDataWriterBase.backup_filename" title="ceed.storage.controller.CeedDataWriterBase.backup_filename"><code class="xref py py-attr docutils literal notranslate"><span class="pre">backup_filename</span></code></a>
+from it.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.save_as">
+<span class="sig-name descname"><span class="pre">save_as</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.save_as" title="Permalink to this definition">¶</a></dt>
+<dd><p>Saves the data in <a class="reference internal" href="#ceed.storage.controller.CeedDataWriterBase.backup_filename" title="ceed.storage.controller.CeedDataWriterBase.backup_filename"><code class="xref py py-attr docutils literal notranslate"><span class="pre">backup_filename</span></code></a> to a new h5 file and opens
+that file.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.save">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Saves any changes to <a class="reference internal" href="#ceed.storage.controller.CeedDataWriterBase.backup_filename" title="ceed.storage.controller.CeedDataWriterBase.backup_filename"><code class="xref py py-attr docutils literal notranslate"><span class="pre">backup_filename</span></code></a> and copies
+the <a class="reference internal" href="#ceed.storage.controller.CeedDataWriterBase.backup_filename" title="ceed.storage.controller.CeedDataWriterBase.backup_filename"><code class="xref py py-attr docutils literal notranslate"><span class="pre">backup_filename</span></code></a> to <code class="docutils literal notranslate"><span class="pre">filename</span></code> if it’s not empty.
+Otherwise, it saves it to <a class="reference internal" href="#ceed.storage.controller.CeedDataWriterBase.filename" title="ceed.storage.controller.CeedDataWriterBase.filename"><code class="xref py py-attr docutils literal notranslate"><span class="pre">filename</span></code></a> if that is not empty.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.write_changes">
+<span class="sig-name descname"><span class="pre">write_changes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">largs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scheduled</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.write_changes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes all unsaved changes to <a class="reference internal" href="#ceed.storage.controller.CeedDataWriterBase.backup_filename" title="ceed.storage.controller.CeedDataWriterBase.backup_filename"><code class="xref py py-attr docutils literal notranslate"><span class="pre">backup_filename</span></code></a> and flushes it.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.save_shapes_to_yaml">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">save_shapes_to_yaml</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shape_factory</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.save_shapes_to_yaml" title="Permalink to this definition">¶</a></dt>
+<dd><p>Exports the shape data to a yaml file so it can be imported
+from the GUI.</p>
+<p>It can be used to create shapes from a script, dump it to a file,
+and then import it from the GUI.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> – The filename to save to (should end with with .yaml or
+.yml for ease of use).</p></li>
+<li><p><strong>shape_factory</strong> – The <a class="reference internal" href="../shape/shape.html#ceed.shape.CeedPaintCanvasBehavior" title="ceed.shape.CeedPaintCanvasBehavior"><code class="xref py py-class docutils literal notranslate"><span class="pre">CeedPaintCanvasBehavior</span></code></a>
+containing the shapes that will be dumped to the file.</p></li>
+<li><p><strong>overwrite</strong> – Whether to overwrite the file if it exists.</p></li>
+</ul>
+</dd>
+</dl>
+<p>E.g.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">ceed.shape</span> <span class="kn">import</span> <span class="n">CeedPaintCanvasBehavior</span><span class="p">,</span> <span class="n">CeedPaintCircle</span>
+
+<span class="n">shape_factory</span> <span class="o">=</span> <span class="n">CeedPaintCanvasBehavior</span><span class="p">()</span>
+<span class="n">circle</span> <span class="o">=</span> <span class="n">CeedPaintCircle</span><span class="o">.</span><span class="n">create_shape</span><span class="p">(</span><span class="n">center</span><span class="o">=</span><span class="p">(</span><span class="mi">700</span><span class="p">,</span> <span class="mi">300</span><span class="p">),</span> <span class="n">radius</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+<span class="n">shape_factory</span><span class="o">.</span><span class="n">add_shape</span><span class="p">(</span><span class="n">circle</span><span class="p">)</span>
+<span class="n">CeedDataWriterBase</span><span class="o">.</span><span class="n">save_shapes_to_yaml</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">shape_factory</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.write_yaml_config">
+<span class="sig-name descname"><span class="pre">write_yaml_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stages_only</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.write_yaml_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Exports the config data to a yaml file.</p>
+<p>Unlike a H5 file, the yaml file contains only the configuration data.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">stages_only</span></code>, it only exports the stages/functions/shapes data,
+but not the app config, e.g. player config, mea/camera rotation etc.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.read_yaml_config">
+<span class="sig-name descname"><span class="pre">read_yaml_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stages_only</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">requires_app_settings</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.read_yaml_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Imports and applies the config data from a yaml file that was
+previously exported with <a class="reference internal" href="#ceed.storage.controller.CeedDataWriterBase.write_yaml_config" title="ceed.storage.controller.CeedDataWriterBase.write_yaml_config"><code class="xref py py-meth docutils literal notranslate"><span class="pre">write_yaml_config()</span></code></a>.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">stages_only</span></code>, it’ll only import the data required to recreates the
+stages/functions/shapes but it won’t import the other app config.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">requires_app_settings</span></code>, but the data only contains
+stage/shape/function config, it raises an exception.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.write_config">
+<span class="sig-name descname"><span class="pre">write_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_section</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.write_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes the app config data and stages/functions/shapes to the
+<a class="reference internal" href="#ceed.storage.controller.CeedDataWriterBase.backup_filename" title="ceed.storage.controller.CeedDataWriterBase.backup_filename"><code class="xref py py-attr docutils literal notranslate"><span class="pre">backup_filename</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.read_config">
+<span class="sig-name descname"><span class="pre">read_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_section</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.read_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads the app config data and stages/functions/shapes from the
+<a class="reference internal" href="#ceed.storage.controller.CeedDataWriterBase.backup_filename" title="ceed.storage.controller.CeedDataWriterBase.backup_filename"><code class="xref py py-attr docutils literal notranslate"><span class="pre">backup_filename</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.add_log_item">
+<span class="sig-name descname"><span class="pre">add_log_item</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.add_log_item" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds the text to the currently open H5 file app log data.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.add_app_log">
+<span class="sig-name descname"><span class="pre">add_app_log</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.add_app_log" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds the text to the app log (indirectly) and shows it to the user
+in the app log screen.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.get_log_data">
+<span class="sig-name descname"><span class="pre">get_log_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.get_log_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the app log data, saved with <a class="reference internal" href="#ceed.storage.controller.CeedDataWriterBase.add_log_item" title="ceed.storage.controller.CeedDataWriterBase.add_log_item"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_log_item()</span></code></a> from the
+currently open data file.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.load_last_fluorescent_image">
+<span class="sig-name descname"><span class="pre">load_last_fluorescent_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.load_last_fluorescent_image" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the last saved camera image from the H5 data file.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.add_image_to_file">
+<span class="sig-name descname"><span class="pre">add_image_to_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">notes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.add_image_to_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stores the image and the optional notes in the currently open H5
+data file.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.write_fluorescent_image">
+<span class="sig-name descname"><span class="pre">write_fluorescent_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">img</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">postfix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.write_fluorescent_image" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes the given image to the given experiment or image block in the
+currently open H5 data file.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.get_num_fluorescent_images">
+<span class="sig-name descname"><span class="pre">get_num_fluorescent_images</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.get_num_fluorescent_images" title="Permalink to this definition">¶</a></dt>
+<dd><p>Same as <a class="reference internal" href="#ceed.storage.controller.CeedDataWriterBase.get_file_num_fluorescent_images" title="ceed.storage.controller.CeedDataWriterBase.get_file_num_fluorescent_images"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_file_num_fluorescent_images()</span></code></a>, but for the
+currently open H5 data file.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.get_file_num_fluorescent_images">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get_file_num_fluorescent_images</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nix_file</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.get_file_num_fluorescent_images" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the total number of images saved to the H5 data file (not
+including images stored in each experiment).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.get_experiment_numbers">
+<span class="sig-name descname"><span class="pre">get_experiment_numbers</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.get_experiment_numbers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns list of experiments saved in the currently open H5 data file.</p>
+<p>They are each a number, even though they are returned as strings.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.get_experiment_notes">
+<span class="sig-name descname"><span class="pre">get_experiment_notes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">experiment_block_number</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.get_experiment_notes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the experiment notes from the given experiment number stored
+in the currently open H5 data file.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.set_experiment_notes">
+<span class="sig-name descname"><span class="pre">set_experiment_notes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">experiment_block_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.set_experiment_notes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the experiment notes for the given experiment number stored
+in the currently open H5 data file.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.get_experiment_config">
+<span class="sig-name descname"><span class="pre">get_experiment_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">experiment_block_number</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.get_experiment_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the app config dict from the given experiment number stored
+in the currently open H5 data file.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.get_config_mea_matrix_string">
+<span class="sig-name descname"><span class="pre">get_config_mea_matrix_string</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">experiment_block_number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.get_config_mea_matrix_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the yaml-string encoded
+<a class="reference internal" href="../view/controller.html#ceed.view.controller.ViewControllerBase.mea_transform" title="ceed.view.controller.ViewControllerBase.mea_transform"><code class="xref py py-attr docutils literal notranslate"><span class="pre">mea_transform</span></code></a> from the
+given experiment number stored in the currently open H5 data file.</p>
+<p>If no experiment is provided, it gets it from the app config.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.set_config_mea_matrix_string">
+<span class="sig-name descname"><span class="pre">set_config_mea_matrix_string</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">experiment_block_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_config_string</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.set_config_mea_matrix_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the yaml-string encoded
+<a class="reference internal" href="../view/controller.html#ceed.view.controller.ViewControllerBase.mea_transform" title="ceed.view.controller.ViewControllerBase.mea_transform"><code class="xref py py-attr docutils literal notranslate"><span class="pre">mea_transform</span></code></a> for the
+given experiment number stored in the currently open H5 data file.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.get_experiment_metadata">
+<span class="sig-name descname"><span class="pre">get_experiment_metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">experiment_block_number</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.get_experiment_metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads the experiment metadata (notes, time, etc.) from the given
+experiment in the currently open H5 data file.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.get_saved_image">
+<span class="sig-name descname"><span class="pre">get_saved_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image_num</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.get_saved_image" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads and returns the requested image and its metadata from the
+currently open H5 data file.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.get_blocks_experiment_numbers">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get_blocks_experiment_numbers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">blocks</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_list</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.get_blocks_experiment_numbers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns list of experiments in the given nix blocks.</p>
+<p><code class="docutils literal notranslate"><span class="pre">ignore_list</span></code>, if provided, is a list of experiment numbers to skip.</p>
+<p>Each experiment name is a number, represented as a str.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.get_experiment_block_name">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">get_experiment_block_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">experiment_num</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.get_experiment_block_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts the experiment number to the full name used to name the
+block that stores the experiment data.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.collect_experiment">
+<span class="sig-name descname"><span class="pre">collect_experiment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shapes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame_bits</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame_counter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame_time_counter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">queue</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lock</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">led_state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">event_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">event_data_count</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.collect_experiment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that runs in its own thread, for each experiment, that gets
+incoming experiment data over the <a class="reference internal" href="#ceed.storage.controller.CeedDataWriterBase.data_queue" title="ceed.storage.controller.CeedDataWriterBase.data_queue"><code class="xref py py-attr docutils literal notranslate"><span class="pre">data_queue</span></code></a> and saves it to
+the file.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.prepare_experiment">
+<span class="sig-name descname"><span class="pre">prepare_experiment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stage_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">used_shapes</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.prepare_experiment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initializes the file with the current app config and prepares it to
+accept streamed experiment data for a new experiment using the given
+stage.</p>
+<p>It also starts <a class="reference internal" href="#ceed.storage.controller.CeedDataWriterBase.collect_experiment" title="ceed.storage.controller.CeedDataWriterBase.collect_experiment"><code class="xref py py-meth docutils literal notranslate"><span class="pre">collect_experiment()</span></code></a> in a new thread.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.stop_experiment">
+<span class="sig-name descname"><span class="pre">stop_experiment</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.stop_experiment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stops the thread running the experiment data stream listener,
+<a class="reference internal" href="#ceed.storage.controller.CeedDataWriterBase.collect_experiment" title="ceed.storage.controller.CeedDataWriterBase.collect_experiment"><code class="xref py py-meth docutils literal notranslate"><span class="pre">collect_experiment()</span></code></a>, and cleans up after the experiment.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.add_frame">
+<span class="sig-name descname"><span class="pre">add_frame</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.add_frame" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds experiment data for a single video frame displayed on screen,
+to the <a class="reference internal" href="#ceed.storage.controller.CeedDataWriterBase.data_queue" title="ceed.storage.controller.CeedDataWriterBase.data_queue"><code class="xref py py-attr docutils literal notranslate"><span class="pre">data_queue</span></code></a>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">data</span></code> is a <code class="docutils literal notranslate"><span class="pre">(counter_bits,</span> <span class="pre">shape_rgba)</span></code> tuple.
+<code class="docutils literal notranslate"><span class="pre">counter_bits</span></code> is a dict whose <code class="docutils literal notranslate"><span class="pre">&quot;count&quot;</span></code> key is the frame global
+counter value (<a class="reference internal" href="../view/controller.html#ceed.view.controller.ViewControllerBase.count" title="ceed.view.controller.ViewControllerBase.count"><code class="xref py py-attr docutils literal notranslate"><span class="pre">count</span></code></a>)
+of the frame
+and <code class="docutils literal notranslate"><span class="pre">&quot;bits&quot;</span></code> is the 24-bit corner pixel value sent with the frame
+(<a class="reference internal" href="#ceed.storage.controller.DataSerializerBase.get_bits" title="ceed.storage.controller.DataSerializerBase.get_bits"><code class="xref py py-meth docutils literal notranslate"><span class="pre">DataSerializerBase.get_bits()</span></code></a>).</p>
+<p><code class="docutils literal notranslate"><span class="pre">shape_rgba</span></code> is a dict whose keys are the names of shapes and whose
+values are the rgba 4-tuple intensity value of that shape for this
+frame.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.add_frame_flip">
+<span class="sig-name descname"><span class="pre">add_frame_flip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.add_frame_flip" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds experiment data for a single video frame displayed on screen,
+after it has been sent to the GPU and displayed, to the
+<a class="reference internal" href="#ceed.storage.controller.CeedDataWriterBase.data_queue" title="ceed.storage.controller.CeedDataWriterBase.data_queue"><code class="xref py py-attr docutils literal notranslate"><span class="pre">data_queue</span></code></a>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">data</span></code> is a dict whose <code class="docutils literal notranslate"><span class="pre">&quot;count&quot;</span></code> key is the frame global
+counter value (<a class="reference internal" href="../view/controller.html#ceed.view.controller.ViewControllerBase.count" title="ceed.view.controller.ViewControllerBase.count"><code class="xref py py-attr docutils literal notranslate"><span class="pre">count</span></code></a>)
+of the frame
+and <code class="docutils literal notranslate"><span class="pre">&quot;t&quot;</span></code> is the approximate time when the frame was finished being
+displayed.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.add_led_state">
+<span class="sig-name descname"><span class="pre">add_led_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">count</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.add_led_state" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds experiment data about the projector LED state to the
+<a class="reference internal" href="#ceed.storage.controller.CeedDataWriterBase.data_queue" title="ceed.storage.controller.CeedDataWriterBase.data_queue"><code class="xref py py-attr docutils literal notranslate"><span class="pre">data_queue</span></code></a>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">count</span></code> is the <a class="reference internal" href="../view/controller.html#ceed.view.controller.ViewControllerBase.count" title="ceed.view.controller.ViewControllerBase.count"><code class="xref py py-attr docutils literal notranslate"><span class="pre">count</span></code></a>
+of the frame when it was set, (r, g, b) is each a bool indicating
+if the r, g, and b LEDs were set each ON or OFF.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.add_debug_data">
+<span class="sig-name descname"><span class="pre">add_debug_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.add_debug_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds experiment debug data to the <a class="reference internal" href="#ceed.storage.controller.CeedDataWriterBase.data_queue" title="ceed.storage.controller.CeedDataWriterBase.data_queue"><code class="xref py py-attr docutils literal notranslate"><span class="pre">data_queue</span></code></a>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">name</span></code> is the name of the debug data. If an array with the name
+<code class="docutils literal notranslate"><span class="pre">f'debug_{name}'</span></code> already exists the data is appended to it,
+otherwise such an array is created and data appended. This allows
+streaming arbitrary data to the file.</p>
+<p><code class="docutils literal notranslate"><span class="pre">data</span></code> is a n-dimensional array. Subsequent data will be appended
+to the first axis of the array in the file and it must match the
+dimensionality of the original data.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.CeedDataWriterBase.add_event_data">
+<span class="sig-name descname"><span class="pre">add_event_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bytes</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.storage.controller.CeedDataWriterBase.add_event_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds event data logged during the experiment to the
+<a class="reference internal" href="#ceed.storage.controller.CeedDataWriterBase.data_queue" title="ceed.storage.controller.CeedDataWriterBase.data_queue"><code class="xref py py-attr docutils literal notranslate"><span class="pre">data_queue</span></code></a> to be saved.</p>
+<p><code class="docutils literal notranslate"><span class="pre">data</span></code> is a json encoded bytes object, encoded with <code class="docutils literal notranslate"><span class="pre">orjson</span></code>. It
+contains a list of the most recent logged data. See
+<a class="reference internal" href="../analysis/analysis.html#ceed.analysis.CeedDataReader.event_data" title="ceed.analysis.CeedDataReader.event_data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">event_data</span></code></a> for details and for
+the decoded logs.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.storage.controller.DataSerializerBase">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.storage.controller.</span></span><span class="sig-name descname"><span class="pre">DataSerializerBase</span></span><a class="headerlink" href="#ceed.storage.controller.DataSerializerBase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">kivy._event.EventDispatcher</span></code></p>
+<p>To facilitate temporal data alignment between the Ceed data (shape
+intensity) and MCS (electrode data), Ceed outputs a bit pattern in the
+corner pixel that is output by the projector controller as a bit pattern
+on its digital port, and is recorded by MCS.</p>
+<p>Post-experiment we locate each Ceed frame in the recorded MCS data by
+locating the Ceed frame bit-pattern in the MCS data, thereby locating the
+sample index in the MCS data, corresponding to the Ceed frame.</p>
+<p>While we have 24 bits to use from the Ceed side, MCS can only record upto
+16 bits, possibly less depending on the config, so we have to be flexible
+on the bit-pattern to send. Our bit-pattern has three components:</p>
+<ol class="arabic">
+<li><p>A clock bit that alternates low/high for each frame, starting with high.
+The clock bit is set by <a class="reference internal" href="#ceed.storage.controller.DataSerializerBase.clock_idx" title="ceed.storage.controller.DataSerializerBase.clock_idx"><code class="xref py py-attr docutils literal notranslate"><span class="pre">clock_idx</span></code></a>.</p></li>
+<li><p>Some bits are dedicated to simple short counter that overflows back to
+zero at the top. E.g. if we dedicate 3-bits for the counter, then it’ll
+go 0,1,…,6,7,0,1,…,6,7,0,1,… etc.</p>
+<p>The bits used by the short counter is set with
+<a class="reference internal" href="#ceed.storage.controller.DataSerializerBase.short_count_indices" title="ceed.storage.controller.DataSerializerBase.short_count_indices"><code class="xref py py-attr docutils literal notranslate"><span class="pre">short_count_indices</span></code></a>. The length of the list determines the size
+of the counter, as explained.</p>
+<p>As explained in #3 below, there’s a global counter that increments for
+each frame. Potentially, this increment could be larger than one
+(although currently it’s always one). The short counter increments the
+counter with this frame increment, so it could potentially go
+0,1,3,…,6,7,0,1,2,… if the third frame incremented the global
+counter by two instead of one.</p>
+</li>
+<li><p>Some bits are dedicated to a long term counter (and initial
+handshaking). E.g. if the counter is a 32-bit int, then the counter will
+just count up until 2 ^ 32 when it overflows back to zero.</p>
+<p>However, the counter could be 32-bits wide, but the number of bits
+available on the projector is much less. So, we split up the counter
+across multiple frames. E.g. if <a class="reference internal" href="#ceed.storage.controller.DataSerializerBase.counter_bit_width" title="ceed.storage.controller.DataSerializerBase.counter_bit_width"><code class="xref py py-attr docutils literal notranslate"><span class="pre">counter_bit_width</span></code></a> is 32 and
+<a class="reference internal" href="#ceed.storage.controller.DataSerializerBase.count_indices" title="ceed.storage.controller.DataSerializerBase.count_indices"><code class="xref py py-attr docutils literal notranslate"><span class="pre">count_indices</span></code></a> has only, say, 4 bits available. Then we split
+the 32 bits into <code class="docutils literal notranslate"><span class="pre">32</span> <span class="pre">/</span> <span class="pre">4</span></code> transactions. However, each transaction is
+sent twice, the value and its one’s complement (aligning with the clock
+being low), except for the first transaction of each number and for the
+initial handshake bytes sent, where it’s sent twice, identically,
+without inverting to one’s complement. So, the total number of frames
+required is <code class="docutils literal notranslate"><span class="pre">32</span> <span class="pre">/</span> <span class="pre">4</span> <span class="pre">*</span> <span class="pre">2</span> <span class="pre">=</span> <span class="pre">16</span></code> frames.</p>
+<p>So, overall for this example, if the first count value starts at zero
+and increments with each frame, then the first 16 frames sends the
+number 0. When it’s done, the counter is at 16, so we send the number 16
+over the next 16 frames, then the number 32 over the next 16 frames etc.</p>
+<p>The counter is broken and sent starting from the least significant
+(lower) bits to the most significant (upper) bits.</p>
+<p>At the start, we also optionally send an arbitrary sequence of bytes
+to help identify experimental specific metadata as described in
+<a class="reference internal" href="#ceed.storage.controller.DataSerializerBase.get_bits" title="ceed.storage.controller.DataSerializerBase.get_bits"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_bits()</span></code></a>. The counter then starts sending its current value when
+the bytes are done. The length of the bytes is sent before the bytes
+(zero is sent if empty).</p>
+</li>
+</ol>
+<p>See also <a class="reference internal" href="../analysis/merge_data.html#handshake-protocol"><span class="std std-ref">Temporal alignment protocol</span></a>.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.storage.controller.DataSerializerBase.counter_bit_width">
+<span class="sig-name descname"><span class="pre">counter_bit_width</span></span><em class="property"><span class="pre">:</span> <span class="pre">int</span></em><a class="headerlink" href="#ceed.storage.controller.DataSerializerBase.counter_bit_width" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of bits in the long counter, as described in
+<a class="reference internal" href="#ceed.storage.controller.DataSerializerBase" title="ceed.storage.controller.DataSerializerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataSerializerBase</span></code></a>.</p>
+<p>Must be a multiple of 8 (to align with a byte).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.storage.controller.DataSerializerBase.clock_idx">
+<span class="sig-name descname"><span class="pre">clock_idx</span></span><em class="property"><span class="pre">:</span> <span class="pre">int</span></em><a class="headerlink" href="#ceed.storage.controller.DataSerializerBase.clock_idx" title="Permalink to this definition">¶</a></dt>
+<dd><p>The bit index to use for the clock.</p>
+<p>A number between 0-23, inclusive.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.storage.controller.DataSerializerBase.count_indices">
+<span class="sig-name descname"><span class="pre">count_indices</span></span><em class="property"><span class="pre">:</span> <span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#ceed.storage.controller.DataSerializerBase.count_indices" title="Permalink to this definition">¶</a></dt>
+<dd><p>A list of bit indices to use for the long counter as explained in
+<a class="reference internal" href="#ceed.storage.controller.DataSerializerBase" title="ceed.storage.controller.DataSerializerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataSerializerBase</span></code></a>.</p>
+<p>Each item is a number between 0-23, inclusive. Their order is the order of
+the counter bit pattern. The first index is for the first (least
+significant) bit of the counter etc.</p>
+<p>If the length of <a class="reference internal" href="#ceed.storage.controller.DataSerializerBase.count_indices" title="ceed.storage.controller.DataSerializerBase.count_indices"><code class="xref py py-attr docutils literal notranslate"><span class="pre">count_indices</span></code></a> doesn’t divide
+<a class="reference internal" href="#ceed.storage.controller.DataSerializerBase.counter_bit_width" title="ceed.storage.controller.DataSerializerBase.counter_bit_width"><code class="xref py py-attr docutils literal notranslate"><span class="pre">counter_bit_width</span></code></a> exactly, the ends are padded with zeros for those
+bits.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.storage.controller.DataSerializerBase.short_count_indices">
+<span class="sig-name descname"><span class="pre">short_count_indices</span></span><em class="property"><span class="pre">:</span> <span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#ceed.storage.controller.DataSerializerBase.short_count_indices" title="Permalink to this definition">¶</a></dt>
+<dd><p>A list of bit indices to use for the short counter as explained in
+<a class="reference internal" href="#ceed.storage.controller.DataSerializerBase" title="ceed.storage.controller.DataSerializerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataSerializerBase</span></code></a>.</p>
+<p>Each item is a number between 0-23, inclusive. Their order is the order of
+the counter bit pattern. E.g. if it was <code class="docutils literal notranslate"><span class="pre">[1,</span> <span class="pre">3]</span></code>, the the bit pattern for
+just the counter would look like: 0b0000, 0b0010, 0b1000, 0b1010, 0b0000,
+0b0010, 0b1000…</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.storage.controller.DataSerializerBase.projector_to_aquisition_map">
+<span class="sig-name descname"><span class="pre">projector_to_aquisition_map</span></span><em class="property"><span class="pre">:</span> <span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#ceed.storage.controller.DataSerializerBase.projector_to_aquisition_map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Maps the bit indices used by Ceed to the corresponding bit indices used
+by MCS. It is required to be able to align the two systems.</p>
+<p>I.e. if port zero of the projector is connected to port 3 of the MCS
+controller, then this would be <code class="docutils literal notranslate"><span class="pre">{0:</span> <span class="pre">3}</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.DataSerializerBase.get_bits">
+<span class="sig-name descname"><span class="pre">get_bits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_bytes</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bytes</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">b''</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Generator</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">,</span> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ceed.storage.controller.DataSerializerBase.get_bits" title="Permalink to this definition">¶</a></dt>
+<dd><p>A generator that yields a 24 bit value for each clock frame, that is
+to be used as a RGB value which is then output to the projector
+controller by the hardware and connected to the MCS controller.</p>
+<p>At each iteration, the generator gets send the current frame count
+(typically increments by one) and it yields the RGB value to use for
+that frame.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">n_sub_frames</span></code> is more than 1, the digital IO is simply duplicated
+for those sub-frames by Ceed increasing the number of frames. However,
+<a class="reference internal" href="#ceed.storage.controller.DataSerializerBase.get_bits" title="ceed.storage.controller.DataSerializerBase.get_bits"><code class="xref py py-meth docutils literal notranslate"><span class="pre">DataSerializerBase.get_bits()</span></code></a> gets only called once per group of
+sub-frames. So while the short counter is only incremented once per
+group of sub-frames, the counter does get incremented once per
+sub-frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>config_bytes</strong> – An optional bytes object to be sent. If provided,
+it will be padded with zeros to <a class="reference internal" href="#ceed.storage.controller.DataSerializerBase.counter_bit_width" title="ceed.storage.controller.DataSerializerBase.counter_bit_width"><code class="xref py py-attr docutils literal notranslate"><span class="pre">counter_bit_width</span></code></a> divided
+by eight. E.g. if the length of <code class="docutils literal notranslate"><span class="pre">config_bytes</span></code> is 15 and
+<a class="reference internal" href="#ceed.storage.controller.DataSerializerBase.counter_bit_width" title="ceed.storage.controller.DataSerializerBase.counter_bit_width"><code class="xref py py-attr docutils literal notranslate"><span class="pre">counter_bit_width</span></code></a> is 32, it’ll be padded with one zero byte
+at the end.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.storage.controller.DataSerializerBase.num_ticks_handshake">
+<span class="sig-name descname"><span class="pre">num_ticks_handshake</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_len</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_sub_frames</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.storage.controller.DataSerializerBase.num_ticks_handshake" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the number of frames required to transmit the handshake
+signature (i.e. config bytes) of the experiment as provided to
+<a class="reference internal" href="#ceed.storage.controller.DataSerializerBase.get_bits" title="ceed.storage.controller.DataSerializerBase.get_bits"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_bits()</span></code></a> with the given <code class="docutils literal notranslate"><span class="pre">config_bytes</span></code>.</p>
+<p>See also <a class="reference internal" href="#ceed.storage.controller.num_ticks_handshake" title="ceed.storage.controller.num_ticks_handshake"><code class="xref py py-func docutils literal notranslate"><span class="pre">num_ticks_handshake()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>config_len</strong> – The number of config <strong>bytes</strong> being sent (not
+including padding bytes).</p></li>
+<li><p><strong>n_sub_frames</strong> – the number of sub-frames in each frame.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ceed.storage.controller.num_ticks_handshake">
+<span class="sig-prename descclassname"><span class="pre">ceed.storage.controller.</span></span><span class="sig-name descname"><span class="pre">num_ticks_handshake</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">counter_bit_width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">count_indices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_len</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_sub_frames</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.storage.controller.num_ticks_handshake" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the number of frames required to transmit the handshake
+signature (i.e. config bytes) of the experiment as provided to
+<a class="reference internal" href="#ceed.storage.controller.DataSerializerBase.get_bits" title="ceed.storage.controller.DataSerializerBase.get_bits"><code class="xref py py-meth docutils literal notranslate"><span class="pre">DataSerializerBase.get_bits()</span></code></a> with the given <code class="docutils literal notranslate"><span class="pre">config_bytes</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>counter_bit_width</strong> – See <a class="reference internal" href="#ceed.storage.controller.DataSerializerBase.counter_bit_width" title="ceed.storage.controller.DataSerializerBase.counter_bit_width"><code class="xref py py-attr docutils literal notranslate"><span class="pre">DataSerializerBase.counter_bit_width</span></code></a>.</p></li>
+<li><p><strong>count_indices</strong> – See <a class="reference internal" href="#ceed.storage.controller.DataSerializerBase.count_indices" title="ceed.storage.controller.DataSerializerBase.count_indices"><code class="xref py py-attr docutils literal notranslate"><span class="pre">DataSerializerBase.count_indices</span></code></a>.</p></li>
+<li><p><strong>config_len</strong> – The number of config <strong>bytes</strong> being sent (not including
+padding bytes).</p></li>
+<li><p><strong>n_sub_frames</strong> – the number of sub-frames in each frame. E.g. in quad4x
+mode, each frame is actually 4 frames, but the digital IO is the same
+for all of them.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ceed.storage.controller.num_ticks_handshake_1_0_0_dev0">
+<span class="sig-prename descclassname"><span class="pre">ceed.storage.controller.</span></span><span class="sig-name descname"><span class="pre">num_ticks_handshake_1_0_0_dev0</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">counter_bit_width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">count_indices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_len</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_sub_frames</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.storage.controller.num_ticks_handshake_1_0_0_dev0" title="Permalink to this definition">¶</a></dt>
+<dd><p>Same as <a class="reference internal" href="#ceed.storage.controller.num_ticks_handshake" title="ceed.storage.controller.num_ticks_handshake"><code class="xref py py-func docutils literal notranslate"><span class="pre">num_ticks_handshake()</span></code></a>, but it returns the value used for
+ceed version 1.0.0.dev0.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="storage_widgets.html" class="btn btn-neutral float-right" title="Storage widgets" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="storage.html" class="btn btn-neutral float-left" title="Storage" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2019, Matthew Einhorn.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

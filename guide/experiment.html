@@ -1,0 +1,633 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Ceed experiment &mdash; Ceed  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="CEED Config" href="../config.html" />
+    <link rel="prev" title="Ceed camera player" href="player.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Ceed
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../blueprint.html">System Blueprint</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="guide.html">User Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="function.html">Ceed functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shape.html">Ceed shapes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="stage.html">Ceed stages</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html">Ceed camera player</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Ceed experiment</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#running-experiment">Running experiment</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#experiment-data">Experiment data</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#spatial-system-alignment">Spatial system alignment</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#aligning-camera-to-projector">Aligning camera to projector</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#aligning-mea-to-camera">Aligning MEA to camera</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#experiment-flow">Experiment flow</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#projection-frame-rate">Projection Frame rate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#projector-leds">Projector LEDs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ceed-configuration">Ceed configuration</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#yaml-file">Yaml file</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#h5-file">H5 file</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#configuration-window">Configuration window</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#teensy-uc">Teensy uC</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#post-experiment-analysis">Post experiment Analysis</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#merge-data">Merge data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#analyze-data">Analyze data</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../config.html">CEED Config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../example_code/example_code.html">Example Analysis Code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../apps/apps.html">Ceed Apps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/api.html">The Ceed API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../optics/optics.html">Microscope optics</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Ceed</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="guide.html">User Guide</a> &raquo;</li>
+        
+      <li>Ceed experiment</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/guide/experiment.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="ceed-experiment">
+<h1>Ceed experiment<a class="headerlink" href="#ceed-experiment" title="Permalink to this headline">¶</a></h1>
+<p>See the <a class="reference internal" href="../api/view/controller.html#view-api"><span class="std std-ref">experiment control API</span></a> for in-depth experiment control details.</p>
+<div class="section" id="running-experiment">
+<span id="run-experiment"></span><h2>Running experiment<a class="headerlink" href="#running-experiment" title="Permalink to this headline">¶</a></h2>
+<p>Any of the stages created in the stages pane can be <a class="reference internal" href="../api/view/controller.html#view-api"><span class="std std-ref">run as an experiment</span></a>.
+As shown in the <a class="reference internal" href="stage.html#stage-guide"><span class="std std-ref">stage guide</span></a>, a stage</p>
+<ol class="arabic simple">
+<li><p>can be previewed as an intensity vs. time plot for each shape. See <a class="reference internal" href="stage.html#preview-stage"><span class="std std-ref">Previewing stage</span></a>.</p></li>
+<li><p>It can be previewed by playing the experiment in the drawing area. See <a class="reference internal" href="stage.html#preview-play-stage"><span class="std std-ref">Running preview stage</span></a>.</p></li>
+<li><p>Or the experiment can be played as a real experiment by opening the second
+Ceed window and playing the experiment.</p></li>
+</ol>
+<p>To run a real experiment, select the stage to use from the dropdown menu and press the
+window button. This will open a second blank Window that is fullscreen.
+The experiment will play in that screen when the stage is started with the keyboard.</p>
+<p>Following are the keyboard shortcuts used to to interact with Ceed from that window:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">ctrl-s</span></code> starts an experiment using the currently selected stage.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ctrl-c</span></code> stops the currently running experiment.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ctrl-z</span></code> stops the currently running experiment (if any) and closes the fullscreen window.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ctrl-f</span></code> toggles the second window between fullscreen and normal.</p></li>
+</ul>
+<img alt="../_images/exp_controls.png" src="../_images/exp_controls.png" />
+<p>The fraction (0 / 0 in the image) is the estimated experiment CPU and GPU refresh rate for
+Ceed, respectively.</p>
+<div class="section" id="experiment-data">
+<span id="id1"></span><h3>Experiment data<a class="headerlink" href="#experiment-data" title="Permalink to this headline">¶</a></h3>
+<p>Ceed saves all the experiment data into a <a class="reference external" href="https://nixpy.readthedocs.io/en/latest/">Nix</a>
+data file. Each experiment (even when previewed-played) creates a new unique section
+in the Nix H5 data file and Ceed stores all the experiment data there.</p>
+<p>Before running the experiment, Ceed copies the stage to be used for the experiment
+and creates a new stage called <code class="docutils literal notranslate"><span class="pre">experiment_sampled</span></code>
+(<a class="reference internal" href="../api/stage/stage.html#ceed.stage.last_experiment_stage_name" title="ceed.stage.last_experiment_stage_name"><code class="xref py py-attr docutils literal notranslate"><span class="pre">last_experiment_stage_name</span></code></a>) from it (overwriting the
+last one, if present). This is the stage Ceed actually runs. Then, Ceed saves the
+current camera image, if any, and the complete <a class="reference internal" href="#tut-config"><span class="std std-ref">Ceed configuration</span></a>
+including the stages/shapes/functions required to reproduce the experiment.</p>
+<p>During the experiment it saves for every frame the red,
+green, and blue intensity values for every rendered shape. It also saves the frame time
+and frame digital IO pattern that is sent along the ProPixx to MCS hardware connection
+so we can temporally align the Ceed frames to the MCS electrode data post hoc.</p>
+<p>Additionally, each experiment is added to the image/experiment log window. It displays
+the camera image, if any, and it allows you to enter notes for the experiment that is
+available during <a class="reference internal" href="#analyze-tut"><span class="std std-ref">analysis</span></a>.</p>
+<img alt="../_images/experiment_log_window.png" src="../_images/experiment_log_window.png" />
+<p>Ceed automatically creates an anonymous Nix file when Ceed starts. Experiment data is
+saved there. When the file is explicitly saved to a location (see <a class="reference internal" href="#tut-config"><span class="std std-ref">Ceed configuration</span></a>)
+the data is copied and saved there. But, Ceed maintains the internal anonymous file
+to which it writes future data and copies it to the requested file when explicitly
+saved by the user. Consequently, unsaved data can safely be discarded without affecting
+the user data file. Ceed will prompt you when closing Ceed while there’s data in the
+Ceed file that has not been explicitly saved.</p>
+</div>
+</div>
+<div class="section" id="spatial-system-alignment">
+<h2>Spatial system alignment<a class="headerlink" href="#spatial-system-alignment" title="Permalink to this headline">¶</a></h2>
+<p>There are three physical systems that interact with a tissue slice:</p>
+<ol class="arabic simple">
+<li><p>The MEA it rests on. There’s an electrode grid beneath the tissue and the tissue
+orientation determines on which electrodes it rests on.</p></li>
+<li><p>The projector. The projector, through the lenses, projects light patterns on the
+tissue; again the orientation determines how the tissue is stimulated.</p></li>
+<li><p>The camera. The camera observes the slice, the projector patterns, and potentially
+the electrode grid.</p></li>
+</ol>
+<p>There are two spatial alignment procedures, described below, that enables us to know
+precisely where on the tissue the projector stimulated and which electrodes are
+beneath it.</p>
+<p>The first computes the transformation matrix between the camera and projector
+(<a class="reference internal" href="../api/view/controller.html#ceed.view.controller.ViewControllerBase.cam_transform" title="ceed.view.controller.ViewControllerBase.cam_transform"><code class="xref py py-attr docutils literal notranslate"><span class="pre">cam_transform</span></code></a>),
+the second between the camera and the MEA electrode termination
+points (<a class="reference internal" href="../api/view/controller.html#ceed.view.controller.ViewControllerBase.mea_transform" title="ceed.view.controller.ViewControllerBase.mea_transform"><code class="xref py py-attr docutils literal notranslate"><span class="pre">mea_transform</span></code></a>).
+Together, we can compute the transformation matrix between
+any of three physical systems. These matrices are stored with the rest of the
+<a class="reference internal" href="#tut-config"><span class="std std-ref">Ceed configuration</span></a> and saved with experiments and is available
+during analysis.</p>
+<div class="section" id="aligning-camera-to-projector">
+<span id="align-cam-proj"></span><h3>Aligning camera to projector<a class="headerlink" href="#aligning-camera-to-projector" title="Permalink to this headline">¶</a></h3>
+<p>This procedure aligns the camera and the projector so given the camera image we can know
+precisely where on the image each projector pixel will project on. This must be done
+anytime the camera or the projector or any of the lenses in its path are moved.</p>
+<p>First draw a few unique shapes that will allows us to clearly identify any rotations
+and translations of the shapes. Then add a constant function that stimulates these shapes
+at some large intensity for an extended duration.</p>
+<p>Following is an screenshot and configuration file for an example stage.</p>
+<img alt="../_images/align_cam_before.png" src="../_images/align_cam_before.png" />
+<p><a class="reference download internal" download="" href="../_downloads/8f57aa67d0f4565e87fdc93d794094af/align_cam.yml"><code class="xref download docutils literal notranslate"><span class="pre">Ceed</span> <span class="pre">camera</span> <span class="pre">alignment</span> <span class="pre">config</span></code></a></p>
+<p>Now ensure that Filers2 is streaming camera images to Ceed and run the experiment
+in the fullscreen window on <strong>an empty array</strong>.</p>
+<p>For the example stage, we would see the following being projected on the tissue
+and on screen. Notice that the projector output is flipped; it’s set in the settings
+window (see <a class="reference internal" href="#tut-config-window"><span class="std std-ref">Configuration window</span></a>, “reflect shapes horizontally”) because the
+lenses flip the projection in the current setup (2021).</p>
+<img alt="../_images/align_cam_exp_pattern.png" src="../_images/align_cam_exp_pattern.png" />
+<p>While it’s running observe the camera output in Filers2 on the other computer.
+The camera (and you) should see the shapes being projected on the array like the image.
+You can stop the experiment (ctrl-c) when it’s clear in the camera. When done, in Ceed
+stop the camera from streaming and reload the camera image to the
+image just before the stage ended (see <a class="reference internal" href="player.html#reload-last"><span class="std std-ref">Reloading last experiment image</span></a>).</p>
+<p>Now, as in the video below, enter “align cam” mode and using the mouse apply scaling,
+rotation, and translation to the image on the shapes and image align. Use right mouse
+click to add the red dot to allow scaling and rotating relative to it. If the shapes
+appear mirrored, enable “reflect camera horizontally” in the settings window
+(see <a class="reference internal" href="#tut-config-window"><span class="std std-ref">Configuration window</span></a>).</p>
+
+    <video loop   controls autoplay title="Open in tab for original size" style="max-width: 100%;">
+    <source src="../_videos/stage_create.webm" type="video/webm">
+    stage_create
+    </video>
+    </div>
+<div class="section" id="aligning-mea-to-camera">
+<span id="align-cam-mea"></span><h3>Aligning MEA to camera<a class="headerlink" href="#aligning-mea-to-camera" title="Permalink to this headline">¶</a></h3>
+<p>This procedure aligns the camera and the MEA so given the camera image we can know
+precisely where on the image each electrode terminates. This must be done
+anytime the MEA is translated or rotated (likely after each experiment).</p>
+<p>First ensure that Filers2 is running the camera and streaming it to Ceed. Within
+Ceed similarly stream the images from Filers2. Now, turn ON the lamp beneath the
+MEA until the array is clearly seen in the images, like below. Adjust the exposure
+etc in Filers2 if it’s too bright/dark.</p>
+<p>Like above, enter “Align_MEA” mode and using the mouse apply scaling,
+rotation, and translation to the grid until it aligns with the electrodes
+termination points. Notice in the video that electrode A12, as visible on the
+array, is in the top left corner.</p>
+<p>If the number of electrodes in the columns/rows don’t match or the electrodes
+need to be flipped, you can change them in the configuration file (see
+<a class="reference internal" href="#tut-config"><span class="std std-ref">Ceed configuration</span></a>, and properties
+<a class="reference internal" href="../api/view/controller.html#ceed.view.controller.ViewControllerBase.mea_diameter" title="ceed.view.controller.ViewControllerBase.mea_diameter"><code class="xref py py-attr docutils literal notranslate"><span class="pre">mea_diameter</span></code></a>,
+<a class="reference internal" href="../api/view/controller.html#ceed.view.controller.ViewControllerBase.mea_num_cols" title="ceed.view.controller.ViewControllerBase.mea_num_cols"><code class="xref py py-attr docutils literal notranslate"><span class="pre">mea_num_cols</span></code></a>,
+<a class="reference internal" href="../api/view/controller.html#ceed.view.controller.ViewControllerBase.mea_num_rows" title="ceed.view.controller.ViewControllerBase.mea_num_rows"><code class="xref py py-attr docutils literal notranslate"><span class="pre">mea_num_rows</span></code></a>,
+<a class="reference internal" href="../api/view/controller.html#ceed.view.controller.ViewControllerBase.mea_pitch" title="ceed.view.controller.ViewControllerBase.mea_pitch"><code class="xref py py-attr docutils literal notranslate"><span class="pre">mea_pitch</span></code></a>,
+<a class="reference internal" href="../api/view/controller.html#ceed.view.controller.ViewControllerBase.mirror_mea" title="ceed.view.controller.ViewControllerBase.mirror_mea"><code class="xref py py-attr docutils literal notranslate"><span class="pre">mirror_mea</span></code></a>,).</p>
+
+    <video loop   controls autoplay title="Open in tab for original size" style="max-width: 100%;">
+    <source src="../_videos/align_mea.webm" type="video/webm">
+    align_mea
+    </video>
+    <p>Typically at the start of an experiment you may move the array, e.g. to adjust to
+the tissue. So you would need to do the alignment after the experiment to know the
+transformation used during the experiment. Unfortunately, the experiment data would
+already include the incorrect matrix saved at the start of the experiment.</p>
+<p>Ceed lets you back-apply the MEA transformation matrix to existing experiment data
+as shown in the following video. The red bar indicates that the transform
+is different than the subsequent experiment (or current value for last experiment) -
+meaning that it changed.
+At the top you can copy the transform from any experiment to another, where app means
+the current Ceed app value. In the video we copy the current transform to experiments
+1-4 (with the assumption that the current transform applies to all these experiments).</p>
+
+    <video loop   controls autoplay title="Open in tab for original size" style="max-width: 100%;">
+    <source src="../_videos/align_mea_apply.webm" type="video/webm">
+    align_mea_apply
+    </video>
+    </div>
+</div>
+<div class="section" id="experiment-flow">
+<h2>Experiment flow<a class="headerlink" href="#experiment-flow" title="Permalink to this headline">¶</a></h2>
+<p>Given the above, an overall typical experiment flow is as follows:</p>
+<ol class="arabic simple">
+<li><p>Initially do <a class="reference internal" href="#align-cam-proj"><span class="std std-ref">Aligning camera to projector</span></a>.</p></li>
+<li><p>Create a shape that encloses the entire projector area (see <a class="reference internal" href="shape.html#control-shape"><span class="std std-ref">Controlling shapes</span></a>).
+Add stage with a constant function to stimulate it. Ensure the camera is streaming and
+run that stage. You should now see area of the tissue that fluoresces due to cells.</p></li>
+<li><p>Design a stage for your experiment.</p></li>
+<li><p><a class="reference internal" href="#run-experiment"><span class="std std-ref">Run</span></a> that experiment.</p></li>
+<li><p><a class="reference internal" href="#align-cam-mea"><span class="std std-ref">Align the MEA to camera</span></a> for that tissue.</p></li>
+<li><p>Using the Ceed code, <a class="reference internal" href="#merge-tut"><span class="std std-ref">merge</span></a> and align the Ceed and MCS data
+files into a single Ceed file.</p></li>
+<li><p>Using the Ceed code, <a class="reference internal" href="#analyze-tut"><span class="std std-ref">analyze</span></a> the recorded experiment data.</p></li>
+</ol>
+</div>
+<div class="section" id="projection-frame-rate">
+<h2>Projection Frame rate<a class="headerlink" href="#projection-frame-rate" title="Permalink to this headline">¶</a></h2>
+<p>By default the projector refreshes and re-renders the stimulation shapes at 120Hz
+(119.96 more precisely). The rate must be correctly set in the settings window
+to the exact decimal to match the GPU refresh rate, and it must show the correct
+fraction. Otherwise the experiment will be OFF temporally. You can see the
+refresh rate for your GPU by inspecting e.g. the NVIDIA control panel.</p>
+<p>At 120Hz it is too slow if we need to stimulate at e.g. 100Hz. E.g. a sine wave
+would barely have one sample per cycle. The projector can be refreshed at higher
+rates, at a cost of lower resolution or color. From the settings you can select
+these faster video modes. There are three options:</p>
+<ol class="arabic simple">
+<li><p>RGB, the normal mode that refreshes at 120Hz.</p></li>
+<li><p>QUAD4X, a mode that updates at 4 * 120Hz at the cost of only having a quarter
+of the resolution.</p></li>
+<li><p>QUAD12X, a mode that updates at 12 * 120Hz at the cost of only having a quarter
+of the resolution and only being able to project one intensity value for the red,
+green, and blue channels (i.e. grayscale - you can still turn OFF specific LEDs
+though, see <a class="reference internal" href="#led-tut"><span class="std std-ref">Projector LEDs</span></a>).</p></li>
+</ol>
+<p>The mode can be selected from the settings window (see <a class="reference internal" href="#tut-config-window"><span class="std std-ref">Configuration window</span></a>).
+E.g. here we selected QUAD12X for the video mode. This results in a refresh rate
+of 1,439.52Hz.</p>
+<img alt="../_images/settings_window_mode.png" src="../_images/settings_window_mode.png" />
+<p>When using the quad mode, the projector internally re-uses the quadrants of the
+video frame for this increase in speed. So on the monitor it would seem like
+the 4 quadrants are displaying separate frames (see image below), the projector
+correctly outputs only one quadrant at a time.</p>
+<img alt="../_images/quad_mode.png" src="../_images/quad_mode.png" />
+</div>
+<div class="section" id="projector-leds">
+<span id="led-tut"></span><h2>Projector LEDs<a class="headerlink" href="#projector-leds" title="Permalink to this headline">¶</a></h2>
+<p>The projector contains three internal LEDs - red, green, and blue that allows
+rendering any color using a combination of these LEDs. Typically you specify in
+Ceed the color to use for each stage (e.g. red and green, see <a class="reference internal" href="stage.html#stage-color"><span class="std std-ref">Shape color</span></a>)
+and an intensity for each video frame from the functions. Then the projector
+will automatically control the LEDs to output the requested color.</p>
+<p>The projector LEDs can also be directly turned ON or OFF individually. In the
+settings window (see <a class="reference internal" href="#tut-config-window"><span class="std std-ref">Configuration window</span></a>) you can select any of the
+red, green, and/or blue LEDs to be ON or OFF independently.</p>
+<p>There are two options:</p>
+<ol class="arabic simple">
+<li><p><strong>Projector LED mode</strong>
+(<a class="reference internal" href="../api/view/controller.html#ceed.view.controller.ViewControllerBase.LED_mode" title="ceed.view.controller.ViewControllerBase.LED_mode"><code class="xref py py-attr docutils literal notranslate"><span class="pre">LED_mode</span></code></a>).
+This controls which LED is available when running the
+experiments. Any of the turned OFF LEDs will not respond if Ceed sets that color
+(e.g. setting it to <code class="docutils literal notranslate"><span class="pre">&quot;RG&quot;</span></code>, will disable the blue LED).</p></li>
+<li><p><strong>Projector LED mode (idle)</strong>
+(<a class="reference internal" href="../api/view/controller.html#ceed.view.controller.ViewControllerBase.LED_mode_idle" title="ceed.view.controller.ViewControllerBase.LED_mode_idle"><code class="xref py py-attr docutils literal notranslate"><span class="pre">LED_mode_idle</span></code></a>).
+Like the first, but it controls the LEDs outside an
+experiment. Outside the experiment they should be OFF (i.e. set option to none)
+because otherwise the projector would be projecting on the slice the whole time.
+Setting it to none turns OFF all the LEDs. Ceed will automatically switch to
+the first mode option when the experiment starts and then switch back when done.</p></li>
+</ol>
+<p>In QUAD12X mode, Ceed will set the color to grayscale because red, green, and blue
+are assigned the same intensity value. However, you probably only want to stimulate
+a specific color (e.g. blue). Manually turn OFF the other LEDs in that case and even
+though Ceed will request to stimulate all three LEDs (gray), the projector will only
+use the blue LED.</p>
+</div>
+<div class="section" id="ceed-configuration">
+<span id="tut-config"></span><h2>Ceed configuration<a class="headerlink" href="#ceed-configuration" title="Permalink to this headline">¶</a></h2>
+<p>Ceed is fully configured from a yaml configuration file. The settings in the file
+are documented in the auto generated
+<a class="reference external" href="https://matham.github.io/ceed/config.html">configuration docs</a>. The default
+yaml file loaded by Ceed is contained where Ceed is installed, under
+<code class="docutils literal notranslate"><span class="pre">ceed/data/CeedApp_config.yaml</span></code>. The file can be edited or deleted
+altogether (and Ceed will recreate it), while Ceed is closed.</p>
+<p>In addition to the app settings in the file, Ceed can also include all the
+stages, shapes, and functions in the yaml configuration. Ceed relies on the
+ability to encode the stages and other required metadata to yaml in order
+to run the experiment cleanly in the full-screen window. So all plugins
+must ensure that their objects can be fully captured by config.</p>
+<p>The config can be expressly saved or imported from the data window:</p>
+<img alt="../_images/data_window.png" src="../_images/data_window.png" />
+<p>From the data window you can either import/export/open/save the config
+and experiment data to the Nix H5 file, or you can import/export the config
+to a yaml file as detailed below.</p>
+<div class="section" id="yaml-file">
+<h3>Yaml file<a class="headerlink" href="#yaml-file" title="Permalink to this headline">¶</a></h3>
+<p>Ceed can export the stages/shapes/function to a yaml file to be re-used as
+a template later for a new experiment. To use it, import the stages yaml file.</p>
+<p>In addition to the stages, it can also export and import the overall app settings
+from the yaml file (e.g. the frame rate, camera and MEA transforms etc).
+Importing <strong>only the stages</strong> is recommended because it may not be visibly obvious
+all the configuration options that changed when importing the app settings.</p>
+<p>Following is an example config file with just the stage/shape/functions
+settings as well as one with the app settings as well:</p>
+<p><a class="reference download internal" download="" href="../_downloads/b4c4a024c6c8377b2581bceb3c0823f5/stages_config.yml"><code class="xref download docutils literal notranslate"><span class="pre">Stages</span> <span class="pre">config</span></code></a>
+<a class="reference download internal" download="" href="../_downloads/afe48bc57dcf8b64a1fc71f2b5dd51bf/stages_with_app_settings_config.yml"><code class="xref download docutils literal notranslate"><span class="pre">Stages</span> <span class="pre">and</span> <span class="pre">app</span> <span class="pre">settings</span> <span class="pre">config</span></code></a></p>
+</div>
+<div class="section" id="h5-file">
+<h3>H5 file<a class="headerlink" href="#h5-file" title="Permalink to this headline">¶</a></h3>
+<p>Ceed uses Nix H5 files to store the experiment data. However, it also stores a
+complete copy of the current app settings and stages/shapes/functions whenever
+it is saved. In addition, the complete settings are also saved for each
+experiment with the experiment data.</p>
+<p>Like with the yaml file, you can import the last configuration from the H5
+file. But, you can also explicitly save or re-open the H5 file.</p>
+<p>You can save and save-as the H5 file (including from the save icon). Until
+saved, the changes are saved to a temp file and only copied to the indicated
+H5 file every time manually saved. You can also discard unsaved changes or close
+the H5 file altogether. And you can open existing H5 files, which loads
+their last config into Ceed.</p>
+</div>
+<div class="section" id="configuration-window">
+<span id="tut-config-window"></span><h3>Configuration window<a class="headerlink" href="#configuration-window" title="Permalink to this headline">¶</a></h3>
+<p>Although most settings can only be changed from the yaml file, a few settings are
+exposed in the settings window:</p>
+<img alt="../_images/settings_window.png" src="../_images/settings_window.png" />
+<p>Following is an overview of the settings not explained in previous/subsequent sections.
+Each settings also has an associated property in the yaml file and documented
+in the <a class="reference external" href="https://matham.github.io/ceed/config.html">configuration docs</a>.</p>
+<ul>
+<li><p>“Projector window is fullscreen”: See
+<a class="reference internal" href="../api/view/controller.html#ceed.view.controller.ViewControllerBase.fullscreen" title="ceed.view.controller.ViewControllerBase.fullscreen"><code class="xref py py-attr docutils literal notranslate"><span class="pre">fullscreen</span></code></a> in the config docs.
+This should be True.</p></li>
+<li><p>“Restrict projector play rate”: See
+<a class="reference internal" href="../api/view/controller.html#ceed.view.controller.ViewControllerBase.use_software_frame_rate" title="ceed.view.controller.ViewControllerBase.use_software_frame_rate"><code class="xref py py-attr docutils literal notranslate"><span class="pre">use_software_frame_rate</span></code></a>
+in the config docs. This should be False expect perhaps during testing.</p></li>
+<li><p>“File compression”: See
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">compression`</span></code> in the config docs.</p></li>
+<li><p>“Pad stage duration to handshake”: See
+<a class="reference internal" href="../api/view/controller.html#ceed.view.controller.ViewControllerBase.pad_to_stage_handshake" title="ceed.view.controller.ViewControllerBase.pad_to_stage_handshake"><code class="xref py py-attr docutils literal notranslate"><span class="pre">pad_to_stage_handshake</span></code></a>
+in the config docs. This should ideally be True, otherwise merging Ceed with MCS
+data may not work.</p></li>
+<li><p>“Pre-compute finite stages/functions”: See <a class="reference internal" href="../api/stage/stage.html#pre-compute"><span class="std std-ref">Pre-computing</span></a> and
+<a class="reference internal" href="../api/view/controller.html#ceed.view.controller.ViewControllerBase.pre_compute_stages" title="ceed.view.controller.ViewControllerBase.pre_compute_stages"><code class="xref py py-attr docutils literal notranslate"><span class="pre">pre_compute_stages</span></code></a> in the config docs.
+This should ideally be True, especially if stage functions do much computation, because
+otherwise Ceed would do too much work during the experiment, potentially missing
+frames. By pre-computing, all the computation is done before the experiment starts.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If turned ON, there will be a slight delay (potentially many seconds) between
+starting an experiment and the experiment actually starting.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="teensy-uc">
+<span id="teensy-tut"></span><h2>Teensy uC<a class="headerlink" href="#teensy-uc" title="Permalink to this headline">¶</a></h2>
+<p>The CPU/GPU will sometimes take more than a frame duration to display a frame.
+E.g. if the computer is processing too much, it may not submit the next frame in
+time. Consequently, Ceed needs to <a class="reference internal" href="../api/view/controller.html#dropped-frames"><span class="std std-ref">drop a frame</span></a> to
+compensate for the slow frame.</p>
+<p>Ceed can detect delayed frames using a software-based time estimation (
+<a class="reference internal" href="../api/view/controller.html#ceed.view.controller.FrameEstimation" title="ceed.view.controller.FrameEstimation"><code class="xref py py-class docutils literal notranslate"><span class="pre">FrameEstimation</span></code></a>), or using
+a connected Teensy microcontroller (
+<a class="reference internal" href="../api/view/controller.html#ceed.view.controller.TeensyFrameEstimation" title="ceed.view.controller.TeensyFrameEstimation"><code class="xref py py-class docutils literal notranslate"><span class="pre">TeensyFrameEstimation</span></code></a>). The Teensy,
+by watching the Ceed to MCS hardware
+link, can notify Ceed more quickly and reliably than the software approach.</p>
+<p>Whether to use the Teensy is set in the settings window (see “Use Teensy” -
+<a class="reference internal" href="#tut-config-window"><span class="std std-ref">Configuration window</span></a>,
+<a class="reference internal" href="../api/view/controller.html#ceed.view.controller.TeensyFrameEstimation.use_teensy" title="ceed.view.controller.TeensyFrameEstimation.use_teensy"><code class="xref py py-attr docutils literal notranslate"><span class="pre">use_teensy</span></code></a>).
+The Teensy can only be used when the GPU is updating
+at 119.96Hz (it’s hardcoded in the Teensy’s firmware).</p>
+<p>The Teensy also has an LED that blinks faster when the experiment starts,
+while it’s pre-computing the stages (see above) and getting things ready.
+It blinks even faster while the experiment is running. This LED can help
+you track the current experiment state during an experiment.</p>
+</div>
+<div class="section" id="post-experiment-analysis">
+<h2>Post experiment Analysis<a class="headerlink" href="#post-experiment-analysis" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="merge-data">
+<span id="merge-tut"></span><h3>Merge data<a class="headerlink" href="#merge-data" title="Permalink to this headline">¶</a></h3>
+<p>After experiments you’ll have two files:</p>
+<ol class="arabic simple">
+<li><p>The Ceed H5 <a class="reference internal" href="#experiment-data"><span class="std std-ref">data file</span></a> containing the intensity
+values for every shape and for every frame, for each experiment stored in
+the file.</p></li>
+<li><p>A MCS proprietary file containing all the electrode data recorded during the
+experiments. The MCS data tool allows you to export this data into an HDF5
+(H5) file.</p></li>
+</ol>
+<p>The merging step merges both files and computes the temporal alignment between
+them so we know exactly which electrode samples correlate with each projected frame.</p>
+<p>It outputs a Ceed based Nix H5 file that contains the Ceed experiment data, the
+electrode data, and the alignment between them for all experiments.</p>
+<p>See <a class="reference internal" href="../api/analysis/merge_data.html#merge-api"><span class="std std-ref">Ceed-MCS data merging</span></a> and <a class="reference internal" href="../api/analysis/merge_data.html#merge-api-example"><span class="std std-ref">Merging example</span></a> for the merging API. See also
+<a class="reference internal" href="../example_code/merge_ceed_with_mcs_data.html#merge-example"><span class="std std-ref">Merging Ceed Data with MCS Data</span></a> for a completely worked example.</p>
+</div>
+<div class="section" id="analyze-data">
+<span id="analyze-tut"></span><h3>Analyze data<a class="headerlink" href="#analyze-data" title="Permalink to this headline">¶</a></h3>
+<p>After <a class="reference internal" href="#merge-tut"><span class="std std-ref">merging</span></a> the Ceed and MCS data into a single Ceed file,
+you can use the <a class="reference internal" href="../api/analysis/analysis.html#ceed.analysis.CeedDataReader" title="ceed.analysis.CeedDataReader"><code class="xref py py-class docutils literal notranslate"><span class="pre">CeedDataReader</span></code></a> to load the data
+and the experiment Ceed configuration.</p>
+<p>See <a class="reference internal" href="../api/analysis/analysis.html#ceed-analysis"><span class="std std-ref">Ceed data analysis</span></a> for the API. See also
+<a class="reference internal" href="../example_code/example_code.html#example-analysis"><span class="std std-ref">Example Analysis Code</span></a> for completely worked through examples of reading
+and using the data.</p>
+<p>Some data relevant <a class="reference internal" href="../api/analysis/analysis.html#ceed.analysis.CeedDataReader" title="ceed.analysis.CeedDataReader"><code class="xref py py-class docutils literal notranslate"><span class="pre">CeedDataReader</span></code></a> properties are
+<a class="reference internal" href="../api/analysis/analysis.html#ceed.analysis.CeedDataReader.electrodes_data" title="ceed.analysis.CeedDataReader.electrodes_data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">electrodes_data</span></code></a>,
+<a class="reference internal" href="../api/analysis/analysis.html#ceed.analysis.CeedDataReader.electrode_intensity_alignment" title="ceed.analysis.CeedDataReader.electrode_intensity_alignment"><code class="xref py py-attr docutils literal notranslate"><span class="pre">electrode_intensity_alignment</span></code></a>,
+<a class="reference internal" href="../api/analysis/analysis.html#ceed.analysis.CeedDataReader.shapes_intensity" title="ceed.analysis.CeedDataReader.shapes_intensity"><code class="xref py py-attr docutils literal notranslate"><span class="pre">shapes_intensity</span></code></a>,
+<a class="reference internal" href="../api/analysis/analysis.html#ceed.analysis.CeedDataReader.shapes_intensity_rendered" title="ceed.analysis.CeedDataReader.shapes_intensity_rendered"><code class="xref py py-attr docutils literal notranslate"><span class="pre">shapes_intensity_rendered</span></code></a>, but see
+the examples and the other class properties for full details.</p>
+<p>For example, Ceed can generate a video replaying the stage and the electrodes’
+voltage corresponding to the stage frames. The following video shows the voltage
+of each of the electrodes in the array, and it replays the stage stimulation
+protocol. It is replayed on a image of the tissue. Additionally, a rectangle
+shows the electrodes the tissue falls on. I.e. the top right corner of the tissue
+corresponds to the A1 electrode. Meaning the array is rotated approximately
+90 degrees clockwise.</p>
+
+    <video loop   controls autoplay title="Open in tab for original size" style="max-width: 100%;">
+    <source src="../_videos/analysis_video.webm" type="video/webm">
+    analysis_video
+    </video>
+    </div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="../config.html" class="btn btn-neutral float-right" title="CEED Config" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="player.html" class="btn btn-neutral float-left" title="Ceed camera player" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2019, Matthew Einhorn.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,352 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Ceed shapes &mdash; Ceed  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Ceed stages" href="stage.html" />
+    <link rel="prev" title="Ceed functions" href="function.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Ceed
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../blueprint.html">System Blueprint</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="guide.html">User Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="function.html">Ceed functions</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Ceed shapes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#drawing-shape">Drawing shape</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#displaying-shapes">Displaying shapes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#controlling-shapes">Controlling shapes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#shape-groups">Shape groups</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#shape-plugin">Shape plugin</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="stage.html">Ceed stages</a></li>
+<li class="toctree-l2"><a class="reference internal" href="player.html">Ceed camera player</a></li>
+<li class="toctree-l2"><a class="reference internal" href="experiment.html">Ceed experiment</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../config.html">CEED Config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../example_code/example_code.html">Example Analysis Code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../apps/apps.html">Ceed Apps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/api.html">The Ceed API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../optics/optics.html">Microscope optics</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Ceed</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="guide.html">User Guide</a> &raquo;</li>
+        
+      <li>Ceed shapes</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/guide/shape.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="ceed-shapes">
+<h1>Ceed shapes<a class="headerlink" href="#ceed-shapes" title="Permalink to this headline">¶</a></h1>
+<p>A Ceed <a class="reference internal" href="../api/shape/shape.html#shape-api"><span class="std std-ref">shape</span></a> is how a stage sets the color intensity of a region
+of space. For every frame each stage gets an intensity value from its function and it
+sets all the shapes and shape groups attached to that stage to that intensity.</p>
+<p>The main black area of Ceed is a drawing area the size of the projector, in pixels,
+upon which shapes are drawn.</p>
+<div class="section" id="drawing-shape">
+<h2>Drawing shape<a class="headerlink" href="#drawing-shape" title="Permalink to this headline">¶</a></h2>
+<p>To add a shape, first ensure you’re in <code class="docutils literal notranslate"><span class="pre">draw</span></code> mode, then ensure that one of the 4
+drawing types is selected. You can draw a circle, ellipse, freeform polygon, and a
+polygon.</p>
+<p>Drop one or more points depending on the shape type to create the shape. Once created, a
+long-press on a point will activate edit mode for that shape and you can interact with
+any of the points of that shape. Clicking on black-space will exit editing that shape.</p>
+<p>If no shape is being edited, dragging the orange point will drag the shape. If none of the
+4 shape drawing types is selected, you can only edit the shapes, but not create new ones.</p>
+
+    <video loop   controls autoplay title="Open in tab for original size" style="max-width: 100%;">
+    <source src="../_videos/shape_draw.webm" type="video/webm">
+    shape_draw
+    </video>
+    </div>
+<div class="section" id="displaying-shapes">
+<h2>Displaying shapes<a class="headerlink" href="#displaying-shapes" title="Permalink to this headline">¶</a></h2>
+<p>Once created, shapes can be controlled in the shapes pane. Using the buttons a shape can
+be locked from interaction, or it can be hidden altogether. It can also be deleted.</p>
+<p>There’s an implicit shape depth order. Shapes further down in the list are above shapes
+earlier in the list. If two shapes occupy the same space or overlap, the shape on top
+is used for the region where they overlap. The arrows allow moving a shape up or down.
+See <a class="reference internal" href="stage.html#stage-donut"><span class="std std-ref">donut stage</span></a> how to use depth to create a donut shaped stage.</p>
+<p>Selecting a shape in the pane will also highlight it in the drawing area. There, you
+can change its name to something unique. You can change the x, y position of its
+centroid. And you can set its approximate area and it’ll be automatically scaled
+to the closest feasible area.</p>
+
+    <video loop   controls autoplay title="Open in tab for original size" style="max-width: 100%;">
+    <source src="../_videos/shape_control.webm" type="video/webm">
+    shape_control
+    </video>
+    </div>
+<div class="section" id="controlling-shapes">
+<span id="control-shape"></span><h2>Controlling shapes<a class="headerlink" href="#controlling-shapes" title="Permalink to this headline">¶</a></h2>
+<p>By default, you can only select one shape at a time. Enabling multiselect in the
+controls, or holding down the ctrl key enabled selecting multiples shape, either in
+the pane or by touching their orange point.</p>
+<p>Dragging on the orange point of one will drag all the selected shapes.
+From the controls you can also duplicate the selected shapes, or delete them.</p>
+<p>There’s a special button that adds a polygon shape named “enclosed” that encloses the
+whole projector area. It is typically used to stimulate the entire slice.</p>
+<p>From the controls you can also enable a mode to see the name of each shape and the x, y
+pixel position of the mouse as it transverses the drawing area.</p>
+
+    <video loop   controls autoplay title="Open in tab for original size" style="max-width: 100%;">
+    <source src="../_videos/shape_multiple.webm" type="video/webm">
+    shape_multiple
+    </video>
+    </div>
+<div class="section" id="shape-groups">
+<h2>Shape groups<a class="headerlink" href="#shape-groups" title="Permalink to this headline">¶</a></h2>
+<p>Rather than dragging individual shapes into stages, you can group shapes into shape groups.
+Then, these groups can be added to stages and it’s as if all it shapes are added to the stage.
+A single shape may be in multiple groups and all these groups may be added to a stage
+simultaneously, as well as the individual shape itself, without problems.</p>
+
+    <video loop   controls autoplay title="Open in tab for original size" style="max-width: 100%;">
+    <source src="../_videos/shape_groups.webm" type="video/webm">
+    shape_groups
+    </video>
+    </div>
+<div class="section" id="shape-plugin">
+<h2>Shape plugin<a class="headerlink" href="#shape-plugin" title="Permalink to this headline">¶</a></h2>
+<p>Although Ceed does not offer a plugin for shapes, it’s simple to create shapes
+and shape groups with a script, dump it to disk as a yaml file, and import it
+into Ceed from the GUI. See <a class="reference internal" href="../api/shape/shape.html#module-ceed.shape" title="ceed.shape"><code class="xref py py-mod docutils literal notranslate"><span class="pre">shape</span></code></a> for more details.</p>
+<p>Following is an example using <a class="reference internal" href="../api/shape/shape.html#ceed.shape.CeedPaintCanvasBehavior" title="ceed.shape.CeedPaintCanvasBehavior"><code class="xref py py-class docutils literal notranslate"><span class="pre">CeedPaintCanvasBehavior</span></code></a>
+with the specific shape classes and their corresponding <code class="docutils literal notranslate"><span class="pre">create_shape</span></code> methods;
+<a class="reference internal" href="../api/shape/shape.html#ceed.shape.CeedPaintCircle" title="ceed.shape.CeedPaintCircle"><code class="xref py py-class docutils literal notranslate"><span class="pre">CeedPaintCircle</span></code></a>
+(<a class="reference external" href="https://kivy-garden.github.io/painter/flower.html#kivy_garden.painter.PaintCircle.create_shape" title="(in Painter)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">create_shape()</span></code></a>),
+<a class="reference internal" href="../api/shape/shape.html#ceed.shape.CeedPaintEllipse" title="ceed.shape.CeedPaintEllipse"><code class="xref py py-class docutils literal notranslate"><span class="pre">CeedPaintEllipse</span></code></a>
+(<a class="reference external" href="https://kivy-garden.github.io/painter/flower.html#kivy_garden.painter.PaintEllipse.create_shape" title="(in Painter)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">create_shape()</span></code></a>),
+<a class="reference internal" href="../api/shape/shape.html#ceed.shape.CeedPaintPolygon" title="ceed.shape.CeedPaintPolygon"><code class="xref py py-class docutils literal notranslate"><span class="pre">CeedPaintPolygon</span></code></a>
+(<a class="reference external" href="https://kivy-garden.github.io/painter/flower.html#kivy_garden.painter.PaintPolygon.create_shape" title="(in Painter)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">create_shape()</span></code></a>).</p>
+<p>After running the script it will generate a yml file that can be imported into
+Ceed from the GUI and it’ll contain these shapes.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">ceed.shape</span> <span class="kn">import</span> <span class="n">CeedPaintCanvasBehavior</span><span class="p">,</span> <span class="n">CeedPaintCircle</span><span class="p">,</span> \
+    <span class="n">CeedPaintEllipse</span><span class="p">,</span> <span class="n">CeedPaintPolygon</span>
+<span class="kn">from</span> <span class="nn">ceed.storage.controller</span> <span class="kn">import</span> <span class="n">CeedDataWriterBase</span>
+
+<span class="c1"># create shape factory to which we&#39;ll add shapes</span>
+<span class="n">shape_factory</span> <span class="o">=</span> <span class="n">CeedPaintCanvasBehavior</span><span class="p">()</span>
+<span class="c1"># create the shapes and name them. We use the Shape classes imported from Ceed</span>
+<span class="n">ellipse</span> <span class="o">=</span> <span class="n">CeedPaintEllipse</span><span class="o">.</span><span class="n">create_shape</span><span class="p">(</span>
+    <span class="n">center</span><span class="o">=</span><span class="p">(</span><span class="mi">250</span><span class="p">,</span> <span class="mi">450</span><span class="p">),</span> <span class="n">radius_x</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">radius_y</span><span class="o">=</span><span class="mi">400</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;ellipse&#39;</span><span class="p">)</span>
+<span class="n">circle</span> <span class="o">=</span> <span class="n">CeedPaintCircle</span><span class="o">.</span><span class="n">create_shape</span><span class="p">(</span>
+    <span class="n">center</span><span class="o">=</span><span class="p">(</span><span class="mi">700</span><span class="p">,</span> <span class="mi">300</span><span class="p">),</span> <span class="n">radius</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;circle&#39;</span><span class="p">)</span>
+<span class="n">polygon</span> <span class="o">=</span> <span class="n">CeedPaintPolygon</span><span class="o">.</span><span class="n">create_shape</span><span class="p">(</span>
+    <span class="n">points</span><span class="o">=</span><span class="p">[</span><span class="mi">275</span><span class="p">,</span> <span class="mi">300</span><span class="p">,</span> <span class="mi">700</span><span class="p">,</span> <span class="mi">300</span><span class="p">,</span> <span class="mi">500</span><span class="p">,</span> <span class="mi">800</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;polygon&#39;</span><span class="p">)</span>
+
+<span class="c1"># add the shapes to factory</span>
+<span class="n">shape_factory</span><span class="o">.</span><span class="n">add_shape</span><span class="p">(</span><span class="n">ellipse</span><span class="p">)</span>
+<span class="n">shape_factory</span><span class="o">.</span><span class="n">add_shape</span><span class="p">(</span><span class="n">circle</span><span class="p">)</span>
+<span class="n">shape_factory</span><span class="o">.</span><span class="n">add_shape</span><span class="p">(</span><span class="n">polygon</span><span class="p">)</span>
+
+<span class="c1"># create group, name it, and add shapes to it</span>
+<span class="n">group</span> <span class="o">=</span> <span class="n">shape_factory</span><span class="o">.</span><span class="n">add_group</span><span class="p">()</span>
+<span class="n">group</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;shapes&#39;</span>
+<span class="n">group</span><span class="o">.</span><span class="n">add_shape</span><span class="p">(</span><span class="n">ellipse</span><span class="p">)</span>
+<span class="n">group</span><span class="o">.</span><span class="n">add_shape</span><span class="p">(</span><span class="n">polygon</span><span class="p">)</span>
+
+<span class="c1"># save it to disk for import later</span>
+<span class="n">CeedDataWriterBase</span><span class="o">.</span><span class="n">save_shapes_to_yaml</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">shape_factory</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="../_downloads/498b2362eef1e7420bbbe3884eebaaff/shapes.yml"><code class="xref download docutils literal notranslate"><span class="pre">Generated</span> <span class="pre">Ceed</span> <span class="pre">config</span></code></a></p>
+<p>The ProPixx projector used by Ceed has a resolution of 1920x108, so that should
+be the maximum extent of the shapes. The exact available drawing area can
+be read/set in Ceed’s config.</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="stage.html" class="btn btn-neutral float-right" title="Ceed stages" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="function.html" class="btn btn-neutral float-left" title="Ceed functions" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2019, Matthew Einhorn.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

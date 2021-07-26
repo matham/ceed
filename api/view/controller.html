@@ -1,0 +1,1508 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Experiment Controller &mdash; Ceed  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Viewer widgets" href="view_widgets.html" />
+    <link rel="prev" title="Experiment Viewer" href="view.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Ceed
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../blueprint.html">System Blueprint</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../guide/guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../config.html">CEED Config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../example_code/example_code.html">Example Analysis Code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../apps/apps.html">Ceed Apps</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">The Ceed API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../ceed.html">Ceed</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../analysis/api.html">Analysis API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../function/api.html">Function API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../shape/api.html">Shape API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../stage/api.html">Stage API</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="api.html">Experiment API</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="view.html">Experiment Viewer</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Experiment Controller</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#camera-projector-array-alignment">Camera-projector-array alignment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#video-mode">Video mode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#led-mode">LED mode</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#frame-rate-and-dropped-frames">Frame rate and dropped frames</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#experiment-flow">Experiment flow</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#synchronization">Synchronization</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="view_widgets.html">Viewer widgets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="main.html">Ceed Viewer side App</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../storage/api.html">Storage API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../player.html">Video Player</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils.html">Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../graphics/api.html">Graphics API</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../optics/optics.html">Microscope optics</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Ceed</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../api.html">The Ceed API</a> &raquo;</li>
+        
+          <li><a href="api.html">Experiment API</a> &raquo;</li>
+        
+      <li>Experiment Controller</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../../_sources/api/view/controller.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <span class="target" id="module-ceed.view.controller"></span><div class="section" id="experiment-controller">
+<span id="view-api"></span><h1>Experiment Controller<a class="headerlink" href="#experiment-controller" title="Permalink to this headline">¶</a></h1>
+<p>Runs, controls, and displays Ceed experiments on screen, both during a “real”
+experiment and when previewing it.</p>
+<p>The purpose of Ceed is to run visual-temporal experiments. Once a
+<a class="reference internal" href="../stage/stage.html#module-ceed.stage" title="ceed.stage"><code class="xref py py-mod docutils literal notranslate"><span class="pre">stage</span></code></a> containing one or more <a class="reference internal" href="../function/function.html#module-ceed.function" title="ceed.function"><code class="xref py py-mod docutils literal notranslate"><span class="pre">function</span></code></a>
+and one or more <a class="reference internal" href="../shape/shape.html#module-ceed.shape" title="ceed.shape"><code class="xref py py-mod docutils literal notranslate"><span class="pre">shape</span></code></a> has been designed, you’re ready to run
+the experiment.</p>
+<p>Following are some of the experiment configuration options:</p>
+<div class="section" id="camera-projector-array-alignment">
+<span id="view-flip"></span><h2>Camera-projector-array alignment<a class="headerlink" href="#camera-projector-array-alignment" title="Permalink to this headline">¶</a></h2>
+<p>There are three systems interacting with the tissue, and they all need to be
+aligned to each other; the projector, the camera, and the MEA electrode grid.</p>
+<div class="section" id="camera-projector">
+<h3>Camera-projector<a class="headerlink" href="#camera-projector" title="Permalink to this headline">¶</a></h3>
+<p>The first step is to draw any unique shape in Ceed and project this pattern
+on the MEA plane and then capture the projected pattern using the camera.
+Then in the GUI scale and align the captured image to the original shape. This
+will give us the camera to projector <a class="reference internal" href="#ceed.view.controller.ViewControllerBase.cam_transform" title="ceed.view.controller.ViewControllerBase.cam_transform"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ViewControllerBase.cam_transform</span></code></a>
+matrix.</p>
+<p>With the camera aligned to the projector output, you can draw shapes and target
+specific regions of the slice, visually (from a broad field stimulation camera
+capture) and it will be projected at the correct place on the tissue. If
+there’s mirroring, making affine alignment impossible you can either
+<a class="reference internal" href="#ceed.view.controller.ViewControllerBase.flip_camera" title="ceed.view.controller.ViewControllerBase.flip_camera"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ViewControllerBase.flip_camera</span></code></a> or
+<a class="reference internal" href="#ceed.view.controller.ViewControllerBase.flip_projector" title="ceed.view.controller.ViewControllerBase.flip_projector"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ViewControllerBase.flip_projector</span></code></a> horizontally. These settings are
+also exposed in the GUI.</p>
+</div>
+<div class="section" id="camera-array">
+<h3>Camera-array<a class="headerlink" href="#camera-array" title="Permalink to this headline">¶</a></h3>
+<p>With the camera aligned to the projector, we just need to align the MEA grid to
+the camera. First take a camera picture of the grid - you should be able to see
+the 2D grid of electrode termination points. Then, in the GUI display the
+virtual grid defined by <a class="reference internal" href="#ceed.view.controller.ViewControllerBase.mea_num_rows" title="ceed.view.controller.ViewControllerBase.mea_num_rows"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ViewControllerBase.mea_num_rows</span></code></a>,
+<a class="reference internal" href="#ceed.view.controller.ViewControllerBase.mea_num_cols" title="ceed.view.controller.ViewControllerBase.mea_num_cols"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ViewControllerBase.mea_num_cols</span></code></a>,
+<a class="reference internal" href="#ceed.view.controller.ViewControllerBase.mea_pitch" title="ceed.view.controller.ViewControllerBase.mea_pitch"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ViewControllerBase.mea_pitch</span></code></a>,
+<a class="reference internal" href="#ceed.view.controller.ViewControllerBase.mea_diameter" title="ceed.view.controller.ViewControllerBase.mea_diameter"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ViewControllerBase.mea_diameter</span></code></a>, and
+<a class="reference internal" href="#ceed.view.controller.ViewControllerBase.mirror_mea" title="ceed.view.controller.ViewControllerBase.mirror_mea"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ViewControllerBase.mirror_mea</span></code></a> and manually align it to the image.
+This will generate the <a class="reference internal" href="#ceed.view.controller.ViewControllerBase.mea_transform" title="ceed.view.controller.ViewControllerBase.mea_transform"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ViewControllerBase.mea_transform</span></code></a>.</p>
+<p>With the array aligned to the image and the projector aligned to the image
+we can now know exactly the electrodes on which the drawn shapes will cover
+and we can relate the activity of those cells to the stimulation.</p>
+</div>
+</div>
+<div class="section" id="video-mode">
+<span id="view-video-mode"></span><h2>Video mode<a class="headerlink" href="#video-mode" title="Permalink to this headline">¶</a></h2>
+<p>The projector supports 120 (119.96 more accurately) frames per second at its
+full resolution of 1920x1080 pixels, but it also offers higher speed modes.</p>
+<p>It can split the GPU image into 4 quadrants, such that it renders 4 960x540
+pixel images for each overall frame. So at the cost of a half of the x, y
+resolution we can play at 480Hz.</p>
+<p>Normally each image has red, green, and blue channels. By instead outputting
+a grayscale image, we can use each of the three channels to further multiply
+our speed by three to render 960x540 grayscale at 1,440 Hz.</p>
+<p>The video mode is configurable with <a class="reference internal" href="#ceed.view.controller.ViewControllerBase.video_mode" title="ceed.view.controller.ViewControllerBase.video_mode"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ViewControllerBase.video_mode</span></code></a>
+and from the GUI. Ceed will automatically correctly render the images for each
+mode when it is selected.</p>
+</div>
+<div class="section" id="led-mode">
+<h2>LED mode<a class="headerlink" href="#led-mode" title="Permalink to this headline">¶</a></h2>
+<p>The projector has three LEDs; red, green, and blue. In Ceed you can draw shapes
+and select their color(s). Internally, the projector will uses its LEDs to
+display the image with the requested colors, like a normal projector.</p>
+<p>However, you can manually turn OFF each of these LEDs and then that color will
+be displayed. <a class="reference internal" href="#ceed.view.controller.ViewControllerBase.LED_mode_idle" title="ceed.view.controller.ViewControllerBase.LED_mode_idle"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ViewControllerBase.LED_mode_idle</span></code></a>
+and <a class="reference internal" href="#ceed.view.controller.ViewControllerBase.LED_mode" title="ceed.view.controller.ViewControllerBase.LED_mode"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ViewControllerBase.LED_mode</span></code></a> configure which LEDs are active outside
+and during an experiment, respectively.</p>
+<p>Typically you’d select <code class="docutils literal notranslate"><span class="pre">'none'</span></code> for <a class="reference internal" href="#ceed.view.controller.ViewControllerBase.LED_mode_idle" title="ceed.view.controller.ViewControllerBase.LED_mode_idle"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ViewControllerBase.LED_mode_idle</span></code></a>
+so that the projector is OFF outside the experiment. This way you don’t
+stimulate the tissue outside the experiment. During the experiment you can
+either rely on the color selected for each stage, turn OFF specific LEDs or use
+the optical filters to filter out unwanted color channels.</p>
+</div>
+<div class="section" id="frame-rate-and-dropped-frames">
+<span id="dropped-frames"></span><h2>Frame rate and dropped frames<a class="headerlink" href="#frame-rate-and-dropped-frames" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="frame-time">
+<h3>Frame time<a class="headerlink" href="#frame-time" title="Permalink to this headline">¶</a></h3>
+<p>The projector and GPU display frames at a specific
+<a class="reference internal" href="#ceed.view.controller.ViewControllerBase.frame_rate" title="ceed.view.controller.ViewControllerBase.frame_rate"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ViewControllerBase.frame_rate</span></code></a>. In Ceed (GUI) you must enter the exact
+GPU frame rate, otherwise Ceed will project the stages at an incorrect rate.
+The frame rate will be internally converted to a fraction
+(<a class="reference internal" href="#ceed.view.controller.ViewControllerBase.frame_rate_numerator" title="ceed.view.controller.ViewControllerBase.frame_rate_numerator"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ViewControllerBase.frame_rate_numerator</span></code></a>,
+<a class="reference internal" href="#ceed.view.controller.ViewControllerBase.frame_rate_denominator" title="ceed.view.controller.ViewControllerBase.frame_rate_denominator"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ViewControllerBase.frame_rate_denominator</span></code></a>) that will be used to clock
+the functions (see below).</p>
+<p>Normally, the GPU limits us to the frame rate so we don’t have to estimate from
+software when to display the next frame, because we immediately display the next
+frame when the GPU returns control to the CPU. However, if it’s not available,
+<a class="reference internal" href="#ceed.view.controller.ViewControllerBase.use_software_frame_rate" title="ceed.view.controller.ViewControllerBase.use_software_frame_rate"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ViewControllerBase.use_software_frame_rate</span></code></a> can be used to force the
+frame rate. Although it’s very unreliable and should not be used during an
+experiment.</p>
+</div>
+<div class="section" id="long-frames">
+<h3>Long frames<a class="headerlink" href="#long-frames" title="Permalink to this headline">¶</a></h3>
+<p>In an ideal system, every frame is displayed for exactly the duration of
+the period of the frame_rate before displaying the next frame. In this system
+the time of each frame is 0, 1 * period,, 2 * period, …, n * period.
+Since the period is an exact fraction, the current time can be expressed as an
+exact fraction and when passed to a stage’s function it can accurately determine
+when each function is done.</p>
+<p>In a real system, some frames may be displayed for more than one frame duration.
+This could happen if the CPU is too slow then the current frame is e.g.
+displayed for 2 or more frames before the next frame is shown. If this is not
+accounted for, all subsequent frames are temporally displaced by the number of
+long frames.</p>
+<p>For example, say the frame rate and period is exactly 1 second. Normally, we’d
+display frames at 0s, 1s, … ns, and use that time when computing the functions
+for each frame (i.e. multiplying the frame count by the period to get the time).
+Naively, if we display frame 0 at 0s, 1 at 1s, 2 at 2s. But then frame 2
+actually goes long and is displayed for 2 seconds. Because we’re counting
+frames, the next frame time will be computed as frame 3 at 3s. However, in real
+time, because frame 2 was two frames long the actual frame 3 time is 4s when
+frame 3 is displayed. So all frames are delayed.</p>
+</div>
+<div class="section" id="dropping-frames">
+<h3>Dropping frames<a class="headerlink" href="#dropping-frames" title="Permalink to this headline">¶</a></h3>
+<p>To fix this, frame 3 should be dropped and we should instead display frame 4
+next. Or more generally, we need to drop frames until the frame number times the
+period catches up with the real time.</p>
+<p>Ceed has two approaches to detecting when to drop frames; a software approach
+and a hardware approach. The software approach uses the time after rendering
+frames and a median filter for <a class="reference internal" href="#ceed.view.controller.FrameEstimation" title="ceed.view.controller.FrameEstimation"><code class="xref py py-class docutils literal notranslate"><span class="pre">FrameEstimation</span></code></a>. With default settings
+it may take a few frames before we correct the delay.</p>
+<p>We also have a hardware solution using a <a class="reference external" href="https://github.com/matham/ceed/tree/master/ceed/view/teensy_estimation">Teensy device</a>
+for <a class="reference internal" href="#ceed.view.controller.TeensyFrameEstimation" title="ceed.view.controller.TeensyFrameEstimation"><code class="xref py py-class docutils literal notranslate"><span class="pre">TeensyFrameEstimation</span></code></a>. This device watches for dropped frames
+and notifies us over USB when it happens. This lets us respond more quickly.</p>
+<p>The hardware device can be turned OFF with
+<a class="reference internal" href="#ceed.view.controller.TeensyFrameEstimation.use_teensy" title="ceed.view.controller.TeensyFrameEstimation.use_teensy"><code class="xref py py-attr docutils literal notranslate"><span class="pre">TeensyFrameEstimation.use_teensy</span></code></a>, which is also configurable in the GUI.
+If disabled, we fall back to the software approach, unless it’s completely
+disabled with <a class="reference internal" href="#ceed.view.controller.ViewControllerBase.skip_estimated_missed_frames" title="ceed.view.controller.ViewControllerBase.skip_estimated_missed_frames"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ViewControllerBase.skip_estimated_missed_frames</span></code></a>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For any dropped frames, we still pass the time to the stage and it generates
+the shape values for these frames, but the frames are just dropped.</p>
+<p>This ensures that the root stage receives contiguous times at the given
+frame rate without any jumps, rather, we just don’t draw the frames that
+need to be skipped.</p>
+</div>
+</div>
+</div>
+<div class="section" id="experiment-flow">
+<h2>Experiment flow<a class="headerlink" href="#experiment-flow" title="Permalink to this headline">¶</a></h2>
+<p>Following is the overall experiment flow and what Ceed does when running an
+experiment.</p>
+<div class="section" id="experiment-mode">
+<h3>Experiment mode<a class="headerlink" href="#experiment-mode" title="Permalink to this headline">¶</a></h3>
+<p>There are two modes under which the experiment runs; in <strong>preview mode</strong> or as
+a “real” experiment. In preview mode, the stage is run directly in the Ceed
+GUI in the drawing area but is not projected on the projector (unless the
+<a class="reference internal" href="#ceed.view.controller.ViewControllerBase.LED_mode_idle" title="ceed.view.controller.ViewControllerBase.LED_mode_idle"><code class="xref py py-attr docutils literal notranslate"><span class="pre">LED_mode_idle</span></code></a> is not <code class="docutils literal notranslate"><span class="pre">none</span></code>). All the code is
+executed within the main Ceed process and the controller used to control the
+experiment is a <a class="reference internal" href="#ceed.view.controller.ControllerSideViewControllerBase" title="ceed.view.controller.ControllerSideViewControllerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ControllerSideViewControllerBase</span></code></a> instance.</p>
+<p>In a <strong>“real”</strong> experiment, the user launches a second full screen window from
+within Ceed. This starts a new process that communicates with Ceed over a queue
+and runs the experiment in that fullscreen window. In
+this case, the controller in the second process is a
+<a class="reference internal" href="#ceed.view.controller.ViewSideViewControllerBase" title="ceed.view.controller.ViewSideViewControllerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ViewSideViewControllerBase</span></code></a> instance, but the main GUI still has its
+<a class="reference internal" href="#ceed.view.controller.ControllerSideViewControllerBase" title="ceed.view.controller.ControllerSideViewControllerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ControllerSideViewControllerBase</span></code></a> instance through it communicates with
+the <a class="reference internal" href="#ceed.view.controller.ViewSideViewControllerBase" title="ceed.view.controller.ViewSideViewControllerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ViewSideViewControllerBase</span></code></a> instance. Data is constantly
+sent between the two processes, specifically, the second process is
+initialized with the config at the start. Then, once the playing
+starts, the client (second process) continuously sends data back to the main
+Ceed GUI for processing and storage.</p>
+</div>
+<div class="section" id="experiment-control">
+<h3>Experiment control<a class="headerlink" href="#experiment-control" title="Permalink to this headline">¶</a></h3>
+<p>When running from the full-screen window, you can control the experiment
+using keyboard shortcuts. Specifically, the following shortcuts:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">ctrl-s</span></code> starts an experiment using the currently selected stage (selected
+in the Ceed GUI).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ctrl-c</span></code> stops the currently running experiment.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ctrl-z</span></code> stops the currently running experiment (if any) and closes the
+fullscreen window.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ctrl-f</span></code> toggles the second window between fullscreen and normal. This
+should not really be used.</p></li>
+</ul>
+<p>If previewing, you can start or stop the stage using the play button in the GUI.</p>
+</div>
+<div class="section" id="preparing-stage">
+<h3>Preparing stage<a class="headerlink" href="#preparing-stage" title="Permalink to this headline">¶</a></h3>
+<p>When the user starts the experiment, starting with the stage selected by the
+user, Ceed copies the stage into a new
+stage named <a class="reference internal" href="../stage/stage.html#ceed.stage.last_experiment_stage_name" title="ceed.stage.last_experiment_stage_name"><code class="xref py py-attr docutils literal notranslate"><span class="pre">last_experiment_stage_name</span></code></a>. If one already
+exists with that name, it is replaced. This is the stage that will be run
+and the name of the stage you should look up in the analysis stage.</p>
+<p>Given the stage, it samples all the randomized function parameters, it expands
+all the reference stages and functions, and it re-samples the function
+parameters not marked as
+<a class="reference internal" href="../function/param_noise.html#ceed.function.param_noise.NoiseBase.lock_after_forked" title="ceed.function.param_noise.NoiseBase.lock_after_forked"><code class="xref py py-attr docutils literal notranslate"><span class="pre">lock_after_forked</span></code></a>. See
+<a class="reference internal" href="../stage/stage.html#ceed.stage.CeedStage.copy_and_resample" title="ceed.stage.CeedStage.copy_and_resample"><code class="xref py py-meth docutils literal notranslate"><span class="pre">copy_and_resample()</span></code></a>.</p>
+</div>
+<div class="section" id="preparing-hardware">
+<h3>Preparing hardware<a class="headerlink" href="#preparing-hardware" title="Permalink to this headline">¶</a></h3>
+<p>Next, it prepares a new section in the data file for this experiment (see
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">prepare_experiment()</span></code>). It then set the video
+mode (<a class="reference internal" href="#ceed.view.controller.ViewControllerBase.video_mode" title="ceed.view.controller.ViewControllerBase.video_mode"><code class="xref py py-attr docutils literal notranslate"><span class="pre">video_mode</span></code></a>) and LED state
+(<a class="reference internal" href="#ceed.view.controller.ViewControllerBase.LED_mode" title="ceed.view.controller.ViewControllerBase.LED_mode"><code class="xref py py-attr docutils literal notranslate"><span class="pre">LED_mode</span></code></a>) to the requested state and it is ready
+to run the stage.</p>
+<p>If it’s running for “real” and not being previewed, Ceed tell the second process
+to start the stage in the second full-screen window. It also starts
+communication with the <a class="reference internal" href="#ceed.view.controller.TeensyFrameEstimation" title="ceed.view.controller.TeensyFrameEstimation"><code class="xref py py-class docutils literal notranslate"><span class="pre">TeensyFrameEstimation</span></code></a> if it’s being used. Now,
+it sets up all the graphics and everything it needs to run.</p>
+</div>
+<div class="section" id="warmup">
+<h3>Warmup<a class="headerlink" href="#warmup" title="Permalink to this headline">¶</a></h3>
+<p>When starting the stage, the stage will pre-compute the intensity values for all
+its frames if enabled (<a class="reference internal" href="../stage/stage.html#pre-compute"><span class="std std-ref">Pre-computing</span></a>). For a long experiment, this may take
+some time during which the GUI won’t update. If the Teensy is running, the
+Teensy’s LED will blink faster than normal until the pre-computing and warmup is
+done and the stage actually starts playing frames when it will blink even
+faster until the stage is done.</p>
+<p>When pre-computing is done, Ceed will run 50 blank frames. This gives sufficient
+time to make sure <a class="reference internal" href="#ceed.view.controller.ViewControllerBase.LED_mode" title="ceed.view.controller.ViewControllerBase.LED_mode"><code class="xref py py-attr docutils literal notranslate"><span class="pre">LED_mode</span></code></a> is updated. It also
+allows us to collect the rendering time of these warmup frames, which will then
+be used to initialize <a class="reference internal" href="#ceed.view.controller.FrameEstimation" title="ceed.view.controller.FrameEstimation"><code class="xref py py-class docutils literal notranslate"><span class="pre">FrameEstimation</span></code></a> to help us estimate when to drop
+frames as a fallback if Teensy is not available.</p>
+</div>
+<div class="section" id="running-stage">
+<h3>Running stage<a class="headerlink" href="#running-stage" title="Permalink to this headline">¶</a></h3>
+<p>To run the stage, Ceed will sample the stage’s function at integer multiples of
+the period of the GPU refresh rate (<a class="reference internal" href="#ceed.view.controller.ViewControllerBase.frame_rate" title="ceed.view.controller.ViewControllerBase.frame_rate"><code class="xref py py-attr docutils literal notranslate"><span class="pre">frame_rate</span></code></a> or
+rather <a class="reference internal" href="#ceed.view.controller.ViewControllerBase.effective_frame_rate" title="ceed.view.controller.ViewControllerBase.effective_frame_rate"><code class="xref py py-attr docutils literal notranslate"><span class="pre">effective_frame_rate</span></code></a> if any of the quad
+modes is ON). Specifically, Ceed counts GPU frames and increments the counter by
+one for each frame (or sub-frame if the quad mode is ON). So to compute the
+current frame time, it divides <a class="reference internal" href="#ceed.view.controller.ViewControllerBase.count" title="ceed.view.controller.ViewControllerBase.count"><code class="xref py py-attr docutils literal notranslate"><span class="pre">count</span></code></a> by
+<a class="reference internal" href="#ceed.view.controller.ViewControllerBase.effective_frame_rate" title="ceed.view.controller.ViewControllerBase.effective_frame_rate"><code class="xref py py-attr docutils literal notranslate"><span class="pre">effective_frame_rate</span></code></a>.</p>
+<p>Hence <a class="reference internal" href="#ceed.view.controller.ViewControllerBase.frame_rate" title="ceed.view.controller.ViewControllerBase.frame_rate"><code class="xref py py-attr docutils literal notranslate"><span class="pre">frame_rate</span></code></a> <strong>must be exactly the GPU refresh
+rate</strong>. E.g. if the GPU is updating at 119.96 (which is typical), the frame
+rate must be set to <code class="docutils literal notranslate"><span class="pre">119.96</span></code>, and not <code class="docutils literal notranslate"><span class="pre">120</span></code>.</p>
+<p>At each frame or sub-frame, Ceed ticks the stage with the current frame time.
+This causes it to update all the shapes to the stage’s function intensity and
+for the new frame to be rendered.</p>
+<p>As the experiment is running Ceed also logs all the shape data. It stores for
+each frame the intensity of all shapes as well as some minimal debug data about
+frame time. More debug data can be logged by turning ON
+<a class="reference internal" href="#ceed.view.controller.ViewControllerBase.log_debug_timing" title="ceed.view.controller.ViewControllerBase.log_debug_timing"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ViewControllerBase.log_debug_timing</span></code></a>. It also logs the corner pixel
+Ceed-MCS alignment pattern for each frame, to be used for later alignment
+(see <a class="reference internal" href="#exp-sync"><span class="std std-ref">Synchronization</span></a>).</p>
+</div>
+<div class="section" id="experiment-shutdown">
+<h3>Experiment shutdown<a class="headerlink" href="#experiment-shutdown" title="Permalink to this headline">¶</a></h3>
+<p>When the experiment finishes or is stopped, Ceed will save the last camera image
+just before the experiment stops (
+<a class="reference internal" href="#ceed.view.controller.ControllerSideViewControllerBase.last_cam_image" title="ceed.view.controller.ControllerSideViewControllerBase.last_cam_image"><code class="xref py py-attr docutils literal notranslate"><span class="pre">last_cam_image</span></code></a>), if the camera was
+playing. Then it stops the stage (if it didn’t naturally stop) and cleans up.</p>
+</div>
+</div>
+<div class="section" id="synchronization">
+<span id="exp-sync"></span><h2>Synchronization<a class="headerlink" href="#synchronization" title="Permalink to this headline">¶</a></h2>
+<p>To facilitate temporal data alignment between the Ceed data (each projected
+frame) and MCS (the electrode data), Ceed outputs a bit pattern in the
+top-left corner pixel for each frame. This pixel is output by the projector
+controller as a bit pattern on its digital port, and is recorded by MCS.
+It is turned ON just before the experiment starts when running a “real”
+experiment using <a class="reference internal" href="#ceed.view.controller.ControllerSideViewControllerBase.set_pixel_mode" title="ceed.view.controller.ControllerSideViewControllerBase.set_pixel_mode"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ControllerSideViewControllerBase.set_pixel_mode()</span></code></a>.</p>
+<p>Specifically, the corner pixel contains 24-bits (8 for red, green, and blue).
+Ceed sends synchronization data in this pixel, so that after an experiment
+Ceed can look at its frame and the MCS data that logged the pattern and it
+can figure out exactly the electrode samples that corresponds to each projected
+frame.</p>
+<p>See <a class="reference internal" href="../storage/controller.html#ceed.storage.controller.DataSerializerBase" title="ceed.storage.controller.DataSerializerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataSerializerBase</span></code></a> to see the details
+about this pattern. See also <a class="reference internal" href="../analysis/merge_data.html#handshake-protocol"><span class="std std-ref">Temporal alignment protocol</span></a> to see how it used
+used to merge the data after an experiment.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.view.controller.FrameEstimation">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.view.controller.</span></span><span class="sig-name descname"><span class="pre">FrameEstimation</span></span><a class="headerlink" href="#ceed.view.controller.FrameEstimation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A window-based running-median estimator.</p>
+<p>Starting from the first frame, you pass it (<a class="reference internal" href="#ceed.view.controller.FrameEstimation.add_frame" title="ceed.view.controller.FrameEstimation.add_frame"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_frame()</span></code></a>) the time
+just after each frame is rendered. With that, it estimates the time
+the first frame was rendered by estimating the whole number of frames passed
+since <a class="reference internal" href="#ceed.view.controller.FrameEstimation.first_frame_time" title="ceed.view.controller.FrameEstimation.first_frame_time"><code class="xref py py-attr docutils literal notranslate"><span class="pre">first_frame_time</span></code></a>, rounding, and then back-computing the first
+frame time from the current frame time, the count, and the GPU period.</p>
+<p>So, each frame gives us an estimate of when the first frame was rendered.
+Next, we keep a <a class="reference internal" href="#ceed.view.controller.FrameEstimation.history" title="ceed.view.controller.FrameEstimation.history"><code class="xref py py-attr docutils literal notranslate"><span class="pre">history</span></code></a> of this estimate from the last 100 frames
+and its median is the best estimate for the actual first frame render time.</p>
+<p>Next, given the best estimate of the first frame render time and the period,
+we compute how many frames have passed and round to whole frames. We record
+this number for the last <code class="docutils literal notranslate"><span class="pre">n</span></code> (<a class="reference internal" href="#ceed.view.controller.FrameEstimation.skip_detection_smoothing_n_frames" title="ceed.view.controller.FrameEstimation.skip_detection_smoothing_n_frames"><code class="xref py py-attr docutils literal notranslate"><span class="pre">skip_detection_smoothing_n_frames</span></code></a>)
+frames in the circular <a class="reference internal" href="#ceed.view.controller.FrameEstimation.render_times" title="ceed.view.controller.FrameEstimation.render_times"><code class="xref py py-attr docutils literal notranslate"><span class="pre">render_times</span></code></a> buffer. Our assumption is that
+starting from the first of the <code class="docutils literal notranslate"><span class="pre">n</span></code> frames until the nth frame, we should
+have rendered <code class="docutils literal notranslate"><span class="pre">n</span> <span class="pre">-</span> <span class="pre">1</span></code> frames.</p>
+<p>Averaging this over the <code class="docutils literal notranslate"><span class="pre">n</span></code> frames, so that we are less sensitive to
+individual frame jitter, we get the best estimate of how many frames we
+should have rendered by now, given the start time and the period.
+Additionally, globally, we keep count of the total number of frame actually
+submitted to the GPU and rendered. If our estimate for the number of frames
+we should have rendered is larger than the number of actual rendered,
+we know that some frame took to long to render and we need to drop one or
+more frames to compensate.</p>
+<p><a class="reference internal" href="#ceed.view.controller.FrameEstimation.add_frame" title="ceed.view.controller.FrameEstimation.add_frame"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_frame()</span></code></a> returns now many frames need to be dropped to catch up.</p>
+<p>Before the first real frame, we do some frame warmup and initialize
+<a class="reference internal" href="#ceed.view.controller.FrameEstimation.render_times" title="ceed.view.controller.FrameEstimation.render_times"><code class="xref py py-attr docutils literal notranslate"><span class="pre">render_times</span></code></a> with <a class="reference internal" href="#ceed.view.controller.FrameEstimation.reset" title="ceed.view.controller.FrameEstimation.reset"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reset()</span></code></a>.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.FrameEstimation.min_heap">
+<span class="sig-name descname"><span class="pre">min_heap</span></span><em class="property"><span class="pre">:</span> <span class="pre">List</span></em><em class="property"> <span class="pre">=</span> <span class="pre">[]</span></em><a class="headerlink" href="#ceed.view.controller.FrameEstimation.min_heap" title="Permalink to this definition">¶</a></dt>
+<dd><p>The min heap used to track the median.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.FrameEstimation.max_heap">
+<span class="sig-name descname"><span class="pre">max_heap</span></span><em class="property"><span class="pre">:</span> <span class="pre">List</span></em><em class="property"> <span class="pre">=</span> <span class="pre">[]</span></em><a class="headerlink" href="#ceed.view.controller.FrameEstimation.max_heap" title="Permalink to this definition">¶</a></dt>
+<dd><p>The max heap used to track the median.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.FrameEstimation.history">
+<span class="sig-name descname"><span class="pre">history</span></span><em class="property"><span class="pre">:</span> <span class="pre">List</span></em><em class="property"> <span class="pre">=</span> <span class="pre">[]</span></em><a class="headerlink" href="#ceed.view.controller.FrameEstimation.history" title="Permalink to this definition">¶</a></dt>
+<dd><p>A circular buffer of 100 items that tracks the estimate of the time that
+the first frame was rendered, using the last 100 frames.</p>
+<p><a class="reference internal" href="#ceed.view.controller.FrameEstimation.count" title="ceed.view.controller.FrameEstimation.count"><code class="xref py py-attr docutils literal notranslate"><span class="pre">count</span></code></a> is the index in <a class="reference internal" href="#ceed.view.controller.FrameEstimation.history" title="ceed.view.controller.FrameEstimation.history"><code class="xref py py-attr docutils literal notranslate"><span class="pre">history</span></code></a> of the oldest timestamp
+(i.e. the next one to be overwritten).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.FrameEstimation.count">
+<span class="sig-name descname"><span class="pre">count</span></span><em class="property"><span class="pre">:</span> <span class="pre">int</span></em><em class="property"> <span class="pre">=</span> <span class="pre">0</span></em><a class="headerlink" href="#ceed.view.controller.FrameEstimation.count" title="Permalink to this definition">¶</a></dt>
+<dd><p>Index in <a class="reference internal" href="#ceed.view.controller.FrameEstimation.history" title="ceed.view.controller.FrameEstimation.history"><code class="xref py py-attr docutils literal notranslate"><span class="pre">history</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.FrameEstimation.frame_rate">
+<span class="sig-name descname"><span class="pre">frame_rate</span></span><em class="property"><span class="pre">:</span> <span class="pre">float</span></em><em class="property"> <span class="pre">=</span> <span class="pre">0</span></em><a class="headerlink" href="#ceed.view.controller.FrameEstimation.frame_rate" title="Permalink to this definition">¶</a></dt>
+<dd><p>The GPU frame rate.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.FrameEstimation.render_times">
+<span class="sig-name descname"><span class="pre">render_times</span></span><em class="property"><span class="pre">:</span> <span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">=</span> <span class="pre">[]</span></em><a class="headerlink" href="#ceed.view.controller.FrameEstimation.render_times" title="Permalink to this definition">¶</a></dt>
+<dd><p>A circular buffer of <a class="reference internal" href="#ceed.view.controller.FrameEstimation.skip_detection_smoothing_n_frames" title="ceed.view.controller.FrameEstimation.skip_detection_smoothing_n_frames"><code class="xref py py-attr docutils literal notranslate"><span class="pre">skip_detection_smoothing_n_frames</span></code></a> items
+that tracks the estimate of how many frames should have been rendered,
+using the last <a class="reference internal" href="#ceed.view.controller.FrameEstimation.skip_detection_smoothing_n_frames" title="ceed.view.controller.FrameEstimation.skip_detection_smoothing_n_frames"><code class="xref py py-attr docutils literal notranslate"><span class="pre">skip_detection_smoothing_n_frames</span></code></a> frames.</p>
+<p><code class="xref py py-attr docutils literal notranslate"><span class="pre">last_render_times_i</span></code> is the index in <a class="reference internal" href="#ceed.view.controller.FrameEstimation.render_times" title="ceed.view.controller.FrameEstimation.render_times"><code class="xref py py-attr docutils literal notranslate"><span class="pre">render_times</span></code></a> of the
+oldest estimate (i.e. the next one to be overwritten).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.FrameEstimation.skip_detection_smoothing_n_frames">
+<span class="sig-name descname"><span class="pre">skip_detection_smoothing_n_frames</span></span><em class="property"><span class="pre">:</span> <span class="pre">int</span></em><em class="property"> <span class="pre">=</span> <span class="pre">4</span></em><a class="headerlink" href="#ceed.view.controller.FrameEstimation.skip_detection_smoothing_n_frames" title="Permalink to this definition">¶</a></dt>
+<dd><p>How many frames ot average to detect when a frame needs to be skipped.</p>
+<p>See class description.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.FrameEstimation.smoothing_frame_growth">
+<span class="sig-name descname"><span class="pre">smoothing_frame_growth</span></span><em class="property"><span class="pre">:</span> <span class="pre">float</span></em><em class="property"> <span class="pre">=</span> <span class="pre">0.0</span></em><a class="headerlink" href="#ceed.view.controller.FrameEstimation.smoothing_frame_growth" title="Permalink to this definition">¶</a></dt>
+<dd><p>When averaging <a class="reference internal" href="#ceed.view.controller.FrameEstimation.render_times" title="ceed.view.controller.FrameEstimation.render_times"><code class="xref py py-attr docutils literal notranslate"><span class="pre">render_times</span></code></a>, we subtract
+<a class="reference internal" href="#ceed.view.controller.FrameEstimation.smoothing_frame_growth" title="ceed.view.controller.FrameEstimation.smoothing_frame_growth"><code class="xref py py-attr docutils literal notranslate"><span class="pre">smoothing_frame_growth</span></code></a>, which is the average over <code class="docutils literal notranslate"><span class="pre">range(n)</span></code>,
+which is the expected number of frames to added over the last
+<a class="reference internal" href="#ceed.view.controller.FrameEstimation.skip_detection_smoothing_n_frames" title="ceed.view.controller.FrameEstimation.skip_detection_smoothing_n_frames"><code class="xref py py-attr docutils literal notranslate"><span class="pre">skip_detection_smoothing_n_frames</span></code></a> frames.</p>
+<p>If the remainder is not zero, it is the number of frames to be dropped.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.FrameEstimation.first_frame_time">
+<span class="sig-name descname"><span class="pre">first_frame_time</span></span><em class="property"><span class="pre">:</span> <span class="pre">float</span></em><em class="property"> <span class="pre">=</span> <span class="pre">0.0</span></em><a class="headerlink" href="#ceed.view.controller.FrameEstimation.first_frame_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>The best current estimate of the time that the first experiment frame was
+rendered.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.view.controller.FrameEstimation.reset">
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frame_rate</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">render_times</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#ceed.view.controller.FrameEstimation.reset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Resets the instance and initializes it to the render times from the
+warm up frames.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.view.controller.FrameEstimation.update_first_render_time">
+<span class="sig-name descname"><span class="pre">update_first_render_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">render_time</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#ceed.view.controller.FrameEstimation.update_first_render_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds the frame render time to the running-median history and updates
+<a class="reference internal" href="#ceed.view.controller.FrameEstimation.first_frame_time" title="ceed.view.controller.FrameEstimation.first_frame_time"><code class="xref py py-attr docutils literal notranslate"><span class="pre">first_frame_time</span></code></a> with the new best estimate.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.view.controller.FrameEstimation.add_frame">
+<span class="sig-name descname"><span class="pre">add_frame</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">render_time</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">count</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_sub_frames</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#ceed.view.controller.FrameEstimation.add_frame" title="Permalink to this definition">¶</a></dt>
+<dd><p>Estimates number of missed frames during experiment, given the render
+time of the last frame and the total frames sent to the GPU.</p>
+<p><code class="docutils literal notranslate"><span class="pre">n_sub_frames</span></code> is the number of sub-frames included in <code class="docutils literal notranslate"><span class="pre">count</span></code>, e.g.
+in quad mode.</p>
+<p>Can only be called after it is initialized with warmup frames in
+<a class="reference internal" href="#ceed.view.controller.FrameEstimation.reset" title="ceed.view.controller.FrameEstimation.reset"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reset()</span></code></a>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.view.controller.TeensyFrameEstimation">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.view.controller.</span></span><span class="sig-name descname"><span class="pre">TeensyFrameEstimation</span></span><a class="headerlink" href="#ceed.view.controller.TeensyFrameEstimation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">kivy._event.EventDispatcher</span></code></p>
+<p>Alternatively to <a class="reference internal" href="#ceed.view.controller.FrameEstimation" title="ceed.view.controller.FrameEstimation"><code class="xref py py-class docutils literal notranslate"><span class="pre">FrameEstimation</span></code></a>, we can estimate when the GPU
+rendered a frame for too long and frame needs to be dropped using the
+attached Teensy microcontroller.</p>
+<p>This microcontroller watches the clock bit in the 24-bit corner pixel that
+is described in <a class="reference internal" href="../storage/controller.html#ceed.storage.controller.DataSerializerBase" title="ceed.storage.controller.DataSerializerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataSerializerBase</span></code></a>. Then,
+if a frame change is not seen after 1 / 119.96 seconds after the last clock
+change, we know the frame is going long and we’ll need to drop a frame.</p>
+<p>This information is communicated over the USB and this class, in the main
+process but in a second thread, continuously reads the USB. When it
+indicates that a frame needs to be skipped, it updates the
+<a class="reference internal" href="#ceed.view.controller.TeensyFrameEstimation.shared_value" title="ceed.view.controller.TeensyFrameEstimation.shared_value"><code class="xref py py-attr docutils literal notranslate"><span class="pre">shared_value</span></code></a> that is seen by the second Ceed process that runs the
+experiment and that drops the required number of frames.</p>
+<p>The Teensy can and is only used during an actual experiment when Ceed is run
+from a second process, because otherwise the corner pixel is not visible,
+and the GPU doesn’t match the frame rate anyway.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.TeensyFrameEstimation.usb_vendor_id">
+<span class="sig-name descname"><span class="pre">usb_vendor_id</span></span><em class="property"><span class="pre">:</span> <span class="pre">int</span></em><em class="property"> <span class="pre">=</span> <span class="pre">5824</span></em><a class="headerlink" href="#ceed.view.controller.TeensyFrameEstimation.usb_vendor_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>The Teensy vendor ID. This is how we find the attached Teensy on the
+bus. If there’s more than one, this needs to be modified.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.TeensyFrameEstimation.usb_product_id">
+<span class="sig-name descname"><span class="pre">usb_product_id</span></span><em class="property"><span class="pre">:</span> <span class="pre">int</span></em><em class="property"> <span class="pre">=</span> <span class="pre">1158</span></em><a class="headerlink" href="#ceed.view.controller.TeensyFrameEstimation.usb_product_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>The Teensy product ID. This is how we find the attached Teensy on the
+bus. If there’s more than one, this needs to be modified.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.TeensyFrameEstimation.use_teensy">
+<span class="sig-name descname"><span class="pre">use_teensy</span></span><a class="headerlink" href="#ceed.view.controller.TeensyFrameEstimation.use_teensy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether to use the Teensy.</p>
+<p>If it’s not attached, set this to False. When False, it falls back on
+<a class="reference internal" href="#ceed.view.controller.FrameEstimation" title="ceed.view.controller.FrameEstimation"><code class="xref py py-class docutils literal notranslate"><span class="pre">FrameEstimation</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.TeensyFrameEstimation.is_available">
+<span class="sig-name descname"><span class="pre">is_available</span></span><em class="property"> <span class="pre">=</span> <span class="pre">False</span></em><a class="headerlink" href="#ceed.view.controller.TeensyFrameEstimation.is_available" title="Permalink to this definition">¶</a></dt>
+<dd><p>Indicates whether the Teensy is available and found.</p>
+<p>If <a class="reference internal" href="#ceed.view.controller.TeensyFrameEstimation.use_teensy" title="ceed.view.controller.TeensyFrameEstimation.use_teensy"><code class="xref py py-attr docutils literal notranslate"><span class="pre">use_teensy</span></code></a>, but not <a class="reference internal" href="#ceed.view.controller.TeensyFrameEstimation.is_available" title="ceed.view.controller.TeensyFrameEstimation.is_available"><code class="xref py py-attr docutils literal notranslate"><span class="pre">is_available</span></code></a>, then we don’t do
+any frame adjustment.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.TeensyFrameEstimation.usb_device">
+<span class="sig-name descname"><span class="pre">usb_device</span></span><em class="property"><span class="pre">:</span> <span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">usb.core.Device</span><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.view.controller.TeensyFrameEstimation.usb_device" title="Permalink to this definition">¶</a></dt>
+<dd><p>The USB device handle.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.TeensyFrameEstimation.endpoint_out">
+<span class="sig-name descname"><span class="pre">endpoint_out</span></span><em class="property"><span class="pre">:</span> <span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">usb.core.Endpoint</span><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.view.controller.TeensyFrameEstimation.endpoint_out" title="Permalink to this definition">¶</a></dt>
+<dd><p>The output endpoint of the USB that we use to send messages to the
+Teensy.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.TeensyFrameEstimation.endpoint_in">
+<span class="sig-name descname"><span class="pre">endpoint_in</span></span><em class="property"><span class="pre">:</span> <span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">usb.core.Endpoint</span><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.view.controller.TeensyFrameEstimation.endpoint_in" title="Permalink to this definition">¶</a></dt>
+<dd><p>The input endpoint of the USB that we use to read messages from the
+Teensy.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.TeensyFrameEstimation.shared_value">
+<span class="sig-name descname"><span class="pre">shared_value</span></span><em class="property"><span class="pre">:</span> <span class="pre">multiprocessing.context.BaseContext.Value</span></em><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.view.controller.TeensyFrameEstimation.shared_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>A values shared between the main process (that updates this value based
+on the Teensy and indicates the number of frames skipped) and the second
+experiment process that uses this value to drop frames based on how many
+the Teensy thinks were skipped.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.view.controller.TeensyFrameEstimation.configure_device">
+<span class="sig-name descname"><span class="pre">configure_device</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.view.controller.TeensyFrameEstimation.configure_device" title="Permalink to this definition">¶</a></dt>
+<dd><p>Configures the Teensy.</p>
+<p>This is called by the main Ceed process before the second process is
+started and opens the device in the main process.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.view.controller.TeensyFrameEstimation.release_device">
+<span class="sig-name descname"><span class="pre">release_device</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.view.controller.TeensyFrameEstimation.release_device" title="Permalink to this definition">¶</a></dt>
+<dd><p>Releases a previously configured Teensy.</p>
+<p>This is called by the main Ceed process after the second process is
+stopped and closes the device.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.view.controller.TeensyFrameEstimation.start_estimation">
+<span class="sig-name descname"><span class="pre">start_estimation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frame_rate</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.view.controller.TeensyFrameEstimation.start_estimation" title="Permalink to this definition">¶</a></dt>
+<dd><p>For each experiment, it notifies the Teensy that a new experiment
+started so that it starts counting skipped frames once it sees the first
+clock toggle in the corner pixel.</p>
+<p>Called by the main Ceed process and it starts a new thread and
+continuously reads from the Teensy and correspondingly updates
+<a class="reference internal" href="#ceed.view.controller.TeensyFrameEstimation.shared_value" title="ceed.view.controller.TeensyFrameEstimation.shared_value"><code class="xref py py-attr docutils literal notranslate"><span class="pre">shared_value</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.view.controller.TeensyFrameEstimation.stop_estimation">
+<span class="sig-name descname"><span class="pre">stop_estimation</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.view.controller.TeensyFrameEstimation.stop_estimation" title="Permalink to this definition">¶</a></dt>
+<dd><p>After each experiment it notifies the Teensy that the experiment
+ended so it goes back to waiting for the next experiment notification.</p>
+<p>Called by the main Ceed process and it also stops the second thread
+started by <a class="reference internal" href="#ceed.view.controller.TeensyFrameEstimation.start_estimation" title="ceed.view.controller.TeensyFrameEstimation.start_estimation"><code class="xref py py-meth docutils literal notranslate"><span class="pre">start_estimation()</span></code></a>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.view.controller.</span></span><span class="sig-name descname"><span class="pre">ViewControllerBase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.view.controller.ViewControllerBase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">kivy._event.EventDispatcher</span></code></p>
+<p>Base class for running a Ceed experiment and visualizing the output of a
+<a class="reference internal" href="../stage/stage.html#module-ceed.stage" title="ceed.stage"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ceed.stage</span></code></a> on the projector (full-screen) or during preview.</p>
+<p>There are two sub-classes; <a class="reference internal" href="#ceed.view.controller.ControllerSideViewControllerBase" title="ceed.view.controller.ControllerSideViewControllerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ControllerSideViewControllerBase</span></code></a> for
+playing the experiment when it is previewed in the Ceed GUI and
+<a class="reference internal" href="#ceed.view.controller.ViewSideViewControllerBase" title="ceed.view.controller.ViewSideViewControllerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ViewSideViewControllerBase</span></code></a> for playing the experiment in the
+second Ceed process when it is played “for real”.</p>
+<p>Additionally, <a class="reference internal" href="#ceed.view.controller.ControllerSideViewControllerBase" title="ceed.view.controller.ControllerSideViewControllerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ControllerSideViewControllerBase</span></code></a> is used to control
+the experiment from within the main Ceed process in each case.
+A base class for visualizing the output of a <a class="reference internal" href="../stage/stage.html#module-ceed.stage" title="ceed.stage"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ceed.stage</span></code></a> on the
+projector or to preview it in the main GUI.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Events</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><cite>on_changed</cite>:</dt><dd><p>Triggered whenever a configuration option of the class is changed.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.screen_width">
+<span class="sig-name descname"><span class="pre">screen_width</span></span><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.screen_width" title="Permalink to this definition">¶</a></dt>
+<dd><p>The screen width in pixels on which the data is played. This is the
+full-screen width.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.flip_projector">
+<span class="sig-name descname"><span class="pre">flip_projector</span></span><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.flip_projector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether to flip the projector output horizontally, around the center.
+See also <a class="reference internal" href="#view-flip"><span class="std std-ref">Camera-projector-array alignment</span></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.flip_camera">
+<span class="sig-name descname"><span class="pre">flip_camera</span></span><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.flip_camera" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether to flip the camera images horizontally, around the center.
+See also <a class="reference internal" href="#view-flip"><span class="std std-ref">Camera-projector-array alignment</span></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.screen_height">
+<span class="sig-name descname"><span class="pre">screen_height</span></span><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.screen_height" title="Permalink to this definition">¶</a></dt>
+<dd><p>The screen height in pixels on which the data is played. This is the
+full-screen height.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.screen_offset_x">
+<span class="sig-name descname"><span class="pre">screen_offset_x</span></span><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.screen_offset_x" title="Permalink to this definition">¶</a></dt>
+<dd><p>When there are multiple monitors, the monitor on which the experiment is
+shown in full-screen mode is controlled by the x-position of the displayed
+window.</p>
+<p>E.g. to show it on the right monitor of two monitors each 1920 pixel wide,
+and with the main monitor being on the left. Then the
+<a class="reference internal" href="#ceed.view.controller.ViewControllerBase.screen_offset_x" title="ceed.view.controller.ViewControllerBase.screen_offset_x"><code class="xref py py-attr docutils literal notranslate"><span class="pre">screen_offset_x</span></code></a> should be set to <code class="docutils literal notranslate"><span class="pre">1920</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.frame_rate">
+<span class="sig-name descname"><span class="pre">frame_rate</span></span><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.frame_rate" title="Permalink to this definition">¶</a></dt>
+<dd><p>The frame-rate of the GPU that plays the experiment.</p>
+<p>This should be set to the exact refresh rate of the GPU, as can be found in
+e.g. the nvidia control panel. Otherwise, the experiment will be out of sync
+and played incorrectly.</p>
+<p>This is internally converted to a fraction (<a class="reference internal" href="#ceed.view.controller.ViewControllerBase.frame_rate_numerator" title="ceed.view.controller.ViewControllerBase.frame_rate_numerator"><code class="xref py py-attr docutils literal notranslate"><span class="pre">frame_rate_numerator</span></code></a>,
+<a class="reference internal" href="#ceed.view.controller.ViewControllerBase.frame_rate_denominator" title="ceed.view.controller.ViewControllerBase.frame_rate_denominator"><code class="xref py py-attr docutils literal notranslate"><span class="pre">frame_rate_denominator</span></code></a>), so the number must be such
+that it can be converted to a fraction. E.g. 119.96 or 59.94 can be
+represented correctly as fractions.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.frame_rate_numerator">
+<span class="sig-name descname"><span class="pre">frame_rate_numerator</span></span><em class="property"><span class="pre">:</span> <span class="pre">int</span></em><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.frame_rate_numerator" title="Permalink to this definition">¶</a></dt>
+<dd><p>The numerator of the <a class="reference internal" href="#ceed.view.controller.ViewControllerBase.frame_rate" title="ceed.view.controller.ViewControllerBase.frame_rate"><code class="xref py py-attr docutils literal notranslate"><span class="pre">frame_rate</span></code></a> fraction.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.frame_rate_denominator">
+<span class="sig-name descname"><span class="pre">frame_rate_denominator</span></span><em class="property"><span class="pre">:</span> <span class="pre">int</span></em><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.frame_rate_denominator" title="Permalink to this definition">¶</a></dt>
+<dd><p>The denominator of the <a class="reference internal" href="#ceed.view.controller.ViewControllerBase.frame_rate" title="ceed.view.controller.ViewControllerBase.frame_rate"><code class="xref py py-attr docutils literal notranslate"><span class="pre">frame_rate</span></code></a> fraction.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.use_software_frame_rate">
+<span class="sig-name descname"><span class="pre">use_software_frame_rate</span></span><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.use_software_frame_rate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Depending on the CPU/GPU, the software may be unable to render faster
+than the GPU refresh rate. In that case, the GPU limits us to the GPU frame
+rate and <a class="reference internal" href="#ceed.view.controller.ViewControllerBase.frame_rate" title="ceed.view.controller.ViewControllerBase.frame_rate"><code class="xref py py-attr docutils literal notranslate"><span class="pre">frame_rate</span></code></a> should be set to match the GPU refresh rate
+and this should be False.</p>
+<p>If the GPU isn’t forcing a frame rate. Then this should be True and
+<a class="reference internal" href="#ceed.view.controller.ViewControllerBase.frame_rate" title="ceed.view.controller.ViewControllerBase.frame_rate"><code class="xref py py-attr docutils literal notranslate"><span class="pre">frame_rate</span></code></a> should be the desired frame rate. That will restrict us
+the given frame rate. However, the actual frame rate will be wildly
+inaccurate in this mode, so it’s only useful for testing.</p>
+<p>One can tell whether the GPU is forcing a frame rate by setting
+<a class="reference internal" href="#ceed.view.controller.ViewControllerBase.frame_rate" title="ceed.view.controller.ViewControllerBase.frame_rate"><code class="xref py py-attr docutils literal notranslate"><span class="pre">frame_rate</span></code></a> to a large value and setting
+<a class="reference internal" href="#ceed.view.controller.ViewControllerBase.use_software_frame_rate" title="ceed.view.controller.ViewControllerBase.use_software_frame_rate"><code class="xref py py-attr docutils literal notranslate"><span class="pre">use_software_frame_rate</span></code></a> to False and seeing what the resultant
+frame rate is. If it isn’t capped at some value constant, e.g. 120Hz, it
+means that the GPU isn’t forcing a rate.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.log_debug_timing">
+<span class="sig-name descname"><span class="pre">log_debug_timing</span></span><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.log_debug_timing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether to log the times that frames are drawn and rendered to a debug
+section in the h5 file.</p>
+<p>If True, this will additionally be logged for each displayed frame in a
+special section in the file.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.skip_estimated_missed_frames">
+<span class="sig-name descname"><span class="pre">skip_estimated_missed_frames</span></span><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.skip_estimated_missed_frames" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether to drop frames to compensate when we detect that a previous
+frame was displayed for longer than a single GPU frame duration. Then, we
+may want to drop an equivalent number of frames, rather than
+displaying all the subsequent frames at a delay.</p>
+<p>See <a class="reference internal" href="#ceed.view.controller.FrameEstimation" title="ceed.view.controller.FrameEstimation"><code class="xref py py-class docutils literal notranslate"><span class="pre">FrameEstimation</span></code></a> and <a class="reference internal" href="#ceed.view.controller.TeensyFrameEstimation" title="ceed.view.controller.TeensyFrameEstimation"><code class="xref py py-class docutils literal notranslate"><span class="pre">TeensyFrameEstimation</span></code></a> for how
+we detect these long frames. Use <a class="reference internal" href="#ceed.view.controller.TeensyFrameEstimation.use_teensy" title="ceed.view.controller.TeensyFrameEstimation.use_teensy"><code class="xref py py-attr docutils literal notranslate"><span class="pre">TeensyFrameEstimation.use_teensy</span></code></a>
+to control which estimator is used.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.cam_transform">
+<span class="sig-name descname"><span class="pre">cam_transform</span></span><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.cam_transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>A 4x4 matrix that controls the rotation, offset, and scaling of the
+camera images relative to the projector.</p>
+<p>In the Ceed GUI, a user can transform the camera image, in addition to
+<a class="reference internal" href="#ceed.view.controller.ViewControllerBase.flip_camera" title="ceed.view.controller.ViewControllerBase.flip_camera"><code class="xref py py-attr docutils literal notranslate"><span class="pre">flip_camera</span></code></a> until it fully aligns with the projector output.
+See also <a class="reference internal" href="#view-flip"><span class="std std-ref">Camera-projector-array alignment</span></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.mea_transform">
+<span class="sig-name descname"><span class="pre">mea_transform</span></span><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.mea_transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>A 4x4 matrix that controls the rotation, offset, and scaling of the
+mea array relative to the camera.</p>
+<p>This is a grid that corresponds to the electrodes in the electrode array.
+In the Ceed GUI, a user can transform this grid, in addition to
+<a class="reference internal" href="#ceed.view.controller.ViewControllerBase.mirror_mea" title="ceed.view.controller.ViewControllerBase.mirror_mea"><code class="xref py py-attr docutils literal notranslate"><span class="pre">mirror_mea</span></code></a> until it fully aligns with a camera image of the grid
+from the actual array.</p>
+<p>See also <a class="reference internal" href="#view-flip"><span class="std std-ref">Camera-projector-array alignment</span></a> and the other <code class="docutils literal notranslate"><span class="pre">mea_</span></code> properties of this class.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.mirror_mea">
+<span class="sig-name descname"><span class="pre">mirror_mea</span></span><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.mirror_mea" title="Permalink to this definition">¶</a></dt>
+<dd><p>When True, the MEA grid is mirrored vertically around the center.
+See <a class="reference internal" href="#ceed.view.controller.ViewControllerBase.mea_transform" title="ceed.view.controller.ViewControllerBase.mea_transform"><code class="xref py py-attr docutils literal notranslate"><span class="pre">mea_transform</span></code></a> also.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.mea_num_rows">
+<span class="sig-name descname"><span class="pre">mea_num_rows</span></span><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.mea_num_rows" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of electrode rows in the array. See <a class="reference internal" href="#ceed.view.controller.ViewControllerBase.mea_transform" title="ceed.view.controller.ViewControllerBase.mea_transform"><code class="xref py py-attr docutils literal notranslate"><span class="pre">mea_transform</span></code></a>
+also.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.mea_num_cols">
+<span class="sig-name descname"><span class="pre">mea_num_cols</span></span><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.mea_num_cols" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of electrode columns in the array. See <a class="reference internal" href="#ceed.view.controller.ViewControllerBase.mea_transform" title="ceed.view.controller.ViewControllerBase.mea_transform"><code class="xref py py-attr docutils literal notranslate"><span class="pre">mea_transform</span></code></a>
+also.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.mea_pitch">
+<span class="sig-name descname"><span class="pre">mea_pitch</span></span><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.mea_pitch" title="Permalink to this definition">¶</a></dt>
+<dd><p>The distance in pixels, center-to-center, between neighboring
+rows/columns. It is assumed that it is the same for columns and rows.</p>
+<p>See <a class="reference internal" href="#ceed.view.controller.ViewControllerBase.mea_transform" title="ceed.view.controller.ViewControllerBase.mea_transform"><code class="xref py py-attr docutils literal notranslate"><span class="pre">mea_transform</span></code></a> also.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.mea_diameter">
+<span class="sig-name descname"><span class="pre">mea_diameter</span></span><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.mea_diameter" title="Permalink to this definition">¶</a></dt>
+<dd><p>The diameter in pixels of the displayed electrode circles in the grid.</p>
+<p>See <a class="reference internal" href="#ceed.view.controller.ViewControllerBase.mea_transform" title="ceed.view.controller.ViewControllerBase.mea_transform"><code class="xref py py-attr docutils literal notranslate"><span class="pre">mea_transform</span></code></a> also.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.pad_to_stage_handshake">
+<span class="sig-name descname"><span class="pre">pad_to_stage_handshake</span></span><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.pad_to_stage_handshake" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ad described in <a class="reference internal" href="../storage/controller.html#ceed.storage.controller.DataSerializerBase" title="ceed.storage.controller.DataSerializerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataSerializerBase</span></code></a>,
+Ceed sends handshaking data to the MCS system at the start of each
+experiment. This helps us align the Ceed and MCS data afterwards. If the
+root stage of the experiment is too short, it’s possible the full handshake
+would not be sent, preventing alignment afterwards.</p>
+<p>If <a class="reference internal" href="#ceed.view.controller.ViewControllerBase.pad_to_stage_handshake" title="ceed.view.controller.ViewControllerBase.pad_to_stage_handshake"><code class="xref py py-attr docutils literal notranslate"><span class="pre">pad_to_stage_handshake</span></code></a>, then the root stage will be padded
+so it goes for the minimum number of clock frames required to finish
+the handshake, if it’s too short. The shapes will be black for those
+padded frames.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.output_count">
+<span class="sig-name descname"><span class="pre">output_count</span></span><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.output_count" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether the corner pixel is used to output frame information on the
+PROPixx controller IO pot as described in
+<a class="reference internal" href="../storage/controller.html#ceed.storage.controller.DataSerializerBase" title="ceed.storage.controller.DataSerializerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataSerializerBase</span></code></a>.</p>
+<p>If True, <a class="reference internal" href="../storage/controller.html#ceed.storage.controller.DataSerializerBase" title="ceed.storage.controller.DataSerializerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.storage.controller.DataSerializerBase</span></code></a> is used to set
+the 24 bits of the corner pixel. Otherwise, that pixel is treated like the
+other normal pixels.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.fullscreen">
+<span class="sig-name descname"><span class="pre">fullscreen</span></span><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.fullscreen" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether the second Ceed window that runs the “real experiment” is run
+in fullscreen mode.</p>
+<p>In fullscreen mode the window has no borders and takes over the whole
+screen.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.stage_active">
+<span class="sig-name descname"><span class="pre">stage_active</span></span><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.stage_active" title="Permalink to this definition">¶</a></dt>
+<dd><p>True when an experiment is being played. Read-only.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.cpu_fps">
+<span class="sig-name descname"><span class="pre">cpu_fps</span></span><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.cpu_fps" title="Permalink to this definition">¶</a></dt>
+<dd><p>The estimated CPU frames-per-second of the window playing the experiment.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.gpu_fps">
+<span class="sig-name descname"><span class="pre">gpu_fps</span></span><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.gpu_fps" title="Permalink to this definition">¶</a></dt>
+<dd><p>The estimated GPU frames-per-second of the window playing the experiment.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.video_modes">
+<span class="sig-name descname"><span class="pre">video_modes</span></span><em class="property"> <span class="pre">=</span> <span class="pre">['RGB',</span> <span class="pre">'QUAD4X',</span> <span class="pre">'QUAD12X']</span></em><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.video_modes" title="Permalink to this definition">¶</a></dt>
+<dd><p>The video modes that the PROPixx projector can be set to.</p>
+<p>See also <a class="reference internal" href="#view-video-mode"><span class="std std-ref">Video mode</span></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.led_modes">
+<span class="sig-name descname"><span class="pre">led_modes</span></span><em class="property"> <span class="pre">=</span> <span class="pre">{'B':</span> <span class="pre">3,</span> <span class="pre">'G':</span> <span class="pre">5,</span> <span class="pre">'GB':</span> <span class="pre">1,</span> <span class="pre">'R':</span> <span class="pre">6,</span> <span class="pre">'RB':</span> <span class="pre">2,</span> <span class="pre">'RG':</span> <span class="pre">4,</span> <span class="pre">'RGB':</span> <span class="pre">0,</span> <span class="pre">'none':</span> <span class="pre">7}</span></em><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.led_modes" title="Permalink to this definition">¶</a></dt>
+<dd><p>The color modes the PROPixx projector can be set to.</p>
+<p>It determines which of the RGB LEDs are turned OFF. E.g. <code class="docutils literal notranslate"><span class="pre">&quot;RG&quot;</span></code> means that
+the blue LED is OFF.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.video_mode">
+<span class="sig-name descname"><span class="pre">video_mode</span></span><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.video_mode" title="Permalink to this definition">¶</a></dt>
+<dd><p>The current video mode from among the <a class="reference internal" href="#ceed.view.controller.ViewControllerBase.video_modes" title="ceed.view.controller.ViewControllerBase.video_modes"><code class="xref py py-attr docutils literal notranslate"><span class="pre">video_modes</span></code></a>.</p>
+<p>See also <a class="reference internal" href="#view-video-mode"><span class="std std-ref">Video mode</span></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.LED_mode">
+<span class="sig-name descname"><span class="pre">LED_mode</span></span><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.LED_mode" title="Permalink to this definition">¶</a></dt>
+<dd><p>The LED mode the projector will be set to during the experiment.</p>
+<p>Its value is from the <a class="reference internal" href="#ceed.view.controller.ViewControllerBase.led_modes" title="ceed.view.controller.ViewControllerBase.led_modes"><code class="xref py py-attr docutils literal notranslate"><span class="pre">led_modes</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.LED_mode_idle">
+<span class="sig-name descname"><span class="pre">LED_mode_idle</span></span><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.LED_mode_idle" title="Permalink to this definition">¶</a></dt>
+<dd><p>The LED mode the projector will be set to before/after the experiment.
+This is used to turn OFF the projector LEDs in between experiments so that
+light is not projected on the tissue while stages are designed.</p>
+<p>Its value is from the <a class="reference internal" href="#ceed.view.controller.ViewControllerBase.led_modes" title="ceed.view.controller.ViewControllerBase.led_modes"><code class="xref py py-attr docutils literal notranslate"><span class="pre">led_modes</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.do_quad_mode">
+<span class="sig-name descname"><span class="pre">do_quad_mode</span></span><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.do_quad_mode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether the video mode is one of the quad modes. Read-only.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.pre_compute_stages">
+<span class="sig-name descname"><span class="pre">pre_compute_stages</span></span><em class="property"><span class="pre">:</span> <span class="pre">bool</span></em><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.pre_compute_stages" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether the stage run by the experiment should be pre-computed. See
+<a class="reference internal" href="../stage/stage.html#pre-compute"><span class="std std-ref">Pre-computing</span></a> for details.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.canvas_name">
+<span class="sig-name descname"><span class="pre">canvas_name</span></span><em class="property"> <span class="pre">=</span> <span class="pre">'view_controller'</span></em><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.canvas_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name used for the Kivy canvas to which we add the experiment’s graphics
+instructions.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.current_canvas">
+<span class="sig-name descname"><span class="pre">current_canvas</span></span><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.current_canvas" title="Permalink to this definition">¶</a></dt>
+<dd><p>The last canvas used on which the experiment’s shapes, graphics, and
+color instructions was added.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.tick_event">
+<span class="sig-name descname"><span class="pre">tick_event</span></span><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.tick_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>The kivy clock event that updates the shapes’ colors on every frame.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.tick_func">
+<span class="sig-name descname"><span class="pre">tick_func</span></span><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.tick_func" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="../stage/stage.html#ceed.stage.StageFactoryBase.tick_stage" title="ceed.stage.StageFactoryBase.tick_stage"><code class="xref py py-meth docutils literal notranslate"><span class="pre">tick_stage()</span></code></a> generator that
+updates the shapes on every frame.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.count">
+<span class="sig-name descname"><span class="pre">count</span></span><em class="property"> <span class="pre">=</span> <span class="pre">0</span></em><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.count" title="Permalink to this definition">¶</a></dt>
+<dd><p>The current global frame count, reset for each experiment.</p>
+<p>This number divided by the <a class="reference internal" href="#ceed.view.controller.ViewControllerBase.effective_frame_rate" title="ceed.view.controller.ViewControllerBase.effective_frame_rate"><code class="xref py py-attr docutils literal notranslate"><span class="pre">effective_frame_rate</span></code></a> is the current
+global experiment time.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.experiment_uuid">
+<span class="sig-name descname"><span class="pre">experiment_uuid</span></span><em class="property"><span class="pre">:</span> <span class="pre">bytes</span></em><em class="property"> <span class="pre">=</span> <span class="pre">b''</span></em><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.experiment_uuid" title="Permalink to this definition">¶</a></dt>
+<dd><p>A unique uuid that is re-generated before each experiment and sent along
+over the corner pixel as the initial uniquely-identifying handshake-pattern.
+It allows us to locate this experiment in the MCS data post-hoc.</p>
+<p>See <a class="reference internal" href="../storage/controller.html#ceed.storage.controller.DataSerializerBase" title="ceed.storage.controller.DataSerializerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataSerializerBase</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.effective_frame_rate">
+<span class="sig-name descname"><span class="pre">effective_frame_rate</span></span><em class="property"><span class="pre">:</span> <span class="pre">fractions.Fraction</span></em><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.effective_frame_rate" title="Permalink to this definition">¶</a></dt>
+<dd><p>The effective frame rate at which the experiment’s shapes is updated.</p>
+<p>E.g. in <code class="docutils literal notranslate"><span class="pre">'QUAD4X'</span></code> <a class="reference internal" href="#ceed.view.controller.ViewControllerBase.video_mode" title="ceed.view.controller.ViewControllerBase.video_mode"><code class="xref py py-attr docutils literal notranslate"><span class="pre">video_mode</span></code></a> shapes are updated at about
+4 * 120Hz = 480Hz.</p>
+<p>It is read only and automatically computed.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.serializer">
+<span class="sig-name descname"><span class="pre">serializer</span></span><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.serializer" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="../storage/controller.html#ceed.storage.controller.DataSerializerBase.get_bits" title="ceed.storage.controller.DataSerializerBase.get_bits"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ceed.storage.controller.DataSerializerBase.get_bits()</span></code></a>
+generator instance that generates the corner pixel value.</p>
+<p>It is advanced for each frame and its value set to the 24-bits of the
+corner pixel.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.serializer_tex">
+<span class="sig-name descname"><span class="pre">serializer_tex</span></span><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.serializer_tex" title="Permalink to this definition">¶</a></dt>
+<dd><p>The kivy texture that displays the corner pixel value on screen.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.queue_view_read">
+<span class="sig-name descname"><span class="pre">queue_view_read</span></span><em class="property"><span class="pre">:</span> <span class="pre">multiprocessing.context.BaseContext.Queue</span></em><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.queue_view_read" title="Permalink to this definition">¶</a></dt>
+<dd><p>The queue used by the second viewer process side to receive messages
+from the main GUI controller side.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.queue_view_write">
+<span class="sig-name descname"><span class="pre">queue_view_write</span></span><em class="property"><span class="pre">:</span> <span class="pre">multiprocessing.context.BaseContext.Queue</span></em><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.queue_view_write" title="Permalink to this definition">¶</a></dt>
+<dd><p>The queue used by the second viewer process side to send messages
+to the main GUI controller side.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.stage_shape_names">
+<span class="sig-name descname"><span class="pre">stage_shape_names</span></span><em class="property"><span class="pre">:</span> <span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">=</span> <span class="pre">[]</span></em><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.stage_shape_names" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of all the <a class="reference internal" href="../shape/shape.html#module-ceed.shape" title="ceed.shape"><code class="xref py py-mod docutils literal notranslate"><span class="pre">shape</span></code></a> names used during this experiment.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.propixx_lib">
+<span class="sig-name descname"><span class="pre">propixx_lib</span></span><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.propixx_lib" title="Permalink to this definition">¶</a></dt>
+<dd><p>True when the propixx python library (pypixxlib) is available. Read-only.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.shape_views">
+<span class="sig-name descname"><span class="pre">shape_views</span></span><em class="property"><span class="pre">:</span> <span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><a class="reference external" href="https://kivy.org/doc/stable/api-kivy.graphics.context_instructions.html#kivy.graphics.context_instructions.Color" title="(in Kivy v2.0.0)"><span class="pre">kivy.graphics.context_instructions.Color</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">=</span> <span class="pre">[]</span></em><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.shape_views" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of kivy shapes graphics instructions added to the
+<a class="reference internal" href="#ceed.view.controller.ViewControllerBase.current_canvas" title="ceed.view.controller.ViewControllerBase.current_canvas"><code class="xref py py-attr docutils literal notranslate"><span class="pre">current_canvas</span></code></a>.</p>
+<p>These are the shape’s whose color and intensity is controlled by the
+experiment.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.frame_estimation">
+<span class="sig-name descname"><span class="pre">frame_estimation</span></span><em class="property"><span class="pre">:</span> <a class="reference internal" href="#ceed.view.controller.FrameEstimation" title="ceed.view.controller.FrameEstimation"><span class="pre">ceed.view.controller.FrameEstimation</span></a></em><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.frame_estimation" title="Permalink to this definition">¶</a></dt>
+<dd><p>The running-median based frame dropping estimator.</p>
+<p>See <a class="reference internal" href="#ceed.view.controller.FrameEstimation" title="ceed.view.controller.FrameEstimation"><code class="xref py py-class docutils literal notranslate"><span class="pre">FrameEstimation</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.teensy_frame_estimation">
+<span class="sig-name descname"><span class="pre">teensy_frame_estimation</span></span><em class="property"><span class="pre">:</span> <a class="reference internal" href="#ceed.view.controller.TeensyFrameEstimation" title="ceed.view.controller.TeensyFrameEstimation"><span class="pre">ceed.view.controller.TeensyFrameEstimation</span></a></em><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.teensy_frame_estimation" title="Permalink to this definition">¶</a></dt>
+<dd><p>The Teensy based frame dropping estimator.</p>
+<p>See <a class="reference internal" href="#ceed.view.controller.TeensyFrameEstimation" title="ceed.view.controller.TeensyFrameEstimation"><code class="xref py py-class docutils literal notranslate"><span class="pre">TeensyFrameEstimation</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.request_process_data">
+<span class="sig-name descname"><span class="pre">request_process_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.request_process_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called during the experiment, either by the second or main Ceed
+process (when previewing) to pass data to the main controller to be
+logged or displayed.</p>
+<p>It is the general interface by which the frame callbacks pass data
+back to the controller.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.add_graphics">
+<span class="sig-name descname"><span class="pre">add_graphics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">canvas</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">black_back</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.add_graphics" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called at the start of the experiment to add all the graphics
+required to visualize the shapes, to the <a class="reference internal" href="#ceed.view.controller.ViewControllerBase.current_canvas" title="ceed.view.controller.ViewControllerBase.current_canvas"><code class="xref py py-attr docutils literal notranslate"><span class="pre">current_canvas</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.start_stage">
+<span class="sig-name descname"><span class="pre">start_stage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stage_name</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">canvas</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.start_stage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Starts the experiment using the special
+<a class="reference internal" href="../stage/stage.html#ceed.stage.last_experiment_stage_name" title="ceed.stage.last_experiment_stage_name"><code class="xref py py-attr docutils literal notranslate"><span class="pre">last_experiment_stage_name</span></code></a> stage.</p>
+<p>It adds the graphics instructions to the canvas, saves it as
+<a class="reference internal" href="#ceed.view.controller.ViewControllerBase.current_canvas" title="ceed.view.controller.ViewControllerBase.current_canvas"><code class="xref py py-attr docutils literal notranslate"><span class="pre">current_canvas</span></code></a>, and starts playing the experiment using the
+stage.</p>
+<p><code class="docutils literal notranslate"><span class="pre">stage_name</span></code> is ignored because we use the special stage instead.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.end_stage">
+<span class="sig-name descname"><span class="pre">end_stage</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.end_stage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ends the current experiment, if one is running.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.tick_callback">
+<span class="sig-name descname"><span class="pre">tick_callback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">largs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.tick_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called for every CPU Clock frame to handle any processing work.</p>
+<p>If not <a class="reference internal" href="#ceed.view.controller.ViewControllerBase.use_software_frame_rate" title="ceed.view.controller.ViewControllerBase.use_software_frame_rate"><code class="xref py py-attr docutils literal notranslate"><span class="pre">use_software_frame_rate</span></code></a> and if the GPU restricts
+the CPU to the GPU refresh rate, then this is called once before
+each frame is rendered so we can update the projector at the expected
+frame rate.</p>
+<p>Before the experiment starts for real we do 50 empty warmup frames.
+Warmup is required to ensure the projector LED had time to change to the
+experiment value <a class="reference internal" href="#ceed.view.controller.ViewControllerBase.LED_mode" title="ceed.view.controller.ViewControllerBase.LED_mode"><code class="xref py py-attr docutils literal notranslate"><span class="pre">LED_mode</span></code></a> (compared to <a class="reference internal" href="#ceed.view.controller.ViewControllerBase.LED_mode_idle" title="ceed.view.controller.ViewControllerBase.LED_mode_idle"><code class="xref py py-attr docutils literal notranslate"><span class="pre">LED_mode_idle</span></code></a>).
+In addition to allowing us to estimate the time of the first experiment
+frame render for <a class="reference internal" href="#ceed.view.controller.FrameEstimation" title="ceed.view.controller.FrameEstimation"><code class="xref py py-class docutils literal notranslate"><span class="pre">FrameEstimation</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewControllerBase.flip_callback">
+<span class="sig-name descname"><span class="pre">flip_callback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">largs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.view.controller.ViewControllerBase.flip_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called for every GPU rendered frame by the graphics system.</p>
+<p>This method lets us estimate the rendering times and if we need to drop
+frames.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewSideViewControllerBase">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.view.controller.</span></span><span class="sig-name descname"><span class="pre">ViewSideViewControllerBase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.view.controller.ViewSideViewControllerBase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ceed.view.controller.ViewControllerBase" title="ceed.view.controller.ViewControllerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.view.controller.ViewControllerBase</span></code></a></p>
+<p>This class is used for experiment control when Ceed is running a
+real experiment in the second Ceed process.</p>
+<p>If Ceed is running in the second process started with
+<a class="reference internal" href="#ceed.view.controller.view_process_enter" title="ceed.view.controller.view_process_enter"><code class="xref py py-func docutils literal notranslate"><span class="pre">view_process_enter()</span></code></a>, then this is a “real” experiment and this class
+is used. It has a inter-process queue from which it gets messages from the
+main Ceed process, such as to start or stop an experiment. It also sends
+back messages to the main process including data about the rendered frames
+and data to be logged.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewSideViewControllerBase.start_stage">
+<span class="sig-name descname"><span class="pre">start_stage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stage_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">canvas</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.view.controller.ViewSideViewControllerBase.start_stage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Starts the experiment using the special
+<a class="reference internal" href="../stage/stage.html#ceed.stage.last_experiment_stage_name" title="ceed.stage.last_experiment_stage_name"><code class="xref py py-attr docutils literal notranslate"><span class="pre">last_experiment_stage_name</span></code></a> stage.</p>
+<p>It adds the graphics instructions to the canvas, saves it as
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">current_canvas</span></code>, and starts playing the experiment using the
+stage.</p>
+<p><code class="docutils literal notranslate"><span class="pre">stage_name</span></code> is ignored because we use the special stage instead.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewSideViewControllerBase.end_stage">
+<span class="sig-name descname"><span class="pre">end_stage</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.view.controller.ViewSideViewControllerBase.end_stage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ends the current experiment, if one is running.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewSideViewControllerBase.request_process_data">
+<span class="sig-name descname"><span class="pre">request_process_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.view.controller.ViewSideViewControllerBase.request_process_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called during the experiment, either by the second or main Ceed
+process (when previewing) to pass data to the main controller to be
+logged or displayed.</p>
+<p>It is the general interface by which the frame callbacks pass data
+back to the controller.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewSideViewControllerBase.send_keyboard_down">
+<span class="sig-name descname"><span class="pre">send_keyboard_down</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">modifiers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.view.controller.ViewSideViewControllerBase.send_keyboard_down" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets called by the window for every keyboard key press, which it
+sends on to the main GUI process to handle.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewSideViewControllerBase.send_keyboard_up">
+<span class="sig-name descname"><span class="pre">send_keyboard_up</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.view.controller.ViewSideViewControllerBase.send_keyboard_up" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets called by the window for every keyboard key release, which it
+sends on to the main GUI process to handle.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewSideViewControllerBase.handle_exception">
+<span class="sig-name descname"><span class="pre">handle_exception</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">exception</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exc_info</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.view.controller.ViewSideViewControllerBase.handle_exception" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called upon an error which is passed on to the main process.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewSideViewControllerBase.view_read">
+<span class="sig-name descname"><span class="pre">view_read</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">largs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.view.controller.ViewSideViewControllerBase.view_read" title="Permalink to this definition">¶</a></dt>
+<dd><p>Communication between the two process occurs through queues. This
+method is run periodically by the Kivy Clock to serve the queue and
+read and handle messages from the main GUI.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.view.controller.ViewSideViewControllerBase.prepare_view_window">
+<span class="sig-name descname"><span class="pre">prepare_view_window</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">largs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.view.controller.ViewSideViewControllerBase.prepare_view_window" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called before <a class="reference internal" href="main.html#ceed.view.main.CeedViewApp" title="ceed.view.main.CeedViewApp"><code class="xref py py-class docutils literal notranslate"><span class="pre">CeedViewApp</span></code></a> is run, to
+prepare the new window according to the configuration parameters.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ceed.view.controller.view_process_enter">
+<span class="sig-prename descclassname"><span class="pre">ceed.view.controller.</span></span><span class="sig-name descname"><span class="pre">view_process_enter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">read</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">multiprocessing.context.BaseContext.Queue</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">write</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">multiprocessing.context.BaseContext.Queue</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">settings</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">app_settings</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shared_value</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">multiprocessing.context.BaseContext.Value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.view.controller.view_process_enter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Entry method for the second Ceed process that runs “real” experiments.</p>
+<p>It is called by this process when it is created. This in turns configures
+the app and then runs it until it’s closed.</p>
+<p>The experiment is run in this process by
+<a class="reference internal" href="#ceed.view.controller.ViewSideViewControllerBase" title="ceed.view.controller.ViewSideViewControllerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ViewSideViewControllerBase</span></code></a>. It receives control messages and sends
+back data to the main process over the provided queues.
+<a class="reference internal" href="#ceed.view.controller.ControllerSideViewControllerBase" title="ceed.view.controller.ControllerSideViewControllerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ControllerSideViewControllerBase</span></code></a> handles these queues on the main
+process side.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.view.controller.ControllerSideViewControllerBase">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">ceed.view.controller.</span></span><span class="sig-name descname"><span class="pre">ControllerSideViewControllerBase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.view.controller.ControllerSideViewControllerBase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ceed.view.controller.ViewControllerBase" title="ceed.view.controller.ViewControllerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ceed.view.controller.ViewControllerBase</span></code></a></p>
+<p>This class is used by the main Ceed process to control experiments
+run either as previews (in the main Ceed process) or as a real experiment
+(in a second process).</p>
+<p>If the experiment is run in the second process, then that second process
+runs <a class="reference internal" href="#ceed.view.controller.ViewSideViewControllerBase" title="ceed.view.controller.ViewSideViewControllerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ViewSideViewControllerBase</span></code></a> and this class is used by the
+main process to send control messages and receive experiment data from that
+process over queues.</p>
+<p>Otherwise, this class directly controls the experiment.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ControllerSideViewControllerBase.view_process">
+<span class="sig-name descname"><span class="pre">view_process</span></span><em class="property"><span class="pre">:</span> <span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">multiprocessing.context.Process</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#ceed.view.controller.ControllerSideViewControllerBase.view_process" title="Permalink to this definition">¶</a></dt>
+<dd><p>The second process that runs “real” experiments in full-screen mode.
+See <a class="reference internal" href="#ceed.view.controller.view_process_enter" title="ceed.view.controller.view_process_enter"><code class="xref py py-func docutils literal notranslate"><span class="pre">view_process_enter()</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ControllerSideViewControllerBase.selected_stage_name">
+<span class="sig-name descname"><span class="pre">selected_stage_name</span></span><em class="property"> <span class="pre">=</span> <span class="pre">''</span></em><a class="headerlink" href="#ceed.view.controller.ControllerSideViewControllerBase.selected_stage_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>The name of the stage currently selected in the GUI to be run.</p>
+<p>This will be the stage that is copied and run.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ControllerSideViewControllerBase.initial_cam_image">
+<span class="sig-name descname"><span class="pre">initial_cam_image</span></span><em class="property"><span class="pre">:</span> <span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://matham.github.io/ffpyplayer/pic.html#ffpyplayer.pic.Image" title="(in FFPyPlayer)"><span class="pre">ffpyplayer.pic.Image</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.view.controller.ControllerSideViewControllerBase.initial_cam_image" title="Permalink to this definition">¶</a></dt>
+<dd><p>The last camera image received before the experiment starts, if any.</p>
+<p>See also <a class="reference internal" href="#ceed.view.controller.ControllerSideViewControllerBase.last_cam_image" title="ceed.view.controller.ControllerSideViewControllerBase.last_cam_image"><code class="xref py py-attr docutils literal notranslate"><span class="pre">last_cam_image</span></code></a>.</p>
+<p>It is only set for a “real” experiment, not during preview.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ControllerSideViewControllerBase.last_cam_image">
+<span class="sig-name descname"><span class="pre">last_cam_image</span></span><em class="property"><span class="pre">:</span> <span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://matham.github.io/ffpyplayer/pic.html#ffpyplayer.pic.Image" title="(in FFPyPlayer)"><span class="pre">ffpyplayer.pic.Image</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#ceed.view.controller.ControllerSideViewControllerBase.last_cam_image" title="Permalink to this definition">¶</a></dt>
+<dd><p>After the experiment ends, this contains the last camera image acquired
+before the experiment ended. If no image was taken during the experiment,
+this is the image from before the experiment if there’s one.</p>
+<p>This allows us to keep the last image generated by the tissue in response
+to experiment stimulation. In the GUI, after the experiment ended, there’s
+a button which when pressed will take this image (if not None) and set it
+as the camera image.</p>
+<p>It is only set for a “real” experiment, not during preview.</p>
+<p>See also <a class="reference internal" href="#ceed.view.controller.ControllerSideViewControllerBase.proj_pixels" title="ceed.view.controller.ControllerSideViewControllerBase.proj_pixels"><code class="xref py py-attr docutils literal notranslate"><span class="pre">proj_pixels</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ControllerSideViewControllerBase.proj_size">
+<span class="sig-name descname"><span class="pre">proj_size</span></span><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.view.controller.ControllerSideViewControllerBase.proj_size" title="Permalink to this definition">¶</a></dt>
+<dd><p>If <a class="reference internal" href="#ceed.view.controller.ControllerSideViewControllerBase.last_cam_image" title="ceed.view.controller.ControllerSideViewControllerBase.last_cam_image"><code class="xref py py-attr docutils literal notranslate"><span class="pre">last_cam_image</span></code></a> is an image and not None, this contains the
+screen size from which the <a class="reference internal" href="#ceed.view.controller.ControllerSideViewControllerBase.proj_pixels" title="ceed.view.controller.ControllerSideViewControllerBase.proj_pixels"><code class="xref py py-attr docutils literal notranslate"><span class="pre">proj_pixels</span></code></a> were generated.</p>
+<p>It’s the second index value of the tuple returned by
+<a class="reference internal" href="main.html#ceed.view.main.CeedViewApp.get_root_pixels" title="ceed.view.main.CeedViewApp.get_root_pixels"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_root_pixels()</span></code></a>.</p>
+<p>It is only set for a “real” experiment, not during preview.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.view.controller.ControllerSideViewControllerBase.proj_pixels">
+<span class="sig-name descname"><span class="pre">proj_pixels</span></span><em class="property"> <span class="pre">=</span> <span class="pre">None</span></em><a class="headerlink" href="#ceed.view.controller.ControllerSideViewControllerBase.proj_pixels" title="Permalink to this definition">¶</a></dt>
+<dd><p>If <a class="reference internal" href="#ceed.view.controller.ControllerSideViewControllerBase.last_cam_image" title="ceed.view.controller.ControllerSideViewControllerBase.last_cam_image"><code class="xref py py-attr docutils literal notranslate"><span class="pre">last_cam_image</span></code></a> is an image and not None, this contains the
+pixel intensity values for all the pixels shown during the last frame before
+the experiment ended.</p>
+<p>Together with <a class="reference internal" href="#ceed.view.controller.ControllerSideViewControllerBase.last_cam_image" title="ceed.view.controller.ControllerSideViewControllerBase.last_cam_image"><code class="xref py py-attr docutils literal notranslate"><span class="pre">last_cam_image</span></code></a>, this lets you compare the pixels
+displayed on the projector to the image from the tissue lighting up in
+response to those pixels.</p>
+<p>It’s the first index value of the tuple returned by
+<a class="reference internal" href="main.html#ceed.view.main.CeedViewApp.get_root_pixels" title="ceed.view.main.CeedViewApp.get_root_pixels"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_root_pixels()</span></code></a>.</p>
+<p>It is only set for a “real” experiment, not during preview.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.view.controller.ControllerSideViewControllerBase.add_graphics">
+<span class="sig-name descname"><span class="pre">add_graphics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">canvas</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">black_back</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.view.controller.ControllerSideViewControllerBase.add_graphics" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called at the start of the experiment to add all the graphics
+required to visualize the shapes, to the <code class="xref py py-attr docutils literal notranslate"><span class="pre">current_canvas</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.view.controller.ControllerSideViewControllerBase.request_stage_start">
+<span class="sig-name descname"><span class="pre">request_stage_start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stage_name</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">experiment_uuid</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">bytes</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#ceed.view.controller.ControllerSideViewControllerBase.request_stage_start" title="Permalink to this definition">¶</a></dt>
+<dd><p>Starts the experiment using the stage, either running it in the GUI
+when previewing or in the second process.</p>
+<p>This internally calls the appropriate
+<a class="reference internal" href="#ceed.view.controller.ViewControllerBase.start_stage" title="ceed.view.controller.ViewControllerBase.start_stage"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ViewControllerBase.start_stage()</span></code></a> method either for
+<a class="reference internal" href="#ceed.view.controller.ViewSideViewControllerBase" title="ceed.view.controller.ViewSideViewControllerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ViewSideViewControllerBase</span></code></a> or
+<a class="reference internal" href="#ceed.view.controller.ControllerSideViewControllerBase" title="ceed.view.controller.ControllerSideViewControllerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ControllerSideViewControllerBase</span></code></a> so this should be used to
+start the experiment.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.view.controller.ControllerSideViewControllerBase.request_stage_end">
+<span class="sig-name descname"><span class="pre">request_stage_end</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.view.controller.ControllerSideViewControllerBase.request_stage_end" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ends the currently running experiment, whether it’s running in the
+GUI when previewing or in the second process.</p>
+<p>This internally calls the appropriate
+<a class="reference internal" href="#ceed.view.controller.ViewControllerBase.end_stage" title="ceed.view.controller.ViewControllerBase.end_stage"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ViewControllerBase.end_stage()</span></code></a> method either for
+<a class="reference internal" href="#ceed.view.controller.ViewSideViewControllerBase" title="ceed.view.controller.ViewSideViewControllerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ViewSideViewControllerBase</span></code></a> or
+<a class="reference internal" href="#ceed.view.controller.ControllerSideViewControllerBase" title="ceed.view.controller.ControllerSideViewControllerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ControllerSideViewControllerBase</span></code></a> so this should be used to
+stop the experiment.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.view.controller.ControllerSideViewControllerBase.stage_end_cleanup">
+<span class="sig-name descname"><span class="pre">stage_end_cleanup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.view.controller.ControllerSideViewControllerBase.stage_end_cleanup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Automatically called by Ceed after a <a class="reference internal" href="#ceed.view.controller.ControllerSideViewControllerBase.request_stage_end" title="ceed.view.controller.ControllerSideViewControllerBase.request_stage_end"><code class="xref py py-meth docutils literal notranslate"><span class="pre">request_stage_end()</span></code></a>
+request and it cleans up any resources and finalizes the last
+experiment.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.view.controller.ControllerSideViewControllerBase.end_stage">
+<span class="sig-name descname"><span class="pre">end_stage</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.view.controller.ControllerSideViewControllerBase.end_stage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ends the current experiment, if one is running.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.view.controller.ControllerSideViewControllerBase.request_fullscreen">
+<span class="sig-name descname"><span class="pre">request_fullscreen</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.view.controller.ControllerSideViewControllerBase.request_fullscreen" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the <code class="xref py py-attr docutils literal notranslate"><span class="pre">fullscreen</span></code> state of the second Ceed process.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.view.controller.ControllerSideViewControllerBase.request_process_data">
+<span class="sig-name descname"><span class="pre">request_process_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.view.controller.ControllerSideViewControllerBase.request_process_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called during the experiment, either by the second or main Ceed
+process (when previewing) to pass data to the main controller to be
+logged or displayed.</p>
+<p>It is the general interface by which the frame callbacks pass data
+back to the controller.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.view.controller.ControllerSideViewControllerBase.start_process">
+<span class="sig-name descname"><span class="pre">start_process</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.view.controller.ControllerSideViewControllerBase.start_process" title="Permalink to this definition">¶</a></dt>
+<dd><p>Starts the second Ceed process that runs the “real” experiment
+using <a class="reference internal" href="#ceed.view.controller.ViewSideViewControllerBase" title="ceed.view.controller.ViewSideViewControllerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ViewSideViewControllerBase</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.view.controller.ControllerSideViewControllerBase.stop_process">
+<span class="sig-name descname"><span class="pre">stop_process</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.view.controller.ControllerSideViewControllerBase.stop_process" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ends the <a class="reference internal" href="#ceed.view.controller.ControllerSideViewControllerBase.view_process" title="ceed.view.controller.ControllerSideViewControllerBase.view_process"><code class="xref py py-class docutils literal notranslate"><span class="pre">view_process</span></code></a> process by sending a EOF to
+the second process.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.view.controller.ControllerSideViewControllerBase.finish_stop_process">
+<span class="sig-name descname"><span class="pre">finish_stop_process</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.view.controller.ControllerSideViewControllerBase.finish_stop_process" title="Permalink to this definition">¶</a></dt>
+<dd><p>Automatically called by Ceed through the read queue when we receive
+the message that the second process received the <a class="reference internal" href="#ceed.view.controller.ControllerSideViewControllerBase.stop_process" title="ceed.view.controller.ControllerSideViewControllerBase.stop_process"><code class="xref py py-meth docutils literal notranslate"><span class="pre">stop_process()</span></code></a>
+EOF and that it stopped.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.view.controller.ControllerSideViewControllerBase.handle_key_press">
+<span class="sig-name descname"><span class="pre">handle_key_press</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">modifiers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">down</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.view.controller.ControllerSideViewControllerBase.handle_key_press" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called by by the read queue thread when we receive a keypress
+event from the second process.</p>
+<p>In response it e.g. starts/stops the experiment, closes the second
+process etc.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.view.controller.ControllerSideViewControllerBase.controller_read">
+<span class="sig-name descname"><span class="pre">controller_read</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">largs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.view.controller.ControllerSideViewControllerBase.controller_read" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called periodically by the Kivy Clock to serve the queue that
+receives messages from the second Ceed process.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.view.controller.ControllerSideViewControllerBase.set_pixel_mode">
+<span class="sig-name descname"><span class="pre">set_pixel_mode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_exception</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.view.controller.ControllerSideViewControllerBase.set_pixel_mode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the projector pixel mode to show the corner pixel on the
+controller IO.</p>
+<p>It is called with True before the experiment starts and with False
+when it ends.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.view.controller.ControllerSideViewControllerBase.set_led_mode">
+<span class="sig-name descname"><span class="pre">set_led_mode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_exception</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.view.controller.ControllerSideViewControllerBase.set_led_mode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the projector’s LED mode to one of the
+<a class="reference internal" href="#ceed.view.controller.ViewControllerBase.led_modes" title="ceed.view.controller.ViewControllerBase.led_modes"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ViewControllerBase.led_modes</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.view.controller.ControllerSideViewControllerBase.set_video_mode">
+<span class="sig-name descname"><span class="pre">set_video_mode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_exception</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.view.controller.ControllerSideViewControllerBase.set_video_mode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the projector’s video mode to one of the
+<a class="reference internal" href="#ceed.view.controller.ViewControllerBase.video_modes" title="ceed.view.controller.ViewControllerBase.video_modes"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ViewControllerBase.video_modes</span></code></a>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="ceed.view.controller.ignore_vpixx_import_error">
+<span class="sig-prename descclassname"><span class="pre">ceed.view.controller.</span></span><span class="sig-name descname"><span class="pre">ignore_vpixx_import_error</span></span><em class="property"> <span class="pre">=</span> <span class="pre">False</span></em><a class="headerlink" href="#ceed.view.controller.ignore_vpixx_import_error" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ceed requires the pypixxlib package to control the projector. Ceed can still
+run in demo mode with it being installed (it requires hardware drivers to
+install) and it will ignore any projector commands.</p>
+<p>Set this to True to make it skip the projector commands. E.g. during testing
+on the CI.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="view_widgets.html" class="btn btn-neutral float-right" title="Viewer widgets" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="view.html" class="btn btn-neutral float-left" title="Experiment Viewer" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2019, Matthew Einhorn.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

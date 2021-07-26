@@ -1,0 +1,349 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Ceed camera player &mdash; Ceed  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Ceed experiment" href="experiment.html" />
+    <link rel="prev" title="Ceed stages" href="stage.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Ceed
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../blueprint.html">System Blueprint</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="guide.html">User Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="function.html">Ceed functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shape.html">Ceed shapes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="stage.html">Ceed stages</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Ceed camera player</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#filers2-side">Filers2 side</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#playing-thor-camera">Playing Thor camera</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#streaming-to-ceed">Streaming to Ceed</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#ceed-side">Ceed side</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#streaming-from-filers2">Streaming from Filers2</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#camera-image">Camera image</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#logging-image">Logging image</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#saving-loading-image">Saving/loading image</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#reloading-last-experiment-image">Reloading last experiment image</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="experiment.html">Ceed experiment</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../config.html">CEED Config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../example_code/example_code.html">Example Analysis Code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../apps/apps.html">Ceed Apps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/api.html">The Ceed API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../optics/optics.html">Microscope optics</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Ceed</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="guide.html">User Guide</a> &raquo;</li>
+        
+      <li>Ceed camera player</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/guide/player.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="ceed-camera-player">
+<h1>Ceed camera player<a class="headerlink" href="#ceed-camera-player" title="Permalink to this headline">¶</a></h1>
+<p>A core function of Ceed is to stimulate the tissue broadly until it fluoresces,
+and then visually locate cells and further stimulate them. Ceed comes with
+built-in camera playing support using the same GUI components as the
+<a class="reference external" href="https://matham.github.io/filers2/index.html">Filers2</a> project.</p>
+<p>Like Filers2, Ceed supports playing from a
+<a class="reference external" href="https://matham.github.io/filers2/guide/player_types.html#webcam-or-video-file-stream">Webcam/video file</a>,
+a remote <a class="reference external" href="https://matham.github.io/filers2/guide/player_types.html#network">server</a>,
+<a class="reference external" href="https://matham.github.io/filers2/guide/player_types.html#thor">Thor camera</a>, and from a
+<a class="reference external" href="https://matham.github.io/filers2/guide/player_types.html#pointgray">PointGray camera</a>. The typical setup
+for Ceed is to control the camera externally through Filers2 and have Filers2 stream the images over the network
+acting as a server. Then, Ceed streams the images from the server acting as a client displaying them in
+the GUI. This is also described in this guide.</p>
+<p>The above workflow is required because while Ceed is displaying a stage on the projector,
+we cannot preview images, so we preview the camera on another (Windows) computer,
+See also <a class="reference internal" href="../blueprint.html#ceed-blueprint"><span class="std std-ref">System Blueprint</span></a>.</p>
+<div class="section" id="filers2-side">
+<h2>Filers2 side<a class="headerlink" href="#filers2-side" title="Permalink to this headline">¶</a></h2>
+<p>To stream images to Ceed using Filers2, install it and then start the Filers2 GUI.
+Ensure that at least one Player is added.</p>
+<div class="section" id="playing-thor-camera">
+<h3>Playing Thor camera<a class="headerlink" href="#playing-thor-camera" title="Permalink to this headline">¶</a></h3>
+<p>From the player menu select Thor. You can access its settings from the three dots, or
+pin the settings for live interaction.</p>
+<p>Refresh the list of cameras, select a camera serial number and then open it. You can
+now play the camera from the play button and change its exposure, color filters,
+and other settings.</p>
+<p>You’ll need to open camera every time after you close it before you can play the camera.</p>
+
+    <video loop   controls autoplay title="Open in tab for original size" style="max-width: 100%;">
+    <source src="../_videos/filers_play_thor.webm" type="video/webm">
+    filers_play_thor
+    </video>
+    </div>
+<div class="section" id="streaming-to-ceed">
+<h3>Streaming to Ceed<a class="headerlink" href="#streaming-to-ceed" title="Permalink to this headline">¶</a></h3>
+<p>Ensure that Jumbo packet is enabled as described <a class="reference internal" href="../installation.html#win-filers"><span class="std std-ref">here</span></a>.
+Then, in the recorder dropdown, select <strong>server</strong>. In its options enter the IP of this
+computer. It cannot be localhost, but must be the actual IP (on Windows you can get it from
+<code class="docutils literal notranslate"><span class="pre">ipconfig</span></code>).</p>
+<p>Next, select a port, it can be pretty much any high number that is not already in use.
+The number of queued frames is the maximum number of frames to buffer before dropping
+newer frames. Finally start the server.</p>
+<p>With the player playing and the server started, press the record button to stream. It will show
+a timer of how long it has been recording. Press again to stop.</p>
+
+    <video loop   controls autoplay title="Open in tab for original size" style="max-width: 100%;">
+    <source src="../_videos/filers_record_server.webm" type="video/webm">
+    filers_record_server
+    </video>
+    </div>
+</div>
+<div class="section" id="ceed-side">
+<h2>Ceed side<a class="headerlink" href="#ceed-side" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="streaming-from-filers2">
+<h3>Streaming from Filers2<a class="headerlink" href="#streaming-from-filers2" title="Permalink to this headline">¶</a></h3>
+<p>Ensure that Jumbo packet is enabled as described <a class="reference internal" href="../installation.html#linux-network"><span class="std std-ref">here</span></a>.
+Then, in Ceed from the player dropdown select Network. In its settings enter the
+IP of the computer serving the Filers2 images and the port number selected
+and open the connection.</p>
+<p>With the connection open you can play the images streamed from Filers2.</p>
+<p>Similar to Filers2, you can also record video and images from the player
+to disk, using the recorder dropdown (not shown in the video).</p>
+
+    <video loop   controls autoplay title="Open in tab for original size" style="max-width: 100%;">
+    <source src="../_videos/play_from_network.webm" type="video/webm">
+    play_from_network
+    </video>
+    </div>
+</div>
+<div class="section" id="camera-image">
+<h2>Camera image<a class="headerlink" href="#camera-image" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="logging-image">
+<h3>Logging image<a class="headerlink" href="#logging-image" title="Permalink to this headline">¶</a></h3>
+<p>Whenever an experiment starts Ceed will save the current camera image, if any, with the
+<a class="reference internal" href="experiment.html#experiment-data"><span class="std std-ref">Experiment data</span></a>. However, at any time the current camera image can be added to the
+current data file along with notes.</p>
+<p>Press the button highlighted in the image and the dialog will appear. You can write
+notes which will be included with the image.</p>
+<img alt="../_images/log_image.png" src="../_images/log_image.png" />
+<p>You can see all the images logged (as well as experiments) in the experiment log
+window by pressing the highlighted button in the image.</p>
+<img alt="../_images/image_log_window.png" src="../_images/image_log_window.png" />
+<p>To retrieve the image, see <a class="reference internal" href="../api/analysis/analysis.html#ceed-analysis"><span class="std std-ref">Ceed data analysis</span></a> for reading the data file.</p>
+</div>
+<div class="section" id="saving-loading-image">
+<h3>Saving/loading image<a class="headerlink" href="#saving-loading-image" title="Permalink to this headline">¶</a></h3>
+<p>You can directly save the current camera image to disk (if there’s one), or load a
+image from disk and set it as the current background camera image by pressing one
+of the highlighted buttons.</p>
+<img alt="../_images/down_up_image.png" src="../_images/down_up_image.png" />
+<p>E.g. the current camera image is saved as
+<a class="reference download internal" download="" href="../_downloads/e588d93217add911ce4e43e3617bffe8/saved_cam_file.jpg"><code class="xref download docutils literal notranslate"><span class="pre">this</span> <span class="pre">image</span> <span class="pre">file.</span></code></a></p>
+</div>
+<div class="section" id="reloading-last-experiment-image">
+<span id="reload-last"></span><h3>Reloading last experiment image<a class="headerlink" href="#reloading-last-experiment-image" title="Permalink to this headline">¶</a></h3>
+<p>As shown in <a class="reference internal" href="experiment.html#align-cam-proj"><span class="std std-ref">Aligning camera to projector</span></a>, if the camera is running during an experiment,
+Ceed will bookmark the last image just before the experiment is ended. This is
+useful because when the experiment ends, the stimulation ends and the consequent
+fluorescence changes.</p>
+<p>Press the highlighted button to restore the current image to this last
+experiment image.</p>
+<img alt="../_images/reset_image.png" src="../_images/reset_image.png" />
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="experiment.html" class="btn btn-neutral float-right" title="Ceed experiment" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="stage.html" class="btn btn-neutral float-left" title="Ceed stages" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2019, Matthew Einhorn.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
