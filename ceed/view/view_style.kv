@@ -195,7 +195,7 @@
             height: self.minimum_height
             size_hint_min_x: self.minimum_width
             padding: '5dp'
-            spacing: '5dp'
+            spacing: '10dp'
             cols: 2
             ThemedLabel:
                 size_hint: None, None
@@ -237,6 +237,7 @@
                 input_filter: 'float'
                 text: str(app.view_controller.frame_rate)
                 on_text_validate: app.view_controller.frame_rate = float(self.text)
+                padding: 0
             ThemedLabel:
                 size_hint: None, None
                 size: self.texture_size
@@ -279,6 +280,33 @@
                     if app.view_controller.propixx_lib: app.view_controller.set_led_mode(app.view_controller.LED_mode_idle)
                 size_hint_x: None
                 width: self.minimum_width
+            ThemedLabel:
+                size_hint: None, None
+                size: self.texture_size
+                text: 'Red current (A):'
+            FlatSizedTextInput:
+                input_filter: 'float'
+                text: str(app.view_controller.current_red)
+                on_text_validate: app.view_controller.current_red = float(self.text)
+                padding: 0
+            ThemedLabel:
+                size_hint: None, None
+                size: self.texture_size
+                text: 'Green current (A):'
+            FlatSizedTextInput:
+                input_filter: 'float'
+                text: str(app.view_controller.current_green)
+                on_text_validate: app.view_controller.current_green = float(self.text)
+                padding: 0
+            ThemedLabel:
+                size_hint: None, None
+                size: self.texture_size
+                text: 'Blue current (A):'
+            FlatSizedTextInput:
+                input_filter: 'float'
+                text: str(app.view_controller.current_blue)
+                on_text_validate: app.view_controller.current_blue = float(self.text)
+                padding: 0
             ThemedLabel:
                 size_hint: None, None
                 size: self.texture_size

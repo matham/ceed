@@ -876,7 +876,8 @@ class ViewControllerBase(EventDispatcher):
         'flip_projector', 'flip_camera', 'pad_to_stage_handshake',
         'pre_compute_stages', 'experiment_uuid', 'log_debug_timing',
         'skip_estimated_missed_frames', 'frame_rate_numerator',
-        'frame_rate_denominator',
+        'frame_rate_denominator', 'current_red', 'current_green',
+        'current_blue',
     )
 
     _config_children_ = {
@@ -1137,6 +1138,24 @@ class ViewControllerBase(EventDispatcher):
     do_quad_mode = AliasProperty(
         _get_do_quad_mode, None, cache=True, bind=('video_mode', ))
     '''Whether the video mode is one of the quad modes. Read-only.
+    '''
+
+    current_red = NumericProperty(42.32)
+    '''The current to use for the projector red LED.
+
+    Its value is between 0 to 43 amps.
+    '''
+
+    current_green = NumericProperty(27.74)
+    '''The current to use for the projector green LED.
+
+    Its value is between 0 to 43 amps.
+    '''
+
+    current_blue = NumericProperty(14)
+    '''The current to use for the projector blue LED.
+
+    Its value is between 0 to 43 amps.
     '''
 
     pre_compute_stages: bool = BooleanProperty(False)
@@ -2115,6 +2134,7 @@ class ControllerSideViewControllerBase(ViewControllerBase):
 
         if self.propixx_lib:
             self.set_video_mode(self.video_mode)
+            self.set_leds_current()
             m = self.LED_mode
             self.set_led_mode(m)
             app.ceed_data.add_led_state(
@@ -2417,3 +2437,25 @@ class ControllerSideViewControllerBase(ViewControllerBase):
         dev.setDlpSequencerProgram(modes[mode])
         dev.updateRegisterCache()
         dev.close()
+
+    @app_error
+    def set_leds_current(self):
+        """Sets the projector's RGB LEDs to the current given in the settings.
+        """
+        if PROPixx is None:
+            if ignore_vpixx_import_error:
+                return
+            raise ImportError('Cannot open PROPixx library')
+
+        red = libdpx.propixx_led_current_constant['PPX_LED_CUR_RED_H']
+        green = libdpx.propixx_led_current_constant['PPX_LED_CUR_GRN_H']
+        blue = libdpx.propixx_led_current_constant['PPX_LED_CUR_BLU_H']
+
+        libdpx.DPxOpen()
+        if not libdpx.DPxSelectDevice('PROPixx'):
+            raise TypeError('Cannot set projector LED mode. Is it ON?')
+        libdpx.DPxSetPPxLedCurrent(red, self.current_red)
+        libdpx.DPxSetPPxLedCurrent(green, self.current_green)
+        libdpx.DPxSetPPxLedCurrent(blue, self.current_blue)
+        libdpx.DPxUpdateRegCache()
+        libdpx.DPxClose()

@@ -191,6 +191,9 @@ view:
     - 0.0
     - 0.0
     - 1.0
+  current_blue: 14
+  current_green: 27.74
+  current_red: 42.32
   experiment_uuid: !!binary ""
   flip_camera: false
   flip_projector: true

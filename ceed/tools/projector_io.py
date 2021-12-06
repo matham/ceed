@@ -20,12 +20,9 @@ from kivy.graphics.opengl import glEnable, GL_DITHER, glDisable
 from kivy.graphics.texture import Texture
 if __name__ == '__main__':
     from kivy.core.window import Window
-try:
-    from pypixxlib import _libdpx as libdpx
-    from pypixxlib.propixx import PROPixx
-    from pypixxlib.propixx import PROPixxCTRL
-except ImportError:
-    libdpx = PROPixx = PROPixxCTRL = None
+from pypixxlib import _libdpx as libdpx
+from pypixxlib.propixx import PROPixx
+from pypixxlib.propixx import PROPixxCTRL
 
 __all__ = ('IOApp', )
 
@@ -128,6 +125,12 @@ class IOApp(App):
     """If the projector pixel-mode is ON.
     """
 
+    led_current_ids = {
+        'red': libdpx.propixx_led_current_constant['PPX_LED_CUR_RED_H'],
+        'green': libdpx.propixx_led_current_constant['PPX_LED_CUR_GRN_H'],
+        'blue': libdpx.propixx_led_current_constant['PPX_LED_CUR_BLU_H']
+    }
+
     def build(self):
         tex = self.bits_texture = Texture.create(size=(1, 1))
         tex.mag_filter = 'nearest'
@@ -149,6 +152,10 @@ class IOApp(App):
         self.set_video_mode(self.video_mode)
         self.update_bits()
         self.set_pixel_mode(True)
+
+        print('Red LED I:', self.get_led_current('red'))
+        print('Green LED I:', self.get_led_current('green'))
+        print('Blue LED I:', self.get_led_current('blue'))
 
     def set_pixel_mode(self, state):
         if PROPixxCTRL is None:
@@ -192,6 +199,22 @@ class IOApp(App):
         dev.setDlpSequencerProgram(modes[mode])
         dev.updateRegisterCache()
         dev.close()
+
+    def get_led_current(self, led):
+        led_id = self.led_current_ids[led]
+        libdpx.DPxOpen()
+        libdpx.DPxSelectDevice('PROPixx')
+        current = libdpx.DPxGetPPxLedCurrent(led_id)
+        libdpx.DPxClose()
+        return current
+
+    def set_led_current(self, led, current):
+        led_id = self.led_current_ids[led]
+        libdpx.DPxOpen()
+        libdpx.DPxSelectDevice('PROPixx')
+        libdpx.DPxSetPPxLedCurrent(led_id, current)
+        libdpx.DPxUpdateRegCache()
+        libdpx.DPxClose()
 
     def update_bits(self):
         value = 0
