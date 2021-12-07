@@ -42,7 +42,7 @@ from math import ceil
 from threading import Thread, RLock
 from queue import Queue, Empty
 import numpy as np
-from functools import partial
+from functools import partial, wraps
 import struct
 from typing import Generator, Dict, List, Union
 import re
@@ -62,6 +62,17 @@ from more_kivy_app.utils import yaml_dumps, yaml_loads
 __all__ = (
     'CeedDataWriterBase', 'DataSerializerBase', 'num_ticks_handshake',
     'num_ticks_handshake_1_0_0_dev0')
+
+
+def clear_thread(func):
+    @wraps(func)
+    def f(self, *args, **kwargs):
+        try:
+            return func(self, *args, **kwargs)
+        finally:
+            self.data_queue = self.data_thread = self.data_lock = None
+
+    return f
 
 
 class CeedDataWriterBase(EventDispatcher):
@@ -571,7 +582,16 @@ class CeedDataWriterBase(EventDispatcher):
             self.write_changes()
             filename = filename or self.filename
             if filename:
+                if self.data_thread is not None:
+                    raise TypeError(
+                        'Cannot copy data while experiment data is still '
+                        'collected')
+
+                self.nix_file.close()
                 copy2(self.backup_filename, filename)
+                self.nix_file = nix.File.open(
+                    self.backup_filename, nix.FileMode.ReadWrite,
+                    compression=self.nix_compression)
         finally:
             if self.data_lock:
                 self.data_lock.release()
@@ -954,6 +974,7 @@ class CeedDataWriterBase(EventDispatcher):
         allocated = allocated = (required >> 3) + 6 + required
 
     @app_error
+    @clear_thread
     def collect_experiment(self, block, shapes, frame_bits, frame_counter,
                            frame_time, frame_time_counter, queue, lock,
                            led_state, event_data, event_data_count):
@@ -1110,7 +1131,6 @@ class CeedDataWriterBase(EventDispatcher):
             Clock.schedule_once(notify)
 
         self.data_queue.put_nowait(('eof', wait_for_stop))
-        self.data_queue = self.data_thread = self.data_lock = None
         self.dispatch(
             'on_experiment_change', 'experiment_stop',
             block.name[len('experiment'):])
