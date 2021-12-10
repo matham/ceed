@@ -287,7 +287,7 @@
             FlatSizedTextInput:
                 input_filter: 'float'
                 text: str(app.view_controller.current_red)
-                on_focus: if not self.focus: app.view_controller.current_red = float(self.text)
+                on_focus: if not self.focus: app.view_controller.current_red = min(max(float(self.text), 0), 43)
                 padding: 0
             ThemedLabel:
                 size_hint: None, None
@@ -296,7 +296,7 @@
             FlatSizedTextInput:
                 input_filter: 'float'
                 text: str(app.view_controller.current_green)
-                on_focus: if not self.focus: app.view_controller.current_green = float(self.text)
+                on_focus: if not self.focus: app.view_controller.current_green = min(max(float(self.text), 0), 43)
                 padding: 0
             ThemedLabel:
                 size_hint: None, None
@@ -305,7 +305,7 @@
             FlatSizedTextInput:
                 input_filter: 'float'
                 text: str(app.view_controller.current_blue)
-                on_focus: if not self.focus: app.view_controller.current_blue = float(self.text)
+                on_focus: if not self.focus: app.view_controller.current_blue = min(max(float(self.text), 0), 43)
                 padding: 0
             ThemedLabel:
                 size_hint: None, None
