@@ -56,6 +56,8 @@ async def run_experiment(
         stage_app.app.view_controller.request_stage_end()
     await stage_app.wait_clock_frames(2)
 
+    await wait_experiment_stopped(stage_app)
+
     filename = str(tmp_path / 'saved_data.h5')
     stage_app.app.ceed_data.save(filename=filename)
 
@@ -234,3 +236,12 @@ async def measure_fps(stage_app: CeedTestApp, max_fps=120.) -> int:
     diff = sorted([t2 - t1 for t1, t2 in zip(times[:-1], times[1:])])
     fps = max(diff[len(diff) // 2], 1 / max_fps)
     return int(round(1 / fps))
+
+
+async def wait_experiment_stopped(stage_app: CeedTestApp, timeout=15):
+    ts = perf_counter()
+    while stage_app.app.ceed_data.is_experiment_running():
+        if perf_counter() - ts >= timeout:
+            raise TimeoutError
+
+        await stage_app.wait_clock_frames(2)

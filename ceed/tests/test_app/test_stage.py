@@ -18,7 +18,7 @@ from .examples.shapes import assert_add_three_groups, CircleShapeP1
 from .examples.funcs import create_funcs, GroupFunction
 from .examples.stages import fake_plugin_stage, SerialAllStage
 from .examples.experiment import wait_stage_experiment_started, \
-    wait_experiment_done, measure_fps
+    wait_experiment_done, measure_fps, wait_experiment_stopped
 from .test_func import assert_func_params_in_gui, \
     replace_last_ref_with_original_func, assert_funcs_same
 
@@ -702,6 +702,7 @@ async def test_recursive_play_stage_intensity(
     stage_app.app.view_controller.request_stage_start(root.name)
 
     await wait_experiment_done(stage_app, timeout=num_frames / rate * 50)
+    await wait_experiment_stopped(stage_app)
 
     filename = str(tmp_path / 'recursive_play_stage_intensity.h5')
     stage_app.app.ceed_data.save(filename=filename)
@@ -867,6 +868,7 @@ async def test_moat_stage_shapes(stage_app: CeedTestApp, tmp_path):
 
     stage_app.app.view_controller.request_stage_end()
     await stage_app.wait_clock_frames(2)
+    await wait_experiment_stopped(stage_app)
 
     filename = str(tmp_path / 'moat_stage_shapes.h5')
     stage_app.app.ceed_data.save(filename=filename)
@@ -937,6 +939,7 @@ async def test_moat_single_stage_shapes(stage_app: CeedTestApp, tmp_path):
     stage_app.app.view_controller.request_stage_end()
     await stage_app.wait_clock_frames(2)
     assert not stage_app.app.view_controller.stage_active
+    await wait_experiment_stopped(stage_app)
 
     filename = str(tmp_path / 'moat_single_stage_shapes.h5')
     stage_app.app.ceed_data.save(filename=filename)
@@ -972,6 +975,7 @@ async def test_event_data_empty(stage_app: CeedTestApp, tmp_path, func):
     stage_app.app.view_controller.frame_rate = 10
     stage_app.app.view_controller.request_stage_start(root.name)
     await wait_experiment_done(stage_app, timeout=180)
+    await wait_experiment_stopped(stage_app)
 
     filename = str(tmp_path / 'event_data_empty.h5')
     stage_app.app.ceed_data.save(filename=filename)
@@ -1038,6 +1042,7 @@ async def test_pad_stage_ticks(
     stage_app.app.view_controller.pad_to_stage_handshake = True
     stage_app.app.view_controller.request_stage_start(root.name)
     await wait_experiment_done(stage_app, 300)
+    await wait_experiment_stopped(stage_app)
 
     filename = str(tmp_path / 'pad_stage_ticks.h5')
     stage_app.app.ceed_data.save(filename=filename)
@@ -1202,6 +1207,7 @@ async def test_short_stage(
     stage_app.app.view_controller.request_stage_start(root.name)
 
     await wait_experiment_done(stage_app, timeout=50)
+    await wait_experiment_stopped(stage_app)
 
     assert stage_app.app.view_controller.count == num_frames + 1
     # only counts whole frames

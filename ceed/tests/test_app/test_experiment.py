@@ -8,7 +8,8 @@ import ceed
 from .examples.shapes import CircleShapeP1, CircleShapeP2
 from .examples import assert_image_same, create_test_image
 from .examples.experiment import create_basic_experiment, run_experiment, \
-    set_serializer_even_count_bits, wait_experiment_done, measure_fps
+    set_serializer_even_count_bits, wait_experiment_done, measure_fps, \
+    wait_experiment_stopped
 from ceed.tests.ceed_app import CeedTestApp
 from ceed.tests.test_stages import get_stage_time_intensity
 from ceed.analysis.merge_data import CeedMCSDataMerger
@@ -285,6 +286,7 @@ async def test_create_internal_experiment(
     filename = internal_experiment_filename
 
     await run_data_experiment(stage_app)
+    await wait_experiment_stopped(stage_app)
 
     stage_app.app.ceed_data.save(filename=filename)
     base = filename[:-3]
@@ -304,6 +306,7 @@ async def test_create_external_experiment(
 
     stage_app.app.view_controller.stop_process()
     await stage_app.wait_clock_frames(2)
+    await wait_experiment_stopped(stage_app)
 
     stage_app.app.ceed_data.save(filename=filename)
 
@@ -909,6 +912,7 @@ async def test_serializer_saved_data(
 
     await wait_experiment_done(stage_app)
     event.cancel()
+    await wait_experiment_stopped(stage_app)
 
     filename = str(tmp_path / 'serializer_data.h5')
     stage_app.app.ceed_data.save(filename=filename)

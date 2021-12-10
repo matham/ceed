@@ -1135,6 +1135,9 @@ class CeedDataWriterBase(EventDispatcher):
             'on_experiment_change', 'experiment_stop',
             block.name[len('experiment'):])
 
+    def is_experiment_running(self):
+        return self.data_thread is not None
+
     def add_frame(self, data):
         """Adds experiment data for a single video frame displayed on screen,
         to the :attr:`data_queue`.
