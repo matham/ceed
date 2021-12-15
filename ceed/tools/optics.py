@@ -1296,7 +1296,7 @@ class OpticsApp(App):
 
         self.cam_lens_closer2.widget = widget = FormulaWidget(
             formula=self.cam_lens_closer2,
-            description='((4/4) Fourth lens in the sequence.',
+            description='(4/4) Fourth lens in the sequence.',
             name='L4')
         widget.populate_widget()
         container.add_widget(widget)

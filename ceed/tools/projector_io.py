@@ -20,9 +20,13 @@ from kivy.graphics.opengl import glEnable, GL_DITHER, glDisable
 from kivy.graphics.texture import Texture
 if __name__ == '__main__':
     from kivy.core.window import Window
-from pypixxlib import _libdpx as libdpx
-from pypixxlib.propixx import PROPixx
-from pypixxlib.propixx import PROPixxCTRL
+
+try:
+    from pypixxlib import _libdpx as libdpx
+    from pypixxlib.propixx import PROPixx
+    from pypixxlib.propixx import PROPixxCTRL
+except ImportError:
+    libdpx = PROPixx = PROPixxCTRL = None
 
 __all__ = ('IOApp', )
 
@@ -125,11 +129,13 @@ class IOApp(App):
     """If the projector pixel-mode is ON.
     """
 
-    led_current_ids = {
-        'red': libdpx.propixx_led_current_constant['PPX_LED_CUR_RED_H'],
-        'green': libdpx.propixx_led_current_constant['PPX_LED_CUR_GRN_H'],
-        'blue': libdpx.propixx_led_current_constant['PPX_LED_CUR_BLU_H']
-    }
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.led_current_ids = {
+            'red': libdpx.propixx_led_current_constant['PPX_LED_CUR_RED_H'],
+            'green': libdpx.propixx_led_current_constant['PPX_LED_CUR_GRN_H'],
+            'blue': libdpx.propixx_led_current_constant['PPX_LED_CUR_BLU_H']
+        }
 
     def build(self):
         tex = self.bits_texture = Texture.create(size=(1, 1))

@@ -16,26 +16,40 @@ Specs
 ------
 
 Here's a list of all the lenses used in the microscope.
-All distances are from the center of the dichroic cube.
+All distances are from the center of the dichroic cube. The axis from projector to tissue
+goes negative to positive. The axis from tissue to camera is also negative to
+positive.
 
-1.  Projector. **PROPixx projector**. Focal distance is 1.22 meters. **@32cm**.
-2.  L1\ **. AC508-075-A-ML**. f=75mm – 2”. **@27.5cm**.
-3.  **ND filter**.
-4.  L2. **AC508-100-A-ML**. f=100mm – 2”. **@21.2cm**.
-5.  L3. **AC254-030-A-ML**. f=30mm – 1”. **@3.5cm**.
+1.  Projector. **PROPixx projector**. Projected image is at 1.22 meters from projector (@67cm). **@-55cm**.
+2.  L1. **AC508-075-A-ML**. f=75mm – 2”. **@-51cm**.
+3.  L2. **AC508-080-A-ML**. f=80mm – 2”. **@-49cm**.
+4.  **ND filter** ring.
+5.  L3. **AC508-200-A-ML**. f=200mm – 2”. **@-27cm**.
 6.  **Dichroic**.
-7.  L4. **Nikon Plan Fluor**. F=41.3mm. 4x/0.13, WD17.2. **@16.15cm**.
-8.  Tissue. **Tissue platform**. **@21.55cm**.
-9.  L5. **AC508-080-A-ML**. f=80mm – 2”. **@4.5cm**.
-10. L6. **AC508-100-A-ML**. f=100mm – 2”. **@17.2cm**.
-11. L7. **AC508-180-A-ML**. f=180mm – 2”. **@21.2cm**.
-12. Acquisition. **4070C-USB** **Thor cam**. Sensor plate **@30.427cm**.
+7.  L4. Objective lens **@13cm** (center). There are two objectives to choose from, a 4x (the default -
+    all computations below use this) and a 2x when we need larger area.
+
+    * **Nikon Plan Fluor**. F=41.3mm. 4x/0.13, WD17.2.
+    * **CFI Plan Apochromat Lambda**. F=mm. 2x/0.1, WD8.5.
+8.  **Tissue**. **@17.1748cm**.
+9.  L5. **AC508-150-A-ML**. f=150mm – 2”. **@7cm**.
+10. Camera. **4070C-USB** **Thor cam**. Sensor plate **@21.4077cm**.
+
+The measured tissue projected area with the 4x objective is approximately 4.24mm x 2.41mm.
+For the 2x objective it's 8.36mm x 4.72mm. Computed magnification from the projector
+to the tissue is **-0.0072** for the 4x objective.
+
+The camera sensor has 2048x2048 pixels and each pixel is 7.4μm x 7.4μm. Sensor area
+width and height is 15.1552mm. Computed magnification from the tissue to the camera is **-3.6403**.
+This results in a computed field of view on the tissue of 4.16mm square.
 
 |image0|
 
+Figure 1 The microscope
+
 |image1|
 
-**Optics analysis**
+Figure 2 The microscope annotated
 
 Projector to tissue light path
 ------------------------------
@@ -48,23 +62,23 @@ the axis and the tissue is on the positive side.
 Static Optical Analysis
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-Following is the optical details of all the optical components in the
-path.
+Following is the details of all the optical components in the
+projector path.
 
-.. _static-l1:
+.. _static-p-l1:
 
 L1
 ""
 
-L1 must sit close to the projector to get the full projector view. The
-“object” input to the lens is projected by the projector. The “object”
-is between 1.22m to 10m on the right of the projector, depending on the
-focal setting of the projector’s lens. Although it’s the right of L1, we
+L1 must sit close to the projector to get the full projector view and most
+of the light. The “object” input to the lens is projected by the projector.
+The “object” is between 1.22m to 10m on the right of the projector, depending
+on the focal setting of the projector’s lens. Although it’s the right of L1, we
 use the provided “object” position. We assume it’s set at 1.22m.
 
 |image2|
 
-Figure 1 The characteristics of L1.
+Figure 3 The characteristics of L1.
 
 The figure is read as follows, we input the focal length of the lens,
 the position of the lens and the object (as output by the projector).
@@ -72,168 +86,156 @@ The output is the estimated image position (on the other side of the
 lens, if positive relative to the lens), the magnification, and the
 relative distance between the lens and the image.
 
-.. _static-l2:
+.. _static-p-l2:
 
 L2
 ""
 
-L2 is the zoom lens, that we use to change the magnification of the
-final pattern projected on the tissue, without changing the position of
-the projected image.
+L2 sits as close to L1 as possible and together they focus the image just to the right
+of L2 and at a significant downscaling.
 
 |image3|
 
-Figure 2 The characteristics of L2.
+Figure 4 The characteristics of L2.
 
-.. _static-l3:
+.. _static-p-l3:
 
 L3
 ""
 
-L3 is a smaller lens that sits on the dichroic. By being directly
-attached to the dichroic, it physically acts as an aperture, preventing
-any stray light from casting echoes on the tissue. If the lens is not
-directly attached to the dichroic cube cage, there is a circle of
-interfering reflections around the tissue.
+L3 controls the zoom of the final projection on the tissue as well as the
+distance from the objective lens to the projection. The goal is for that projection
+to be at the rated working distance of the objective and to size the projection
+to the required size.
+
+This lens creates a virtual image at negative infinity. This collimates the light
+before it reaches the objective.
 
 |image4|
 
-Figure 3 The characteristics of L3.
+Figure 5 The characteristics of L3.
 
-.. _static-l4:
+.. _static-p-l4:
 
 L4
 ""
 
 L4 is the final objective lens before the tissue. The position of the
 lens is dictated by the positions of all the previous lenses and the
-projector, as well as the position of the tissue. It is adjusted to get
-a clear projection on the tissue. The final magnification should be
-approximately 0.4% of the original object projected by the projector.
-The distance between the center of the objective and the tissue should
-be about 5.57cm.
+projector, given the objective's working distance. The projection should
+be in focus at the working distance.
 
 |image5|
 
-Figure 4 The characteristics of L4.
+Figure 6 The characteristics of L4.
 
 Dynamic Optical Analysis
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 In the following, we explore how the lens values were chosen and how the
 lens values change the primary variables -- the final position of the
-projected pattern and its magnification. In all of this, we were looking
-for an ideal magnification around 0.4% and the minimal image
-displacement as a function of lens position for the zoom lens (L2).
+projected pattern and its magnification.
 
 .. _dynamic-projector:
 
 Projector
 """""""""
 
-|image6|
+The projector is placed as close to the tissue as possible, given the lenses
+in the path, so that we can capture all the light from the projector and the full
+view. The projector has inbuilt lenses that diverge the light at a smallish angle as
+it's coming out from the projector.
 
-This figure shows how the mag and position would change as we move the
-projector left 20cm, or upto 5cm to the right. The largest effect is on
-the mag, which varies between 0.38% - 0.5%. Moving to the left increases
-mag.
+.. _dynamic-p-l1-l2:
 
-.. _dynamic-l1:
+L1-L2
+"""""
 
-L1
-""
+Lens L1 and L2 are the smallest focal length lens at 2" diameter that
+we can get. Its purpose is to scale down the image as much as possible.
+The lenses are placed as close to each other as possible. The resultant
+image should be focused just to the right of L2, as can be seen on a
+piece of paper.
+
+.. _dynamic-p-l3:
+
+L3 Dynamic
+""""""""""
+
+The purpose of L3 is to provide some further down-scaling of the image.
+It also collimates the light by forming a virtual image at negative
+infinity. Light collimation is required for the objective to function
+optimally.
+
+The exact placement of the lens and its distance from the objective
+(L4) determines how much down-scaling occurs. It also controls the
+distance between the objective and the focused image, which ideally
+will be the working distance of the objective to fully benefit from
+the objective.
+
+Assuming some placement of L4 (additionally investigated below),
+we have two variables to control; the location and focal length
+of L3. The following images investigate these variables.
 
 |image7|
 
-This figure shows how the position and mag would change as we change the
-focal length and position of L1. We chose 7.5mm@-27.5cm.
+Figure 7 The final image magnification on the tissue in response
+to L3 position and focal length. The red square is the selected
+values for the microscope.
 
-From the right graph, while keeping all the other lenses constant we can
-only increase or decrease the focal length (x-axis), by about +/- 20mm
-if we want to maintain the current mag. However, we’d also need to move
-the lens by a lot (+/- 7.5cm) to maintain the mag. On the other hand,
-from the right graph, the image position will not change much.
+The desired value is 0.005 - 0.01. From the contours we see that
+increasing the focal length decreases the magnification at this
+position, with larger "jumps" at larger focal values. However,
+moving the lens by small values keeps the magnification constant.
 
 |image8|
 
-Using a 75mm lens, this figure shows how the mag and positon change as
-the lens is moved +/- 7.5 cm. It does change the mag between 0.36% and
-0.5% and the image position by about 1mm. However, it’s not practical
-because the projector would also need to be moved as the lens is right
-next to the projector. In addition, this does not take into account the
-effect of moving the projector, as that will also affect the variables.
+Figure 8 The distance between the objective center and the final
+projected image on the tissue in response to L3 position and focal
+length. The red square is the selected values for the microscope.
 
-.. _dynamic-l2:
+The desired value is around 4.17cm because that seems to be the value
+that focuses the image at the objective working distance of 1.72cm
+from the objective end for the 4x and 8.5 for the 2x.
 
-L2
-""
+From the contours we see that increasing the focal length increases the distance.
+So increasing the focal length also requires moving the L3 to the right
+to maintain the working distance. Additionally, moving L3 too close to the
+dichroic may cut off some light.
+
+The final lens picked for L3 and its position optimizes all these variables.
+
+.. _dynamic-p-l4:
+
+L4 Dynamic
+""""""""""
+
+The purpose of L4, the objective is to focus the light on the tissue and
+compensate for any optical defects in earlier stages. The final image
+must be at its working distance.
 
 |image9|
 
-This lens is used as the primary zoom lens. We used a 100mm and zoom by
-changing its position. From the right image, the lens is moved up until
-the bottom of the curve and down to change the mag. If the lens is much
-larger than 100mm, then its range of mag of less (we only cross 5 or 6
-contours). If it’s much less than 100mm, the mag changes too quickly.
-Additionally, from the right graph, getting much less than 100mm, will
-result and much larger final image position change, which is
-undesirable. 100mm, seems a good tradeoff, although smaller lenses can
-be used to further reduce the mag if needed.
+Figure 9 The final image magnification on the tissue in response
+to L3 and L4 position. The red square is the selected
+values for the microscope.
+
+The desired value is 0.005 - 0.01. From the contours we see that
+moving L3 changes the magnification, but moving L4 mostly does not.
 
 |image10|
 
-Using a 100mm lens, we look at how changing its position changes the mag
-and final image position. If we limit ourselves to the -25cm - -13cm
-range, we transverse the mag range of 0.3% - 0.7%, without changing the
-final image position much.
+Figure 10 The distance between the objective center and the final
+projected image on the tissue in response to L3 and L4 position.
+The red square is the selected values for the microscope.
 
-|image11|
+The desired value is around 4.17cm because that seems to be the value
+that focuses the image at the objective working distance of 1.72cm
+from the objective end for the 4x and 8.5 for the 2x.
 
-For completeness, the figure above shows the variables when using a 75mm
-lens.
-
-|image12|
-
-As well as when using a 15mm lens. 10mm seems pretty optimal.
-
-.. _dynamic-l3:
-
-L3
-""
-
-|image13|
-
-We used a 30mm lens, that is attached to the dichroic cub. From the
-right figure we must stick to lenses less than 40mm because larger
-lenses will take us out of the required mag range. But, within the
-10mm-40mm range, changing the focal length changes mag quickly. But
-changing the position has little effect.
-
-On the other hand, the image position does change a lot when the lens
-position of focal length is changed.
-
-|image14|
-
-This figure shows how the mag and image position changes when the focal
-length is changed (very quickly).
-
-|image15|
-
-This figure similarly shows how the position and mag changes using a
-30mm lens and changing its position.
-
-Placing it right next to the cage, as required anyway to reduce
-reflections seems optimal.
-
-.. _dynamic-l4:
-
-L4
-""
-
-|image16|
-
-This figure shows how the mag and position changes when changing the
-objective, L4, position. It seems to vary linearly for both variables.
+From the contours we see that moving L3 changes the distance, but moving
+L4 mostly does not. So given a specific focal length for L3, its exact
+position must be fixed to get the appropriate distance.
 
 Tissue to camera light path
 ---------------------------
@@ -243,329 +245,161 @@ camera through the dichroic mirror. The center of the dichroic is the
 zero point, and the tissue is on the negative part of the axis and the
 camera is on the positive side.
 
-Static Optical Analysis
-^^^^^^^^^^^^^^^^^^^^^^^
+Static Camera Optical Analysis
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Following is the optical details of all the optical components in the
-path.
+Following is the details of all the optical components in the
+camera path.
 
 .. _static-cam-l4:
 
-L4
-""
+L4 Camera
+"""""""""
 
 The position of L4 (objective lens) and the tissue location are
-predetermined by the projector light path and tissue location.
+predetermined by the projector light path and the tissue location
+as determined above.
 
-Although in the last analysis we estimated that the image/tissue will be
-at -21.7161cm, we measured it to be around -21.55, likely due to
-imprecision of all the measurements. But we’ll use -21.55 as the object
-location for this light path.
+|image11|
 
-|image17|
+Figure 11 The characteristics of L4 relative to the camera path.
 
 .. _static-cam-l5:
 
 L5
 ""
 
-L5 is the first lens after the dichroic and sits as close to the
-dichroic cube cage as possible.
+L5 is the zoom lens between the camera and the objective. Its function is
+to focus the image on the camera sensor plane and to zoom into the tissue
+to see the full projected area.
 
-|image18|
+It is chosen so that it doesn't waste too much resolution capturing
+tissue outside the area of interest, but also so that the camera is
+as close to the lens as possible.
 
-.. _static-cam-l6:
+|image12|
 
-L6
-""
+Figure 12 The characteristics of L5.
 
-L6 is our zoom lens, that we move up and down to zoom the camera image.
-
-|image19|
-
-.. _static-cam-l7:
-
-L7
-""
-
-L7 is the final lens before the camera. The final magnification is
-around 3.3x of the tissue and projected image. The distance between the
-center of the lens and the camera’s sensor plate is about 9.2cm.
-
-|image20|
-
-Dynamic Optical Analysis
-^^^^^^^^^^^^^^^^^^^^^^^^
+Dynamic Camera Optical Analysis
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In the following, we explore how the lens values were chosen and how the
 lens values change the primary variables -- the final position of the
 image and therefore camera position and its magnification. In all of
-this, we were looking for an ideal magnification around 3.3x and the
-minimal image displacement as a function of lens position for the zoom
-lens (L6). Another limitation is that the distance between the final
+this, we were looking for an ideal magnification around 3.5x (based on
+experimental tests). Another limitation is that the distance between the final
 lens (L7) and the image cannot be much less than 5cm or 6cm because the
-lens and camera thickness prevent that.
-
-As a note, this light path has more server restrictions and degeneracies
-than the projector to tissue light path. We have no control over the
-position of the objective (L4) because that’s predetermined by the
-projector to tissue light path. Similarly, the minimum final lens to
-camera distance reduces the options significantly.
+lens and camera thickness prevent that. Also, there are physical limitations
+on how close L5 can be to L4 because of the dichroic in the path.
 
 .. _dynamic-cam-l4:
 
-L4
-""
+L4 Dynamic camera
+"""""""""""""""""
 
-|image21|
-
-This figure shows that as we change the object (tissue) position, if we
-change the objective position by the same amount in the same direction,
-both the mag and the final image position will remain generally
-unchanged. This is good, because as we saw earlier in the projector to
-tissue light path, if the objective is moved down, the projector will
-project the tissue image by about the same amount further. Therefore, if
-both the objective and the tissue are moved by the same amount, neither
-the projector nor the camera positions and lensing would need to be
-adjusted (perhaps by tiny amounts).
+The position and characteristics of L4 is determined by the projector
+path.
 
 .. _dynamic-cam-l5:
 
-L5
-""
+L5 Dynamic
+""""""""""
 
-|image22|
+The purpose of L5 is to focus the image on the camera.
 
-For L5, to have a good mag, we should prefer lower focal lengths. But
-too low will have too much mag. We picked 80mm. For image distance,
-focal length doesn’t have a significant impact.
+The exact placement of the lens and its focal length determines the zoom.
+It also controls the distance between the lens and the focused image, where
+the camera's sensor needs to be placed.
 
-|image23|
+|image13|
 
-This figure shows how the lens position affects the mag and final image
-position when using a 80mm lens. As can be seen, increasing the lens
-position reduces the final image distance, which is a problem if it gets
-below the minimum final lens – camera distance. However, the mag
-increases. We placed it at 4.5cm, which the closest to the dichroic cube
-we could place it so that the final image will be as far from the final
-lens as possible.
+Figure 13 The final image magnification on the camera in response
+to L5 position and focal length. The red square is the selected
+values for the microscope.
 
-.. _dynamic-cam-l6:
+The desired value is around 3.5. From the contours we see that
+increasing the focal length increases the magnification. However,
+moving the lens mostly keeps the magnification constant.
 
-L6
-""
+|image14|
 
-|image24|
+Figure 14 The position of the final focused image (where the camera is placed)
+in response to L5 position and focal length. The red square is the selected
+values for the microscope.
 
-The goal for this lens is to act as a zoom lens. Ideally, as we move it
-up and down the final image mag will change through our desired range,
-without changing the final image position by much. Looking at the left
-figure, we see that a 100mm lens is the most optimum because when it is
-moved up and down it will change final image position minimally.
-Similarly, from the right figure, when moved up and down it’ll go
-through a range of mag values quickly.
+The desired value is larger than about 5cm to accommodate the hardware. We also
+don't want it to be too large.
 
-|image25|
+From the contours we see that increasing the focal length linearly moves
+the focused image position. Similarly, moving the lens up, also linearly
+moves the focused image up.
 
-This figure shows how the image position and mag will change when a
-100mm lens is moved up and down. We can see how the image position
-changes minimally, when the lens is moved through a range of mag values.
+The final lens picked and its exact position was selected to optimize the zoom
+and visible area of interest of the tissue.
 
-We can also ask how the mag and position will change as the lens is
-moved up and down as a function of the focal length of L5 (the previous
-lens).
+Projector power
+---------------
 
-|image26|
+We measured the projector power of the blue LED as it reaches the slice
+through the dichroic using dichroic mirror that reflects blue to the tissue.
 
-Using 100mm for L6, this figure shows that as we change the focal length
-for L5, the image position doesn’t change much. But, by reducing the
-focal length, we can increase the baseline mag. So e.g. if we picked a
-75mm lens rather than 80mm for L5, we would get a higher magnification.
+We varied the current using the Ceed software from 0A to 43A, the maximum.
+We also varied the color intensity from 1 (255) to 0.5 (127) using the parameters
+of the constant function in Ceed. We set the full projector area to output
+blue.
 
-Following we replicate the L6 figures using a 75mm lens for L5, rather
-than 80mm above.
+Following is a table of the measured power in mW at the tissue plane using a
+Thor PM100D with the S175C sensor.
 
-|image27|
++--------------+--------------+----------------+
+| Current (A)  | Intensity=1  | Intensity=0.5  |
++==============+==============+================+
+| 0            | 0            | 0              |
++--------------+--------------+----------------+
+| 1            | 0.5          | 0.368          |
++--------------+--------------+----------------+
+| 2            | 1.18         | 0.632          |
++--------------+--------------+----------------+
+| 3            | 1.86         | 0.923          |
++--------------+--------------+----------------+
+| 5            | 3.07         | 1.5            |
++--------------+--------------+----------------+
+| 10           | 5.71         | 2.77           |
++--------------+--------------+----------------+
+| 15           | 7.93         | 3.868          |
++--------------+--------------+----------------+
+| 20           | 9.87         | 4.902          |
++--------------+--------------+----------------+
+| 25           | 11.55        | 5.672          |
++--------------+--------------+----------------+
+| 30           | 13.03        | 6.438          |
++--------------+--------------+----------------+
+| 35           | 14.41        | 7.102          |
++--------------+--------------+----------------+
+| 40           | 15.61        | 7.6            |
++--------------+--------------+----------------+
+| 43           | 16.18        | 7.94           |
++--------------+--------------+----------------+
 
-|image28|
+This graph shows the table data as well as a linear and polynomial of degree 2
+regression to estimate the equation of each line to help estimate the power
+for a given current and intensity.
 
-We can see that using 75mm, the image position change as a function of
-lens position is even flatter than with a 80mm lens and that the overall
-mag also increased. So choosing a 75mm vs 80mm for L5 can be changed
-depending on the desired mag, if we need to change it by a small amount.
+|image6|
 
-|image29|
-
-We can also ask how the mag and image position would change if we move
-L5 up away from the dichroic cage by a little. The right figure shows
-that increasing L5’s position will not change the mag range for L6 by
-much. It mostly serves to accentuate the change in the image position
-(left figure) as L5 is increased. But that can be traded against a mag
-increase if that’s desired.
-
-.. _dynamic-cam-l7:
-
-L7
-""
-
-|image30|
-
-For the final lens before the camera, we need to ensure that the image
-is not too close to the lens because otherwise the camera cannot get
-close enough to see it. This minimum distance is about 5cm. Therefore,
-for the right graph, instead of showing the image position as the
-intensity value, we shoe the distance between the lens and the image and
-threshold at 5cm.
-
-We observe that increasing the focal length will increase the final
-image position. On the other hand, increasing the final lens position
-will only decrease the image position. For the mag, increasing either
-the focal length or the lens position increases the mag. Therefore, this
-lens provides us some freedom to choose the baseline mag for the zoom
-lens.
-
-|image31|
-
-This figure shows the above observation more clearly, that for the
-selected lens position, increasing the focal length will increase the
-image position and mag.
-
-|image32|
-
-In the same vane it’s interesting to ask what the effect of increasing
-the focal length of the final lens (L7) will have on the mag range as L6
-is moved up and down. Similarly, how much is the final image position
-perturbed? The above figure shows that as we increase the focal length
-of L8, the baseline mag will increase. But, from the left figure it
-seems that as the focal length increases, the image position changes
-more. The following figure shows it clearly.
-
-|image33|
-
-This figure shows how the mag range and image position changes as L6 is
-moved up and down when L7 is 250mm, rather than 180mm above. We can see
-clearly that the baseline mag is larger on the right, but so is the
-image position deflection on the left. This suggests that 180mm is a
-overall good choice, except if higher mag is required.
-
-|image34|
-
-So far, we haven’t found a great way to increase the baseline mag by a
-lot. We saw earlier that as we increase the position of L7, the baseline
-mag increases, but the lens to image distance also decreases, which may
-be a problem. The above figure looks at the mag and image location range
-as the zoom lens is moved up and down for different L7 positions.
-Indeed, we can see that as L7 position increases, the overall mag
-increases.
-
-|image35|
-
-This figure shows the lens to image distance and mag values when we move
-L7 up to 27cm, rather than 21.2cm that we used earlier. We can see that
-indeed the overall mag increased, but so does the image position and
-that the image position is more variable.
-
-.. |image0| image:: media/image1.png
-.. |image1| image:: media/image2.jpeg
-.. |image2| image:: media/image3.png
-   :width: 1.87500in
-   :height: 2.70833in
-.. |image3| image:: media/image4.png
-   :width: 1.87500in
-   :height: 2.70833in
-.. |image4| image:: media/image5.png
-   :width: 1.84583in
-   :height: 2.73333in
-.. |image5| image:: media/image6.png
-   :width: 1.86667in
-   :height: 2.70000in
-.. |image6| image:: media/image7.png
-   :width: 7.37849in
-   :height: 2.20833in
-.. |image7| image:: media/image8.png
-   :width: 7.40435in
-   :height: 2.18333in
-.. |image8| image:: media/image9.png
-   :width: 7.43242in
-   :height: 2.19583in
-.. |image9| image:: media/image10.png
-   :width: 7.34783in
-   :height: 2.16667in
-.. |image10| image:: media/image11.png
-   :width: 7.34496in
-   :height: 2.16250in
-.. |image11| image:: media/image12.png
-   :width: 7.37128in
-   :height: 2.22083in
-.. |image12| image:: media/image13.png
-   :width: 7.37090in
-   :height: 2.22500in
-.. |image13| image:: media/image14.png
-   :width: 7.43381in
-   :height: 2.21250in
-.. |image14| image:: media/image15.png
-   :width: 7.35722in
-   :height: 2.19583in
-.. |image15| image:: media/image16.png
-   :width: 7.37849in
-   :height: 2.20833in
-.. |image16| image:: media/image17.png
-   :width: 7.37403in
-   :height: 2.20417in
-.. |image17| image:: media/image18.png
-   :width: 1.84583in
-   :height: 2.67917in
-.. |image18| image:: media/image19.png
-   :width: 1.83333in
-   :height: 2.70833in
-.. |image19| image:: media/image20.png
-   :width: 1.87500in
-   :height: 2.66667in
-.. |image20| image:: media/image21.png
-   :width: 1.83333in
-   :height: 2.58333in
-.. |image21| image:: media/image22.png
-   :width: 7.39894in
-   :height: 2.22917in
-.. |image22| image:: media/image23.png
-   :width: 7.33081in
-   :height: 2.15833in
-.. |image23| image:: media/image24.png
-   :width: 7.32979in
-   :height: 2.20833in
-.. |image24| image:: media/image25.png
-   :width: 7.39682in
-   :height: 2.17917in
-.. |image25| image:: media/image26.png
-   :width: 7.40975in
-   :height: 2.19583in
-.. |image26| image:: media/image27.png
-   :width: 7.33081in
-   :height: 2.15833in
-.. |image27| image:: media/image28.png
-   :width: 7.30427in
-   :height: 2.14583in
-.. |image28| image:: media/image29.png
-   :width: 7.31667in
-   :height: 2.19453in
-.. |image29| image:: media/image30.png
-   :width: 7.36100in
-   :height: 2.16250in
-.. |image30| image:: media/image31.png
-   :width: 7.39764in
-   :height: 2.18750in
-.. |image31| image:: media/image32.png
-   :width: 7.36007in
-   :height: 2.15417in
-.. |image32| image:: media/image33.png
-   :width: 7.38074in
-   :height: 2.17917in
-.. |image33| image:: media/image34.png
-   :width: 7.31475in
-   :height: 2.19583in
-.. |image34| image:: media/image35.png
-   :width: 7.37794in
-   :height: 2.17500in
-.. |image35| image:: media/image36.png
-   :width: 7.37609in
-   :height: 2.17500in
+.. |image0| image:: media/microscope.jpg
+.. |image1| image:: media/Microscope_annotated_drawio.svg
+.. |image2| image:: media/L1_proj.jpg
+.. |image3| image:: media/L2_proj.jpg
+.. |image4| image:: media/L3_proj.jpg
+.. |image5| image:: media/L4_proj.jpg
+.. |image6| image:: media/power_analysis.jpg
+.. |image7| image:: media/L3_pos_vs_L3_f_mag_proj.jpg
+.. |image8| image:: media/L3_pos_vs_L3_f_dist_proj.jpg
+.. |image9| image:: media/L4_pos_vs_L3_pos_mag_proj.jpg
+.. |image10| image:: media/L4_pos_vs_L3_pos_dist_proj.jpg
+.. |image11| image:: media/L4_cam.jpg
+.. |image12| image:: media/L5_cam.jpg
+.. |image13| image:: media/L5_pos_vs_L5_f_mag.jpg
+.. |image14| image:: media/L5_pos_vs_L5_f_dist.jpg
