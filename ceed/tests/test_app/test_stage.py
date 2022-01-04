@@ -1,3 +1,4 @@
+import os
 import sys
 import math
 from contextlib import contextmanager
@@ -10,8 +11,9 @@ from .examples.stages import create_test_stages, make_stage, StageWrapper, \
     stage_classes, assert_stages_same
 from typing import Type, List, Union
 from ceed.tests.ceed_app import CeedTestApp
-from ceed.tests.test_app import replace_text, touch_widget, escape
-from ceed.stage import CeedStage, CeedStageRef
+from ceed.tests.test_app import replace_text, touch_widget, escape, \
+    run_plugin_experiment
+from ceed.stage import CeedStage, CeedStageRef, last_experiment_stage_name
 from ceed.function import CeedFuncRef, FuncBase, FuncGroup
 from ceed.shape import CeedShape, CeedShapeGroup
 from .examples.shapes import assert_add_three_groups, CircleShapeP1
@@ -1122,14 +1124,26 @@ def add_to_path(tmp_path, *args):
 
 @pytest.mark.parametrize(
     "ceed_app",
-    [{'yaml_config': {'external_stage_plugin_package': 'my_gui_stage_plugin'},
+    [{'yaml_config': {
+        'external_stage_plugin_package': 'my_gui_stage_plugin',
+        'view': {'teensy_frame_estimation': {'use_teensy': False}}},
       'app_context': add_to_path}, ],
     indirect=True
 )
-async def test_external_plugin_named_package(stage_app: CeedTestApp, tmp_path):
+@pytest.mark.parametrize('external', [False, True])
+async def test_external_plugin_named_package(
+        stage_app: CeedTestApp, tmp_path, external):
     stage_factory = stage_app.app.stage_factory
 
     assert 'FakeStage' in stage_factory.stages_cls
+
+    stage = SerialAllStage(
+        stage_factory=stage_factory, show_in_gui=True, app=stage_app,
+        create_add_to_parent=False, stage_cls=stage_factory.get('FakeStage'))
+    stage.stage.val = 13
+    await run_plugin_experiment(stage_app, tmp_path, external, stage=stage)
+
+    assert stage_factory.stage_names[last_experiment_stage_name].val == 13
 
 
 @pytest.mark.parametrize(

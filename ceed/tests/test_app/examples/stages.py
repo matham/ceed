@@ -128,6 +128,8 @@ class StageWrapper:
 
     shapes: List[Shape] = []
 
+    stage_cls = CeedStage
+
     color_r = False
 
     color_g = False
@@ -141,7 +143,7 @@ class StageWrapper:
             stage_factory: StageFactoryBase = None,
             parent_wrapper_stage: 'StageWrapper' = None,
             show_in_gui=True, create_add_to_parent=False, shapes=[],
-            functions=[]):
+            functions=[], stage_cls=CeedStage):
         self.stages = []
         super().__init__()
         self.app = app
@@ -153,6 +155,7 @@ class StageWrapper:
         self.parent_wrapper_stage = parent_wrapper_stage
         self.shapes = shapes
         self.functions = functions
+        self.stage_cls = stage_cls
 
         if show_in_gui:
             self.show_in_gui()
@@ -160,7 +163,7 @@ class StageWrapper:
             self.create_add_to_parent()
 
     def create_stage(self):
-        stage = self.stage = CeedStage(
+        stage = self.stage = self.stage_cls(
             stage_factory=self.stage_factory,
             function_factory=self.stage_factory.function_factory,
             shape_factory=self.stage_factory.shape_factory,

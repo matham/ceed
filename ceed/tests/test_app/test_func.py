@@ -7,7 +7,7 @@ from typing import Type, List, Union
 
 from ceed.tests.ceed_app import CeedTestApp
 from ceed.tests.test_app import replace_text, touch_widget, \
-    select_spinner_value as select_spinner_func, escape
+    select_spinner_value as select_spinner_func, escape, run_plugin_experiment
 from ceed.function import FuncBase, FuncGroup, FunctionFactoryBase, \
     CeedFuncRef, register_external_functions
 from .examples.funcs import GroupFunction, \
@@ -549,13 +549,26 @@ def add_to_path(tmp_path, *args):
 
 @pytest.mark.parametrize(
     "ceed_app",
-    [{'yaml_config': {'external_function_plugin_package': 'my_gui_func_plugin'},
+    [{'yaml_config': {
+        'external_function_plugin_package': 'my_gui_func_plugin',
+        'view': {'teensy_frame_estimation': {'use_teensy': False}}},
       'app_context': add_to_path}, ],
     indirect=True
 )
-async def test_external_plugin_named_package(func_app: CeedTestApp, tmp_path):
+@pytest.mark.parametrize('external', [False, True])
+async def test_external_plugin_named_package(
+        func_app: CeedTestApp, tmp_path, external):
+    from ceed.stage import last_experiment_stage_name
     function_factory = func_app.app.function_factory
     noise_classes = function_factory.param_noise_factory.noise_classes
 
     assert 'FakeFunc' in function_factory.funcs_cls
     assert 'FakeNoise' in noise_classes
+
+    func = func_app.app.function_factory.get('FakeFunc')(
+        function_factory=func_app.app.function_factory, duration=1)
+    func.val = 7
+
+    await run_plugin_experiment(func_app, tmp_path, external, func=func)
+    assert func_app.app.stage_factory.stage_names[last_experiment_stage_name]\
+        .functions[0].val == 7

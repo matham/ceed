@@ -1069,7 +1069,7 @@ class StageFactoryBase(EventDispatcher):
         :meth:`CeedStage.get_state` of the corresponding stage in
         :attr:`stages`.
         """
-        return [s.get_state(expand_ref=False)for s in self.stages]
+        return [s.get_state(expand_ref=False) for s in self.stages]
 
     def recover_stages(
             self, stage_states: List[dict], func_name_map: dict,
@@ -1093,9 +1093,8 @@ class StageFactoryBase(EventDispatcher):
             # cannot be a ref func here because they are global funcs
             c = state['cls']
             assert c != 'CeedStageRef'
-            assert c == 'CeedStage'
 
-            stage = CeedStage(
+            stage = self.get(c)(
                 stage_factory=self, function_factory=self.function_factory,
                 shape_factory=self.shape_factory)
             old_name = stage.name = state['name']

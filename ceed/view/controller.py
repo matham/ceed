@@ -1988,8 +1988,7 @@ def view_process_enter(
     try:
         app = CeedViewApp()
 
-        classes = get_config_children_names(app)
-        app.app_settings = {cls: app_settings[cls] for cls in classes}
+        app.app_settings = app_settings
         app.apply_app_settings()
 
         viewer = app.view_controller
