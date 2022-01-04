@@ -627,17 +627,24 @@ class CeedDataWriterBase(EventDispatcher):
                 self.data_lock.release()
 
     @staticmethod
-    def save_shapes_to_yaml(filename, shape_factory, overwrite=False):
-        """Exports the shape data to a yaml file so it can be imported
-        from the GUI.
+    def save_config_to_yaml(
+            filename, shape_factory=None, function_factory=None,
+            stage_factory=None, overwrite=False
+    ):
+        """Exports the shape/function/stage data to a yaml file so it can be
+        imported from the GUI.
 
-        It can be used to create shapes from a script, dump it to a file,
-        and then import it from the GUI.
+        It can be used to create shapes, functions, and stages from a script,
+        dump it to a file, and then import it from the GUI.
 
-        :param filename: The filename to save to (should end with with .yaml or
+        :param filename: The filename to save to (should end with .yaml or
             .yml for ease of use).
         :param shape_factory: The :class:`~ceed.shape.CeedPaintCanvasBehavior`
             containing the shapes that will be dumped to the file.
+        :param function_factory: The :class:`~ceed.function.FunctionFactoryBase`
+            containing the functions that will be dumped to the file.
+        :param stage_factory: The :class:`~ceed.stage.StageFactoryBase`
+            containing the stages that will be dumped to the file.
         :param overwrite: Whether to overwrite the file if it exists.
 
         E.g.::
@@ -649,8 +656,11 @@ class CeedDataWriterBase(EventDispatcher):
             shape_factory.add_shape(circle)
             CeedDataWriterBase.save_shapes_to_yaml(filename, shape_factory)
         """
-        shapes = shape_factory.get_state()
-        data = {'shape': shapes, 'function': [], 'stage': []}
+        shapes = [] if shape_factory is None else shape_factory.get_state()
+        funcs = [] if function_factory is None else \
+            function_factory.save_functions()
+        stages = [] if stage_factory is None else stage_factory.save_stages()
+        data = {'shape': shapes, 'function': funcs, 'stage': stages}
 
         if exists(filename) and not overwrite:
             raise ValueError('{} already exists'.format(filename))
