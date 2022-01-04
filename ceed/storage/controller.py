@@ -44,7 +44,7 @@ from queue import Queue, Empty
 import numpy as np
 from functools import partial, wraps
 import struct
-from typing import Generator, Dict, List, Union
+from typing import Generator, Dict, List, Union, Optional
 import re
 import time
 from tree_config import get_config_children_names
@@ -190,6 +190,15 @@ class CeedDataWriterBase(EventDispatcher):
         if (not os.environ.get('KIVY_DOC_INCLUDE', None) and
                 self.backup_interval):
             self.backup_event = Clock.schedule_interval(
+                partial(self.write_changes, scheduled=True),
+                self.backup_interval)
+            self.fbind('backup_interval', self._rebind_interval)
+
+    def _rebind_interval(self, *largs):
+        if self.backup_event is None:
+            return
+        self.backup_event.cancel()
+        self.backup_event = Clock.schedule_interval(
                 partial(self.write_changes, scheduled=True),
                 self.backup_interval)
 
