@@ -627,7 +627,7 @@ from kivy.graphics import Color, Canvas
 
 from ceed.function import CeedFunc, FuncDoneException, CeedFuncRef, \
     FunctionFactoryBase, FuncBase, CeedFuncOrRefInstance
-from ceed.utils import fix_name, update_key_if_other_key, CeedWithID
+from ceed.utils import update_key_if_other_key, CeedWithID, UniqueNames
 from ceed.shape import CeedShapeGroup, CeedPaintCanvasBehavior, CeedShape
 
 __all__ = (
@@ -738,6 +738,11 @@ class StageFactoryBase(EventDispatcher):
         {'Stage': <ceed.stage.CeedStage at 0x1da866f00b8>}
     '''
 
+    unique_names: UniqueNames = None
+    """A set that tracks existing stage names to help us ensure all global
+    stages have unique names.
+    """
+
     function_factory: FunctionFactoryBase = None
     """The :class:`~ceed.function.FunctionFactoryBase` instance that contains
     or is associated with all the functions used in the stages.
@@ -775,6 +780,7 @@ class StageFactoryBase(EventDispatcher):
         self.stages_cls = {}
         self.stages_inst_default = {}
         self._stage_ref = defaultdict(int)
+        self.unique_names = UniqueNames()
         self.plugin_sources = {}
 
     def on_changed(self, *largs, **kwargs):
@@ -853,7 +859,8 @@ class StageFactoryBase(EventDispatcher):
             shape_factory=self.shape_factory) if instance is None else instance
         if s.stage_factory is not self:
             raise ValueError('Instance stage factory is set incorrectly')
-        s.name = fix_name(s.name, self.stage_names)
+        s.name = self.unique_names.fix_name(s.name)
+        self.unique_names.add(s.name)
 
         self.stage_names[s.name] = s
         self.stages_inst_default[s.name] = s
@@ -965,11 +972,12 @@ class StageFactoryBase(EventDispatcher):
         if stage.stage_factory is not self:
             raise ValueError('stage factory is incorrect')
 
-        names = set(self.stage_names.keys())
-        if not allow_last_experiment:
-            names.add(last_experiment_stage_name)
+        if not allow_last_experiment and \
+                stage.name == last_experiment_stage_name:
+            stage.name += '_'
 
-        stage.name = fix_name(stage.name, names)
+        stage.name = self.unique_names.fix_name(stage.name)
+        self.unique_names.add(stage.name)
         stage.fbind('name', self._change_stage_name, stage)
 
         self.stages.append(stage)
@@ -996,6 +1004,7 @@ class StageFactoryBase(EventDispatcher):
             return False
 
         stage.funbind('name', self._change_stage_name, stage)
+        self.unique_names.remove(stage.name)
 
         # we cannot remove by equality check (maybe?)
         for i, s in enumerate(self.stages):
@@ -1053,22 +1062,24 @@ class StageFactoryBase(EventDispatcher):
                     return
 
                 del self.stage_names[name]
+                self.unique_names.remove(name)
                 # only one change at a time happens because of binding
                 break
         else:
             raise ValueError(
                 '{} has not been added to the stage'.format(stage))
 
-        new_name = fix_name(
-            stage.name,
-            list(self.stage_names.keys()) + [last_experiment_stage_name])
+        name = stage.name
+        if name == last_experiment_stage_name:
+            name += '_'
+
+        new_name = self.unique_names.fix_name(name)
+        self.unique_names.add(new_name)
         self.stage_names[new_name] = stage
         stage.name = new_name
 
         if not new_name:
-            stage.name = fix_name(
-                'name',
-                list(self.stage_names.keys()) + [last_experiment_stage_name])
+            stage.name = 'stage'
         self.dispatch('on_changed')
 
     def save_stages(self) -> List[dict]:

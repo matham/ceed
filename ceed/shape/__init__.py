@@ -129,7 +129,7 @@ from kivy_garden.collider import Collide2DPoly, CollideEllipse
 from kivy_garden.painter import PaintCanvasBehavior, PaintCircle,\
     PaintEllipse, PaintPolygon, PaintFreeformPolygon
 
-from ceed.utils import fix_name
+from ceed.utils import UniqueNames
 
 __all__ = (
     'CeedPaintCanvasBehavior', 'CeedShape', 'CeedShapeGroup',
@@ -185,15 +185,24 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
     and the corresponding value is the :class:`CeedShapeGroup` instance.
     '''
 
+    unique_names: UniqueNames = None
+    """A set that tracks existing shape/group names to help us ensure all
+    shapes/groups have unique names.
+    """
+
     __events__ = ('on_remove_shape', 'on_remove_group', 'on_changed')
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.unique_names = UniqueNames()
 
     def add_shape(self, shape: 'CeedShape'):
         if not super(CeedPaintCanvasBehavior, self).add_shape(shape):
             return False
 
         # make sure the name is unique
-        name = fix_name(
-            shape.name, self.shape_names, self.shape_group_names)
+        name = self.unique_names.fix_name(shape.name)
+        self.unique_names.add(name)
         self.shape_names[name] = shape
         shape.name = name
         shape.fbind('name', self._change_shape_name)
@@ -205,6 +214,7 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
             return False
 
         shape.funbind('name', self._change_shape_name)
+        self.unique_names.remove(shape.name)
         self.remove_shape_from_groups(shape)
         del self.shape_names[shape.name]
         self.dispatch('on_remove_shape', shape)
@@ -269,8 +279,8 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
             group = CeedShapeGroup(paint_widget=self)
         self.groups.append(group)
 
-        name = fix_name(
-            group.name, self.shape_names, self.shape_group_names)
+        name = self.unique_names.fix_name(group.name)
+        self.unique_names.add(name)
         self.shape_group_names[name] = group
         group.name = name
         group.fbind('name', self._change_shape_name)
@@ -290,6 +300,7 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
             True if the group was removed, False otherwise.
         """
         group.funbind('name', self._change_shape_name)
+        self.unique_names.remove(group.name)
         del self.shape_group_names[group.name]
         self.groups.remove(group)
         self.dispatch('on_remove_group', group)
@@ -420,19 +431,20 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
                     return name
 
                 del container[name]
+                self.unique_names.remove(name)
                 # only one change at a time happens because of binding
                 break
         else:
             raise ValueError(
                 '{} has not been added to the factory'.format(shape))
 
-        new_name = fix_name(new_name, self.shape_names, self.shape_group_names)
+        new_name = self.unique_names.fix_name(new_name)
+        self.unique_names.add(new_name)
         container[new_name] = shape
         shape.name = new_name
 
         if not new_name:
-            shape.name = fix_name(
-                'name', self.shape_names, self.shape_group_names)
+            shape.name = 'shape'
         self.dispatch('on_changed')
 
 

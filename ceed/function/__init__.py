@@ -683,7 +683,7 @@ from kivy.event import EventDispatcher
 from kivy.properties import StringProperty, NumericProperty, BooleanProperty, \
     ObjectProperty, DictProperty, AliasProperty
 
-from ceed.utils import fix_name, update_key_if_other_key, CeedWithID
+from ceed.utils import update_key_if_other_key, CeedWithID, UniqueNames
 from ceed.function.param_noise import ParameterNoiseFactory, NoiseBase
 
 __all__ = (
@@ -796,6 +796,11 @@ class FunctionFactoryBase(EventDispatcher):
          'Cos': <ceed.function.plugin.CosFunc at 0x1da866f0ac8>}
     '''
 
+    unique_names: UniqueNames = None
+    """A set that tracks existing function names to help us ensure all global
+    functions have unique names.
+    """
+
     param_noise_factory: ParameterNoiseFactory = None
     """An automatically created instance of
     :class:`ceed.function.param_noise.ParameterNoiseFactory` that is used to
@@ -826,6 +831,7 @@ class FunctionFactoryBase(EventDispatcher):
         self.funcs_inst_default = {}
         self.plugin_sources = {}
         self._ref_funcs = defaultdict(int)
+        self.unique_names = UniqueNames()
         self.param_noise_factory = ParameterNoiseFactory()
 
     def on_changed(self, *largs, **kwargs):
@@ -899,7 +905,8 @@ class FunctionFactoryBase(EventDispatcher):
         f = cls(function_factory=self) if instance is None else instance
         if f.function_factory is not self:
             raise ValueError('Instance function factory is set incorrectly')
-        f.name = fix_name(f.name, self.funcs_inst)
+        f.name = self.unique_names.fix_name(f.name)
+        self.unique_names.add(f.name)
 
         self.funcs_inst[f.name] = f
         self.funcs_inst_default[f.name] = f
@@ -960,7 +967,8 @@ class FunctionFactoryBase(EventDispatcher):
             `func`: a :class:`FuncBase` derived instance.
                 The function to add.
         """
-        func.name = fix_name(func.name, self.funcs_inst)
+        func.name = self.unique_names.fix_name(func.name)
+        self.unique_names.add(func.name)
 
         func.fbind('name', self._track_func_name, func)
         self.funcs_inst[func.name] = func
@@ -989,6 +997,7 @@ class FunctionFactoryBase(EventDispatcher):
             return False
 
         func.funbind('name', self._track_func_name, func)
+        self.unique_names.remove(func.name)
 
         # we cannot remove by equality check (maybe?)
         for i, f in enumerate(self.funcs_user):
@@ -1013,15 +1022,20 @@ class FunctionFactoryBase(EventDispatcher):
                     return
 
                 del self.funcs_inst[name]
+                self.unique_names.remove(name)
                 # only one change at a time happens because of binding
                 break
         else:
             raise ValueError(
                 '{} has not been added to the factory'.format(func))
 
-        new_name = fix_name(func.name, self.funcs_inst)
+        new_name = self.unique_names.fix_name(func.name)
+        self.unique_names.add(new_name)
         self.funcs_inst[new_name] = func
         func.name = new_name
+
+        if not new_name:
+            func.name = 'func'
         self.dispatch('on_changed')
 
     def clear_added_funcs(self, force=False):
@@ -1148,7 +1162,7 @@ class FuncBase(EventDispatcher, CeedWithID):
             key in the :meth:`get_state` dict) of this instance is changed.
     """
 
-    name = StringProperty('Abstract')
+    name: str = StringProperty('Abstract')
     '''The name of the function instance. The name must be unique within a
     :attr:`FunctionFactoryBase` once it is added
     (:meth:`FunctionFactoryBase.add_func`) to the

@@ -20,7 +20,6 @@ from kivy.lang import Builder
 from base_kivy_app.graphics import FlatTextInput
 from kivy_garden.drag_n_drop import DraggableLayoutBehavior
 
-from ceed.utils import fix_name
 from ceed.graphics import WidgetList, ShowMoreSelection, ShowMoreBehavior
 from ceed.function import CeedFuncRef, FuncBase, FuncGroup, FunctionFactoryBase
 from ceed.function.param_noise import NoiseBase, ParameterNoiseFactory
@@ -617,7 +616,7 @@ class FuncPropTextWidget(FlatTextInput):
         self.text = '{}'.format(getattr(self.func, self.prop_name))
 
     def _update_attr(self, text):
-        """Updates the :attr:`func` property property being tracked whenever
+        """Updates the :attr:`func` property being tracked whenever
         the GUI changes.
         """
         if not text:
@@ -640,8 +639,7 @@ class FuncNamePropTextWidget(FuncPropTextWidget):
             return
 
         if text != self.func.name:
-            self.func.name = fix_name(
-                text, _get_app().function_factory.funcs_inst)
+            self.func.name = text
 
 
 class TrackOptionsSpinner(Factory.SizedCeedFlatSpinner):

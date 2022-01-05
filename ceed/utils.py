@@ -6,58 +6,14 @@ Various tools used in :mod:`ceed`.
 import re
 import pathlib
 from collections import deque
-from typing import List, Tuple, Any, Union
+from typing import List, Tuple, Any, Union, Dict
 
 __all__ = (
-    'fix_name', 'update_key_if_other_key', 'collapse_list_to_counts',
-    'get_plugin_modules', 'CeedWithID',
+    'update_key_if_other_key', 'collapse_list_to_counts', 'get_plugin_modules',
+    'CeedWithID', 'UniqueNames',
 )
 
 _name_pat = re.compile('^(.+)-([0-9]+)$')
-
-
-def fix_name(name, *names):
-    """Fixes the name so that it is unique among the names in ``names``.
-
-    :Params:
-
-        `name`: str
-            A name of something
-        `*names`: iterables of strings
-            Positional argument, where each is a iterable of strings among
-            which we ensure that the returned name is unique.
-
-    :returns:
-
-        A string that is unique among all the ``names``, but is similar to
-        ``name``. We append a integer to make it unique.
-
-    E.g.::
-
-        >>> fix_name('troll', ['toll', 'foll'], ['bole', 'cole'])
-        'troll'
-        >>> fix_name('troll', ['troll', 'toll', 'foll'], ['bole', 'cole'])
-        'troll-2'
-        >>> fix_name('troll', ['troll-2', 'toll', 'foll'], ['bole', 'cole'])
-        'troll'
-        >>> fix_name('troll', ['troll', 'troll-2', 'toll', 'foll'], \
-['bole', 'cole'])
-        'troll-3'
-    """
-    if not any((name in n for n in names)):
-        return name
-
-    m = re.match(_name_pat, name)
-    i = 2
-    if m is not None:
-        name, i = m.groups()
-        i = int(i)
-
-    new_name = '{}-{}'.format(name, i)
-    while any((new_name in n for n in names)):
-        i += 1
-        new_name = '{}-{}'.format(name, i)
-    return new_name
 
 
 def update_key_if_other_key(items, key, value, other_key, key_map):
@@ -184,3 +140,106 @@ class CeedWithID:
         """
         self.ceed_id = min_available
         return min_available + 1
+
+
+class UniqueNames(set):
+    r"""A set of names, that helps ensure no names in the set is duplicated.
+
+    It provides a :meth:`fix_name` method that fixes the name, given some input
+    such that the returned name will not be in the set.
+
+    E.g.:
+
+    .. code-block:: python
+
+        >>> names = UniqueNames()
+        >>> names.fix_name('floor')
+        'floor'
+        >>> names.add('floor')
+        >>> names.fix_name('floor')
+        'floor-1'
+        >>> names.add('floor-1')
+        >>> names.fix_name('floor')
+        'floor-2'
+        >>> names.fix_name('floor-1')
+        'floor-2'
+        >>> names.fix_name('floor-0')
+        'floor-0'
+        >>> names.remove('floor')
+        >>> names.fix_name('floor')
+        'floor'
+        >>> names.fix_name('floor-1')
+        'floor-2'
+        >>> names.add('floor-1')
+        Traceback (most recent call last):
+          File "<ipython-input-14-b43fff249a6b>", line 1, in <module>
+            names.add('floor-1')
+          File "G:\Python\libs\ceed\ceed\utils.py", line 202, in add
+            >>> names.add('floor')
+        ValueError: Tried to add floor-1, but it is already in the set
+    """
+
+    prefix_count: Dict[str, List[int]] = {}
+
+    name_num_pat = re.compile('^(.*?)(-[0-9]+)?$')
+
+    def __init__(self, *args, **kwargs):
+        set.__init__(self, *args, **kwargs)
+        prefix_count = self.prefix_count = {}
+
+        pat = self.name_num_pat
+        for item in self:
+            base, n = re.match(pat, item).groups()
+            if n is None:
+                n = 0
+            else:
+                n = int(n[1:])
+
+            prefix_count[base] = [1, n + 1]
+
+    def add(self, element: str) -> None:
+        if element in self:
+            raise ValueError(
+                f'Tried to add {element}, but it is already in the set')
+        set.add(self, element)
+
+        prefix_count = self.prefix_count
+        base, n = re.match(self.name_num_pat, element).groups()
+        if n is None:
+            n = 0
+        else:
+            n = int(n[1:])
+
+        if base not in prefix_count:
+            prefix_count[base] = [1, n + 1]
+        else:
+            count = prefix_count[base]
+            count[0] += 1
+            count[1] = max(count[1], n + 1)
+
+    def fix_name(self, name: str) -> str:
+        """If the name is already in the set, it returns a new name so that is
+        not in the set. Otherwise, it returns the original name.
+
+        :param name: The name to check if it already exists in the set.
+        :return: The original or fixed name, such that it is not in the set.
+        """
+        if name not in self:
+            return name
+
+        base, _ = re.match(self.name_num_pat, name).groups()
+        return f'{base}-{self.prefix_count[base][1]}'
+
+    def remove(self, element: str) -> None:
+        set.remove(self, element)
+
+        base, _ = re.match(self.name_num_pat, element).groups()
+        count = self.prefix_count[base]
+        count[0] -= 1
+        if not count[0]:
+            del self.prefix_count[base]
+
+    def clear(self) -> None:
+        set.clear(self)
+
+        self.prefix_count = {}
