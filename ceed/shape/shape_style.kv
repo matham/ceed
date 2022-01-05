@@ -88,8 +88,7 @@
                 size_hint_y: None
                 height: shapes_label.texture_size[1]
                 BoxLayout:
-                    size_hint_x: None
-                    width: self.minimum_width
+                    size_hint_min_x: self.minimum_width
                     orientation: 'horizontal'
                     FlatImageButton:
                         test_name: 'add group'
@@ -99,7 +98,7 @@
                         on_release: app.shape_factory.add_group().widget.expand_widget.state = 'down'
                     FlatLabel:
                         id: shapes_label
-                        text: 'Shapes'
+                        text: '{} Shapes / {} Groups'.format(len(app.shape_factory.shapes), len(app.shape_factory.groups)) if app.shape_factory is not None else 'Shapes'
                         width: self.texture_size[0]
                         size_hint_x: None
                         padding: '5dp', '5dp'

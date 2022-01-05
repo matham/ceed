@@ -64,7 +64,8 @@ the resulting shapes may not be valid:
     group.add_shape(polygon)
 
     # save it to disk for import later
-    CeedDataWriterBase.save_shapes_to_yaml(filename, shape_factory)
+    CeedDataWriterBase.save_config_to_yaml(
+        filename, shape_factory=shape_factory)
 
 You can also create the shapes by type name using
 :meth:`~kivy_garden.painter.PaintCanvasBehavior.create_shape`:
@@ -98,7 +99,17 @@ You can also create the shapes by type name using
     group.add_shape(polygon)
 
     # save it to disk for import later
-    CeedDataWriterBase.save_shapes_to_yaml(filename, shape_factory)
+    CeedDataWriterBase.save_config_to_yaml(
+        filename, shape_factory=shape_factory)
+
+See :meth:`~ceed.storage.controller.CeedDataWriterBase.\
+add_frame.save_config_to_yaml`
+for a full example with functions/stages.
+
+If you need to create many shapes or groups and importing them in the Ceed GUI
+is slow, consider setting its :attr:`~CeedShape.no_display` or
+:attr:`~CeedShapeGroup.no_display` to True. E.g.
+``CeedPaintEllipse.create_shape(..., no_display=True)``.
 
 The ProPixx projector used by Ceed has a resolution of 1920x108, so that should
 be the maximum extent of the shapes. The exact available drawing area can also
@@ -333,7 +344,8 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
         """
         d = {
             'shapes': [s.get_state() for s in self.shapes],
-            'groups': [{'name': g.name, 'shapes': [s.name for s in g.shapes]}
+            'groups': [{'name': g.name, 'shapes': [s.name for s in g.shapes],
+                        'no_display': g.no_display}
                        for g in self.groups],
         }
         return d
@@ -369,7 +381,9 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
             self.create_shape_from_state(s, old_name_map)
 
         for group_state in state['groups']:
-            group = CeedShapeGroup(paint_widget=self, name=group_state['name'])
+            group = CeedShapeGroup(
+                paint_widget=self, name=group_state['name'],
+                no_display=group_state.get('no_display', False))
             if group_state['name']:
                 old_name_map[group_state['name']] = group
             self.add_group(group)
@@ -432,6 +446,18 @@ class CeedShape:
     """A unique name associated with the shape.
     """
 
+    no_display: bool = BooleanProperty(False)
+    """If set to True, the shape will not be displayed in the GUI, but it
+    will still work like normal shapes during an experiment if it's in a stage.
+
+    Not displaying the shape can make the stage/function/shape config load
+    faster when importing from e.g. a yaml file because we don't have to
+    display it in the GUI. However, the shapes won't be able to be added to
+    a stage through the GUI, so you'd need to add it to the stage in the same
+    script that generates the shapes. Or, add them to groups and leave the
+    groups visible so it can be dragged to the stage.
+    """
+
     _collider = None
 
     _area = None
@@ -465,12 +491,14 @@ class CeedShape:
     def get_state(self, state=None):
         d = super(CeedShape, self).get_state(state)
         d['name'] = self.name
+        d['no_display'] = self.no_display
         return d
 
     def set_state(self, state):
         state = dict(state)
         state.pop('cls', None)
-        self.name = state.pop('name')
+        self.name = state.pop('name', 'Shape')
+        self.no_display = state.pop('no_display', False)
         return super(CeedShape, self).set_state(state)
 
     def _get_collider(self, size):
@@ -567,6 +595,10 @@ class CeedShapeGroup(EventDispatcher):
     name: str = StringProperty('Group')
     '''The unique name of the group. Similar to :attr:`CeedShape.name`.
     '''
+
+    no_display: bool = BooleanProperty(False)
+    """Same as :attr:`CeedShape.no_display`, but for this group.
+    """
 
     shapes: List[CeedShape] = []
     '''A list that contains the :class:`CeedShape` instances that are part of

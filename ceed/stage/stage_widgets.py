@@ -502,9 +502,11 @@ class StageWidget(ShowMoreBehavior, BoxLayout):
             display.initialize_display(func, stage, selection_controller)
 
         for shape in stage.shapes:
-            shape_widget = StageShapeDisplay()
-            shape_widget.initialize_display(shape, self.selection_controller)
-            self.shape_widget.add_widget(shape_widget)
+            if not shape.shape.no_display:
+                shape_widget = StageShapeDisplay()
+                shape_widget.initialize_display(
+                    shape, self.selection_controller)
+                self.shape_widget.add_widget(shape_widget)
 
     def remove_stage_from_factory_no_ref(self):
         """Removes the stage from the :attr:`stage_factory` and GUI.

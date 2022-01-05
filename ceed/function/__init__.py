@@ -630,6 +630,16 @@ Functions can be manually copied with :meth:`FuncBase.get_state` and
 :meth:`FuncBase.set_state` (although :meth:`FunctionFactoryBase.make_func` is
 more appropriate for end-user creation).
 
+Create function in script
+-------------------------
+
+A function and stages/shapes can be created in a script,
+saved to a yaml file, and then imported from the GUI ready to be
+used in an experiment. See
+:meth:`~ceed.storage.controller.CeedDataWriterBase.\
+add_frame.save_config_to_yaml`
+for an example.
+
 Custom plugin function example
 ------------------------------
 
@@ -2443,7 +2453,7 @@ def register_external_functions(
     See :func:`~ceed.function.plugin.get_plugin_functions`
     for how to make your plugin functions and distributions discoverable.
 
-    Plugin source code files are copied to the data file when a a data file is
+    Plugin source code files are copied to the data file when a data file is
     created. However, it doesn't copy all files (i.e. it ignores non-python
     files) so it should be independently tracked for each experiment.
 

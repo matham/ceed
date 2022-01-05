@@ -119,9 +119,16 @@ Ceed from the GUI and it'll contain these shapes.
     group.add_shape(polygon)
 
     # save it to disk for import later
-    CeedDataWriterBase.save_shapes_to_yaml(filename, shape_factory)
+    CeedDataWriterBase.save_config_to_yaml(
+        filename, shape_factory=shape_factory)
 
 :download:`Generated Ceed config <../media/guide/shapes.yml>`
+
+See ``CeedDataWriterBase.save_config_to_yaml`` for a full example.
+
+If you need to create many shapes or shape groups and importing them in the
+Ceed GUI is slow, consider setting its ``no_display`` to True. E.g.
+``CeedPaintEllipse.create_shape(..., no_display=True)``.
 
 The ProPixx projector used by Ceed has a resolution of 1920x108, so that should
 be the maximum extent of the shapes. The exact available drawing area can

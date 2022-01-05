@@ -537,6 +537,16 @@ Stages can be manually copied with :meth:`CeedStage.get_state` and
 :meth:`CeedStage.set_state` (although :meth:`StageFactoryBase.make_stage` is
 more appropriate for end-user creation).
 
+Create stage in script
+----------------------
+
+A stage complete with functions and shapes can be created in a script,
+saved to a yaml file, and then imported from the GUI ready to be
+used in an experiment. See
+:meth:`~ceed.storage.controller.CeedDataWriterBase.\
+add_frame.save_config_to_yaml`
+for an example.
+
 Custom plugin stage example
 ---------------------------
 

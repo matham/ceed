@@ -14,23 +14,29 @@ pytestmark = pytest.mark.ceed_app
 @pytest.mark.parametrize(
     "shape_cls",
     [PolygonShapeP1, CircleShapeP1, EllipseShapeP1, FreeformPolygonShapeP1])
-async def test_simple_shape(ceed_app: CeedTestApp, shape_cls):
+@pytest.mark.parametrize('no_display', [True, False])
+async def test_simple_shape(ceed_app: CeedTestApp, shape_cls, no_display):
     painter = ceed_app.app.shape_factory
     assert ceed_app.app.shape_factory == painter
     assert not ceed_app.app.shape_factory.shapes
 
-    shape = shape_cls(ceed_app, painter)
+    shape = shape_cls(ceed_app, painter, no_display=no_display)
     await ceed_app.wait_clock_frames(2)
 
     assert shape.shape in ceed_app.app.shape_factory.shapes
     assert shape.shape.name == shape.name
-    shape.check_shape_visible(True)
+    if no_display:
+        assert shape.shape.widget is None
+    else:
+        assert shape.shape.widget is not None
+    shape.check_shape_visible(not no_display)
 
     shape.remove()
     await ceed_app.wait_clock_frames(2)
 
     assert shape.shape not in ceed_app.app.shape_factory.shapes
     assert not ceed_app.app.shape_factory.shapes
+    assert shape.shape.widget is None
     shape.check_shape_visible(False)
 
     painter.add_shape(shape.shape)

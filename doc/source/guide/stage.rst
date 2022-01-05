@@ -146,6 +146,14 @@ Then the shape will be kept dark at all times.
 
 :download:`Ceed config of the video <../media/guide/stage_donut.yml>`
 
+Create stage in script
+----------------------
+
+A stage complete with functions and shapes can be created in a script,
+saved to a yaml file, and then imported from the GUI ready to be
+used in an experiment. See the ``CeedDataWriterBase.save_config_to_yaml``
+method for an example.
+
 Stage plugin
 ------------
 

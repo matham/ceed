@@ -74,34 +74,40 @@ class CeedPainter(CeedPaintCanvasBehavior, Widget):
 
     def add_shape(self, shape):
         if super(CeedPainter, self).add_shape(shape):
-            shape.add_shape_to_canvas(self)
-            widget = shape.widget = WidgetShape(painter=self, shape=shape)
-            widget.show_widget()
-            shape.fbind('on_update', App.get_running_app().changed_callback)
+            if not shape.no_display:
+                shape.add_shape_to_canvas(self)
+                shape.widget = widget = WidgetShape(painter=self, shape=shape)
+                widget.show_widget()
+                shape.fbind('on_update', App.get_running_app().changed_callback)
             return True
         return False
 
     def remove_shape(self, shape):
         if super(CeedPainter, self).remove_shape(shape):
-            shape.remove_shape_from_canvas()
-            shape.widget.hide_widget()
-            shape.widget = None
-            shape.funbind('on_update', App.get_running_app().changed_callback)
+            if not shape.no_display:
+                shape.remove_shape_from_canvas()
+                shape.widget.hide_widget()
+                shape.widget = None
+                shape.funbind(
+                    'on_update', App.get_running_app().changed_callback)
             return True
         return False
 
     def add_group(self, group=None):
         group = super(CeedPainter, self).add_group(group)
-        widget = group.widget = WidgetShapeGroup(group=group)
-        widget.show_widget()
-        group.fbind('on_changed', App.get_running_app().changed_callback)
+        if not group.no_display:
+            widget = group.widget = WidgetShapeGroup(group=group)
+            widget.show_widget()
+            group.fbind('on_changed', App.get_running_app().changed_callback)
         return group
 
     def remove_group(self, group):
         if super(CeedPainter, self).remove_group(group):
-            group.widget.hide_widget()
-            group.widget = None
-            group.funbind('on_changed', App.get_running_app().changed_callback)
+            if not group.no_display:
+                group.widget.hide_widget()
+                group.widget = None
+                group.funbind(
+                    'on_changed', App.get_running_app().changed_callback)
             return True
         return False
 

@@ -159,6 +159,14 @@ The stages and preview graph are explained in the :ref:`stage guide <stage-guide
 Children of function groups (recursively) inherit their timebase from their parents,
 if it's not explicitly overwritten by the child.
 
+Create function in script
+-------------------------
+
+Functions and stages/shapes can be created in a script,
+saved to a yaml file, and then imported from the GUI ready to be
+used in an experiment. See the ``CeedDataWriterBase.save_config_to_yaml``
+method for an example.
+
 Function plugin
 ---------------
 

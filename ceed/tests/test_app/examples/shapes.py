@@ -76,6 +76,8 @@ class Shape:
 
     shape: Union[CeedShape, PaintShape] = None
 
+    no_display = False
+
     drag_point = None
 
     test_points = []
@@ -94,10 +96,13 @@ class Shape:
 
     inside_point = None
 
-    def __init__(self, app, painter, show_in_gui=True, create_add_shape=False):
+    def __init__(
+            self, app, painter, show_in_gui=True, create_add_shape=False,
+            no_display=False):
         super(Shape, self).__init__()
         self.painter = painter
         self.app = app
+        self.no_display = no_display
 
         if show_in_gui:
             self.show_in_gui()
@@ -114,7 +119,8 @@ class Shape:
 
     def show_in_gui(self):
         self.create_add_shape()
-        self.shape.add_shape_to_canvas(self.painter)
+        if not self.no_display:
+            self.shape.add_shape_to_canvas(self.painter)
 
     def remove(self):
         self.painter.remove_shape(self.shape)
@@ -198,7 +204,8 @@ class CircleShape(Shape):
 
     def make_shape(self):
         self.shape = self.painter.create_shape(
-            'circle', center=self.center, radius=self.radius, name=self.name)
+            'circle', center=self.center, radius=self.radius, name=self.name,
+            no_display=self.no_display)
         return self.shape
 
     async def draw(self):
@@ -251,7 +258,7 @@ class EllipseShape(Shape):
     def make_shape(self):
         self.shape = self.painter.create_shape(
             'ellipse', center=self.center, radius_x=self.radius_x,
-            radius_y=self.radius_y, name=self.name)
+            radius_y=self.radius_y, name=self.name, no_display=self.no_display)
         return self.shape
 
     async def draw(self):
@@ -308,7 +315,7 @@ class PolygonShape(Shape):
     def make_shape(self):
         self.shape = self.painter.create_shape(
             'polygon', points=self.points, selection_point=self.points[:2],
-            name=self.name)
+            name=self.name, no_display=self.no_display)
         return self.shape
 
     async def draw(self):
@@ -366,7 +373,7 @@ class FreeofrmPolygonShape(PolygonShape):
     def make_shape(self):
         self.shape = self.painter.create_shape(
             'freeform', points=self.points, selection_point=self.points[:2],
-            name=self.name)
+            name=self.name, no_display=self.no_display)
         return self.shape
 
     async def draw(self):

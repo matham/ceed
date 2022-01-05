@@ -650,11 +650,41 @@ class CeedDataWriterBase(EventDispatcher):
         E.g.::
 
             from ceed.shape import CeedPaintCanvasBehavior, CeedPaintCircle
+            from ceed.function import FunctionFactoryBase,
+                register_all_functions
+            from ceed.stage import StageFactoryBase, register_all_stages
+            from ceed.storage.controller import CeedDataWriterBase
 
             shape_factory = CeedPaintCanvasBehavior()
-            circle = CeedPaintCircle.create_shape(center=(700, 300), radius=200)
+            function_factory = FunctionFactoryBase()
+            stage_factory = StageFactoryBase(
+                function_factory=function_factory, shape_factory=shape_factory)
+            register_all_functions(function_factory)
+            register_all_stages(stage_factory)
+
+            stage_cls = stage_factory.get('CeedStage')
+            stage = stage_cls(
+                function_factory=function_factory, stage_factory=stage_factory,
+                shape_factory=shape_factory, name='best stage')
+            stage_factory.add_stage(stage)
+
+            circle = CeedPaintCircle.create_shape(
+                center=(700, 300), radius=200, name='circle')
             shape_factory.add_shape(circle)
-            CeedDataWriterBase.save_shapes_to_yaml(filename, shape_factory)
+            stage.add_shape(circle)
+
+            func_cls = function_factory.get('ConstFunc')
+            func = func_cls(
+                function_factory=function_factory, name='stable', duration=1,
+                a=0.5)
+            stage.add_func(func)
+
+            CeedDataWriterBase.save_config_to_yaml(
+                'config.yml', shape_factory=shape_factory,
+                function_factory=function_factory, stage_factory=stage_factory)
+
+        See the example scripts directory or the docs for a complete and worked
+        example.
         """
         shapes = [] if shape_factory is None else shape_factory.get_state()
         funcs = [] if function_factory is None else \

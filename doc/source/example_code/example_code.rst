@@ -1,7 +1,7 @@
 .. _example-analysis:
 
 ########################
-  Example Analysis Code
+  Example Code
 ########################
 
 The following examples can also be found in the
@@ -9,6 +9,8 @@ The following examples can also be found in the
 
 .. toctree::
    :maxdepth: 2
+
+   generate_stage_yaml.rst
 
    merge_ceed_with_mcs_data.rst
    read_merged_data.rst
