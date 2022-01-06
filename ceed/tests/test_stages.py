@@ -350,7 +350,7 @@ def test_shape_add_remove(stage_factory: StageFactoryBase):
     assert stage_factory.test_changes_count
 
     # remove same shape again
-    with pytest.raises(ValueError):
+    with pytest.raises((ValueError, KeyError)):
         stage_factory.remove_stage(stage)
 
 
