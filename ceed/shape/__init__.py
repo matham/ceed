@@ -204,7 +204,7 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
         self.fbind('on_changed', self._reset_cached_state)
         self._reset_cached_state()
 
-    def _reset_cached_state(self, *args):
+    def _reset_cached_state(self, *args, **kwargs):
         self._cached_state = None
 
     def add_shape(self, shape: 'CeedShape'):
@@ -435,7 +435,7 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
     def on_remove_group(self, group):
         pass
 
-    def on_changed(self, *largs):
+    def on_changed(self, *args, **kwargs):
         pass
 
     def _change_shape_name(self, shape: 'CeedShape', new_name):
@@ -532,10 +532,10 @@ class CeedShape:
         self.fbind('on_changed', self._reset_cached_state)
         self._reset_cached_state()
 
-    def _reset_cached_state(self, *args):
+    def _reset_cached_state(self, *args, **kwargs):
         self._cached_state = None
 
-    def on_changed(self, *args):
+    def on_changed(self, *args, **kwargs):
         pass
 
     def get_cached_state(self, use_cache=False) -> Dict:
@@ -690,7 +690,7 @@ class CeedShapeGroup(EventDispatcher):
         self.fbind('on_changed', self._reset_cached_state)
         self._reset_cached_state()
 
-    def _reset_cached_state(self, *args):
+    def _reset_cached_state(self, *args, **kwargs):
         self._cached_state = None
 
     def get_cached_state(self, use_cache=False) -> Dict:
@@ -720,7 +720,7 @@ class CeedShapeGroup(EventDispatcher):
             'no_display': self.no_display
         }
 
-    def on_changed(self, *args):
+    def on_changed(self, *args, **kwargs):
         pass
 
     def add_shape(self, shape: CeedShape):

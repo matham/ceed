@@ -788,7 +788,7 @@ class StageFactoryBase(EventDispatcher):
         self.fbind('on_changed', self._reset_cached_state)
         self._reset_cached_state()
 
-    def _reset_cached_state(self, *args):
+    def _reset_cached_state(self, *args, **kwargs):
         self._cached_state = None
 
     def on_changed(self, *largs, **kwargs):
@@ -1833,7 +1833,7 @@ class CeedStage(EventDispatcher, CeedWithID):
         self.fbind('on_changed', self._reset_cached_state)
         self._reset_cached_state()
 
-    def _reset_cached_state(self, *args):
+    def _reset_cached_state(self, *args, **kwargs):
         self._cached_state = None
 
     def __repr__(self):

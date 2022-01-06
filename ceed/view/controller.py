@@ -1371,7 +1371,7 @@ class ViewControllerBase(EventDispatcher):
 
         Clock.schedule_once(restore_state, -1)
 
-    def on_changed(self, *largs):
+    def on_changed(self, *largs, **kwargs):
         pass
 
     def request_process_data(self, data_type, data):

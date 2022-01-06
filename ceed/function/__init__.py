@@ -839,7 +839,7 @@ class FunctionFactoryBase(EventDispatcher):
         self.fbind('on_changed', self._reset_cached_state)
         self._reset_cached_state()
 
-    def _reset_cached_state(self, *args):
+    def _reset_cached_state(self, *args, **kwargs):
         self._cached_state = None
 
     def on_changed(self, *largs, **kwargs):
@@ -1444,7 +1444,7 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
         self.fbind('on_changed', self._reset_cached_state)
         self._reset_cached_state()
 
-    def _reset_cached_state(self, *args):
+    def _reset_cached_state(self, *args, **kwargs):
         self._cached_state = None
 
     def __call__(self, t: NumFraction) -> float:

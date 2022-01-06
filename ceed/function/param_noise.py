@@ -125,7 +125,7 @@ class NoiseBase(EventDispatcher):
                 continue
             self.fbind(prop, self.dispatch, 'on_changed')
 
-    def on_changed(self, *args):
+    def on_changed(self, *args, **kwargs):
         pass
 
     def sample(self) -> float:
