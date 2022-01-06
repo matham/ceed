@@ -93,3 +93,5 @@ ENV/
 
 .idea/
 ceed/examples/data/
+ceed/data/*.yaml
+ceed/data/*.ini
