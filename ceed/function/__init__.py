@@ -824,6 +824,8 @@ class FunctionFactoryBase(EventDispatcher):
     package. The second item in the tuple is the bytes content of the file.
     """
 
+    _cached_state = None
+
     def __init__(self, **kwargs):
         super(FunctionFactoryBase, self).__init__(**kwargs)
         self.funcs_cls = {}
@@ -833,6 +835,12 @@ class FunctionFactoryBase(EventDispatcher):
         self._ref_funcs = defaultdict(int)
         self.unique_names = UniqueNames()
         self.param_noise_factory = ParameterNoiseFactory()
+
+        self.fbind('on_changed', self._reset_cached_state)
+        self._reset_cached_state()
+
+    def _reset_cached_state(self, *args):
+        self._cached_state = None
 
     def on_changed(self, *largs, **kwargs):
         pass
@@ -973,6 +981,7 @@ class FunctionFactoryBase(EventDispatcher):
         func.fbind('name', self._track_func_name, func)
         self.funcs_inst[func.name] = func
         self.funcs_user.append(func)
+        func.fbind('on_changed', self.dispatch, 'on_changed')
 
         if func.function_factory is not self:
             raise ValueError('function factory is incorrect')
@@ -997,6 +1006,7 @@ class FunctionFactoryBase(EventDispatcher):
             return False
 
         func.funbind('name', self._track_func_name, func)
+        func.funbind('on_changed', self.dispatch, 'on_changed')
         self.unique_names.remove(func.name)
 
         # we cannot remove by equality check (maybe?)
@@ -1069,7 +1079,7 @@ class FunctionFactoryBase(EventDispatcher):
             re-instantiation of the function.
         :return: The function instance created.
         """
-        state = dict(state)
+        state = deepcopy(state)
         c = state.pop('cls')
         if c == 'CeedFuncRef':
             cls = CeedFuncRef
@@ -1087,16 +1097,23 @@ class FunctionFactoryBase(EventDispatcher):
             func.func.has_ref = True
         return func
 
-    def save_functions(self) -> List[dict]:
+    def save_functions(self, use_cache=False) -> List[dict]:
         """Returns a dict representation of all the functions added with
         :meth:`add_func`.
+
+        :param use_cache: If True, it'll get the state using the cache from
+            previous times the state was read and cached, if the cache exists.
 
         It is a list of dicts where each item is the
         :meth:`FuncBase.get_state` of the corresponding function in
         :attr:`user_funcs`.
         """
-        return [f.get_state(recurse=True, expand_ref=False)
-                for f in self.funcs_user]
+        if self._cached_state is not None and use_cache:
+            return self._cached_state
+
+        d = [f.get_cached_state(use_cache=use_cache) for f in self.funcs_user]
+        self._cached_state = d
+        return d
 
     def recover_funcs(self, function_states: List[dict]) -> \
             Tuple[List['FuncBase'], Dict[str, str]]:
@@ -1376,7 +1393,8 @@ class FuncBase(EventDispatcher, CeedWithID):
         >>> f = LinearFunc(function_factory=function_factory, duration=2, m=2)
         >>> UniformNoise = \
 function_factory.param_noise_factory.get_cls('UniformNoise')
-        >>> f.noisy_parameters['m'] = UniformNoise(min_val=10, max_val=20)
+        >>> f.set_parameter_noise(
+        ...     'm', noise_obj=UniformNoise(min_val=10, max_val=20))
         >>> f.m
         2
         >>> f.b
@@ -1404,6 +1422,8 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
     :meth:`init_func_tree`.
     """
 
+    _cached_state = None
+
     __events__ = ('on_changed', )
 
     def __init__(self, function_factory, **kwargs):
@@ -1411,6 +1431,8 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
         self.noisy_parameter_samples = {}
         super(FuncBase, self).__init__(**kwargs)
         for prop in self.get_state(recurse=False):
+            if prop in {'cls', 'ceed_id'}:
+                continue
             self.fbind(prop, self.dispatch, 'on_changed', prop)
 
         self.fbind('duration', self._update_duration_min)
@@ -1418,6 +1440,12 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
         self.fbind('loop', self._update_total_duration)
         self._update_duration_min()
         self._update_total_duration()
+
+        self.fbind('on_changed', self._reset_cached_state)
+        self._reset_cached_state()
+
+    def _reset_cached_state(self, *args):
+        self._cached_state = None
 
     def __call__(self, t: NumFraction) -> float:
         raise NotImplementedError
@@ -1436,7 +1464,7 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
             return 1.
         return self.timebase
 
-    def on_changed(self, *largs, **kwargs):
+    def on_changed(self, *args, **kwargs):
         pass
 
     def get_gui_props(self):
@@ -1534,6 +1562,22 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
         """
         return {'duration'}
 
+    def get_cached_state(self, use_cache=False) -> Dict:
+        """Like :meth:`get_state`, but it caches the result. And next time it
+        is called, if ``use_cache`` is True, the cached value will be returned,
+        unless the config changed in between. Helpful for backup so we don't
+        recompute the full state.
+
+        :param use_cache: If True, it'll get the state using the cache from
+            previous times the state was read and cached, if the cache exists.
+        :return: The state dict.
+        """
+        if self._cached_state is not None and use_cache:
+            return self._cached_state
+
+        self._cached_state = d = self.get_state(recurse=True, expand_ref=False)
+        return d
+
     def get_state(self, recurse=True, expand_ref=False) -> Dict:
         """Returns a dict representation of the function so that it can be
         reconstructed later with :meth:`apply_state`.
@@ -1625,14 +1669,15 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
         p = self._clone_props
         for k, v in state.items():
             if k == 'noisy_parameters':
-                noisy_parameters = {}
+                set_parameter_noise = self.set_parameter_noise
+                # clear it
+                for param in list(self.noisy_parameters.keys()):
+                    set_parameter_noise(param)
+
                 noise_factory = self.function_factory.param_noise_factory
-
                 for param, config in v.items():
-                    noisy_parameters[param] = noise_factory.make_instance(
-                        config)
-
-                self.noisy_parameters = noisy_parameters
+                    set_parameter_noise(
+                        param, noise_obj=noise_factory.make_instance(config))
             elif (clone or k not in p) and k != 'cls':
                 setattr(self, k, v)
 
@@ -1937,8 +1982,9 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
             ...     'UniformNoise')
             >>> # create function and add noise to parameters
             >>> f = LinearFunc(function_factory=function_factory)
-            >>> f.noisy_parameters['m'] = UniformNoise()
-            >>> f.noisy_parameters['b'] = UniformNoise(lock_after_forked=True)
+            >>> f.set_parameter_noise('m', noise_obj=UniformNoise())
+            >>> f.set_parameter_noise(
+            ...     'b' noise_obj=UniformNoise(lock_after_forked=True))
             >>> # now add it to factory and create references to it
             >>> function_factory.add_func(f)
             >>> ref1 = function_factory.get_func_ref(func=f)
@@ -1959,7 +2005,7 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
             (0.9117196772532972, 0.3092686616300213)
         """
         samples = self.noisy_parameter_samples
-        for key in samples.keys() - self.noisy_parameters.keys():
+        for key in set(samples.keys() - self.noisy_parameters.keys()):
             del samples[key]
 
         for key, value in self.noisy_parameters.items():
@@ -1992,6 +2038,36 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
         """
         return self
 
+    def set_parameter_noise(
+            self, parameter: str, noise_obj: Optional[NoiseBase] = None,
+            cls: Optional[str] = None) -> Optional[NoiseBase]:
+        """Sets the noise of the parameter.
+
+        :param parameter: The name of the function parameter to randomize/reset.
+        :param noise_obj: A :class:`~ceed.function.param_noise.NoiseBase` to use
+            for the parameter. If None, we create one from ``cls``.
+        :param cls: If ``noise_obj`` is None and this is a string, we create
+            a noise class from the noise factory of class ``cls``. If this is
+            also None, if the parameter has a noise object it is removed.
+        :return: The noise object created/passed in, or None.
+        """
+        if noise_obj is None:
+            if cls:
+                noise_obj = \
+                    self.function_factory.param_noise_factory.get_cls(cls)()
+
+        parameters = self.noisy_parameters
+        if parameter in parameters:
+            parameters[parameter].funbind(
+                'on_changed', self.dispatch, 'on_changed')
+            del parameters[parameter]
+
+        if noise_obj is not None:
+            parameters[parameter] = noise_obj
+            noise_obj.fbind('on_changed', self.dispatch, 'on_changed')
+
+        return noise_obj
+
 
 class CeedFuncRef:
     """A function that refers to another function.
@@ -2023,13 +2099,14 @@ class CeedFuncRef:
         self.func = func
         self.function_factory = function_factory
 
+    def get_cached_state(self, use_cache=False) -> Dict:
+        return {'ref_name': self.func.name, 'cls': 'CeedFuncRef'}
+
     def get_state(self, recurse=True, expand_ref=False):
         if expand_ref:
-            return deepcopy(
-                self.func.get_state(recurse=recurse, expand_ref=True))
+            return self.func.get_state(recurse=recurse, expand_ref=True)
 
-        state = {'ref_name': self.func.name, 'cls': 'CeedFuncRef'}
-        return state
+        return {'ref_name': self.func.name, 'cls': 'CeedFuncRef'}
 
     def apply_state(self, state, clone=False):
         self.func = self.function_factory.funcs_inst[state['ref_name']]
@@ -2308,10 +2385,12 @@ line 934, in __call__
             func.func.fbind('duration', self._update_duration)
             func.func.fbind('timebase', self._update_duration)
             func.func.fbind('duration_min_total', self._update_duration)
+            func.func.fbind('on_changed', self.dispatch, 'on_changed')
         else:
             func.fbind('duration', self._update_duration)
             func.fbind('timebase', self._update_duration)
             func.fbind('duration_min_total', self._update_duration)
+            func.fbind('on_changed', self.dispatch, 'on_changed')
 
         self._update_duration()
         self.dispatch('on_changed', op='add', index=index)
@@ -2332,10 +2411,12 @@ line 934, in __call__
             func.func.funbind('duration', self._update_duration)
             func.func.funbind('timebase', self._update_duration)
             func.func.funbind('duration_min_total', self._update_duration)
+            func.func.funbind('on_changed', self.dispatch, 'on_changed')
         else:
             func.funbind('duration', self._update_duration)
             func.funbind('timebase', self._update_duration)
             func.funbind('duration_min_total', self._update_duration)
+            func.funbind('on_changed', self.dispatch, 'on_changed')
 
         index = self.funcs.index(func)
         del self.funcs[index]

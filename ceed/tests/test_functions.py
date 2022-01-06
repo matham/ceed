@@ -1267,7 +1267,7 @@ def test_func_sampling(function_factory: FunctionFactoryBase, cls_name, props):
     f: FuncBase = function_factory.get('LinearFunc')(
         function_factory=function_factory)
     b = f.b
-    f.noisy_parameters['m'] = cls(**props)
+    f.set_parameter_noise('m', noise_obj=cls(**props))
 
     b_vals = []
     m_vals = []
@@ -1288,7 +1288,7 @@ def test_func_seq_sampling(
 
     f: FuncBase = function_factory.get('LinearFunc')(
         function_factory=function_factory, loop=100)
-    f.noisy_parameters['m'] = cls(sample_each_loop=True, **props)
+    f.set_parameter_noise('m', noise_obj=cls(sample_each_loop=True, **props))
 
     assert 'm' not in f.noisy_parameter_samples
     assert 'b' not in f.noisy_parameter_samples
@@ -1308,8 +1308,8 @@ def test_noise_lock(
 
     f: FuncBase = function_factory.get('LinearFunc')(
         function_factory=function_factory)
-    f.noisy_parameters['m'] = cls()
-    f.noisy_parameters['b'] = cls(lock_after_forked=lock_param)
+    f.set_parameter_noise('m', noise_obj=cls())
+    f.set_parameter_noise('b', noise_obj=cls(lock_after_forked=lock_param))
     b = f.b
 
     b_vals = []
@@ -1338,8 +1338,8 @@ def test_noise_seq_lock(function_factory: FunctionFactoryBase, lock_param):
 
     f: FuncBase = function_factory.get('LinearFunc')(
         function_factory=function_factory, loop=100)
-    f.noisy_parameters['b'] = cls(
-        lock_after_forked=lock_param, sample_each_loop=True)
+    f.set_parameter_noise(
+        'b', noise_obj=cls(lock_after_forked=lock_param, sample_each_loop=True))
 
     assert 'b' not in f.noisy_parameter_samples
     f.resample_parameters(is_forked=False)
@@ -1365,8 +1365,8 @@ def test_noise_ref_lock(function_factory: FunctionFactoryBase):
         function_factory=function_factory)
     function_factory.add_func(f)
 
-    f.noisy_parameters['m'] = cls()
-    f.noisy_parameters['b'] = cls(lock_after_forked=True)
+    f.set_parameter_noise('m', noise_obj=cls())
+    f.set_parameter_noise('b', noise_obj=cls(lock_after_forked=True))
 
     ref2 = function_factory.get_func_ref(func=f)
     f.resample_parameters()
@@ -1388,9 +1388,10 @@ def test_copy_func_noise(
 
     f: FuncBase = function_factory.get('LinearFunc')(
         function_factory=function_factory)
-    f.noisy_parameters['m'] = cls(**props)
-    f.noisy_parameters['b'] = cls(
-        **props, lock_after_forked=True, sample_each_loop=True)
+    f.set_parameter_noise('m', noise_obj=cls(**props))
+    f.set_parameter_noise(
+        'b',
+        noise_obj=cls(**props, lock_after_forked=True, sample_each_loop=True))
 
     f2 = copy.deepcopy(f)
 
@@ -1415,8 +1416,8 @@ def test_copy_func_noise_seq(function_factory: FunctionFactoryBase):
 
     f: FuncBase = function_factory.get('LinearFunc')(
         function_factory=function_factory, loop=100)
-    f.noisy_parameters['m'] = cls()
-    f.noisy_parameters['b'] = cls(sample_each_loop=True)
+    f.set_parameter_noise('m', noise_obj=cls())
+    f.set_parameter_noise('b', noise_obj=cls(sample_each_loop=True))
 
     f.resample_parameters()
     assert 'm' not in f.noisy_parameter_samples

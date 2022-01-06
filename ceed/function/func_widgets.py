@@ -484,10 +484,6 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
         applied so they can be referred to from kv without having to check
         if they are None.
         """
-        func = self.ref_func or self.func
-        app = _get_app()
-        func.fbind('on_changed', app.changed_callback)
-
         Builder.apply_rules(self, 'FuncWidgetStyle', dispatch_kv_post=True)
 
     def create_settings_dropdown(self):
@@ -821,6 +817,10 @@ class FuncNoiseDropDown(Factory.FlatDropDown):
     parameters.
     """
 
+    noise_cls_update = None
+    """Clock trigger to update the noise classes from the GUI.
+    """
+
     def __init__(self, func, prop_name, **kwargs):
         self.func = func
         self.prop_name = prop_name
@@ -835,6 +835,8 @@ class FuncNoiseDropDown(Factory.FlatDropDown):
                 self.noise_param is not None:
             self.show_noise_params(self.noise_param)
 
+        self.noise_cls_update = Clock.create_trigger(self.set_noise_instance)
+
     def clear_noise_param(self):
         """Unbinds and clears the widgets that track the distributions
         parameters.
@@ -843,9 +845,10 @@ class FuncNoiseDropDown(Factory.FlatDropDown):
             widget.unbind_tracking()
         self.param_container.clear_widgets()
 
-    def set_noise_instance(self, cls_name):
+    def set_noise_instance(self, *args):
         """Selects the distribution class to use, by name.
         """
+        cls_name = self.ids['noise_selector'].text
         # during initial setup, the following would be the case - so return
         if self.noise_param is not None and \
                 self.prop_name in self.func.noisy_parameters and \
@@ -855,14 +858,13 @@ class FuncNoiseDropDown(Factory.FlatDropDown):
 
         self.clear_noise_param()
         self.noise_param = None
-        if self.prop_name in self.func.noisy_parameters:
-            del self.func.noisy_parameters[self.prop_name]
 
         if cls_name == 'NoNoise':
+            self.func.set_parameter_noise(self.prop_name)
             return
 
-        noise_param = self.noise_param = self.noise_factory.get_cls(cls_name)()
-        self.func.noisy_parameters[self.prop_name] = noise_param
+        noise_param = self.noise_param = self.func.set_parameter_noise(
+            self.prop_name, cls=cls_name)
         self.show_noise_params(noise_param)
 
     def show_noise_params(self, noise_param):

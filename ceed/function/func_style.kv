@@ -243,13 +243,14 @@
             height: self.minimum_height
             size_hint_min_x: self.minimum_width
             ThemedSpinner:
+                id: noise_selector
                 size_hint_y: None
                 height: '36dp'
                 values: ['NoNoise'] + list(sorted(root.noise_factory.noise_classes.keys()))
                 text: 'NoNoise' if root.func.noisy_parameters.get(root.prop_name) is None else root.func.noisy_parameters[root.prop_name].name
                 text_autoupdate: True
                 size_hint_min_x: self.minimum_width
-                on_text: root.set_noise_instance(self.text)
+                on_text: root.noise_cls_update()
             XYSizedGridLayout:
                 id: param_container
                 cols: 2

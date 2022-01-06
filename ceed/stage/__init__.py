@@ -770,6 +770,8 @@ class StageFactoryBase(EventDispatcher):
     package. The second item in the tuple is the bytes content of the file.
     """
 
+    _cached_state = None
+
     __events__ = ('on_changed', 'on_data_event')
 
     def __init__(self, function_factory, shape_factory, **kwargs):
@@ -782,6 +784,12 @@ class StageFactoryBase(EventDispatcher):
         self._stage_ref = defaultdict(int)
         self.unique_names = UniqueNames()
         self.plugin_sources = {}
+
+        self.fbind('on_changed', self._reset_cached_state)
+        self._reset_cached_state()
+
+    def _reset_cached_state(self, *args):
+        self._cached_state = None
 
     def on_changed(self, *largs, **kwargs):
         pass
@@ -925,7 +933,7 @@ class StageFactoryBase(EventDispatcher):
         :param old_name_to_shape_map: See :meth:`CeedStage.apply_state`.
         :return: The stage instance created or used.
         """
-        state = dict(state)
+        state = deepcopy(state)
         c = state.pop('cls')
 
         if c == 'CeedStageRef':
@@ -979,6 +987,7 @@ class StageFactoryBase(EventDispatcher):
         stage.name = self.unique_names.fix_name(stage.name)
         self.unique_names.add(stage.name)
         stage.fbind('name', self._change_stage_name, stage)
+        stage.fbind('on_changed', self.dispatch, 'on_changed')
 
         self.stages.append(stage)
         self.stage_names[stage.name] = stage
@@ -1004,6 +1013,7 @@ class StageFactoryBase(EventDispatcher):
             return False
 
         stage.funbind('name', self._change_stage_name, stage)
+        stage.funbind('on_changed', self.dispatch, 'on_changed')
         self.unique_names.remove(stage.name)
 
         # we cannot remove by equality check (maybe?)
@@ -1082,15 +1092,23 @@ class StageFactoryBase(EventDispatcher):
             stage.name = 'stage'
         self.dispatch('on_changed')
 
-    def save_stages(self) -> List[dict]:
+    def save_stages(self, use_cache=False) -> List[dict]:
         """Returns a dict representation of all the stages added with
         :meth:`add_stage`.
+
+        :param use_cache: If True, it'll get the state using the cache from
+            previous times the state was read and cached, if the cache exists.
 
         It is a list of dicts where each item is the
         :meth:`CeedStage.get_state` of the corresponding stage in
         :attr:`stages`.
         """
-        return [s.get_state(expand_ref=False) for s in self.stages]
+        if self._cached_state is not None and use_cache:
+            return self._cached_state
+
+        d = [s.get_cached_state(use_cache=use_cache) for s in self.stages]
+        self._cached_state = d
+        return d
 
     def recover_stages(
             self, stage_states: List[dict], func_name_map: dict,
@@ -1791,6 +1809,8 @@ class CeedStage(EventDispatcher, CeedWithID):
     from state to be identical to the original.
     '''
 
+    _cached_state = None
+
     __events__ = ('on_changed', )
 
     def __init__(
@@ -1806,9 +1826,15 @@ class CeedStage(EventDispatcher, CeedWithID):
         self.shapes = []
 
         for prop in self.get_state():
-            if prop in ('stages', 'functions', 'shapes'):
+            if prop in ('stages', 'functions', 'shapes', 'cls', 'ceed_id'):
                 continue
             self.fbind(prop, self.dispatch, 'on_changed', prop)
+
+        self.fbind('on_changed', self._reset_cached_state)
+        self._reset_cached_state()
+
+    def _reset_cached_state(self, *args):
+        self._cached_state = None
 
     def __repr__(self):
         module = self.__class__.__module__
@@ -1819,6 +1845,22 @@ class CeedStage(EventDispatcher, CeedWithID):
 
     def on_changed(self, *largs, **kwargs):
         pass
+
+    def get_cached_state(self, use_cache=False) -> Dict:
+        """Like :meth:`get_state`, but it caches the result. And next time it
+        is called, if ``use_cache`` is True, the cached value will be returned,
+        unless the config changed in between. Helpful for backup so we don't
+        recompute the full state.
+
+        :param use_cache: If True, it'll get the state using the cache from
+            previous times the state was read and cached, if the cache exists.
+        :return: The state dict.
+        """
+        if self._cached_state is not None and use_cache:
+            return self._cached_state
+
+        self._cached_state = d = self.get_state(expand_ref=False)
+        return d
 
     def get_state(self, expand_ref: bool = False) -> dict:
         '''Returns a dict representation of the stage so that it can be
@@ -2002,11 +2044,21 @@ class CeedStage(EventDispatcher, CeedWithID):
             i = self.stages.index(after)
             self.stages.insert(i + 1, stage)
 
+        if isinstance(stage, CeedStageRef):
+            stage.stage.fbind('on_changed', self.dispatch, 'on_changed')
+        else:
+            stage.fbind('on_changed', self.dispatch, 'on_changed')
+
         self.dispatch('on_changed')
 
     def remove_stage(self, stage: CeedStageOrRefInstance) -> bool:
         '''Removes a sub-stage instance :class:`CeedStage` from :attr:`stages`.
         '''
+        if isinstance(stage, CeedStageRef):
+            stage.stage.funbind('on_changed', self.dispatch, 'on_changed')
+        else:
+            stage.funbind('on_changed', self.dispatch, 'on_changed')
+
         self.stages.remove(stage)  # use is not equal, same for funcs
         assert stage.parent_stage is self
         stage.parent_stage = None
@@ -2036,12 +2088,22 @@ class CeedStage(EventDispatcher, CeedWithID):
             i = self.functions.index(after)
             self.functions.insert(i + 1, func)
 
+        if isinstance(func, CeedFuncRef):
+            func.func.fbind('on_changed', self.dispatch, 'on_changed')
+        else:
+            func.fbind('on_changed', self.dispatch, 'on_changed')
+
         self.dispatch('on_changed')
 
     def remove_func(self, func: CeedFuncOrRefInstance) -> bool:
         '''Removes the function instance :class:`ceed.function.FuncBase` from
         :attr:`functions`.
         '''
+        if isinstance(func, CeedFuncRef):
+            func.func.funbind('on_changed', self.dispatch, 'on_changed')
+        else:
+            func.funbind('on_changed', self.dispatch, 'on_changed')
+
         self.functions.remove(func)
         self.dispatch('on_changed')
         return True
@@ -2068,6 +2130,7 @@ class CeedStage(EventDispatcher, CeedWithID):
 
         stage_shape = StageShape(stage=self, shape=shape)
         self.shapes.append(stage_shape)
+        stage_shape.fbind('on_changed', self.dispatch, 'on_changed')
 
         self.dispatch('on_changed')
         return stage_shape
@@ -2076,6 +2139,7 @@ class CeedStage(EventDispatcher, CeedWithID):
         '''Removes a :class:`StageShape` that was previously added to
         :attr:`shapes`.
         '''
+        stage_shape.funbind('on_changed', self.dispatch, 'on_changed')
         self.shapes.remove(stage_shape)
         self.dispatch('on_changed')
 
@@ -2898,14 +2962,14 @@ class CeedStageRef:
         self.shape_factory = shape_factory
         self.function_factory = function_factory
 
+    def get_cached_state(self, use_cache=False) -> Dict:
+        return {'ref_name': self.stage.name, 'cls': 'CeedStageRef'}
+
     def get_state(self, expand_ref: bool = False) -> dict:
         if expand_ref:
             return deepcopy(self.stage.get_state(expand_ref=True))
 
-        state = {}
-        state['ref_name'] = self.stage.name
-        state['cls'] = 'CeedStageRef'
-        return state
+        return {'ref_name': self.stage.name, 'cls': 'CeedStageRef'}
 
     def apply_state(
             self, state: dict = {}, clone: bool = False,
@@ -2957,6 +3021,8 @@ class StageShape(EventDispatcher):
 
     display = None
 
+    __events__ = ('on_changed', )
+
     def __init__(
             self, stage: CeedStage = None,
             shape: Union[CeedShape, CeedShapeGroup] = None, **kwargs):
@@ -2966,8 +3032,14 @@ class StageShape(EventDispatcher):
         self.shape.fbind('name', self._update_name)
         self._update_name()
 
+        for prop in self.get_config():
+            self.fbind(prop, self.dispatch, 'on_changed', prop)
+
     def _update_name(self, *largs) -> None:
         self.name = self.shape.name
+
+    def on_changed(self, *args, **kwargs):
+        pass
 
     def get_config(self) -> Dict:
         """(internal) used by the config system to get the config data of the

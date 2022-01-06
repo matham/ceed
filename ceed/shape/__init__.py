@@ -117,6 +117,7 @@ be read/set in the config at
 :attr:`~ceed.view.controller.ViewControllerBase.screen_width` and
 :attr:`~ceed.view.controller.ViewControllerBase.screen_height`.
 """
+import copy
 import math
 from typing import Type, List, Tuple, Dict, Optional, Union
 
@@ -127,7 +128,7 @@ from kivy.factory import Factory
 from kivy_garden.collider import Collide2DPoly, CollideEllipse
 
 from kivy_garden.painter import PaintCanvasBehavior, PaintCircle,\
-    PaintEllipse, PaintPolygon, PaintFreeformPolygon
+    PaintEllipse, PaintPolygon, PaintFreeformPolygon, PaintShape
 
 from ceed.utils import UniqueNames
 
@@ -171,6 +172,8 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
             is changed.
     """
 
+    shapes: List[Union['PaintShape', 'CeedShape']]
+
     groups: List['CeedShapeGroup'] = ListProperty([])
     '''List of :class:`CeedShapeGroup` instances created in Ceed.
     '''
@@ -190,11 +193,19 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
     shapes/groups have unique names.
     """
 
+    _cached_state = None
+
     __events__ = ('on_remove_shape', 'on_remove_group', 'on_changed')
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.unique_names = UniqueNames()
+
+        self.fbind('on_changed', self._reset_cached_state)
+        self._reset_cached_state()
+
+    def _reset_cached_state(self, *args):
+        self._cached_state = None
 
     def add_shape(self, shape: 'CeedShape'):
         if not super(CeedPaintCanvasBehavior, self).add_shape(shape):
@@ -206,6 +217,7 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
         self.shape_names[name] = shape
         shape.name = name
         shape.fbind('name', self._change_shape_name)
+        shape.fbind('on_changed', self.dispatch, 'on_changed')
         self.dispatch('on_changed')
         return True
 
@@ -214,6 +226,7 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
             return False
 
         shape.funbind('name', self._change_shape_name)
+        shape.funbind('on_changed', self.dispatch, 'on_changed')
         self.unique_names.remove(shape.name)
         self.remove_shape_from_groups(shape)
         del self.shape_names[shape.name]
@@ -284,6 +297,7 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
         self.shape_group_names[name] = group
         group.name = name
         group.fbind('name', self._change_shape_name)
+        group.fbind('on_changed', self.dispatch, 'on_changed')
         self.dispatch('on_changed')
         return group
 
@@ -300,6 +314,7 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
             True if the group was removed, False otherwise.
         """
         group.funbind('name', self._change_shape_name)
+        group.funbind('on_changed', self.dispatch, 'on_changed')
         self.unique_names.remove(group.name)
         del self.shape_group_names[group.name]
         self.groups.remove(group)
@@ -348,17 +363,24 @@ class CeedPaintCanvasBehavior(PaintCanvasBehavior):
             if shape in group.shapes:
                 group.remove_shape(shape)
 
-    def get_state(self):
+    def get_state(self, use_cache=False) -> dict:
         """Returns a dictionary containing all the configuration data for all
         the shapes and groups. It is used with :meth:`set_state` to later
         restore the state.
+
+        :param use_cache: If True, it'll get the state using the cache from
+            previous times the state was read and cached, if the cache exists.
         """
+        if self._cached_state is not None and use_cache:
+            return self._cached_state
+
         d = {
-            'shapes': [s.get_state() for s in self.shapes],
-            'groups': [{'name': g.name, 'shapes': [s.name for s in g.shapes],
-                        'no_display': g.no_display}
-                       for g in self.groups],
+            'shapes': [
+                s.get_cached_state(use_cache=use_cache) for s in self.shapes],
+            'groups': [
+                g.get_cached_state(use_cache=use_cache) for g in self.groups],
         }
+        self._cached_state = d
         return d
 
     def create_shape_from_state(
@@ -488,10 +510,17 @@ class CeedShape:
     customize the shape in the GUI.
     """
 
+    _cached_state = None
+
+    __events__ = ('on_changed', )
+
     def __init__(self, paint_widget_size=(0, 0), **kwargs):
         super(CeedShape, self).__init__(**kwargs)
         self.paint_widget_size = paint_widget_size
-        self.fbind('name', self.dispatch, 'on_update')
+
+        for prop in self.get_state().keys() - super().get_state().keys():
+            self.fbind(prop, self.dispatch, 'on_changed')
+        self.fbind('on_update', self.dispatch, 'on_changed')
 
         def on_update(*largs):
             self._bounding_box = None
@@ -500,8 +529,35 @@ class CeedShape:
             self._collider = None
         self.fbind('on_update', on_update)
 
-    def get_state(self, state=None):
-        d = super(CeedShape, self).get_state(state)
+        self.fbind('on_changed', self._reset_cached_state)
+        self._reset_cached_state()
+
+    def _reset_cached_state(self, *args):
+        self._cached_state = None
+
+    def on_changed(self, *args):
+        pass
+
+    def get_cached_state(self, use_cache=False) -> Dict:
+        """Like :meth:`get_state`, but it caches the result. And next time it
+        is called, if ``use_cache`` is True, the cached value will be returned,
+        unless the config changed in between. Helpful for backup so we don't
+        recompute the full state.
+
+        :param use_cache: If True, it'll get the state using the cache from
+            previous times the state was read and cached, if the cache exists.
+        :return: The state dict.
+        """
+        if self._cached_state is not None and use_cache:
+            return self._cached_state
+
+        self._cached_state = d = self.get_state()
+        return d
+
+    def get_state(self) -> dict:
+        """Returns a dict representing the shape.
+        """
+        d = super().get_state()
         d['name'] = self.name
         d['no_display'] = self.no_display
         return d
@@ -612,7 +668,7 @@ class CeedShapeGroup(EventDispatcher):
     """Same as :attr:`CeedShape.no_display`, but for this group.
     """
 
-    shapes: List[CeedShape] = []
+    shapes: List[CeedShape] = ListProperty([])
     '''A list that contains the :class:`CeedShape` instances that are part of
     this group.
     '''
@@ -622,14 +678,49 @@ class CeedShapeGroup(EventDispatcher):
     customize the group in the GUI.
     """
 
+    _cached_state = None
+
     __events__ = ('on_changed', )
 
     def __init__(self, **kwargs):
         super(CeedShapeGroup, self).__init__(**kwargs)
-        self.shapes = []
-        self.fbind('name', self.dispatch, 'on_changed')
+        for prop in self.get_state():
+            self.fbind(prop, self.dispatch, 'on_changed', prop)
 
-    def on_changed(self, *largs):
+        self.fbind('on_changed', self._reset_cached_state)
+        self._reset_cached_state()
+
+    def _reset_cached_state(self, *args):
+        self._cached_state = None
+
+    def get_cached_state(self, use_cache=False) -> Dict:
+        """Like :meth:`get_state`, but it caches the result. And next time it
+        is called, if ``use_cache`` is True, the cached value will be returned,
+        unless the config changed in between. Helpful for backup so we don't
+        recompute the full state.
+
+        :param use_cache: If True, it'll get the state using the cache from
+            previous times the state was read and cached, if the cache exists.
+
+        :param use_cache: If True, it'll get the state using the cache from
+            previous times the state was read and cached, if the cache exists.
+        :return: The state dict.
+        """
+        if self._cached_state is not None and use_cache:
+            return self._cached_state
+
+        self._cached_state = d = self.get_state()
+        return d
+
+    def get_state(self) -> dict:
+        """Returns a dict representing the shape group.
+        """
+        return {
+            'name': self.name, 'shapes': [s.name for s in self.shapes],
+            'no_display': self.no_display
+        }
+
+    def on_changed(self, *args):
         pass
 
     def add_shape(self, shape: CeedShape):

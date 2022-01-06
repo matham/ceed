@@ -78,7 +78,6 @@ class CeedPainter(CeedPaintCanvasBehavior, Widget):
                 shape.add_shape_to_canvas(self)
                 shape.widget = widget = WidgetShape(painter=self, shape=shape)
                 widget.show_widget()
-                shape.fbind('on_update', App.get_running_app().changed_callback)
             return True
         return False
 
@@ -88,8 +87,6 @@ class CeedPainter(CeedPaintCanvasBehavior, Widget):
                 shape.remove_shape_from_canvas()
                 shape.widget.hide_widget()
                 shape.widget = None
-                shape.funbind(
-                    'on_update', App.get_running_app().changed_callback)
             return True
         return False
 
@@ -98,7 +95,6 @@ class CeedPainter(CeedPaintCanvasBehavior, Widget):
         if not group.no_display:
             widget = group.widget = WidgetShapeGroup(group=group)
             widget.show_widget()
-            group.fbind('on_changed', App.get_running_app().changed_callback)
         return group
 
     def remove_group(self, group):
@@ -106,8 +102,6 @@ class CeedPainter(CeedPaintCanvasBehavior, Widget):
             if not group.no_display:
                 group.widget.hide_widget()
                 group.widget = None
-                group.funbind(
-                    'on_changed', App.get_running_app().changed_callback)
             return True
         return False
 

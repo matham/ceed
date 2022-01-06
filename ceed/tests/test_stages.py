@@ -1203,9 +1203,9 @@ def test_sample_ref_function_stage(stage_factory: StageFactoryBase):
     counter_m = [0]
     counter_b = [0]
     cls = register_callback_distribution(function_factory, counter_m, 0)
-    f.noisy_parameters['m'] = cls()
+    f.set_parameter_noise('m', noise_obj=cls())
     cls = register_callback_distribution(function_factory, counter_b, 1)
-    f.noisy_parameters['b'] = cls(lock_after_forked=True)
+    f.set_parameter_noise('b', noise_obj=cls(lock_after_forked=True))
 
     ref = function_factory.get_func_ref(func=f)
 
@@ -1461,8 +1461,8 @@ def test_stage_func_resample(stage_factory: StageFactoryBase):
     stage.add_func(f)
 
     cls = function_factory.param_noise_factory.get_cls('UniformNoise')
-    f.noisy_parameters['m'] = cls(sample_each_loop=False)
-    f.noisy_parameters['b'] = cls(sample_each_loop=True)
+    f.set_parameter_noise('m', noise_obj=cls(sample_each_loop=False))
+    f.set_parameter_noise('b', noise_obj=cls(sample_each_loop=True))
 
     stage_copy = stage.copy_and_resample()
     f_copy = stage_copy.functions[0]

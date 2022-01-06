@@ -589,10 +589,6 @@ class StageWidget(ShowMoreBehavior, BoxLayout):
         applied so they can be referred to from kv without having to check
         if they are None.
         """
-        app = _get_app()
-        stage = self.ref_stage or self.stage
-        stage.fbind('on_changed', app.changed_callback)
-
         Builder.apply_rules(self, 'StageWidgetStyle', dispatch_kv_post=True)
 
         more = self.more

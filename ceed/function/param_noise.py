@@ -115,6 +115,19 @@ class NoiseBase(EventDispatcher):
     :meth:`~ceed.function.FuncBase.init_loop_iteration`).
     """
 
+    __events__ = ('on_changed', )
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        for prop in self.get_config().keys():
+            if prop in {'cls'}:
+                continue
+            self.fbind(prop, self.dispatch, 'on_changed')
+
+    def on_changed(self, *args):
+        pass
+
     def sample(self) -> float:
         """Samples the distribution and returns a new value.
         """

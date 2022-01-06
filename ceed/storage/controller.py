@@ -227,19 +227,23 @@ class CeedDataWriterBase(EventDispatcher):
         app = App.get_running_app()
         return app.stage_factory.plugin_sources
 
-    def gather_config_data_dict(self, stages_only=False):
+    def gather_config_data_dict(self, stages_only=False, use_cache=False):
         """Accumulates all the configuration data from all the classes into
         a single dict and returns it.
 
-        If ``stages_only``, it only returns the data required to be able to
-        load the stages/functions/shapes, but not the app config,
-        e.g. player config, mea/camera rotation etc.
+        :param stages_only: If True, it only returns the data required to be
+            able to load the stages/functions/shapes, but not the app config,
+            e.g. player config, mea/camera rotation etc.
+        :param use_cache: If True, it'll get the state using the cache from
+            previous times the state was read and cached, if the cache exists.
         """
         app = App.get_running_app()
-        data = {}
-        data['shape'] = app.shape_factory.get_state()
-        data['function'] = app.function_factory.save_functions()
-        data['stage'] = app.stage_factory.save_stages()
+        data = {
+            'shape': app.shape_factory.get_state(use_cache=use_cache),
+            'function': app.function_factory.save_functions(
+                use_cache=use_cache),
+            'stage': app.stage_factory.save_stages(use_cache=use_cache),
+        }
         if stages_only:
             return data
 
@@ -610,6 +614,9 @@ class CeedDataWriterBase(EventDispatcher):
 
     def write_changes(self, *largs, scheduled=False):
         """Writes all unsaved changes to :attr:`backup_filename` and flushes it.
+
+        :param scheduled: Whether the function is called due to a scheduled
+            saving of the config.
         """
         if not self.nix_file or scheduled and self.read_only_file:
             return
@@ -619,7 +626,7 @@ class CeedDataWriterBase(EventDispatcher):
                 self.data_lock.acquire()
 
             if self.config_changed:
-                self.write_config()
+                self.write_config(use_cache=scheduled)
                 self.dispatch('on_experiment_change', 'app_config', None)
             self.nix_file._h5file.flush()
         finally:
@@ -733,14 +740,17 @@ class CeedDataWriterBase(EventDispatcher):
             requires_app_settings=requires_app_settings)
         self.config_changed = True
 
-    def write_config(self, config_section=None):
+    def write_config(self, config_section=None, use_cache=False):
         """Writes the app config data and stages/functions/shapes to the
         :attr:`backup_filename`.
+
+        :param use_cache: If True, it'll get the state using the cache from
+            previous times the config was read and cached, if the cache exists.
         """
         import ceed
         config = config_section if config_section is not None else \
             self.nix_file.sections['app_config']
-        data = self.gather_config_data_dict()
+        data = self.gather_config_data_dict(use_cache=use_cache)
         for k, v in data.items():
             config[k] = yaml_dumps(v)
 
