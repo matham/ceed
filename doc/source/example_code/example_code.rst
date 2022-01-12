@@ -12,6 +12,8 @@ The following examples can also be found in the
 
    generate_stage_yaml.rst
 
+   stage_anim.rst
+
    merge_ceed_with_mcs_data.rst
    read_merged_data.rst
    show_merged_data.rst

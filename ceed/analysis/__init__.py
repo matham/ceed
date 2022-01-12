@@ -1955,7 +1955,7 @@ class CeedDataReader:
         writer.write_frame(img, 0.)
 
         fbo.add(Translate(x, y))
-        shape_views = self.stage_factory.get_shapes_gl_color_instructions(
+        shape_views = self.stage_factory.add_shapes_gl_to_canvas(
             fbo, 'stage_replay')
         fbo.add(Translate(-x, -y))
 

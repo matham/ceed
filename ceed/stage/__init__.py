@@ -311,7 +311,7 @@ experiment:
 
         # convert raw intensity to final color intensity. This function can
         # also e.g. convert the colors for quad mode where it's gray-scale
-        shapes_intensity = stage_factory.fill_shape_gl_color_values(
+        shapes_intensity = stage_factory.set_shape_gl_color_values(
             shape_views=None, shape_values=shapes_intensity_raw)
         print(f'time={t}s,\tintensity="{shapes_intensity}"')
 
@@ -603,6 +603,29 @@ Other methods could potentially also be overwritten to hook into the stage
 lifecycle, but they generally require more care. See all :class:`CeedStage`
 methods and below for further details.
 
+Custom graphics
+---------------
+
+Besides the shapes drawn in the Ceed GUI or script generated, stages could
+add arbitrary Kivy GL graphics to the experiment screen and update them
+during an experiment. This e.g. allows the display of a circle whose intensity
+falls off as it's farther from the center of the circle.
+
+:class:`CeedStage` provides the following methods to add, update, and remove
+these graphics for an experiment: :meth:`~CeedStage.add_gl_to_canvas`,
+:meth:`~CeedStage.set_gl_colors`, and :meth:`~CeedStage.remove_gl_from_canvas`.
+
+Additionally, like GUI drawn shapes that automatically log the shape intensity
+for each frame to be accessible from
+:attr:`~ceed.analysis.CeedDataReader.shapes_intensity`, stages can overwrite
+:meth:`~CeedStage.get_stage_shape_names` to add names and use those names to
+log arbitrary 4-byte (nominally RGBA for shapes) values for each frame.
+These values are also displayed in the graph preview window for all shapes
+in the GUI. However, you have to ensure to compute and log the rgba data during
+each tick.
+
+See the example plugins in the examples directory.
+
 TODO: if a function or stage has zero duration, any data events logged during
  intitialization is not logged if pre-computing. Log these as well. Similarly,
  logs created after the last frame of a stage/function is not logged when
@@ -638,7 +661,7 @@ __all__ = (
 )
 
 StageType = TypeVar('StageType', bound='CeedStage')
-"""The type-hint type for :class:`FuncBase`.
+"""The type-hint type for :class:`CeedStage`.
 """
 
 CeedStageOrRefInstance = Union['CeedStage', 'CeedStageRef']
@@ -1181,7 +1204,7 @@ class StageFactoryBase(EventDispatcher):
             `stage_name`: str
                 The :attr:`CeedStage.name` of the stage to start.
             `stage`: str
-                The :attr:`CeedStage` to start.
+                The :class:`CeedStage` to start.
             `pre_compute`: bool
                 Whether to pre-compute the stages, for those stages that support
                 it.
@@ -1196,7 +1219,7 @@ class StageFactoryBase(EventDispatcher):
             ``values`` is a list of color values and each item in that list is
             a 4-tuple of ``(r, g, b, a)``. Any of these values can be None, in
             which case that color remains the same (see
-            :meth:`fill_shape_gl_color_values`). This way a shape can be
+            :meth:`set_shape_gl_color_values`). This way a shape can be
             updated from multiple sub-stages, where only e.g. the ``r`` value
             is changed.
 
@@ -1211,7 +1234,7 @@ class StageFactoryBase(EventDispatcher):
             stage = self.stage_names[stage_name]
 
         # shapes is updated in place with zero or more values for each shape
-        shapes = {s.name: [] for s in self.shape_factory.shapes}
+        shapes = {name: [] for name in stage.get_stage_shape_names()}
 
         stage.init_stage_tree()
         stage.apply_pre_compute(
@@ -1231,11 +1254,15 @@ class StageFactoryBase(EventDispatcher):
 
             t = yield shape_values
 
-    def get_shapes_gl_color_instructions(
-            self, canvas: Canvas, name: str) -> Dict[str, Color]:
+    def add_shapes_gl_to_canvas(
+            self, canvas: Canvas, name: str, quad: Optional[int] = None
+    ) -> Dict[str, Color]:
         '''Adds all the kivy OpenGL instructions required to display the
         intensity-varying shapes to the kivy canvas and returns the color
         classes that control the color of each shape.
+
+        This is called by Ceed when it creates a new experiment to get all the
+        graphics for the shapes that it will control during the experiment.
 
         :Params:
 
@@ -1246,6 +1273,14 @@ class StageFactoryBase(EventDispatcher):
                 The name to associate with these OpenGL instructions.
                 The name is used later to remove the instructions as it allows
                 to clear all the instructions with that name.
+            `quad`: int or None
+                When in quad mode, we add the instructions 4 times, one for
+                each quad (top-left, top-right, bottom-left, bottom-right) so
+                it is called 4 times sequentially.
+                This counts up from 0-3 in that case. Otherwise, it's None.
+                From a user POV it should not matter whether we're in quad mode
+                because Ceed handles scaling and placing the graphics in the
+                right area.
 
         :returns:
 
@@ -1263,14 +1298,18 @@ class StageFactoryBase(EventDispatcher):
 
         return shape_views
 
-    def fill_shape_gl_color_values(
+    def set_shape_gl_color_values(
             self, shape_views: Optional[Dict[str, Color]],
             shape_values: List[Tuple[str, List[RGBA_Type]]],
-            grayscale: str = None
+            quad: Optional[int] = None, grayscale: str = None
     ) -> List[Tuple[str, float, float, float, float]]:
         '''Takes the dict of the Color instances that control the color of
         each shape as well as the list of the color values for the current time
         point for each shape and sets the shape's color to those values.
+
+        This is called by Ceed for every time step to set the current shape
+        color values. In QUAD4X it's called 4 times per frame, in QUAD121X it's
+        called 12 times per frame.
 
         The shape color values is a list of 4-tuples, each a ``r, g, b, a``
         value. In each tuple, any of them can be None, in which case that color
@@ -1284,27 +1323,40 @@ class StageFactoryBase(EventDispatcher):
 
             `shape_views`: dict
                 The dict of shape names and shapes colors as returned by
-                :meth:`get_shapes_gl_color_instructions`.
+                :meth:`add_shapes_gl_to_canvas`.
 
                 If it is None, the color will not be updated but the return
                 result will be identical to when not None.
             `shape_values`: list
                 The list of color intensity values to use for each shape as
                 yielded by :meth:`tick_stage`.
+            `quad`: int or None
+                When in quad mode, we added the instructions 4 times, one for
+                each quad. This indicates which quad is being updated, counting
+                up from 0-3 in that case. Otherwise, it's None.
             `grayscale`: str
                 The colors to operate on. Can be any subset of the string
                 'rgb'. Specifically, although we get intensity values for some
-                subset of r, g, b values for each stage, this takes their
-                average intensity and assigns their mean to all of the colors
+                subset of r, g, b values for each stage from the stage settings,
+                this computes the average intensity for the active RGB channels
+                selected in the stage and assigns the mean to all of the colors
                 listed in ``grayscale``.
 
-                E.g. if a stage selects the r, g colors in its config, and
+                E.g. if a stage selects the r and g colors in its config, and
                 ``grayscale`` is ``"gb"``, then both the g and b channels are
-                set to the mean r, g values (b is excluded since the stage
+                set to the mean of the r and g values provided by the stage for
+                this timestep (b is excluded since the stage
                 provides no value for it). The b channel is not set so it's
                 left unchanged (i.e. it'll keep the last value).
-                It's how we turn the color into a gray-scale value when e.g. in
-                ``QUAD12X`` mode.
+
+                This is how we turn the color into a gray-scale value when e.g.
+                in ``QUAD12X`` mode. Specifically, in that mode, this method is
+                called 12 times, 4 for the 4 quads, and 3 for the r, g, and b
+                color channel for each quad. It gets called 4 times for the red
+                channel with ``grayscale`` set to ``'r'``, followed by 4 times
+                for the green channel with ``grayscale`` set to ``'g'``,
+                followed by 4 times for the blue channel with ``grayscale`` set
+                to ``'b'``. This sets the value for 12 frames.
 
         :returns:
 
@@ -1314,7 +1366,7 @@ class StageFactoryBase(EventDispatcher):
             Each ``name`` occurs at most once in the list.
 
         E.g. from the worked example in :mod:`~ceed.stage`, by default
-        we called :meth:`fill_shape_gl_color_values` with no grayscale parameter
+        we called :meth:`set_shape_gl_color_values` with no grayscale parameter
         value, which printed::
 
             time=0s,	intensity="[('Shape', 0, 0, 0, 1)]"
@@ -1362,7 +1414,10 @@ class StageFactoryBase(EventDispatcher):
             if a is not None:
                 a = min(max(a, 0.), 1.)
 
-            color = shape_views[name] if shape_views is not None else None
+            if shape_views is not None and name in shape_views:
+                color = shape_views[name]
+            else:
+                color = None
             if r is None and b is None and g is None and a is None:
                 if color is not None:
                     color.rgba = 0, 0, 0, 0
@@ -1390,10 +1445,13 @@ class StageFactoryBase(EventDispatcher):
                 result.append((name, r, g, b, a))
         return result
 
-    def remove_shapes_gl_color_instructions(
+    def remove_shapes_gl_from_canvas(
             self, canvas: Canvas, name: str) -> None:
         '''Removes all the shape and color instructions that was added with
-        :meth:`get_shapes_gl_color_instructions`.
+        :meth:`add_shapes_gl_to_canvas`.
+
+        This is called by Ceed after an experiment and it removes all the
+        instructions added with this group name.
 
         :Params:
 
@@ -1401,7 +1459,7 @@ class StageFactoryBase(EventDispatcher):
                 The canvas to which the gl instructions were added.
             `name`: str
                 The name used when adding the instructions with
-                :meth:`get_shapes_gl_color_instructions`.
+                :meth:`add_shapes_gl_to_canvas`.
         '''
         if canvas:
             canvas.remove_group(name)
@@ -1440,11 +1498,96 @@ class StageFactoryBase(EventDispatcher):
             except StageDoneException:
                 break
 
-            values = self.fill_shape_gl_color_values(
+            values = self.set_shape_gl_color_values(
                 None, shape_values)
             for name, r, g, b, a in values:
                 obj_values[name].append((r, g, b, a))
         return obj_values
+
+    def add_manual_gl_to_canvas(
+            self, screen_width: int, screen_height: int, stage: 'CeedStage',
+            canvas: Canvas, name: str, quad_mode: str,
+            quad: Optional[int] = None
+    ) -> List['CeedStage']:
+        """Adds all the kivy OpenGL instructions that a stage may manually
+        set. It internally calls :meth:`~CeedStage.add_gl_to_canvas` for the
+        root stage and all its substages.
+
+        This is called by Ceed when it creates a new experiment to get all the
+        graphics for the stage used during an experiment.
+
+        :param screen_width: The width of the projector in pixels.
+        :param screen_height: The height of the projector in pixels.
+        :param stage: The root :class:`CeedStage` that will be run.
+        :param canvas: The Kivy canvas instance to which the gl instructions
+            must be added.
+        :param name: The name to associate with these OpenGL instructions.
+            The name is used later to remove the instructions in
+            :meth:`remove_shapes_gl_from_canvas` as it allows to clear all the
+            instructions with that name.
+        :param quad_mode: Whether we're in quad mode. This is the specific quad
+            mode used. It can be one of 'RGB' (normal mode), 'QUAD4X', or
+            'QUAD12X'.
+        :param quad: When in quad mode, we have to add the instructions 4 times,
+            one for each quad (top-left, top-right, bottom-left, bottom-right)
+            so it is called 4 times sequentially. This counts up from 0-3 in
+            that case. Otherwise, it's None.
+
+            From a user POV it should not matter whether we're in quad mode
+            because Ceed handles scaling and placing the graphics in the
+            right area. So the user must always create their graphics at full
+            screen size and relative to bottom left corner. Ceed will
+            automatically scale and translate them to the appropriate quad.
+        :return: The list of stages who added graphics instructions (their
+            :meth:`~CeedStage.add_gl_to_canvas` returned True).
+        """
+        return [s for s in stage.get_stages() if s.add_gl_to_canvas(
+            screen_width, screen_height, canvas, name, quad_mode, quad)]
+
+    def set_manual_gl_colors(
+            self, stages: List['CeedStage'], quad: Optional[int] = None,
+            grayscale: str = None, clear: bool = False) -> None:
+        """Calls :meth:`~CeedStage.set_gl_colors` for all the stages with manual
+        graphics.
+
+        Called by Ceed for every time step to allow the stages to update
+        their manually added gl instructions (in
+        :meth:`add_manual_gl_to_canvas`) for this frame. In QUAD4X it's called
+        4 times per frame, in QUAD121X it's called 12 times per frame.
+
+        :param stages: The list of stages returned by
+            :meth:`add_manual_gl_to_canvas`.
+        :param quad: Same as in :meth:`set_shape_gl_color_values`.
+        :param grayscale: Same as in :meth:`set_shape_gl_color_values`.
+        :param clear: Unlike for the shape graphics that Ceed controls directly
+            Ceed does not control the manual graphics. If a stage ends in the
+            middle of a frame in quad mode, then the rest of the graphics or
+            color channels for that frame must be cleared to black. Therefore,
+            This will be called for those quads/channels with this parameter
+            True and you must clear it.
+        """
+        for stage in stages:
+            stage.set_gl_colors(quad, grayscale, clear)
+
+    def remove_manual_gl_from_canvas(
+            self, stage: 'CeedStage', canvas: Canvas, name: str) -> None:
+        """Removes all the gl instructions that was added with
+        :meth:`add_manual_gl_to_canvas`. It internally calls
+        :meth:`~CeedStage.remove_gl_from_canvas` for the root stage and all its
+        substages.
+
+        This is called by Ceed after an experiment and it should remove all the
+        instructions added. Instructions added with this ``name`` will be
+        automatically removed by :meth:`remove_shapes_gl_from_canvas` so they
+        don't have to be removed manually.
+
+        :param stage: The root :class:`CeedStage` that was run.
+        :param canvas: The Kivy canvas instance to which the gl instructions
+            was added.
+        :param name: The name associated with these OpenGL instructions.
+        """
+        for s in stage.get_stages():
+            s.remove_gl_from_canvas(canvas, name)
 
 
 class CeedStage(EventDispatcher, CeedWithID):
@@ -2880,16 +3023,47 @@ class CeedStage(EventDispatcher, CeedWithID):
 
     def get_stage_shape_names(self) -> Set[str]:
         """Gets all the names of the shapes controlled by the stage or
-        sub-stages.
+        substages. If adding names, you must call ``super`` to get the
+        builtin shapes.
+
+        It calls :meth:`get_stage_shape_names` on its children, recursively,
+        so any of them can be overwritten to return arbitrary names (that must
+        be unique among all the shapes).
+
+        This is used to create the shape logs in the HDF5 data file. Because
+        for each shape we create a Nx4 array, where N is the number of Ceed
+        time frames, and 4 is for the RGBA value for that frame
+        (:attr:`~ceed.analysis.CeedDataReader.shapes_intensity`).
+
+        By default, it gets the name of the shapes from :attr:`shapes` from
+        itself and its children stages. If you're directly updating the
+        graphics, you can log rgba values by returning additional names here
+        and then setting their values when the stage is ticked, as if it was a
+        real shape. The values will then be accessible in
+        :attr:`~ceed.analysis.CeedDataReader.shapes_intensity`.
+
+        If you set the values of the additional shapes when the stage is ticked,
+        then the values will also show in the stage preview graph so you can use
+        it to display arbitrary rgb data for your stage in the graph. But it
+        must be logged during stage tick (e.g. :meth:`evaluate_stage`), not
+        during the actual graphing in :meth:`set_gl_colors` that follows each
+        tick.
+
+        See the stage example plugins for example usage.
         """
         shapes = set()
-        for stage in self.get_stages(step_into_ref=True):
-            for shape in stage.shapes:
-                if isinstance(shape.shape, CeedShapeGroup):
-                    for s in shape.shape.shapes:
-                        shapes.add(s.name)
-                else:
-                    shapes.add(shape.shape.name)
+        for shape in self.shapes:
+            if isinstance(shape.shape, CeedShapeGroup):
+                for s in shape.shape.shapes:
+                    shapes.add(s.name)
+            else:
+                shapes.add(shape.shape.name)
+
+        for stage in self.stages:
+            if isinstance(stage, CeedStageRef):
+                stage = stage.stage
+            shapes.update(stage.get_stage_shape_names())
+
         return shapes
 
     def set_ceed_id(self, min_available: int) -> int:
@@ -2916,6 +3090,89 @@ class CeedStage(EventDispatcher, CeedWithID):
         are a :class:`CeedStageRef`. I.e. ``stage.get_ref_src().name``.
         """
         return self
+
+    def add_gl_to_canvas(
+            self, screen_width: int, screen_height: int, canvas: Canvas,
+            name: str, quad_mode: str, quad: Optional[int] = None, **kwargs
+    ) -> bool:
+        """Should add any stage specific kivy OpenGL instructions that a
+        stage may manually set.
+
+        This is called by Ceed when it creates a new experiment to get all the
+        graphics for the stage and substages used during an experiment.
+
+        :param screen_width: Same as
+            :meth:`~StageFactoryBase.add_manual_gl_to_canvas`.
+        :param screen_height: Same as
+            :meth:`~StageFactoryBase.add_manual_gl_to_canvas`.
+        :param canvas: Same as
+            :meth:`~StageFactoryBase.add_manual_gl_to_canvas`.
+        :param name: Same as
+            :meth:`~StageFactoryBase.add_manual_gl_to_canvas`.
+        :param quad_mode: Same as
+            :meth:`~StageFactoryBase.add_manual_gl_to_canvas`.
+        :param quad: Same as
+            :meth:`~StageFactoryBase.add_manual_gl_to_canvas`.
+        :return: Whether the stage added custom graphics. If True,
+            :meth:`set_gl_colors` will be called for this stage for every Ceed
+            frame. Otherwise, it is not called. Defaults to returning None.
+        """
+        pass
+
+    def set_gl_colors(
+            self, quad: Optional[int] = None, grayscale: str = None,
+            clear: bool = False, **kwargs
+    ) -> None:
+        """If :meth:`add_gl_to_canvas` returned True, it is called by Ceed for
+        every time step to allow the stage to update the manually added gl
+        instructions for this frame. In QUAD4X it's called
+        4 times per frame, in QUAD121X it's called 12 times per frame.
+
+        :param quad: Same as
+            :meth:`~StageFactoryBase.set_manual_gl_colors`.
+        :param grayscale: Same as
+            :meth:`~StageFactoryBase.set_manual_gl_colors`.
+        :param clear: Same as
+            :meth:`~StageFactoryBase.set_manual_gl_colors`.
+
+        .. warning::
+
+            For every clock tick, Ceed "ticks" the stage and then updates the
+            graphics based on the values computed during the tick. If the frame
+            is not dropped, the value is then applied to the graphics.
+
+            For shapes, Ceed does this automatically, only updating the shapes
+            when the frame is not dropped, for each tick. For these manual gl
+            graphics, the stage should only update the graphics in this method.
+            Normally, every tick is followed by a call to this method to draw.
+            If the frame is dropped, the draw call does not follow the tick.
+            Hence, only draw in this method.
+
+            If the stage is pre-computed, then Ceed ticks through the stage
+            before the stage runs. During the stage, tick won't be called,
+            but this method will still be called so you have to work out the
+            timing prior and apply it during this method.
+        """
+        pass
+
+    def remove_gl_from_canvas(
+            self, canvas: Canvas, name: str, **kwargs
+    ) -> None:
+        """Should remove all the gl instructions that was added with
+        :meth:`add_gl_to_canvas`.
+
+        It is called by Ceed for the root stage and all substages after the
+        experiment is done. It should remove all the instructions added.
+        Instructions added with this ``name`` will be
+        automatically removed by
+        :meth:`~StageFactoryBase.remove_shapes_gl_from_canvas` so they
+        don't have to be removed manually.
+
+        :param canvas: The Kivy canvas instance to which the gl instructions
+            was added.
+        :param name: The name associated with these OpenGL instructions.
+        """
+        pass
 
 
 class CeedStageRef:

@@ -13,7 +13,7 @@ Although the functions' range is ``(-infinity, +infinity)`` and this module
 places no restriction on the function output so that it may return any
 scalar value, the graphics system can only accept values in the ``[0, 1]``
 range for each red, green, or blue channel. Consequently, the graphics system
-(at :meth:`ceed.stage.StageFactoryBase.fill_shape_gl_color_values`) will clip
+(at :meth:`ceed.stage.StageFactoryBase.set_shape_gl_color_values`) will clip
 the function output to that range.
 
 .. _function-factory-plugin:

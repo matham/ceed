@@ -227,3 +227,13 @@ package or in Ceed's plugin directory, e.g. ``ceed/stage/plugin/my_plugin.py``
 and ``Grow`` will be listed in the GUI. Make an instance of it and drag shapes
 into it and it can used to run an experiment without needing to add any
 functions (but you could if you wanted to use them somehow).
+
+Custom graphics
+---------------
+
+Besides the shapes drawn in the Ceed GUI or script generated, stages could
+add arbitrary Kivy GL graphics to the experiment screen and update them
+during an experiment. This e.g. allows the display of a circle whose intensity
+falls off as it's farther from the center of the circle.
+
+See the example plugins in the examples directory or the example code section in the docs.

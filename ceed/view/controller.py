@@ -353,7 +353,7 @@ from more_kivy_app.app import app_error
 from more_kivy_app.utils import yaml_dumps, yaml_loads
 
 from ceed.stage import StageDoneException, last_experiment_stage_name, \
-    StageFactoryBase
+    StageFactoryBase, CeedStage
 from ceed.function import FunctionFactoryBase
 
 try:
@@ -885,7 +885,7 @@ class ViewControllerBase(EventDispatcher):
         'teensy_frame_estimation': 'teensy_frame_estimation',
     }
 
-    screen_width = NumericProperty(1920)
+    screen_width: int = NumericProperty(1920)
     '''The screen width in pixels on which the data is played. This is the
     full-screen width.
     '''
@@ -900,12 +900,12 @@ class ViewControllerBase(EventDispatcher):
     See also :ref:`view-flip`.
     """
 
-    screen_height = NumericProperty(1080)
+    screen_height: int = NumericProperty(1080)
     '''The screen height in pixels on which the data is played. This is the
     full-screen height.
     '''
 
-    screen_offset_x = NumericProperty(0)
+    screen_offset_x: int = NumericProperty(0)
     '''When there are multiple monitors, the monitor on which the experiment is
     shown in full-screen mode is controlled by the x-position of the displayed
     window.
@@ -1112,7 +1112,7 @@ class ViewControllerBase(EventDispatcher):
     the blue LED is OFF.
     '''
 
-    video_mode = StringProperty('RGB')
+    video_mode: str = StringProperty('RGB')
     '''The current video mode from among the :attr:`video_modes`.
 
     See also :ref:`view-video-mode`.
@@ -1185,6 +1185,12 @@ class ViewControllerBase(EventDispatcher):
     These are the shape's whose color and intensity is controlled by the
     experiment.
     '''
+
+    stages_with_gl: List[List[CeedStage]] = []
+    """The list of stages that returned True in
+    :meth:`~ceed.stage.CeedStage.add_gl_to_canvas` and need to be called for
+    every frame.
+    """
 
     tick_event = None
     '''The kivy clock event that updates the shapes' colors on every frame.
@@ -1353,6 +1359,7 @@ class ViewControllerBase(EventDispatcher):
             self.fbind(name, self.dispatch, 'on_changed')
         self.propixx_lib = libdpx is not None
         self.shape_views = []
+        self.stages_with_gl = []
         self.frame_estimation = FrameEstimation()
         self.teensy_frame_estimation = TeensyFrameEstimation()
 
@@ -1405,13 +1412,14 @@ class ViewControllerBase(EventDispatcher):
         else:
             assert False
 
-    def add_graphics(self, canvas, black_back=False):
+    def add_graphics(self, canvas, stage: CeedStage, black_back=False):
         """Called at the start of the experiment to add all the graphics
         required to visualize the shapes, to the :attr:`current_canvas`.
         """
-        _get_app().stage_factory.remove_shapes_gl_color_instructions(
-            canvas, self.canvas_name)
+        stage_factory: StageFactoryBase = _get_app().stage_factory
+        stage_factory.remove_shapes_gl_from_canvas(canvas, self.canvas_name)
         self.shape_views = []
+        self.stages_with_gl = []
         w, h = self.screen_width, self.screen_height
         half_w = w // 2
         half_h = h // 2
@@ -1423,6 +1431,7 @@ class ViewControllerBase(EventDispatcher):
 
         if self.do_quad_mode:
 
+            quad_i = 0
             for (x, y) in ((0, 1), (1, 1), (0, 0), (1, 0)):
                 with canvas:
                     PushMatrix(group=self.canvas_name)
@@ -1436,12 +1445,18 @@ class ViewControllerBase(EventDispatcher):
                         s.x = -1
                         s.origin = half_w, half_h
 
-                instructs = _get_app().\
-                    stage_factory.get_shapes_gl_color_instructions(
-                    canvas, self.canvas_name)
+                instructs = stage_factory.add_shapes_gl_to_canvas(
+                    canvas, self.canvas_name, quad_i)
+                stages = stage_factory.add_manual_gl_to_canvas(
+                    w, h, stage, canvas, self.canvas_name, self.video_mode,
+                    quad_i)
+
                 with canvas:
                     PopMatrix(group=self.canvas_name)
+
+                quad_i += 1
                 self.shape_views.append(instructs)
+                self.stages_with_gl.append(stages)
         else:
             if self.flip_projector:
                 with canvas:
@@ -1451,8 +1466,10 @@ class ViewControllerBase(EventDispatcher):
                     s.origin = half_w, half_h
 
             self.shape_views = [
-                _get_app().stage_factory.get_shapes_gl_color_instructions(
+                _get_app().stage_factory.add_shapes_gl_to_canvas(
                     canvas, self.canvas_name)]
+            self.stages_with_gl = [stage_factory.add_manual_gl_to_canvas(
+                w, h, stage, canvas, self.canvas_name, self.video_mode)]
 
             if self.flip_projector:
                 with canvas:
@@ -1552,7 +1569,7 @@ class ViewControllerBase(EventDispatcher):
             self._cpu_stats['tstart'] = self._flip_stats['tstart'] = clock()
         self._flip_stats['count'] = self._cpu_stats['count'] = 0
 
-        self.add_graphics(canvas)
+        self.add_graphics(canvas, stage)
 
         self._frame_buffers_i = self._flip_frame_buffer_i = 0
 
@@ -1580,16 +1597,22 @@ class ViewControllerBase(EventDispatcher):
         self.tick_event.cancel()
         Window.funbind('on_flip', self.flip_callback)
         Clock._max_fps = self._original_fps
-        _get_app().stage_factory.remove_shapes_gl_color_instructions(
-            self.current_canvas, self.canvas_name)
 
         stage_factory: StageFactoryBase = _get_app().stage_factory
         function_factory: FunctionFactoryBase = _get_app().function_factory
+
+        stage_factory.remove_manual_gl_from_canvas(
+            stage_factory.stage_names[last_experiment_stage_name],
+            self.current_canvas, self.canvas_name)
+        stage_factory.remove_shapes_gl_from_canvas(
+            self.current_canvas, self.canvas_name)
+
         function_factory.funbind('on_data_event', self._data_log_callback)
         stage_factory.funbind('on_data_event', self._data_log_callback)
 
         self.tick_func = self.tick_event = self.current_canvas = None
         self.shape_views = []
+        self.stages_with_gl = []
 
         self.serializer_tex = None
         self.serializer = None
@@ -1636,6 +1659,7 @@ class ViewControllerBase(EventDispatcher):
         """
         # are we finishing up in quad mode after there were some partial frame
         # at the end of last iteration so we couldn't finish then?
+        stage_factory: StageFactoryBase = _get_app().stage_factory
         if self._stage_ended_last_frame:
             self._stage_ended_last_frame = False
             self.count += 1
@@ -1677,18 +1701,24 @@ class ViewControllerBase(EventDispatcher):
             projections = [None, ] * 4
             # it already has 4 views
             views = self.shape_views
+            stages_gl = self.stages_with_gl
+            quads = [0, 1, 2, 3]
         elif self.video_mode == 'QUAD12X':
             projections = (['r', ] * 4) + (['g', ] * 4) + (['b', ] * 4)
             views = self.shape_views * 3
+            stages_gl = self.stages_with_gl * 3
+            quads = [0, 1, 2, 3] * 3
         else:
             projections = [None, ]
             views = self.shape_views
+            stages_gl = self.stages_with_gl
+            quads = [None]
 
         effective_rate = self.effective_frame_rate
         # in software mode this is always zero. For skipped frames serializer is
         # not ticked
         for _ in range(self._n_missed_frames):
-            for proj in projections:
+            for quad, proj in zip(quads, projections):
                 # we cannot skip frames (i.e. we may only increment frame by
                 # one). Because stages/func can be pre-computed and it assumes
                 # a constant frame rate. If need to skip n frames, tick n times
@@ -1704,8 +1734,8 @@ class ViewControllerBase(EventDispatcher):
                     self.end_stage()
                     raise
 
-                values = _get_app().stage_factory.fill_shape_gl_color_values(
-                    None, shape_values, proj)
+                values = stage_factory.set_shape_gl_color_values(
+                    None, shape_values, quad, proj)
 
                 stage_shape_names = self.stage_shape_names
                 counter_bits, shape_rgba = self._frame_buffers
@@ -1726,7 +1756,8 @@ class ViewControllerBase(EventDispatcher):
 
         first_blit = True
         bits = 0
-        for k, (shape_views, proj) in enumerate(zip(views, projections)):
+        for k, (stage_gl, shape_views, quad, proj) in enumerate(
+                zip(stages_gl, views, quads, projections)):
             self.count += 1
 
             try:
@@ -1738,15 +1769,20 @@ class ViewControllerBase(EventDispatcher):
                     # we'll increment it again at next frame
                     self.count -= 1
                     self._stage_ended_last_frame = True
-                    for colors, rem_proj in zip(views[k:], projections[k:]):
+                    for rem_stage_gl, rem_views, rem_quad, rem_proj in zip(
+                            stages_gl[k:], views[k:], quads[k:],
+                            projections[k:]):
                         if rem_proj is None:
                             # in quad4 we just set rgba to zero
-                            for color in colors.values():
+                            for color in rem_views.values():
                                 color.rgba = 0, 0, 0, 0
                         else:
                             # in quad12 we only set the unused color channels
-                            for color in colors.values():
+                            for color in rem_views.values():
                                 setattr(color, rem_proj, 0)
+
+                        stage_factory.set_manual_gl_colors(
+                            rem_stage_gl, rem_quad, rem_proj, clear=True)
                     break
 
                 self.end_stage()
@@ -1767,8 +1803,9 @@ class ViewControllerBase(EventDispatcher):
             else:
                 bits = 0
 
-            values = _get_app().stage_factory.fill_shape_gl_color_values(
-                shape_views, shape_values, proj)
+            values = stage_factory.set_shape_gl_color_values(
+                shape_views, shape_values, quad, proj)
+            stage_factory.set_manual_gl_colors(stage_gl, quad, proj)
 
             stage_shape_names = self.stage_shape_names
             counter_bits, shape_rgba = self._frame_buffers
@@ -2090,8 +2127,8 @@ class ControllerSideViewControllerBase(ViewControllerBase):
 
     _last_ctrl_release = 0
 
-    def add_graphics(self, canvas, black_back=True):
-        return super().add_graphics(canvas, black_back=black_back)
+    def add_graphics(self, canvas, stage: CeedStage, black_back=True):
+        return super().add_graphics(canvas, stage, black_back=black_back)
 
     @app_error
     def request_stage_start(
