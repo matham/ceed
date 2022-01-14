@@ -1927,8 +1927,11 @@ class ViewSideViewControllerBase(ViewControllerBase):
     def request_process_data(self, data_type, data):
         if data_type == 'frame':
             counter_bits, shape_rgba = data
-            self.queue_view_write.put_nowait(
-                (data_type, (counter_bits.tobytes(), shape_rgba.tobytes())))
+            self.queue_view_write.put_nowait((
+                data_type, (
+                    counter_bits.tobytes(), shape_rgba.tobytes(),
+                    shape_rgba.shape[0])
+            ))
         elif data_type == 'frame_flip':
             self.queue_view_write.put_nowait((data_type, data.tobytes()))
         elif data_type == 'event_data':
@@ -2367,7 +2370,7 @@ class ControllerSideViewControllerBase(ViewControllerBase):
                 elif msg in ('GPU', 'CPU'):
                     self._process_data(msg, float(value))
                 elif msg == 'frame':
-                    counter_bits, shape_rgba = value
+                    counter_bits, shape_rgba, n = value
 
                     counter_bits = np.frombuffer(
                         counter_bits,
@@ -2375,7 +2378,7 @@ class ControllerSideViewControllerBase(ViewControllerBase):
                     shape_rgba = np.frombuffer(
                         shape_rgba,
                         dtype=[(name, np.float16)
-                               for name in self.stage_shape_names])
+                               for name in self.stage_shape_names], count=n)
                     shape_rgba = shape_rgba.reshape(-1, 4)
 
                     self._process_data(msg, (counter_bits, shape_rgba))
