@@ -45,7 +45,8 @@
                     FlatSpinner:
                         id: func_spin
                         test_name: 'func spinner'
-                        values: sorted(app.function_factory.funcs_inst.keys()) if app.function_factory.funcs_inst else []
+                        text: 'Const'
+                        values: sorted(app.function_factory.funcs_inst.keys(), key=lambda x: x.lower()) if app.function_factory.funcs_inst else []
                         text_autoupdate: True
                         size_hint_min_x: self.minimum_width
                         flat_color: app.theme.text_primary

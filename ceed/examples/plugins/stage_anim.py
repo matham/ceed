@@ -36,7 +36,7 @@ class PlasmaStage(CeedStage):
     """
 
     gl_ctx: dict = {}
-    """The gl context used to run the shader, one for each quad if in quad mode, 
+    """The gl context used to run the shader, one for each quad if in quad mode,
     otherwise just 1.
     """
 
