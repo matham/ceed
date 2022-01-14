@@ -596,9 +596,12 @@ following sub-class in the stage plugin:
             raise StageDoneException
 
 The above class will behave correctly whether the stage is pre-computed or not
-because either way it's called to get the values.
+because either way it's called to get the values. See
+:meth:`CeedStage.evaluate_stage` for further details.
 
-See :meth:`CeedStage.evaluate_stage` for further details.
+To add stage settings to the GUI, see :meth:`CeedStage.get_settings_display`
+and the CSV stage plugin implamentation.
+
 Other methods could potentially also be overwritten to hook into the stage
 lifecycle, but they generally require more care. See all :class:`CeedStage`
 methods and below for further details.
@@ -641,7 +644,7 @@ from math import isclose
 from random import shuffle
 from functools import reduce
 from typing import Dict, List, Union, Tuple, Optional, Generator, Set, Type, \
-    TypeVar
+    TypeVar, Any
 
 from kivy.properties import OptionProperty, ListProperty, ObjectProperty, \
     StringProperty, NumericProperty, DictProperty, BooleanProperty
@@ -2285,6 +2288,22 @@ class CeedStage(EventDispatcher, CeedWithID):
         stage_shape.funbind('on_changed', self.dispatch, 'on_changed')
         self.shapes.remove(stage_shape)
         self.dispatch('on_changed')
+
+    def get_settings_display(self, stage_widget) -> Dict[str, Any]:
+        """Returns widgets that will be displayed to the user in the stage
+        settings.
+
+        These widgets can be used to allow users to further configure custom
+        stages. This is called by the Ceed GUI when the settings are first
+        displayed to the user.
+
+        :param stage_widget: The root settings widget to which the settings
+            will be added as grandchildren by the caller.
+        :return: It should return a dict of the name of each setting mapped to
+            the widget controlling the setting. It will be displayed in two
+            columns: the name followed by the widget on the same row.
+        """
+        return {}
 
     def get_stages(
             self, step_into_ref: bool = True

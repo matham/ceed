@@ -354,7 +354,7 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
                     raise TypeError('"{}" is not a recognized type'.
                                     format(value))
 
-        if props or cls_widgets:
+        if props or cls_widgets or items:
             grid = Factory.XYSizedGridLayout(cols=3)
             label = Factory.FlatXSizedLabel
             color = App.get_running_app().theme.text_primary
@@ -401,12 +401,16 @@ class FuncWidget(ShowMoreBehavior, BoxLayout):
                     noise = Widget(size_hint=(None, None), size=(0, 0))
                 grid.add_widget(noise)
 
-            add(grid)
+            for name, item in items.items():
+                if isinstance(item, string_types):
+                    item = Factory.get(item)()
 
-        for item in items:
-            if isinstance(item, string_types):
-                item = Factory.get(item)()
-            add(item)
+                label_w = label(text=name, padding_x='10dp', flat_color=color)
+                grid.add_widget(label_w)
+                grid.add_widget(item)
+                grid.add_widget(Widget(size_hint=(None, None), size=(0, 0)))
+
+            add(grid)
 
     def initialize_display(
             self, func: FuncOrRef, func_controller, selection_controller):

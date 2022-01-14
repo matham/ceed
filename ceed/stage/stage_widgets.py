@@ -610,6 +610,12 @@ class StageWidget(ShowMoreBehavior, BoxLayout):
             self.settings_root, 'StageSettingsDropdownStyle',
             dispatch_kv_post=True)
 
+        setting_items = self.settings_root.ids['setting_items']
+        StageSettingItem = Factory.StageSettingItem
+        for setting, widget in self.stage.get_settings_display(self).items():
+            setting_items.add_widget(StageSettingItem(text=setting))
+            setting_items.add_widget(widget)
+
     def add_stage_containers(self, more_widget):
         """Adds the widget containers for the sub-stage, functions, and shapes
         widgets of this stage.

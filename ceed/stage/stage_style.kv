@@ -180,6 +180,12 @@
             size: dp(2), self.height
 
 
+
+<StageSettingItem@FlatLabel>:
+    size_hint: (None, None)
+    size: self.texture_size
+    flat_color: app.theme.text_primary
+
 <StageSettingsDropdownStyle@object>:
     test_name: 'stage settings'
     do_scroll: (False, False)
@@ -228,17 +234,15 @@
                     state: 'down' if root.stage_widget.stage.color_b else 'normal'
                     on_state: root.stage_widget.stage.color_b = self.state == 'down'
             GridLayout:
+                id: setting_items
                 size_hint_y: None
                 padding: '5dp'
                 spacing: '5dp'
                 cols: 2
                 height: self.minimum_height
                 size_hint_min_x: self.minimum_width
-                FlatLabel:
-                    size_hint: (None, None)
+                StageSettingItem:
                     text: 'Stage order'
-                    size: self.texture_size
-                    flat_color: app.theme.text_primary
                 BoxLayout:
                     spacing: '5dp'
                     size_hint_y: None
@@ -262,11 +266,8 @@
                         size_hint_min_x: self.texture_size[0]
                         state: 'down' if root.stage_widget.stage.order == 'parallel' else 'normal'
                         on_state: root.stage_widget.stage.order = 'parallel' if self.state == 'down' else 'serial'
-                FlatLabel:
-                    size_hint: (None, None)
+                StageSettingItem:
                     text: 'End on'
-                    size: self.texture_size
-                    flat_color: app.theme.text_primary
                 BoxLayout:
                     spacing: '5dp'
                     size_hint_y: None
@@ -290,11 +291,8 @@
                         size_hint_min_x: self.texture_size[0]
                         state: 'down' if root.stage_widget.stage.complete_on == 'any' else 'normal'
                         on_state: root.stage_widget.stage.complete_on = 'any' if self.state == 'down' else 'all'
-                FlatLabel:
-                    size_hint: (None, None)
+                StageSettingItem:
                     text: 'Pre-compute'
-                    size: self.texture_size
-                    flat_color: app.theme.text_primary
                 BoxLayout:
                     spacing: '5dp'
                     size_hint_y: None
@@ -318,11 +316,8 @@
                         size_hint_min_x: self.texture_size[0]
                         state: 'down' if not root.stage_widget.stage.disable_pre_compute else 'normal'
                         on_state: root.stage_widget.stage.disable_pre_compute = self.state == 'normal'
-                FlatLabel:
-                    size_hint: (None, None)
+                StageSettingItem:
                     text: '# Loops'
-                    size: self.texture_size
-                    flat_color: app.theme.text_primary
                 FlatSizedTextInput:
                     size_hint_y: None
                     height: self.minimum_height
@@ -332,11 +327,8 @@
                     on_text: root.stage_widget.stage.loop = max(int(self.text or 1), 1)
                     on_text_validate: self.text = str(root.stage_widget.stage.loop)
                     text: str(root.stage_widget.stage.loop)
-                FlatLabel:
-                    size_hint: (None, None)
+                StageSettingItem:
                     text: 'Serial order'
-                    size: self.texture_size
-                    flat_color: app.theme.text_primary
                 BoxLayout:
                     spacing: '5dp'
                     size_hint_y: None

@@ -1533,26 +1533,27 @@ function_factory.param_noise_factory.get_cls('UniformNoise')
             'timebase_denominator': 'TB denom'}
         return trans
 
-    def get_gui_elements(self):
+    def get_gui_elements(self) -> dict:
         """Returns widget instances that should be displayed to the user along
         with this function's editable properties of :meth:`get_gui_props`.
 
         These widgets are displayed along with other config
         parameters for the function and can be used for custom config options.
+        This is called by the Ceed GUI when the settings are first
+        displayed to the user.
 
-        :returns:
-
-            A list that contains all Kivy widget instances to be displayed.
+        :return: It should return a dict of the name of each setting mapped to
+            the widget controlling the setting. It will be displayed in two
+            columns: the name followed by the widget on the same row.
 
         E.g.::
 
             >>> Cos = function_factory.get('CosFunc')
             >>> cos = Cos()
             >>> cos.get_gui_elements()
-            []
+            {}
         """
-        items = []
-        return items
+        return {}
 
     def get_noise_supported_parameters(self) -> Set[str]:
         """Returns the set of property names of this function that supports

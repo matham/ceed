@@ -60,21 +60,24 @@ plugin.
 """
 
 import random
+import csv
 import importlib
 import pathlib
+from textwrap import dedent
 from fractions import Fraction
-from math import exp, cos, pi
+from math import exp, cos, pi, isclose
 from typing import Iterable, Union, Tuple, List, Type, Dict, Optional
 
 from kivy.properties import NumericProperty, BooleanProperty, StringProperty
 
-from ceed.function import CeedFunc, FuncType, FunctionFactoryBase
+from ceed.function import CeedFunc, FuncType, FunctionFactoryBase, \
+    FuncDoneException
 from ceed.function.param_noise import NoiseType, NoiseBase
 from ceed.utils import get_plugin_modules
 
 __all__ = (
     'get_plugin_functions', 'ConstFunc', 'LinearFunc', 'ExponentialFunc',
-    'CosFunc', 'GaussianNoise', 'UniformNoise', 'DiscreteNoise',
+    'CosFunc', 'CSVFunc', 'GaussianNoise', 'UniformNoise', 'DiscreteNoise',
     'DiscreteListNoise', 'get_ceed_functions', 'get_ceed_distributions')
 
 
@@ -334,6 +337,126 @@ class CosFunc(CeedFunc):
         return val
 
 
+class CSVFunc(CeedFunc):
+    """Defines a function whose frames are read from a csv file.
+
+    There's only one column of data with no header row. Each row in the
+    column is the value of the function for one frame. The total duration of the
+    function is the number of frames divided by the frame rate. I.e. each row
+    corresponds to a frame, but the depending on the fps in Ceed it can be at
+    different times.
+
+    Values are forced to the ``[0, 1]`` range.
+
+    The function is defined as ``y(t) = row(t * fps)``.
+    """
+
+    csv_path: str = StringProperty('')
+    """The full path to the CSV file.
+    """
+
+    _csv_values: List[float] = []
+
+    _csv_index = 0
+
+    _csv_last_time = 0
+
+    def __init__(self, **kwargs):
+        kwargs.setdefault('name', 'CSV')
+        kwargs.setdefault('description', 'y(t) = row(t * fps)')
+        super().__init__(**kwargs)
+
+    def __call__(self, t: Union[int, float, Fraction]) -> float:
+        if t < self.t_start and not isclose(t, self.t_start):
+            raise ValueError(
+                'Cannot call function {} with time {} less than the '
+                'function start {}'.format(self, t, self.t_start))
+        if self.loop_count >= self.loop:
+            self.finalize_func()
+            raise FuncDoneException
+
+        while True:
+            if self._csv_index < len(self._csv_values):
+                val = self._csv_values[self._csv_index]
+                self._csv_index += 1
+                self._csv_last_time = t
+                return val
+
+            self.t_end = self._csv_last_time
+            if not self.tick_loop(self._csv_last_time):
+                break
+
+        raise FuncDoneException
+
+    def get_gui_elements(self):
+        d = super().get_gui_elements()
+        from kivy.lang import Builder
+        box = Builder.load_string(dedent("""
+        BoxLayout:
+            spacing: '5dp'
+            size_hint_y: None
+            height: self.minimum_height
+            size_hint_min_x: self.minimum_width
+            FlatImageButton:
+                scale_down_color: True
+                source: 'flat_folder.png'
+                hover_text: 'Select CSV file'
+                flat_color: app.theme.accent
+                on_release: app.open_filechooser(\
+callback=root.load_csv, target=text_input.text, title='Select CSV file', \
+filters=['*.csv', '*.*'])
+            FlatTextInput:
+                id: text_input
+                size_hint_min_x: '40dp'
+                size_hint_y: None
+                height: self.minimum_height
+                multiline: False
+        """))
+        text_input = box.ids.text_input
+
+        def load_csv(paths):
+            if not paths:
+                return
+            self.csv_path = paths[0]
+
+        def set_text(*_):
+            text_input.text = self.csv_path
+            self._csv_values = []
+
+        def set_path(*_):
+            if not text_input.focus:
+                self.csv_path = text_input.text
+
+        self.fbind('csv_path', set_text)
+        text_input.fbind('focus', set_path)
+        box.load_csv = load_csv
+
+        d['CSV path'] = box
+        return d
+
+    def get_state(self, *largs, **kwargs):
+        d = super().get_state(*largs, **kwargs)
+        d['csv_path'] = self.csv_path
+        return d
+
+    def init_func_tree(self, *args, **kwargs) -> None:
+        super().init_func_tree(*args, **kwargs)
+
+        def cond(val):
+            return max(0., min(1., float(val[0])))
+
+        with open(self.csv_path) as fp:
+            self._csv_values = list(map(cond, csv.reader(fp)))
+
+    def init_func(self, *args, **kwargs) -> None:
+        super().init_func(*args, **kwargs)
+        self._csv_index = 0
+
+    def init_loop_iteration(self, *args, **kwargs) -> None:
+        super().init_loop_iteration(*args, **kwargs)
+        self._csv_index = 0
+
+
 class GaussianNoise(NoiseBase):
     """Represents a Gaussian distribution.
     """
@@ -552,7 +675,7 @@ def get_ceed_functions(
     :param function_factory: The :class:`~ceed.function.FunctionFactoryBase`
         instance currently active in Ceed.
     """
-    return ConstFunc, LinearFunc, ExponentialFunc, CosFunc
+    return ConstFunc, LinearFunc, ExponentialFunc, CosFunc, CSVFunc
 
 
 def get_ceed_distributions(

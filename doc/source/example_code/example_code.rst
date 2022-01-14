@@ -11,6 +11,7 @@ The following examples can also be found in the
    :maxdepth: 2
 
    generate_stage_yaml.rst
+   generate_csv_experiment.rst
 
    stage_anim.rst
 
