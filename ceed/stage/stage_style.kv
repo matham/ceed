@@ -326,7 +326,7 @@
                     background_color: root.flat_color
                     input_filter: 'int'
                     on_text: root.stage_widget.stage.loop = max(int(self.text or 1), 1)
-                    on_text_validate: self.text = str(root.stage_widget.stage.loop)
+                    on_focus: if not self.focus: self.text = str(root.stage_widget.stage.loop)
                     text: str(root.stage_widget.stage.loop)
                 StageSettingItem:
                     text: 'Serial order'
@@ -579,7 +579,7 @@
                     width: '50dp'
                     background_color: root.flat_color
                     input_filter: 'float'
-                    on_text_validate: root.view_xmin = float(self.text)
+                    on_focus: if not self.focus: root.view_xmin = float(self.text)
                     text: '{:.1f}'.format(root.view_xmin)
                 FlatLabel:
                     text: ' - '
@@ -591,7 +591,7 @@
                     width: '50dp'
                     background_color: root.flat_color
                     input_filter: 'float'
-                    on_text_validate: root.view_xmax = float(self.text)
+                    on_focus: if not self.focus: root.view_xmax = float(self.text)
                     text: '{:.1f}'.format(root.view_xmax)
             FlatDivider:
                 orientation: 'horizontal'
