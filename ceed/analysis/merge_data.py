@@ -1442,7 +1442,6 @@ class CeedMCSDataMerger:
         ceed_count_data = ceed_.count_data
 
         # ceed counter contains an item for each frame and sub-frame
-        assert not len(ceed_count_data) % n_sub_frames
         # mcs only sees frames, because sub-frames are all the same
         ceed_count_data_main_frames = ceed_count_data[::n_sub_frames]
         n_ceed = len(ceed_count_data_main_frames)
