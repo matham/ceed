@@ -1645,10 +1645,7 @@ class CeedMCSDataMerger:
         streams = mcs_f.recordings[0].analog_streams
         num_channels = 0
         for stream in streams.values():
-            if 128 in stream.channel_infos:
-                num_channels += 1
-            elif 0 in stream.channel_infos:
-                num_channels += len(stream.channel_infos)
+            num_channels += len(stream.channel_infos)
 
         pbar = tqdm(
             total=num_channels, file=sys.stdout, unit_scale=1,
@@ -1658,18 +1655,27 @@ class CeedMCSDataMerger:
         block.metadata = section = f.create_section(
             'mcs_metadata', 'Associated metadata for the mcs data')
         for stream_id, stream in streams.items():
-            if 128 in stream.channel_infos:
+            keys = stream.channel_infos.keys()
+            electrodes = all(0 <= k <= 119 for k in keys)
+            analogs = all(120 <= k <= 127 for k in keys)
+            digital = 128 in keys
+            if digital:
+                # digital data
+                assert len(stream.channel_infos) == 1
                 pbar.update()
                 block.create_data_array(
                     'digital_io', 'digital_io',
                     data=np.array(stream.channel_data).squeeze())
-            elif 0 in stream.channel_infos:
+            elif analogs or electrodes:
+                # electrode or raw analog data
                 for i in stream.channel_infos:
                     info = stream.channel_infos[i].info
                     pbar.update()
 
+                    name = 'electrode' if electrodes else 'analog'
+
                     elec_sec = section.create_section(
-                        'electrode_{}'.format(info['Label']),
+                        f'{name}_{info["Label"]}',
                         'metadata for this electrode')
                     for key, val in info.items():
                         if isinstance(val, np.generic):
@@ -1680,14 +1686,19 @@ class CeedMCSDataMerger:
                     freq = freq.m_as(ureg.hertz).item()
                     ts = stream.channel_infos[i].sampling_tick
                     ts = ts.m_as(ureg.second).item()
+                    adc_step = stream.channel_infos[i].adc_step
+                    adc_step = adc_step.m_as(ureg.volt).item()
 
                     elec_sec['sampling_frequency'] = yaml_dumps(freq)
                     elec_sec['sampling_tick'] = yaml_dumps(ts)
+                    elec_sec['analog_adc_step'] = yaml_dumps(adc_step)
 
-                    data = np.array(stream.channel_data[i, :])
+                    if electrodes:
+                        data = np.array(stream.channel_data[i, :])
+                    else:
+                        data = np.array(stream.channel_data[i - 120, :])
                     block.create_data_array(
-                        'electrode_{}'.format(info['Label']), 'electrode_data',
-                        data=data)
+                        f'{name}_{info["Label"]}', f'{name}_data', data=data)
 
         pbar.close()
         f.close()

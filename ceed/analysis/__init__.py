@@ -281,6 +281,23 @@ class CeedDataReader:
     samples as in the :attr:`electrodes_data` for any electrode.
     """
 
+    analog_data: Dict[str, np.ndarray] = {}
+    """After :meth:`load_mcs_data`, it is a mapping whose keys is an
+    analog channel name and whose values is a 1D array with the raw analog data
+    from MCS.
+
+    Use :meth:`get_analog_offset_scale` to convert the raw data to properly
+    scaled volt.
+
+    The analog data is typically sampled at a high sampling rate and contains
+    multiple Ceed experiments. See :attr:`electrode_intensity_alignment`.
+    """
+
+    analog_metadata: Dict[str, Dict[str, Any]] = {}
+    """Similar to :attr:`analog_data`, but instead the values is a dict of
+    the analog metadata such as sampling rate etc.
+    """
+
     electrode_intensity_alignment: Optional[np.ndarray] = None
     """After :meth:`load_experiment` it is a 1D array, mapping the ceed
     frames (:attr:`shapes_intensity_rendered`) to the MCS
@@ -1127,6 +1144,17 @@ class CeedDataReader:
             for prop in mcs_metadata.sections[item.name].props:
                 electrode_metadata[prop.name] = yaml_loads(read_nix_prop(prop))
 
+        analog_data = self.analog_data = {}
+        analogs_metadata = self.analog_metadata = {}
+        for item in mcs_block.data_arrays:
+            if not item.name.startswith('analog_'):
+                continue
+            analog_data[item.name[7:]] = item
+
+            analogs_metadata[item.name[7:]] = analog_metadata = {}
+            for prop in mcs_metadata.sections[item.name].props:
+                analog_metadata[prop.name] = yaml_loads(read_nix_prop(prop))
+
     def format_event_data(
             self, event: Optional[str] = None,
             ceed_obj: Optional[CeedWithID] = None,
@@ -1234,6 +1262,21 @@ class CeedDataReader:
             E.g. ``micro-volt = (input - offset) * scale``.
         """
         metadata = self.electrodes_metadata[electrode]
+        return (
+            float(metadata['ADZero']),
+            float(metadata['ConversionFactor']) *
+            10. ** float(metadata['Exponent']))
+
+    def get_analog_offset_scale(self, channel: str) -> Tuple[float, float]:
+        """After :meth:`load_mcs_data`, returns the conversion factors used
+        to convert the raw integer data in :attr:`analog_data` to properly
+        scaled micro-volt.
+
+        :param channel: The channel name as stored in :attr:`analog_data`
+        :return: A 2-tuple of `(offset, scale) `` that can be used to convert.
+            E.g. ``micro-volt = (input - offset) * scale``.
+        """
+        metadata = self.analog_metadata[channel]
         return (
             float(metadata['ADZero']),
             float(metadata['ConversionFactor']) *
