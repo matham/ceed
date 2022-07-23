@@ -604,6 +604,15 @@ class DiscreteListNoise(NoiseBase):
     addition to the required commas.
     """
 
+    num_dup: int = NumericProperty(1)
+    """When :attr:`with_replacement` is ``True``, :attr:`csv_list` is duplicated
+    :attr:`num_dup` times before we sample from it. This can ensure there are
+    enough samples in the distribution.
+
+    If :attr:`with_replacement` is ``False`` and this is not ``1`` an error is
+    raised. Same if :attr:`num_dup` is less than ``1``.
+    """
+
     with_replacement: bool = BooleanProperty(True)
     """Whether, when sampling the distribution, to sample with replacement.
 
@@ -633,20 +642,30 @@ class DiscreteListNoise(NoiseBase):
         items = self.parsed_csv_list
         if not items:
             raise ValueError(
-                f'Not value provided for noise distribution {self}')
+                f'No value provided for noise distribution: {self}')
 
         return random.choice(items)
 
     def sample_seq(self, n) -> List[float]:
         items = self.parsed_csv_list
+        num_dup = self.num_dup
+        if num_dup < 1:
+            raise ValueError(f'N duplicated is less than 1: {self}')
 
         if self.with_replacement:
             if not items:
                 raise ValueError(
-                    f'Not value provided for noise distribution {self}')
+                    f'No values provided for noise distribution: {self}')
+
+            if num_dup > 1:
+                raise ValueError(
+                    f'N duplicated is more than 1, which is not allowed when '
+                    f'with replacement is enabled: {self}')
 
             return random.choices(items, k=n)
 
+        if num_dup != 1:
+            items = list(items) * num_dup
         if n > len(items):
             raise ValueError(
                 f'Sampling without replacement, but asked for {n} samples '
@@ -656,13 +675,14 @@ class DiscreteListNoise(NoiseBase):
 
     def get_config(self) -> dict:
         config = super().get_config()
-        for attr in ('csv_list', 'with_replacement'):
+        for attr in ('csv_list', 'with_replacement', 'num_dup'):
             config[attr] = getattr(self, attr)
         return config
 
     def get_prop_pretty_name(self) -> Dict[str, str]:
         names = super().get_prop_pretty_name()
-        names['csv_list'] = 'CSV list'
+        names['csv_list'] = 'CSV dist'
+        names['num_dup'] = 'N duplicated'
         names['with_replacement'] = 'With replacement'
         return names
 
