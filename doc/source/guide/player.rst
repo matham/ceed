@@ -10,7 +10,7 @@ Like Filers2, Ceed supports playing from a
 `Webcam/video file <https://matham.github.io/filers2/guide/player_types.html#webcam-or-video-file-stream>`_,
 a remote `server <https://matham.github.io/filers2/guide/player_types.html#network>`_,
 `Thor camera <https://matham.github.io/filers2/guide/player_types.html#thor>`_, and from a
-`PointGray camera <https://matham.github.io/filers2/guide/player_types.html#pointgray>`_. The typical setup
+`Flir camera <https://matham.github.io/filers2/guide/player_types.html#rotpy>`_. The typical setup
 for Ceed is to control the camera externally through Filers2 and have Filers2 stream the images over the network
 acting as a server. Then, Ceed streams the images from the server acting as a client displaying them in
 the GUI. This is also described in this guide.

@@ -85,15 +85,8 @@ Install manual python dependencies
 * Install **kivy** from source. We cannot use a pre-compiled kivy from pip because it doesn't work as well in
   full-screen.
   * Install kivy: ``python3 -m pip install kivy[full]==2.0.0 --no-binary kivy`` - it'll take a couple of minutes.
-* If using a **PointGray camera**, on linux we must manually install its libraries
-
-  * Get it from `here <https://www.flir.com/products/flycapture-sdk>`__, extract it and install by running ``install_flycapture.sh``.
-  * Figure out your python version, find the appropriate linux wheel of the last release
-    `here <https://github.com/matham/pyflycap2/releases>`__ and install e.g. with
-    ``pip install https://github.com/matham/pyflycap2/releases/download/v0.3.0/pyflycap2-0.3.0-cp36-cp36m-linux_x86_64.whl``.
-  * If successful, you should be able to run
-    ``python3 -c 'from pyflycap2.interface import CameraContext; cc = CameraContext(); cc.rescan_bus(); print(cc.get_gige_cams())'``
-    and it'll print a list of the serial numbers of all the connected cameras.
+* If using a **Flir camera**, you need to install ``rotpy`` and its dependencies as
+  `described <https://matham.github.io/rotpy/README.html#installation>`_.
 * Install **VPixx** control software as well as ``pypixxlib``
 
   * Go to their `site <https://vpixx.com/>`__ and download the vpixx debian package for ubuntu named e.g. ``vpixx-software-tools.deb``.
@@ -206,11 +199,8 @@ in the home directory. The terminal should be in the home directory
 Install manual python dependencies
 **********************************
 
-* If using a **PointGray camera** install with ``pip install pyflycap2``.
-
-  * If successful, you should be able to run
-    ``python -c "from pyflycap2.interface import CameraContext; cc = CameraContext(); cc.rescan_bus(); print(cc.get_gige_cams())"``
-    and it'll print a list of the serial numbers of all the connected cameras.
+* If using a **Flir camera**, you need to install ``rotpy`` and its dependencies as
+  `described <https://matham.github.io/rotpy/README.html#installation>`_.
 * If using a **Thor camera** install with ``pip install thorcam``.
 * Install **VPixx** control software as well as ``pypixxlib``. Although we're not typically running ceed on this computer,
   it can be tested here.

@@ -40,8 +40,8 @@
     on_kv_post: self.settings_container.add_widget(app.player.ffmpeg_settings)
 
 
-<PTGraySettingsDropdown@PlayerSettingsDropdown>:
-    on_kv_post: self.settings_container.add_widget(app.player.ptgray_settings)
+<FlirSettingsDropdown@PlayerSettingsDropdown>:
+    on_kv_post: self.settings_container.add_widget(app.player.flir_settings)
 
 
 <ThorSettingsDropdown@PlayerSettingsDropdown>:
@@ -119,7 +119,7 @@
         flat_color: app.theme.accent
         on_kv_post:
             self.ffmpeg_dropdown = Factory.FFmpegSettingsDropdown()
-            self.ptgray_dropdown = Factory.PTGraySettingsDropdown()
+            self.flir_dropdown = Factory.FlirSettingsDropdown()
             self.thor_dropdown = Factory.ThorSettingsDropdown()
             self.client_dropdown = Factory.ClientSettingsDropdown()
         on_release: getattr(self, '{}_dropdown'.format(app.player.player_name)).open(root)

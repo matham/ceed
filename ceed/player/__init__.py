@@ -14,7 +14,7 @@ from kivy.properties import BooleanProperty, NumericProperty, StringProperty, \
 from kivy.clock import Clock
 from kivy.app import App
 
-from cpl_media.ptgray import PTGrayPlayer, PTGraySettingsWidget
+from cpl_media.rotpy import FlirPlayer, FlirSettingsWidget
 from cpl_media.ffmpeg import FFmpegPlayer, FFmpegSettingsWidget
 from cpl_media.thorcam import ThorCamPlayer, ThorCamSettingsWidget
 from cpl_media.remote.client import RemoteVideoPlayer, \
@@ -39,7 +39,7 @@ class CeedPlayer(EventDispatcher):
     _config_props_ = ('player_name', )
 
     _config_children_ = {
-        'ffmpeg': 'ffmpeg_player', 'ptgray': 'ptgray_player',
+        'ffmpeg': 'ffmpeg_player', 'flir': 'flir_player',
         'thor': 'thor_player', 'network_client': 'client_player',
         'image_file_recorder': 'image_file_recorder',
         'video_recorder': 'video_recorder',
@@ -54,13 +54,13 @@ class CeedPlayer(EventDispatcher):
     :attr:`ffmpeg_player`.
     """
 
-    ptgray_player: PTGrayPlayer = None
-    """Player that can play a PointGray camera.
+    flir_player: FlirPlayer = None
+    """Player that can play a Flir camera.
     """
 
-    ptgray_settings = None
+    flir_settings = None
     """The settings widget used in the GUI to configure the
-    :attr:`ptgray_player`.
+    :attr:`flir_player`.
     """
 
     thor_player: ThorCamPlayer = None
@@ -83,23 +83,23 @@ class CeedPlayer(EventDispatcher):
 
     player: BasePlayer = ObjectProperty(None, rebind=True)
     """Currently selected player. It is one of :attr:`ffmpeg_player`,
-    :attr:`ptgray_player`, :attr:`thor_player`, or :attr:`client_player`.
+    :attr:`flir_player`, :attr:`thor_player`, or :attr:`client_player`.
     """
 
     player_settings = ObjectProperty(None)
     """The settings widget used in the GUI to configure the currently selected
     player. It is one of :attr:`ffmpeg_settings`,
-    :attr:`ptgray_settings`, :attr:`thor_settings`, or :attr:`client_settings`.
+    :attr:`flir_settings`, :attr:`thor_settings`, or :attr:`client_settings`.
     """
 
     player_name = StringProperty('ffmpeg')
     """The name of the currently selected video player. It is one of "ffmpeg",
-    "thor", "ptgray", or "client".
+    "thor", "flir", or "client".
     """
 
     player_to_raw_name_map = {
         'Webcam/File': 'ffmpeg', 'Network': 'client', 'Thor': 'thor',
-        'PointGray': 'ptgray'
+        'Flir': 'flir'
     }
     """Maps a user friendly player-type name to the name used with
     :attr:`player_name`.
@@ -166,7 +166,7 @@ class CeedPlayer(EventDispatcher):
         super(CeedPlayer, self).__init__(**kwargs)
 
         self.ffmpeg_player = FFmpegPlayer()
-        self.ptgray_player = PTGrayPlayer(open_thread=open_player_thread)
+        self.flir_player = FlirPlayer(open_thread=open_player_thread)
         self.thor_player = ThorCamPlayer(open_thread=open_player_thread)
         self.client_player = RemoteVideoPlayer()
 
@@ -180,7 +180,7 @@ class CeedPlayer(EventDispatcher):
         self._update_recorder()
 
         self.ffmpeg_player.display_frame = self.display_frame
-        self.ptgray_player.display_frame = self.display_frame
+        self.flir_player.display_frame = self.display_frame
         self.thor_player.display_frame = self.display_frame
         self.client_player.display_frame = self.display_frame
 
@@ -200,7 +200,7 @@ class CeedPlayer(EventDispatcher):
         """Creates all the widgets required to show player/recorder.
         """
         self.ffmpeg_settings = FFmpegSettingsWidget(player=self.ffmpeg_player)
-        self.ptgray_settings = PTGraySettingsWidget(player=self.ptgray_player)
+        self.flir_settings = FlirSettingsWidget(player=self.flir_player)
         self.thor_settings = ThorCamSettingsWidget(player=self.thor_player)
         self.client_settings = ClientPlayerSettingsWidget(
             player=self.client_player)
@@ -262,7 +262,7 @@ class CeedPlayer(EventDispatcher):
         for player in (
                 self.ffmpeg_player, self.thor_player, self.client_player,
                 self.image_file_recorder, self.video_recorder,
-                self.ptgray_player):
+                self.flir_player):
             if player is not None:
                 player.stop()
 
@@ -272,6 +272,6 @@ class CeedPlayer(EventDispatcher):
         for player in (
                 self.ffmpeg_player, self.thor_player, self.client_player,
                 self.image_file_recorder, self.video_recorder,
-                self.ptgray_player):
+                self.flir_player):
             if player is not None:
                 player.stop_all(join=True)
