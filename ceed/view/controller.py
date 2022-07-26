@@ -1359,6 +1359,7 @@ class ViewControllerBase(EventDispatcher):
             self.fbind(name, self.dispatch, 'on_changed')
         self.propixx_lib = libdpx is not None
         self.shape_views = []
+        self.stage_shape_names = []
         self.stages_with_gl = []
         self.frame_estimation = FrameEstimation()
         self.teensy_frame_estimation = TeensyFrameEstimation()
@@ -1420,6 +1421,7 @@ class ViewControllerBase(EventDispatcher):
         stage_factory.remove_shapes_gl_from_canvas(canvas, self.canvas_name)
         self.shape_views = []
         self.stages_with_gl = []
+        stage_shapes = self.stage_shape_names
         w, h = self.screen_width, self.screen_height
         half_w = w // 2
         half_h = h // 2
@@ -1446,7 +1448,7 @@ class ViewControllerBase(EventDispatcher):
                         s.origin = half_w, half_h
 
                 instructs = stage_factory.add_shapes_gl_to_canvas(
-                    canvas, self.canvas_name, quad_i)
+                    canvas, self.canvas_name, quad_i, shapes=stage_shapes)
                 stages = stage_factory.add_manual_gl_to_canvas(
                     w, h, stage, canvas, self.canvas_name, self.video_mode,
                     quad_i)
@@ -1467,7 +1469,7 @@ class ViewControllerBase(EventDispatcher):
 
             self.shape_views = [
                 _get_app().stage_factory.add_shapes_gl_to_canvas(
-                    canvas, self.canvas_name)]
+                    canvas, self.canvas_name, shapes=self.stage_shape_names)]
             self.stages_with_gl = [stage_factory.add_manual_gl_to_canvas(
                 w, h, stage, canvas, self.canvas_name, self.video_mode)]
 

@@ -644,7 +644,7 @@ from math import isclose
 from random import shuffle
 from functools import reduce
 from typing import Dict, List, Union, Tuple, Optional, Generator, Set, Type, \
-    TypeVar, Any
+    TypeVar, Any, Container
 
 from kivy.properties import OptionProperty, ListProperty, ObjectProperty, \
     StringProperty, NumericProperty, DictProperty, BooleanProperty
@@ -1258,7 +1258,8 @@ class StageFactoryBase(EventDispatcher):
             t = yield shape_values
 
     def add_shapes_gl_to_canvas(
-            self, canvas: Canvas, name: str, quad: Optional[int] = None
+            self, canvas: Canvas, name: str, quad: Optional[int] = None,
+            shapes: Optional[Container[str]] = None
     ) -> Dict[str, Color]:
         '''Adds all the kivy OpenGL instructions required to display the
         intensity-varying shapes to the kivy canvas and returns the color
@@ -1295,9 +1296,10 @@ class StageFactoryBase(EventDispatcher):
         '''
         shape_views = {}
         for shape in self.shape_factory.shapes:
-            color = shape_views[shape.name] = Color(0, 0, 0, 1, group=name)
-            canvas.add(color)
-            shape.add_area_graphics_to_canvas(name, canvas)
+            if not shapes or shape.name in shapes:
+                color = shape_views[shape.name] = Color(0, 0, 0, 1, group=name)
+                canvas.add(color)
+                shape.add_area_graphics_to_canvas(name, canvas)
 
         return shape_views
 

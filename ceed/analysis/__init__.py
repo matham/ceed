@@ -1999,7 +1999,8 @@ class CeedDataReader:
 
         fbo.add(Translate(x, y))
         shape_views = self.stage_factory.add_shapes_gl_to_canvas(
-            fbo, 'stage_replay')
+            fbo, self.experiment_stage_name,
+            shapes=self.experiment_stage.get_stage_shape_names())
         fbo.add(Translate(-x, -y))
 
         pbar = tqdm(
