@@ -2380,7 +2380,7 @@ class ControllerSideViewControllerBase(ViewControllerBase):
                     shape_rgba = np.frombuffer(
                         shape_rgba,
                         dtype=[(name, np.float16)
-                               for name in self.stage_shape_names], count=n)
+                               for name in self.stage_shape_names])
                     shape_rgba = shape_rgba.reshape(-1, 4)
 
                     self._process_data(msg, (counter_bits, shape_rgba))
