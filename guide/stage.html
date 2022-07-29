@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ceed stages &mdash; Ceed  documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Ceed camera player" href="player.html" />
+    <link rel="prev" title="Ceed shapes" href="shape.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> Ceed
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../blueprint.html">System Blueprint</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="guide.html">User Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="function.html">Ceed functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shape.html">Ceed shapes</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Ceed stages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#creating-stages">Creating stages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#previewing-stage">Previewing stage</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#modifying-functions">Modifying functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#running-preview-stage">Running preview stage</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#shape-color">Shape color</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sub-stages">Sub-stages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#donut-stage-shapes">Donut stage shapes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#create-stage-in-script">Create stage in script</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#stage-plugin">Stage plugin</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#custom-graphics">Custom graphics</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="player.html">Ceed camera player</a></li>
+<li class="toctree-l2"><a class="reference internal" href="experiment.html">Ceed experiment</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../config.html">CEED Config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../example_code/example_code.html">Example Code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../apps/apps.html">Ceed Apps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/api.html">The Ceed API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../optics/optics.html">Microscope optics V2</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Ceed</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="guide.html">User Guide</a> &raquo;</li>
+      <li>Ceed stages</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/guide/stage.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="ceed-stages">
+<span id="stage-guide"></span><h1>Ceed stages<a class="headerlink" href="#ceed-stages" title="Permalink to this headline"></a></h1>
+<p>A Ceed <a class="reference internal" href="../api/stage/stage.html#stage-api"><span class="std std-ref">stage</span></a> uses its functions to control the intensity of its
+shapes during an experiment.</p>
+<p>A stage contains functions, shapes, and children stages. Each experiments runs a root
+stage and this stage ticks through its functions and children stages. For every video
+frame the current time is computed as the frame number multiplied by the period of
+the video frame rate. This time is passed to the functions and sub-stages which
+set their corresponding shapes for that frame from their functions’ return value.</p>
+<p>See the <a class="reference internal" href="../api/stage/stage.html#stage-api"><span class="std std-ref">stage API</span></a> for in-depth stage details.</p>
+<section id="creating-stages">
+<h2>Creating stages<a class="headerlink" href="#creating-stages" title="Permalink to this headline"></a></h2>
+<p>Ceed comes with a <a class="reference internal" href="../api/stage/stage.html#stage-factory-plugin"><span class="std std-ref">pre-defined</span></a> stage with various parameters,
+but a <a class="reference internal" href="../api/stage/stage_plugin.html#stage-plugin"><span class="std std-ref">plugin</span></a> can create custom stage classes and add them to the
+available stages list. Additionally, you can customize stages in the stage pane to make it
+available for re-use in other stages or to be run directly.</p>
+<p>This video shows multiple how to create a stage and name it, how to drag a sequence of
+functions into it and how to drag a shape and shape group into it.</p>
+<p>Each stage has three “shelves” where you can drag objects ordered vertically as
+stages, functions, and shapes. The controller only lets you drop the dragged object
+into the correct shelf, depending on the object.</p>
+
+    <video loop   controls autoplay title="Open in tab for original size" style="max-width: 100%;">
+    <source src="../_videos/stage_create.webm" type="video/webm">
+    stage_create
+    </video>
+    </section>
+<section id="previewing-stage">
+<span id="preview-stage"></span><h2>Previewing stage<a class="headerlink" href="#previewing-stage" title="Permalink to this headline"></a></h2>
+<p>Once we have a stage with functions and shapes, when run as an experiment Ceed will go
+through these functions sequentially until each is done before moving to the next.
+Meanwhile, for every frame, it applies the intensity from the current function for all
+its shapes.</p>
+<p>You can preview the exact temporal sequence of intensity that each shape will experience.</p>
+<p>Select the stage to preview, the sampling rate (it should match the projector rate for
+best accuracy, but it could take a while to pre-compute the entire stage) and refresh
+to compute.</p>
+<p>You can select which color channel (red, green, blue) to preview and zoom to specific
+time intervals to see its intensity.</p>
+<p>For example in this video, only the blue channel and only three shapes have intensity,
+the others have zero intensity (black). The temporal pattern is a cosine (“Slow”)
+for 30 seconds followed by a constant intensity for a few seconds (the duration and
+intensity is randomized by the function). Function’s output are clipped to the 0-1
+range.</p>
+
+    <video loop   controls autoplay title="Open in tab for original size" style="max-width: 100%;">
+    <source src="../_videos/stage_graph.webm" type="video/webm">
+    stage_graph
+    </video>
+    </section>
+<section id="modifying-functions">
+<span id="mod-stage"></span><h2>Modifying functions<a class="headerlink" href="#modifying-functions" title="Permalink to this headline"></a></h2>
+<p>Rather than modifying the functions in the function pane, you can modify the
+function directly in the stage. When originally adding the function, it uses a
+reference to the original function following any changes to it. Pressing the T-fork
+button will replace it with an editable function that is a copy of the referenced
+function.</p>
+<p>We can also set the stage to <a class="reference internal" href="../api/stage/stage.html#ceed.stage.CeedStage.loop" title="ceed.stage.CeedStage.loop"><code class="xref py py-attr docutils literal notranslate"><span class="pre">loop</span></code></a> over its function
+sequence, e.g. 3 times in the video.</p>
+
+    <video loop   controls autoplay title="Open in tab for original size" style="max-width: 100%;">
+    <source src="../_videos/stage_mod_function.webm" type="video/webm">
+    stage_mod_function
+    </video>
+    </section>
+<section id="running-preview-stage">
+<span id="preview-play-stage"></span><h2>Running preview stage<a class="headerlink" href="#running-preview-stage" title="Permalink to this headline"></a></h2>
+<p>You can preview the frames of a stage by running it in the drawing area and it will
+play the exact sequence of intensity for each shape as during a real experiment.</p>
+<p>Select the stage name from the dropdown and then press the play button to preview.
+Press stop to end it (or wait until it’s done).</p>
+<p>Notice the “experiment sampled” named stage that is created when running. This stage
+is automatically created from the selected stage and is the stage that is run. It
+contains all concrete values generated by the randomized parameters. See also
+<span class="xref std std-ref">logged-experiment</span>.</p>
+
+    <video loop   controls autoplay title="Open in tab for original size" style="max-width: 100%;">
+    <source src="../_videos/stage_run.webm" type="video/webm">
+    stage_run
+    </video>
+    <p><a class="reference download internal" download="" href="../_downloads/545aaa8254e49f3e8a4bf289eb5ae800/stage_run.yml"><code class="xref download docutils literal notranslate"><span class="pre">Ceed</span> <span class="pre">config</span> <span class="pre">of</span> <span class="pre">the</span> <span class="pre">video</span></code></a></p>
+</section>
+<section id="shape-color">
+<span id="stage-color"></span><h2>Shape color<a class="headerlink" href="#shape-color" title="Permalink to this headline"></a></h2>
+<p>You can select the any of the three red, green, and blue color channels to be set
+by the function intensity value. The other channels are kept at zero.</p>
+
+    <video loop   controls autoplay title="Open in tab for original size" style="max-width: 100%;">
+    <source src="../_videos/stage_run_other_color.webm" type="video/webm">
+    stage_run_other_color
+    </video>
+    <p><a class="reference download internal" download="" href="../_downloads/0a09ca4cec8a73a65ebd0fd6a4c6446f/stage_run_other_color.yml"><code class="xref download docutils literal notranslate"><span class="pre">Ceed</span> <span class="pre">config</span> <span class="pre">of</span> <span class="pre">the</span> <span class="pre">video</span></code></a></p>
+</section>
+<section id="sub-stages">
+<h2>Sub-stages<a class="headerlink" href="#sub-stages" title="Permalink to this headline"></a></h2>
+<p>To apply different temporal patterns to different shapes or shape groups, you can
+add these shapes to different stages, and then place the stages into a single root
+stage that runs them.</p>
+<p>A stage applies its functions to its shapes. But, it can contain sub-stages
+that will simultaneously apply their functions to their shapes. A shape contained
+in multiple stages, the most deeply nested stage wins if both stages are active
+simultaneously.</p>
+<p>In this video, we create two sub-stages directly in the stage, one sets two shapes
+to a cosine with frequency 2Hz, the other to sets its two shapes to a frequency of
+1Hz. Additionally, one sets its shapes to cyan, the other to purple.</p>
+<p>Initially, the two sub-stages will be run one after the other (<strong>serially</strong>) looping twice.
+Then we set their order to run in <strong>parallel</strong>.</p>
+
+    <video loop   controls autoplay title="Open in tab for original size" style="max-width: 100%;">
+    <source src="../_videos/stage_parallel.webm" type="video/webm">
+    stage_parallel
+    </video>
+    <p><a class="reference download internal" download="" href="../_downloads/f6c6500e4ba9b4a2c29890a2a6b1f7e1/stage_parallel.yml"><code class="xref download docutils literal notranslate"><span class="pre">Ceed</span> <span class="pre">config</span> <span class="pre">of</span> <span class="pre">the</span> <span class="pre">video</span></code></a></p>
+</section>
+<section id="donut-stage-shapes">
+<span id="stage-donut"></span><h2>Donut stage shapes<a class="headerlink" href="#donut-stage-shapes" title="Permalink to this headline"></a></h2>
+<p>The color of a shape’s internal area is uniformly set to its intensity value. To
+create a donut-style shape, where some internal part is black, you could draw
+the internal shape and create two sub-stages, each with their own function,
+one a cosine and one constant with zero intensity etc.</p>
+<p>A simpler way is to mark “keep dark” in the internal shape’s stage settings.
+Then the shape will be kept dark at all times.</p>
+
+    <video loop   controls autoplay title="Open in tab for original size" style="max-width: 100%;">
+    <source src="../_videos/stage_donut.webm" type="video/webm">
+    stage_donut
+    </video>
+    <p><a class="reference download internal" download="" href="../_downloads/77ea27e0d65ad0447c035b82922f2fa8/stage_donut.yml"><code class="xref download docutils literal notranslate"><span class="pre">Ceed</span> <span class="pre">config</span> <span class="pre">of</span> <span class="pre">the</span> <span class="pre">video</span></code></a></p>
+</section>
+<section id="create-stage-in-script">
+<h2>Create stage in script<a class="headerlink" href="#create-stage-in-script" title="Permalink to this headline"></a></h2>
+<p>A stage complete with functions and shapes can be created in a script,
+saved to a yaml file, and then imported from the GUI ready to be
+used in an experiment. See the <code class="docutils literal notranslate"><span class="pre">CeedDataWriterBase.save_config_to_yaml</span></code>
+method for an example.</p>
+</section>
+<section id="stage-plugin">
+<h2>Stage plugin<a class="headerlink" href="#stage-plugin" title="Permalink to this headline"></a></h2>
+<p>Ceed comes with a blank stage baseclass, however using <a class="reference internal" href="../api/stage/stage_plugin.html#stage-plugin"><span class="std std-ref">plugins</span></a>
+Ceed can support any custom stage.</p>
+<p>It is fully explained in <a class="reference internal" href="../api/stage/stage_plugin.html#stage-plugin"><span class="std std-ref">Stage plugins</span></a>, but you can make your plugin available to
+Ceed by copying your Python file to the <code class="docutils literal notranslate"><span class="pre">ceed/stage/plugin</span></code> directory
+under where Ceed is installed, or register your external plugin package
+using <a class="reference internal" href="../apps/main.html#ceed.main.CeedApp.external_stage_plugin_package" title="ceed.main.CeedApp.external_stage_plugin_package"><code class="xref py py-attr docutils literal notranslate"><span class="pre">external_stage_plugin_package</span></code></a>.</p>
+<p>Ceed gets your stage classes using a <code class="docutils literal notranslate"><span class="pre">get_ceed_stages</span></code> function in the plugin.</p>
+<p>To write a plugin, it helps to become familiar with the
+<a class="reference internal" href="../api/stage/stage.html#stage-api"><span class="std std-ref">stage API</span></a> and the <a class="reference internal" href="../api/stage/stage.html#ceed.stage.CeedStage" title="ceed.stage.CeedStage"><code class="xref py py-class docutils literal notranslate"><span class="pre">CeedStage</span></code></a>
+class that all stages inherit from.</p>
+<p>A very simple stage plugin file that sets the intensity of all its shapes to
+<code class="docutils literal notranslate"><span class="pre">t</span> <span class="pre">^</span> <span class="pre">2</span></code>, where <code class="docutils literal notranslate"><span class="pre">t</span></code> is the elapsed time is, and it lasts for 1 second
+for each loop iteration:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">ceed.stage</span> <span class="kn">import</span> <span class="n">CeedStage</span><span class="p">,</span> <span class="n">StageDoneException</span>
+
+
+<span class="k">class</span> <span class="nc">GrowStage</span><span class="p">(</span><span class="n">CeedStage</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;Grow&#39;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">evaluate_stage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shapes</span><span class="p">,</span> <span class="n">last_end_t</span><span class="p">):</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">color_r</span>
+        <span class="n">g</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">color_g</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">color_b</span>
+
+        <span class="c1"># always get the first time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_start</span> <span class="o">=</span> <span class="n">t</span> <span class="o">=</span> <span class="k">yield</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loop</span><span class="p">):</span>
+            <span class="n">t_start</span> <span class="o">=</span> <span class="n">t</span>
+
+            <span class="c1"># only go for 1 second</span>
+            <span class="k">while</span> <span class="n">t</span> <span class="o">-</span> <span class="n">t_start</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">intensity</span> <span class="o">=</span> <span class="p">(</span><span class="n">t</span> <span class="o">-</span> <span class="n">t_start</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+
+                <span class="c1"># set the r, g, b for those color channels used. Alpha is None</span>
+                <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">shape_values</span> <span class="ow">in</span> <span class="n">shapes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="n">shape_values</span><span class="o">.</span><span class="n">append</span><span class="p">((</span>
+                        <span class="n">intensity</span> <span class="k">if</span> <span class="n">r</span> <span class="k">else</span> <span class="mf">0.</span><span class="p">,</span>
+                        <span class="n">intensity</span> <span class="k">if</span> <span class="n">g</span> <span class="k">else</span> <span class="mf">0.</span><span class="p">,</span>
+                        <span class="n">intensity</span> <span class="k">if</span> <span class="n">b</span> <span class="k">else</span> <span class="mf">0.</span><span class="p">,</span>
+                        <span class="kc">None</span>
+                    <span class="p">))</span>
+                <span class="c1"># this yields so GUI can draw shapes and resume for next frame</span>
+                <span class="n">t</span> <span class="o">=</span> <span class="k">yield</span>
+
+        <span class="c1"># this time value was not used so it ends on the last sample so</span>
+        <span class="c1"># that last time will be used as start of next stage and MUST be saved</span>
+        <span class="c1"># as t_end</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_end</span> <span class="o">=</span> <span class="n">t</span>
+        <span class="c1"># this is how we indicate we&#39;re done</span>
+        <span class="k">raise</span> <span class="n">StageDoneException</span>
+
+
+<span class="k">def</span> <span class="nf">get_ceed_stages</span><span class="p">(</span><span class="n">stage_factory</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">GrowStage</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Simply copy the above code into your python file and place it in your external
+package or in Ceed’s plugin directory, e.g. <code class="docutils literal notranslate"><span class="pre">ceed/stage/plugin/my_plugin.py</span></code>
+and <code class="docutils literal notranslate"><span class="pre">Grow</span></code> will be listed in the GUI. Make an instance of it and drag shapes
+into it and it can used to run an experiment without needing to add any
+functions (but you could if you wanted to use them somehow).</p>
+</section>
+<section id="custom-graphics">
+<h2>Custom graphics<a class="headerlink" href="#custom-graphics" title="Permalink to this headline"></a></h2>
+<p>Besides the shapes drawn in the Ceed GUI or script generated, stages could
+add arbitrary Kivy GL graphics to the experiment screen and update them
+during an experiment. This e.g. allows the display of a circle whose intensity
+falls off as it’s farther from the center of the circle.</p>
+<p>See the example plugins in the examples directory or the example code section in the docs.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="shape.html" class="btn btn-neutral float-left" title="Ceed shapes" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="player.html" class="btn btn-neutral float-right" title="Ceed camera player" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2019, Matthew Einhorn.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

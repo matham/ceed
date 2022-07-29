@@ -1,0 +1,58 @@
+function: []
+shape:
+  groups:
+  - name: shapes
+    shapes:
+    - ellipse
+    - polygon
+  shapes:
+  - angle: 0
+    center:
+    - 250
+    - 450
+    cls: CeedPaintEllipse
+    is_valid: true
+    line_color: &id001
+    - 0
+    - 1
+    - 0
+    - 1
+    line_color_locked: &id002
+    - 0.4
+    - 0.56
+    - 0.36
+    - 1
+    line_width: 1.0
+    locked: false
+    name: ellipse
+    radius_x: 200
+    radius_y: 400
+  - center:
+    - 700
+    - 300
+    cls: CeedPaintCircle
+    is_valid: true
+    line_color: *id001
+    line_color_locked: *id002
+    line_width: 1.0
+    locked: false
+    name: circle
+    radius: 200
+  - cls: CeedPaintPolygon
+    is_valid: true
+    line_color: *id001
+    line_color_locked: *id002
+    line_width: 1.0
+    locked: false
+    name: polygon
+    points:
+    - 275
+    - 300
+    - 700
+    - 300
+    - 500
+    - 800
+    selection_point:
+    - 275
+    - 300
+stage: []

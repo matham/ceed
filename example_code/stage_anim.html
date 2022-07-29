@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stage plugin with animated graphics &mdash; Ceed  documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Merging Ceed Data with MCS Data" href="merge_ceed_with_mcs_data.html" />
+    <link rel="prev" title="Generating data for CSV stage or function" href="generate_csv_experiment.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> Ceed
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../blueprint.html">System Blueprint</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../config.html">CEED Config</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="example_code.html">Example Code</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="generate_stage_yaml.html">Generating complete stage and saving to yaml</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generate_csv_experiment.html">Generating data for CSV stage or function</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Stage plugin with animated graphics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="merge_ceed_with_mcs_data.html">Merging Ceed Data with MCS Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="read_merged_data.html">Reading Ceed Experiment Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="show_merged_data.html">Plotting Ceed Experiment Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generate_movie.html">Generating Movie from Ceed Experiment Data</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../apps/apps.html">Ceed Apps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/api.html">The Ceed API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../optics/optics.html">Microscope optics V2</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Ceed</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="example_code.html">Example Code</a> &raquo;</li>
+      <li>Stage plugin with animated graphics</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/example_code/stage_anim.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="stage-plugin-with-animated-graphics">
+<h1>Stage plugin with animated graphics<a class="headerlink" href="#stage-plugin-with-animated-graphics" title="Permalink to this headline"></a></h1>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos">  1</span><span class="sd">&quot;&quot;&quot;This plugin shows how to create custom graphics to display during a</span>
+<span class="linenos">  2</span><span class="sd">stage and how log RGBA and arbitrary data to the HDF5 file.</span>
+<span class="linenos">  3</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="linenos">  4</span><span class="kn">from</span> <span class="nn">ceed.stage</span> <span class="kn">import</span> <span class="n">CeedStage</span><span class="p">,</span> <span class="n">StageDoneException</span>
+<span class="linenos">  5</span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="linenos">  6</span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Dict</span>
+<span class="linenos">  7</span>
+<span class="linenos">  8</span>
+<span class="linenos">  9</span><span class="c1"># this shader is used to generate a time varying plasma image - it&#39;s very</span>
+<span class="linenos"> 10</span><span class="c1"># low-level GL</span>
+<span class="linenos"> 11</span><span class="n">plasma_shader</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;</span>
+<span class="linenos"> 12</span><span class="s1">$HEADER$</span>
+<span class="linenos"> 13</span>
+<span class="linenos"> 14</span><span class="s1">uniform vec2 resolution;</span>
+<span class="linenos"> 15</span><span class="s1">uniform float time;</span>
+<span class="linenos"> 16</span>
+<span class="linenos"> 17</span><span class="s1">void main(void)</span>
+<span class="linenos"> 18</span><span class="s1">{</span>
+<span class="linenos"> 19</span><span class="s1">   vec4 frag_coord = frag_modelview_mat * gl_FragCoord;</span>
+<span class="linenos"> 20</span><span class="s1">   float x = frag_coord.x;</span>
+<span class="linenos"> 21</span><span class="s1">   float y = frag_coord.y;</span>
+<span class="linenos"> 22</span><span class="s1">   float mov0 = x+y+cos(sin(time)*2.)*100.+sin(x/100.)*1000.;</span>
+<span class="linenos"> 23</span><span class="s1">   float mov1 = y / resolution.y / 0.2 + time;</span>
+<span class="linenos"> 24</span><span class="s1">   float mov2 = x / resolution.x / 0.2;</span>
+<span class="linenos"> 25</span><span class="s1">   float c1 = abs(sin(mov1+time)/2.+mov2/2.-mov1-mov2+time);</span>
+<span class="linenos"> 26</span><span class="s1">   float c2 = abs(sin(c1+sin(mov0/1000.+time)</span>
+<span class="linenos"> 27</span><span class="s1">              +sin(y/40.+time)+sin((x+y)/100.)*3.));</span>
+<span class="linenos"> 28</span><span class="s1">   float c3 = abs(sin(c2+cos(mov1+mov2+c2)+cos(mov2)+sin(x/1000.)));</span>
+<span class="linenos"> 29</span><span class="s1">   gl_FragColor = vec4( c1,c2,c3,1.0);</span>
+<span class="linenos"> 30</span><span class="s1">}</span>
+<span class="linenos"> 31</span><span class="s1">&#39;&#39;&#39;</span>
+<span class="linenos"> 32</span>
+<span class="linenos"> 33</span>
+<span class="linenos"> 34</span><span class="k">class</span> <span class="nc">PlasmaStage</span><span class="p">(</span><span class="n">CeedStage</span><span class="p">):</span>
+<span class="linenos"> 35</span>    <span class="sd">&quot;&quot;&quot;Displays a time varying plasma as an experiment stage.</span>
+<span class="linenos"> 36</span><span class="sd">    &quot;&quot;&quot;</span>
+<span class="linenos"> 37</span>
+<span class="linenos"> 38</span>    <span class="n">gl_ctx</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="linenos"> 39</span>    <span class="sd">&quot;&quot;&quot;The gl context used to run the shader, one for each quad if in quad mode,</span>
+<span class="linenos"> 40</span><span class="sd">    otherwise just 1.</span>
+<span class="linenos"> 41</span><span class="sd">    &quot;&quot;&quot;</span>
+<span class="linenos"> 42</span>
+<span class="linenos"> 43</span>    <span class="n">last_time</span> <span class="o">=</span> <span class="mf">0.</span>
+<span class="linenos"> 44</span>    <span class="sd">&quot;&quot;&quot;The last time value passed by ceed to the stage in tick. Used to update</span>
+<span class="linenos"> 45</span><span class="sd">    the plasma in ``set_gl_colors``.</span>
+<span class="linenos"> 46</span><span class="sd">    &quot;&quot;&quot;</span>
+<span class="linenos"> 47</span>
+<span class="linenos"> 48</span>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="linenos"> 49</span>        <span class="c1"># set a custom name for the stage class</span>
+<span class="linenos"> 50</span>        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;Plasma&#39;</span>
+<span class="linenos"> 51</span>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<span class="linenos"> 52</span>        <span class="c1"># we can&#39;t pre-compute this stage because of how we get the time used</span>
+<span class="linenos"> 53</span>        <span class="c1"># during drawing</span>
+<span class="linenos"> 54</span>        <span class="bp">self</span><span class="o">.</span><span class="n">disable_pre_compute</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="linenos"> 55</span>        <span class="bp">self</span><span class="o">.</span><span class="n">gl_ctx</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="linenos"> 56</span>
+<span class="linenos"> 57</span>    <span class="k">def</span> <span class="nf">add_gl_to_canvas</span><span class="p">(</span>
+<span class="linenos"> 58</span>            <span class="bp">self</span><span class="p">,</span> <span class="n">screen_width</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">screen_height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">canvas</span><span class="p">,</span>
+<span class="linenos"> 59</span>            <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">quad_mode</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">quad</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+<span class="linenos"> 60</span>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="linenos"> 61</span>        <span class="c1"># todo: this stage does not support quad12x, only quad4x</span>
+<span class="linenos"> 62</span>        <span class="c1"># we overwrite this method to manually add gl graphics elements to the</span>
+<span class="linenos"> 63</span>        <span class="c1"># kivy canvas</span>
+<span class="linenos"> 64</span>        <span class="kn">from</span> <span class="nn">kivy.graphics</span> <span class="kn">import</span> <span class="n">Color</span><span class="p">,</span> <span class="n">Rectangle</span><span class="p">,</span> <span class="n">RenderContext</span>
+<span class="linenos"> 65</span>
+<span class="linenos"> 66</span>        <span class="c1"># create a custom canvas context, so that we can use the gl shader</span>
+<span class="linenos"> 67</span>        <span class="bp">self</span><span class="o">.</span><span class="n">gl_ctx</span><span class="p">[</span><span class="n">quad</span><span class="p">]</span> <span class="o">=</span> <span class="n">ctx</span> <span class="o">=</span> <span class="n">RenderContext</span><span class="p">(</span>
+<span class="linenos"> 68</span>            <span class="n">use_parent_projection</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">use_parent_modelview</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="linenos"> 69</span>            <span class="n">use_parent_frag_modelview</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fs</span><span class="o">=</span><span class="n">plasma_shader</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+<span class="linenos"> 70</span>        <span class="c1"># pass the variables required by the shader</span>
+<span class="linenos"> 71</span>        <span class="n">ctx</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
+<span class="linenos"> 72</span>        <span class="n">ctx</span><span class="p">[</span><span class="s1">&#39;resolution&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">screen_width</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">screen_height</span> <span class="o">/</span> <span class="mi">2</span><span class="p">]</span>
+<span class="linenos"> 73</span>
+<span class="linenos"> 74</span>        <span class="c1"># make sure the background behind the canvas is not transparent</span>
+<span class="linenos"> 75</span>        <span class="k">with</span> <span class="n">ctx</span><span class="p">:</span>
+<span class="linenos"> 76</span>            <span class="n">Color</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="linenos"> 77</span>            <span class="n">Rectangle</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">screen_width</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">screen_height</span> <span class="o">//</span> <span class="mi">2</span><span class="p">))</span>
+<span class="linenos"> 78</span>
+<span class="linenos"> 79</span>        <span class="c1"># add it to the overall canvas</span>
+<span class="linenos"> 80</span>        <span class="n">canvas</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span>
+<span class="linenos"> 81</span>
+<span class="linenos"> 82</span>        <span class="c1"># must return True so that set_gl_colors is called</span>
+<span class="linenos"> 83</span>        <span class="k">return</span> <span class="kc">True</span>
+<span class="linenos"> 84</span>
+<span class="linenos"> 85</span>    <span class="k">def</span> <span class="nf">set_gl_colors</span><span class="p">(</span>
+<span class="linenos"> 86</span>            <span class="bp">self</span><span class="p">,</span> <span class="n">quad</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">grayscale</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="linenos"> 87</span>            <span class="n">clear</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="linenos"> 88</span>        <span class="c1"># this is called for every time step, after ticking the stage when the</span>
+<span class="linenos"> 89</span>        <span class="c1"># time is saved. Now pass on to the shader the current time</span>
+<span class="linenos"> 90</span>        <span class="bp">self</span><span class="o">.</span><span class="n">gl_ctx</span><span class="p">[</span><span class="n">quad</span><span class="p">][</span><span class="s1">&#39;time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_time</span>
+<span class="linenos"> 91</span>        <span class="k">if</span> <span class="n">clear</span><span class="p">:</span>
+<span class="linenos"> 92</span>            <span class="c1"># todo: set to black if cleared - it is not supported by plasma</span>
+<span class="linenos"> 93</span>            <span class="k">pass</span>
+<span class="linenos"> 94</span>
+<span class="linenos"> 95</span>    <span class="k">def</span> <span class="nf">remove_gl_from_canvas</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="linenos"> 96</span>        <span class="c1"># everything is removed by name, so just clear the context</span>
+<span class="linenos"> 97</span>        <span class="bp">self</span><span class="o">.</span><span class="n">gl_ctx</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="linenos"> 98</span>        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">remove_gl_from_canvas</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<span class="linenos"> 99</span>
+<span class="linenos">100</span>    <span class="k">def</span> <span class="nf">evaluate_stage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shapes</span><span class="p">,</span> <span class="n">last_end_t</span><span class="p">):</span>
+<span class="linenos">101</span>        <span class="c1"># always get the first time</span>
+<span class="linenos">102</span>        <span class="bp">self</span><span class="o">.</span><span class="n">t_start</span> <span class="o">=</span> <span class="n">t</span> <span class="o">=</span> <span class="k">yield</span>
+<span class="linenos">103</span>        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loop</span><span class="p">):</span>
+<span class="linenos">104</span>            <span class="n">t_start</span> <span class="o">=</span> <span class="n">t</span>
+<span class="linenos">105</span>
+<span class="linenos">106</span>            <span class="c1"># only go for 10 second</span>
+<span class="linenos">107</span>            <span class="k">while</span> <span class="n">t</span> <span class="o">-</span> <span class="n">t_start</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="p">:</span>
+<span class="linenos">108</span>                <span class="c1"># save the current time for use by the shader when</span>
+<span class="linenos">109</span>                <span class="c1"># set_gl_colors is called after each tick</span>
+<span class="linenos">110</span>                <span class="bp">self</span><span class="o">.</span><span class="n">last_time</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">t</span> <span class="o">-</span> <span class="n">t_start</span><span class="p">)</span>
+<span class="linenos">111</span>
+<span class="linenos">112</span>                <span class="c1"># save some value to the shapes log - could be any 4 numbers</span>
+<span class="linenos">113</span>                <span class="n">shapes</span><span class="p">[</span><span class="s1">&#39;plasma&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="mf">.5</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+<span class="linenos">114</span>                <span class="c1"># this yields so GUI can draw shapes and resume for next frame</span>
+<span class="linenos">115</span>                <span class="n">t</span> <span class="o">=</span> <span class="k">yield</span>
+<span class="linenos">116</span>
+<span class="linenos">117</span>        <span class="c1"># this time value was not used so it ends on the last sample so</span>
+<span class="linenos">118</span>        <span class="c1"># that last time will be used as start of next stage and MUST be saved</span>
+<span class="linenos">119</span>        <span class="c1"># as t_end</span>
+<span class="linenos">120</span>        <span class="bp">self</span><span class="o">.</span><span class="n">t_end</span> <span class="o">=</span> <span class="n">t</span>
+<span class="linenos">121</span>        <span class="c1"># this is how we indicate we&#39;re done</span>
+<span class="linenos">122</span>        <span class="k">raise</span> <span class="n">StageDoneException</span>
+<span class="linenos">123</span>
+<span class="linenos">124</span>    <span class="k">def</span> <span class="nf">get_stage_shape_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="linenos">125</span>        <span class="c1"># add a &quot;shape&quot; named plasma so we can log data for it at every</span>
+<span class="linenos">126</span>        <span class="c1"># timestep. The values will also display in the stage preview graph</span>
+<span class="linenos">127</span>        <span class="n">names</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">get_stage_shape_names</span><span class="p">()</span>
+<span class="linenos">128</span>        <span class="n">names</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s1">&#39;plasma&#39;</span><span class="p">)</span>
+<span class="linenos">129</span>        <span class="k">return</span> <span class="n">names</span>
+<span class="linenos">130</span>
+<span class="linenos">131</span>
+<span class="linenos">132</span><span class="k">class</span> <span class="nc">SoftEllipseStage</span><span class="p">(</span><span class="n">CeedStage</span><span class="p">):</span>
+<span class="linenos">133</span>    <span class="sd">&quot;&quot;&quot;Displays a time varying ellipse as an experiment stage. The ellipse is</span>
+<span class="linenos">134</span><span class="sd">    also zero in the center, with increased intensity as we go out from center</span>
+<span class="linenos">135</span><span class="sd">    &quot;&quot;&quot;</span>
+<span class="linenos">136</span>
+<span class="linenos">137</span>    <span class="n">texture_pat</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="linenos">138</span>    <span class="sd">&quot;&quot;&quot;A numpy pattern that will be blitted into the kivy gl texture. This</span>
+<span class="linenos">139</span><span class="sd">    contains the ellipse pattern. This pattern is multiplied by an attenuation</span>
+<span class="linenos">140</span><span class="sd">    factor at each step and copied to ``buffer`` to set the actual intensity.</span>
+<span class="linenos">141</span><span class="sd">    &quot;&quot;&quot;</span>
+<span class="linenos">142</span>
+<span class="linenos">143</span>    <span class="n">buffer</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="linenos">144</span>    <span class="sd">&quot;&quot;&quot;The RGB buffer that is blitted to the texture.</span>
+<span class="linenos">145</span><span class="sd">    &quot;&quot;&quot;</span>
+<span class="linenos">146</span>
+<span class="linenos">147</span>    <span class="n">buffer_count</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="linenos">148</span>    <span class="sd">&quot;&quot;&quot;The current time iteration used to set the ellipse intensity.</span>
+<span class="linenos">149</span><span class="sd">    &quot;&quot;&quot;</span>
+<span class="linenos">150</span>
+<span class="linenos">151</span>    <span class="n">kivy_tex</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="linenos">152</span>    <span class="sd">&quot;&quot;&quot;The Kivy texture, one for each quad if in quad mode, otherwise just 1.</span>
+<span class="linenos">153</span><span class="sd">    &quot;&quot;&quot;</span>
+<span class="linenos">154</span>
+<span class="linenos">155</span>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="linenos">156</span>        <span class="c1"># set a custom name for the stage class</span>
+<span class="linenos">157</span>        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;SoftEllipse&#39;</span>
+<span class="linenos">158</span>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<span class="linenos">159</span>        <span class="c1"># we can&#39;t pre-compute this stage because of how we get the time used</span>
+<span class="linenos">160</span>        <span class="c1"># during drawing</span>
+<span class="linenos">161</span>        <span class="bp">self</span><span class="o">.</span><span class="n">disable_pre_compute</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="linenos">162</span>
+<span class="linenos">163</span>        <span class="c1"># generate the ellipse pattern and the RGB buffer</span>
+<span class="linenos">164</span>        <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">150</span><span class="p">)</span>
+<span class="linenos">165</span>        <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+<span class="linenos">166</span>        <span class="n">xx</span><span class="p">,</span> <span class="n">yy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="linenos">167</span>        <span class="n">zz</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">xx</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">yy</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+<span class="linenos">168</span>        <span class="n">zz</span><span class="p">[</span><span class="n">zz</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="linenos">169</span>
+<span class="linenos">170</span>        <span class="bp">self</span><span class="o">.</span><span class="n">texture_pat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">zz</span> <span class="o">*</span> <span class="mi">255</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+<span class="linenos">171</span>        <span class="bp">self</span><span class="o">.</span><span class="n">buffer</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="linenos">172</span>        <span class="bp">self</span><span class="o">.</span><span class="n">kivy_tex</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="linenos">173</span>
+<span class="linenos">174</span>    <span class="k">def</span> <span class="nf">init_stage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="linenos">175</span>        <span class="c1"># reset counter to zero for ellipse intensity at the start of the stage</span>
+<span class="linenos">176</span>        <span class="bp">self</span><span class="o">.</span><span class="n">buffer_count</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="linenos">177</span>        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">init_stage</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<span class="linenos">178</span>
+<span class="linenos">179</span>    <span class="k">def</span> <span class="nf">init_loop_iteration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="linenos">180</span>        <span class="c1"># reset counter to zero for ellipse intensity at the start of each loop</span>
+<span class="linenos">181</span>        <span class="bp">self</span><span class="o">.</span><span class="n">buffer_count</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="linenos">182</span>        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">init_loop_iteration</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<span class="linenos">183</span>
+<span class="linenos">184</span>    <span class="k">def</span> <span class="nf">draw_ellipse_tex</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">quad</span><span class="p">,</span> <span class="n">grayscale</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">clear</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="linenos">185</span>        <span class="c1"># computes the ellipse intensity using the buffer_count value computed</span>
+<span class="linenos">186</span>        <span class="c1"># in the last tick (evaluate_stage). It then blits it</span>
+<span class="linenos">187</span>        <span class="n">buffer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">buffer</span><span class="p">[</span><span class="n">quad</span><span class="p">]</span>
+<span class="linenos">188</span>        <span class="n">pat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
+<span class="linenos">189</span>            <span class="bp">self</span><span class="o">.</span><span class="n">texture_pat</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">buffer_count</span> <span class="o">/</span> <span class="mi">100</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+<span class="linenos">190</span>        <span class="k">if</span> <span class="n">clear</span><span class="p">:</span>
+<span class="linenos">191</span>            <span class="n">pat</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="linenos">192</span>
+<span class="linenos">193</span>        <span class="k">if</span> <span class="n">grayscale</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<span class="linenos">194</span>            <span class="c1"># we&#39;re either in normal or quad4x mode, so set the selected rgb</span>
+<span class="linenos">195</span>            <span class="c1"># values, depending on which colors user selected in GUI</span>
+<span class="linenos">196</span>            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">color_r</span><span class="p">:</span>
+<span class="linenos">197</span>                <span class="n">buffer</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">pat</span>
+<span class="linenos">198</span>            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">color_g</span><span class="p">:</span>
+<span class="linenos">199</span>                <span class="n">buffer</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">pat</span>
+<span class="linenos">200</span>            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">color_b</span><span class="p">:</span>
+<span class="linenos">201</span>                <span class="n">buffer</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">pat</span>
+<span class="linenos">202</span>            <span class="bp">self</span><span class="o">.</span><span class="n">kivy_tex</span><span class="p">[</span><span class="n">quad</span><span class="p">]</span><span class="o">.</span><span class="n">blit_buffer</span><span class="p">(</span><span class="n">buffer</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+<span class="linenos">203</span>        <span class="k">else</span><span class="p">:</span>
+<span class="linenos">204</span>            <span class="c1"># if in quad12x, set only the specific color channel of this tick,</span>
+<span class="linenos">205</span>            <span class="c1"># this method is called 12 times, one for each quad and channel</span>
+<span class="linenos">206</span>            <span class="n">channel</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;r&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;g&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}[</span><span class="n">grayscale</span><span class="p">]</span>
+<span class="linenos">207</span>            <span class="n">buffer</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">channel</span><span class="p">]</span> <span class="o">=</span> <span class="n">pat</span>
+<span class="linenos">208</span>            <span class="k">if</span> <span class="n">grayscale</span> <span class="o">==</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span>
+<span class="linenos">209</span>                <span class="c1"># only blit once all 3 channels were updated</span>
+<span class="linenos">210</span>                <span class="bp">self</span><span class="o">.</span><span class="n">kivy_tex</span><span class="p">[</span><span class="n">quad</span><span class="p">]</span><span class="o">.</span><span class="n">blit_buffer</span><span class="p">(</span><span class="n">buffer</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+<span class="linenos">211</span>
+<span class="linenos">212</span>    <span class="k">def</span> <span class="nf">add_gl_to_canvas</span><span class="p">(</span>
+<span class="linenos">213</span>            <span class="bp">self</span><span class="p">,</span> <span class="n">screen_width</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">screen_height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">canvas</span><span class="p">,</span>
+<span class="linenos">214</span>            <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">quad_mode</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">quad</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+<span class="linenos">215</span>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="linenos">216</span>        <span class="c1"># we overwrite this method to manually add gl graphics elements to the</span>
+<span class="linenos">217</span>        <span class="c1"># kivy canvas</span>
+<span class="linenos">218</span>        <span class="kn">from</span> <span class="nn">kivy.graphics</span> <span class="kn">import</span> <span class="n">Color</span><span class="p">,</span> <span class="n">Rectangle</span>
+<span class="linenos">219</span>        <span class="kn">from</span> <span class="nn">kivy.graphics.texture</span> <span class="kn">import</span> <span class="n">Texture</span>
+<span class="linenos">220</span>        <span class="k">with</span> <span class="n">canvas</span><span class="p">:</span>
+<span class="linenos">221</span>            <span class="n">Color</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+<span class="linenos">222</span>            <span class="n">rect1</span> <span class="o">=</span> <span class="n">Rectangle</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">150</span><span class="p">,</span> <span class="mi">100</span><span class="p">),</span> <span class="n">pos</span><span class="o">=</span><span class="p">(</span><span class="mi">500</span><span class="p">,</span> <span class="mi">500</span><span class="p">),</span> <span class="n">group</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+<span class="linenos">223</span>            <span class="n">rect2</span> <span class="o">=</span> <span class="n">Rectangle</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">150</span><span class="p">,</span> <span class="mi">100</span><span class="p">),</span> <span class="n">pos</span><span class="o">=</span><span class="p">(</span><span class="mi">1500</span><span class="p">,</span> <span class="mi">500</span><span class="p">),</span> <span class="n">group</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+<span class="linenos">224</span>
+<span class="linenos">225</span>        <span class="n">tex</span> <span class="o">=</span> <span class="n">Texture</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">150</span><span class="p">,</span> <span class="mi">100</span><span class="p">),</span> <span class="n">colorfmt</span><span class="o">=</span><span class="s1">&#39;rgb&#39;</span><span class="p">)</span>
+<span class="linenos">226</span>        <span class="n">rect1</span><span class="o">.</span><span class="n">texture</span> <span class="o">=</span> <span class="n">tex</span>
+<span class="linenos">227</span>        <span class="n">rect2</span><span class="o">.</span><span class="n">texture</span> <span class="o">=</span> <span class="n">tex</span>
+<span class="linenos">228</span>        <span class="bp">self</span><span class="o">.</span><span class="n">kivy_tex</span><span class="p">[</span><span class="n">quad</span><span class="p">]</span> <span class="o">=</span> <span class="n">tex</span>
+<span class="linenos">229</span>        <span class="bp">self</span><span class="o">.</span><span class="n">buffer</span><span class="p">[</span><span class="n">quad</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">100</span><span class="p">,</span> <span class="mi">150</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+<span class="linenos">230</span>
+<span class="linenos">231</span>        <span class="c1"># draw initial ellipse</span>
+<span class="linenos">232</span>        <span class="bp">self</span><span class="o">.</span><span class="n">draw_ellipse_tex</span><span class="p">(</span><span class="n">quad</span><span class="p">)</span>
+<span class="linenos">233</span>
+<span class="linenos">234</span>        <span class="c1"># must return True so that set_gl_colors is called</span>
+<span class="linenos">235</span>        <span class="k">return</span> <span class="kc">True</span>
+<span class="linenos">236</span>
+<span class="linenos">237</span>    <span class="k">def</span> <span class="nf">set_gl_colors</span><span class="p">(</span>
+<span class="linenos">238</span>            <span class="bp">self</span><span class="p">,</span> <span class="n">quad</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">grayscale</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="linenos">239</span>            <span class="n">clear</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="linenos">240</span>        <span class="c1"># this is called for every time step, after ticking the stage when the</span>
+<span class="linenos">241</span>        <span class="c1"># time is saved (i.e. buffer_count is updated). Update the ellipse</span>
+<span class="linenos">242</span>        <span class="bp">self</span><span class="o">.</span><span class="n">draw_ellipse_tex</span><span class="p">(</span><span class="n">quad</span><span class="p">,</span> <span class="n">grayscale</span><span class="p">,</span> <span class="n">clear</span><span class="p">)</span>
+<span class="linenos">243</span>
+<span class="linenos">244</span>    <span class="k">def</span> <span class="nf">remove_gl_from_canvas</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="linenos">245</span>        <span class="c1"># everything is removed by name, so just clear the texture</span>
+<span class="linenos">246</span>        <span class="bp">self</span><span class="o">.</span><span class="n">kivy_tex</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="linenos">247</span>        <span class="bp">self</span><span class="o">.</span><span class="n">buffer</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="linenos">248</span>        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">remove_gl_from_canvas</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<span class="linenos">249</span>
+<span class="linenos">250</span>    <span class="k">def</span> <span class="nf">evaluate_stage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shapes</span><span class="p">,</span> <span class="n">last_end_t</span><span class="p">):</span>
+<span class="linenos">251</span>        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">color_r</span>
+<span class="linenos">252</span>        <span class="n">g</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">color_g</span>
+<span class="linenos">253</span>        <span class="n">b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">color_b</span>
+<span class="linenos">254</span>
+<span class="linenos">255</span>        <span class="c1"># always get the first time</span>
+<span class="linenos">256</span>        <span class="bp">self</span><span class="o">.</span><span class="n">t_start</span> <span class="o">=</span> <span class="n">t</span> <span class="o">=</span> <span class="k">yield</span>
+<span class="linenos">257</span>        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loop</span><span class="p">):</span>
+<span class="linenos">258</span>            <span class="n">t_start</span> <span class="o">=</span> <span class="n">t</span>
+<span class="linenos">259</span>
+<span class="linenos">260</span>            <span class="c1"># only go for 10 second</span>
+<span class="linenos">261</span>            <span class="k">while</span> <span class="n">t</span> <span class="o">-</span> <span class="n">t_start</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="p">:</span>
+<span class="linenos">262</span>                <span class="c1"># update the counter at each tick. The ellipse is only updated</span>
+<span class="linenos">263</span>                <span class="c1"># as well if the frame is rendered and not dropped. But it is</span>
+<span class="linenos">264</span>                <span class="c1"># logged for every frame</span>
+<span class="linenos">265</span>                <span class="bp">self</span><span class="o">.</span><span class="n">buffer_count</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">buffer_count</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="mi">100</span>
+<span class="linenos">266</span>
+<span class="linenos">267</span>                <span class="n">intensity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">buffer_count</span> <span class="o">/</span> <span class="mi">100</span>
+<span class="linenos">268</span>                <span class="n">shapes</span><span class="p">[</span><span class="s1">&#39;soft_ellipse&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">((</span>
+<span class="linenos">269</span>                    <span class="n">intensity</span> <span class="k">if</span> <span class="n">r</span> <span class="k">else</span> <span class="mf">0.</span><span class="p">,</span>
+<span class="linenos">270</span>                    <span class="n">intensity</span> <span class="k">if</span> <span class="n">g</span> <span class="k">else</span> <span class="mf">0.</span><span class="p">,</span>
+<span class="linenos">271</span>                    <span class="n">intensity</span> <span class="k">if</span> <span class="n">b</span> <span class="k">else</span> <span class="mf">0.</span><span class="p">,</span>
+<span class="linenos">272</span>                    <span class="mi">1</span>
+<span class="linenos">273</span>                <span class="p">))</span>
+<span class="linenos">274</span>                <span class="c1"># this yields so GUI can draw shapes and resume for next frame</span>
+<span class="linenos">275</span>                <span class="n">t</span> <span class="o">=</span> <span class="k">yield</span>
+<span class="linenos">276</span>
+<span class="linenos">277</span>        <span class="c1"># this time value was not used so it ends on the last sample so</span>
+<span class="linenos">278</span>        <span class="c1"># that last time will be used as start of next stage and MUST be saved</span>
+<span class="linenos">279</span>        <span class="c1"># as t_end</span>
+<span class="linenos">280</span>        <span class="bp">self</span><span class="o">.</span><span class="n">t_end</span> <span class="o">=</span> <span class="n">t</span>
+<span class="linenos">281</span>        <span class="c1"># this is how we indicate we&#39;re done</span>
+<span class="linenos">282</span>        <span class="k">raise</span> <span class="n">StageDoneException</span>
+<span class="linenos">283</span>
+<span class="linenos">284</span>    <span class="k">def</span> <span class="nf">get_stage_shape_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="linenos">285</span>        <span class="c1"># add a &quot;shape&quot; named soft_ellipse so we can log data for it at every</span>
+<span class="linenos">286</span>        <span class="c1"># timestep. The values will also display in the stage preview graph</span>
+<span class="linenos">287</span>        <span class="n">names</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">get_stage_shape_names</span><span class="p">()</span>
+<span class="linenos">288</span>        <span class="n">names</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s1">&#39;soft_ellipse&#39;</span><span class="p">)</span>
+<span class="linenos">289</span>        <span class="k">return</span> <span class="n">names</span>
+<span class="linenos">290</span>
+<span class="linenos">291</span>
+<span class="linenos">292</span><span class="k">def</span> <span class="nf">get_ceed_stages</span><span class="p">(</span><span class="n">stage_factory</span><span class="p">):</span>
+<span class="linenos">293</span>    <span class="c1"># return all the stage classes</span>
+<span class="linenos">294</span>    <span class="k">return</span> <span class="p">[</span><span class="n">PlasmaStage</span><span class="p">,</span> <span class="n">SoftEllipseStage</span><span class="p">]</span>
+</pre></div>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="generate_csv_experiment.html" class="btn btn-neutral float-left" title="Generating data for CSV stage or function" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="merge_ceed_with_mcs_data.html" class="btn btn-neutral float-right" title="Merging Ceed Data with MCS Data" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2019, Matthew Einhorn.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

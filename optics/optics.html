@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Microscope optics V2 &mdash; Ceed  documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="Graphics" href="../api/graphics/graphics.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> Ceed
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../blueprint.html">System Blueprint</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../config.html">CEED Config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../example_code/example_code.html">Example Code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../apps/apps.html">Ceed Apps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/api.html">The Ceed API</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Microscope optics V2</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#specs">Specs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#projector-to-tissue-light-path">Projector to tissue light path</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#static-optical-analysis">Static Optical Analysis</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#l1">L1</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#l2">L2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#l3">L3</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#l4">L4</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#dynamic-optical-analysis">Dynamic Optical Analysis</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#projector">Projector</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#l1-l2">L1-L2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#l3-dynamic">L3 Dynamic</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#l4-dynamic">L4 Dynamic</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#tissue-to-camera-light-path">Tissue to camera light path</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#static-camera-optical-analysis">Static Camera Optical Analysis</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#l4-camera">L4 Camera</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#l5">L5</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#dynamic-camera-optical-analysis">Dynamic Camera Optical Analysis</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#l4-dynamic-camera">L4 Dynamic camera</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#l5-dynamic">L5 Dynamic</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#projector-power">Projector power</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Ceed</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Microscope optics V2</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/optics/optics.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="microscope-optics-v2">
+<span id="microscope-optics"></span><h1>Microscope optics V2<a class="headerlink" href="#microscope-optics-v2" title="Permalink to this headline"></a></h1>
+<p>This guide shows the current specification for all the lensing in the
+microscope.</p>
+<p>It lists all the lenses used in the microscope as well as the exact positioning
+for each of the lenses to achieve the desired projection and camera magnification.</p>
+<p>For each lens choice it estimated the best value using screenshots generated by running
+the <a class="reference internal" href="../apps/optics_app.html#optics-app"><span class="std std-ref">Optics App</span></a> with test values.</p>
+<section id="specs">
+<h2>Specs<a class="headerlink" href="#specs" title="Permalink to this headline"></a></h2>
+<p>Here’s a list of all the lenses used in the microscope.
+All distances are from the center of the dichroic cube. The axis from projector to tissue
+goes negative to positive. The axis from tissue to camera is also negative to
+positive.</p>
+<ol class="arabic simple">
+<li><p>Projector. <strong>PROPixx projector</strong>. Projected image is at 1.22 meters from projector (&#64;67cm). <strong>&#64;-55cm</strong>.</p></li>
+<li><p>L1. <strong>AC508-075-A-ML</strong>. f=75mm – 2”. <strong>&#64;-51cm</strong>.</p></li>
+<li><p>L2. <strong>AC508-080-A-ML</strong>. f=80mm – 2”. <strong>&#64;-49cm</strong>.</p></li>
+<li><p><strong>ND filter</strong> ring.</p></li>
+<li><p>L3. <strong>AC508-200-A-ML</strong>. f=200mm – 2”. <strong>&#64;-27cm</strong>.</p></li>
+<li><p><strong>Dichroic</strong>.</p></li>
+<li><p>L4. Objective lens <strong>&#64;13cm</strong> (center). There are two objectives to choose from, a 4x (the default -
+all computations below use this) and a 2x when we need larger area.</p>
+<ul class="simple">
+<li><p><strong>Nikon Plan Fluor</strong>. F=41.3mm. 4x/0.13, WD17.2.</p></li>
+<li><p><strong>CFI Plan Apochromat Lambda</strong>. F=mm. 2x/0.1, WD8.5.</p></li>
+</ul>
+</li>
+<li><p><strong>Tissue</strong>. <strong>&#64;17.1748cm</strong>.</p></li>
+<li><p>L5. <strong>AC508-150-A-ML</strong>. f=150mm – 2”. <strong>&#64;7cm</strong>.</p></li>
+<li><p>Camera. <strong>4070C-USB</strong> <strong>Thor cam</strong>. Sensor plate <strong>&#64;21.4077cm</strong>.</p></li>
+</ol>
+<p>The measured tissue projected area with the 4x objective is approximately 4.24mm x 2.41mm.
+For the 2x objective it’s 8.36mm x 4.72mm. Computed magnification from the projector
+to the tissue is <strong>-0.0072</strong> for the 4x objective.</p>
+<p>The camera sensor has 2048x2048 pixels and each pixel is 7.4μm x 7.4μm. Sensor area
+width and height is 15.1552mm. Computed magnification from the tissue to the camera is <strong>-3.6403</strong>.
+This results in a computed field of view on the tissue of 4.16mm square.</p>
+<p><img alt="image0" src="../_images/microscope.jpg" /></p>
+<p>Figure 1 The microscope</p>
+<p><img alt="image1" src="../_images/Microscope_annotated_drawio.svg" /></p>
+<p>Figure 2 The microscope annotated</p>
+</section>
+<section id="projector-to-tissue-light-path">
+<h2>Projector to tissue light path<a class="headerlink" href="#projector-to-tissue-light-path" title="Permalink to this headline"></a></h2>
+<p>For the projector to tissue path, the axis goes from the projector
+towards the tissue through the dichroic mirror. The center of the
+dichroic is the zero point, and the projector is on the negative part of
+the axis and the tissue is on the positive side.</p>
+<section id="static-optical-analysis">
+<h3>Static Optical Analysis<a class="headerlink" href="#static-optical-analysis" title="Permalink to this headline"></a></h3>
+<p>Following is the details of all the optical components in the
+projector path.</p>
+<section id="l1">
+<span id="static-p-l1"></span><h4>L1<a class="headerlink" href="#l1" title="Permalink to this headline"></a></h4>
+<p>L1 must sit close to the projector to get the full projector view and most
+of the light. The “object” input to the lens is projected by the projector.
+The “object” is between 1.22m to 10m on the right of the projector, depending
+on the focal setting of the projector’s lens. Although it’s the right of L1, we
+use the provided “object” position. We assume it’s set at 1.22m.</p>
+<p><img alt="image2" src="../_images/L1_proj.jpg" /></p>
+<p>Figure 3 The characteristics of L1.</p>
+<p>The figure is read as follows, we input the focal length of the lens,
+the position of the lens and the object (as output by the projector).
+The output is the estimated image position (on the other side of the
+lens, if positive relative to the lens), the magnification, and the
+relative distance between the lens and the image.</p>
+</section>
+<section id="l2">
+<span id="static-p-l2"></span><h4>L2<a class="headerlink" href="#l2" title="Permalink to this headline"></a></h4>
+<p>L2 sits as close to L1 as possible and together they focus the image just to the right
+of L2 and at a significant downscaling.</p>
+<p><img alt="image3" src="../_images/L2_proj.jpg" /></p>
+<p>Figure 4 The characteristics of L2.</p>
+</section>
+<section id="l3">
+<span id="static-p-l3"></span><h4>L3<a class="headerlink" href="#l3" title="Permalink to this headline"></a></h4>
+<p>L3 controls the zoom of the final projection on the tissue as well as the
+distance from the objective lens to the projection. The goal is for that projection
+to be at the rated working distance of the objective and to size the projection
+to the required size.</p>
+<p>This lens creates a virtual image at negative infinity. This collimates the light
+before it reaches the objective.</p>
+<p><img alt="image4" src="../_images/L3_proj.jpg" /></p>
+<p>Figure 5 The characteristics of L3.</p>
+</section>
+<section id="l4">
+<span id="static-p-l4"></span><h4>L4<a class="headerlink" href="#l4" title="Permalink to this headline"></a></h4>
+<p>L4 is the final objective lens before the tissue. The position of the
+lens is dictated by the positions of all the previous lenses and the
+projector, given the objective’s working distance. The projection should
+be in focus at the working distance.</p>
+<p><img alt="image5" src="../_images/L4_proj.jpg" /></p>
+<p>Figure 6 The characteristics of L4.</p>
+</section>
+</section>
+<section id="dynamic-optical-analysis">
+<h3>Dynamic Optical Analysis<a class="headerlink" href="#dynamic-optical-analysis" title="Permalink to this headline"></a></h3>
+<p>In the following, we explore how the lens values were chosen and how the
+lens values change the primary variables – the final position of the
+projected pattern and its magnification.</p>
+<section id="projector">
+<span id="dynamic-projector"></span><h4>Projector<a class="headerlink" href="#projector" title="Permalink to this headline"></a></h4>
+<p>The projector is placed as close to the tissue as possible, given the lenses
+in the path, so that we can capture all the light from the projector and the full
+view. The projector has inbuilt lenses that diverge the light at a smallish angle as
+it’s coming out from the projector.</p>
+</section>
+<section id="l1-l2">
+<span id="dynamic-p-l1-l2"></span><h4>L1-L2<a class="headerlink" href="#l1-l2" title="Permalink to this headline"></a></h4>
+<p>Lens L1 and L2 are the smallest focal length lens at 2” diameter that
+we can get. Its purpose is to scale down the image as much as possible.
+The lenses are placed as close to each other as possible. The resultant
+image should be focused just to the right of L2, as can be seen on a
+piece of paper.</p>
+</section>
+<section id="l3-dynamic">
+<span id="dynamic-p-l3"></span><h4>L3 Dynamic<a class="headerlink" href="#l3-dynamic" title="Permalink to this headline"></a></h4>
+<p>The purpose of L3 is to provide some further down-scaling of the image.
+It also collimates the light by forming a virtual image at negative
+infinity. Light collimation is required for the objective to function
+optimally.</p>
+<p>The exact placement of the lens and its distance from the objective
+(L4) determines how much down-scaling occurs. It also controls the
+distance between the objective and the focused image, which ideally
+will be the working distance of the objective to fully benefit from
+the objective.</p>
+<p>Assuming some placement of L4 (additionally investigated below),
+we have two variables to control; the location and focal length
+of L3. The following images investigate these variables.</p>
+<p><img alt="image7" src="../_images/L3_pos_vs_L3_f_mag_proj.jpg" /></p>
+<p>Figure 7 The final image magnification on the tissue in response
+to L3 position and focal length. The red square is the selected
+values for the microscope.</p>
+<p>The desired value is 0.005 - 0.01. From the contours we see that
+increasing the focal length decreases the magnification at this
+position, with larger “jumps” at larger focal values. However,
+moving the lens by small values keeps the magnification constant.</p>
+<p><img alt="image8" src="../_images/L3_pos_vs_L3_f_dist_proj.jpg" /></p>
+<p>Figure 8 The distance between the objective center and the final
+projected image on the tissue in response to L3 position and focal
+length. The red square is the selected values for the microscope.</p>
+<p>The desired value is around 4.17cm because that seems to be the value
+that focuses the image at the objective working distance of 1.72cm
+from the objective end for the 4x and 8.5 for the 2x.</p>
+<p>From the contours we see that increasing the focal length increases the distance.
+So increasing the focal length also requires moving the L3 to the right
+to maintain the working distance. Additionally, moving L3 too close to the
+dichroic may cut off some light.</p>
+<p>The final lens picked for L3 and its position optimizes all these variables.</p>
+</section>
+<section id="l4-dynamic">
+<span id="dynamic-p-l4"></span><h4>L4 Dynamic<a class="headerlink" href="#l4-dynamic" title="Permalink to this headline"></a></h4>
+<p>The purpose of L4, the objective is to focus the light on the tissue and
+compensate for any optical defects in earlier stages. The final image
+must be at its working distance.</p>
+<p><img alt="image9" src="../_images/L4_pos_vs_L3_pos_mag_proj.jpg" /></p>
+<p>Figure 9 The final image magnification on the tissue in response
+to L3 and L4 position. The red square is the selected
+values for the microscope.</p>
+<p>The desired value is 0.005 - 0.01. From the contours we see that
+moving L3 changes the magnification, but moving L4 mostly does not.</p>
+<p><img alt="image10" src="../_images/L4_pos_vs_L3_pos_dist_proj.jpg" /></p>
+<p>Figure 10 The distance between the objective center and the final
+projected image on the tissue in response to L3 and L4 position.
+The red square is the selected values for the microscope.</p>
+<p>The desired value is around 4.17cm because that seems to be the value
+that focuses the image at the objective working distance of 1.72cm
+from the objective end for the 4x and 8.5 for the 2x.</p>
+<p>From the contours we see that moving L3 changes the distance, but moving
+L4 mostly does not. So given a specific focal length for L3, its exact
+position must be fixed to get the appropriate distance.</p>
+</section>
+</section>
+</section>
+<section id="tissue-to-camera-light-path">
+<h2>Tissue to camera light path<a class="headerlink" href="#tissue-to-camera-light-path" title="Permalink to this headline"></a></h2>
+<p>For the tissue to camera path, the axis goes from the tissue towards the
+camera through the dichroic mirror. The center of the dichroic is the
+zero point, and the tissue is on the negative part of the axis and the
+camera is on the positive side.</p>
+<section id="static-camera-optical-analysis">
+<h3>Static Camera Optical Analysis<a class="headerlink" href="#static-camera-optical-analysis" title="Permalink to this headline"></a></h3>
+<p>Following is the details of all the optical components in the
+camera path.</p>
+<section id="l4-camera">
+<span id="static-cam-l4"></span><h4>L4 Camera<a class="headerlink" href="#l4-camera" title="Permalink to this headline"></a></h4>
+<p>The position of L4 (objective lens) and the tissue location are
+predetermined by the projector light path and the tissue location
+as determined above.</p>
+<p><img alt="image11" src="../_images/L4_cam.jpg" /></p>
+<p>Figure 11 The characteristics of L4 relative to the camera path.</p>
+</section>
+<section id="l5">
+<span id="static-cam-l5"></span><h4>L5<a class="headerlink" href="#l5" title="Permalink to this headline"></a></h4>
+<p>L5 is the zoom lens between the camera and the objective. Its function is
+to focus the image on the camera sensor plane and to zoom into the tissue
+to see the full projected area.</p>
+<p>It is chosen so that it doesn’t waste too much resolution capturing
+tissue outside the area of interest, but also so that the camera is
+as close to the lens as possible.</p>
+<p><img alt="image12" src="../_images/L5_cam.jpg" /></p>
+<p>Figure 12 The characteristics of L5.</p>
+</section>
+</section>
+<section id="dynamic-camera-optical-analysis">
+<h3>Dynamic Camera Optical Analysis<a class="headerlink" href="#dynamic-camera-optical-analysis" title="Permalink to this headline"></a></h3>
+<p>In the following, we explore how the lens values were chosen and how the
+lens values change the primary variables – the final position of the
+image and therefore camera position and its magnification. In all of
+this, we were looking for an ideal magnification around 3.5x (based on
+experimental tests). Another limitation is that the distance between the final
+lens (L7) and the image cannot be much less than 5cm or 6cm because the
+lens and camera thickness prevent that. Also, there are physical limitations
+on how close L5 can be to L4 because of the dichroic in the path.</p>
+<section id="l4-dynamic-camera">
+<span id="dynamic-cam-l4"></span><h4>L4 Dynamic camera<a class="headerlink" href="#l4-dynamic-camera" title="Permalink to this headline"></a></h4>
+<p>The position and characteristics of L4 is determined by the projector
+path.</p>
+</section>
+<section id="l5-dynamic">
+<span id="dynamic-cam-l5"></span><h4>L5 Dynamic<a class="headerlink" href="#l5-dynamic" title="Permalink to this headline"></a></h4>
+<p>The purpose of L5 is to focus the image on the camera.</p>
+<p>The exact placement of the lens and its focal length determines the zoom.
+It also controls the distance between the lens and the focused image, where
+the camera’s sensor needs to be placed.</p>
+<p><img alt="image13" src="../_images/L5_pos_vs_L5_f_mag.jpg" /></p>
+<p>Figure 13 The final image magnification on the camera in response
+to L5 position and focal length. The red square is the selected
+values for the microscope.</p>
+<p>The desired value is around 3.5. From the contours we see that
+increasing the focal length increases the magnification. However,
+moving the lens mostly keeps the magnification constant.</p>
+<p><img alt="image14" src="../_images/L5_pos_vs_L5_f_dist.jpg" /></p>
+<p>Figure 14 The position of the final focused image (where the camera is placed)
+in response to L5 position and focal length. The red square is the selected
+values for the microscope.</p>
+<p>The desired value is larger than about 5cm to accommodate the hardware. We also
+don’t want it to be too large.</p>
+<p>From the contours we see that increasing the focal length linearly moves
+the focused image position. Similarly, moving the lens up, also linearly
+moves the focused image up.</p>
+<p>The final lens picked and its exact position was selected to optimize the zoom
+and visible area of interest of the tissue.</p>
+</section>
+</section>
+</section>
+<section id="projector-power">
+<h2>Projector power<a class="headerlink" href="#projector-power" title="Permalink to this headline"></a></h2>
+<p>We measured the projector power of the blue LED as it reaches the slice
+through the dichroic using dichroic mirror that reflects blue to the tissue.</p>
+<p>We varied the current using the Ceed software from 0A to 43A, the maximum.
+We also varied the color intensity from 1 (255) to 0.5 (127) using the parameters
+of the constant function in Ceed. We set the full projector area to output
+blue.</p>
+<p>Following is a table of the measured power in mW at the tissue plane using a
+Thor PM100D with the S175C sensor. The first 4 columns was measured using the 4X,
+objective lens while the last two columns is from the 2X objective.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 12%" />
+<col style="width: 12%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 15%" />
+<col style="width: 16%" />
+<col style="width: 17%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Current (A)</p></th>
+<th class="head"><p>Intensity=1</p></th>
+<th class="head"><p>Intensity=0.5</p></th>
+<th class="head"><p>Intensity=0.25</p></th>
+<th class="head"><p><a href="#id1"><span class="problematic" id="id2">*</span></a>Intensity=0.25</p></th>
+<th class="head"><p>2X (Intensity=1)</p></th>
+<th class="head"><p><a href="#id3"><span class="problematic" id="id4">*</span></a>2X (Intensity=1)</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0</p></td>
+<td><p>0.00</p></td>
+<td><p>0.00</p></td>
+<td><p>-0.01</p></td>
+<td><p>-0.01</p></td>
+<td><p>0.02</p></td>
+<td><p>0.02</p></td>
+</tr>
+<tr class="row-odd"><td><p>1</p></td>
+<td><p>0.50</p></td>
+<td><p>0.37</p></td>
+<td><p>0.11</p></td>
+<td><p>0.09</p></td>
+<td><p>0.93</p></td>
+<td><p>0.85</p></td>
+</tr>
+<tr class="row-even"><td><p>2</p></td>
+<td><p>1.18</p></td>
+<td><p>0.63</p></td>
+<td><p>0.32</p></td>
+<td><p>0.27</p></td>
+<td><p>2.51</p></td>
+<td><p>2.28</p></td>
+</tr>
+<tr class="row-odd"><td><p>3</p></td>
+<td><p>1.86</p></td>
+<td><p>0.92</p></td>
+<td><p>0.59</p></td>
+<td><p>0.49</p></td>
+<td><p>3.98</p></td>
+<td><p>3.62</p></td>
+</tr>
+<tr class="row-even"><td><p>5</p></td>
+<td><p>3.07</p></td>
+<td><p>1.50</p></td>
+<td><p>0.96</p></td>
+<td><p>0.80</p></td>
+<td><p>6.57</p></td>
+<td><p>5.98</p></td>
+</tr>
+<tr class="row-odd"><td><p>10</p></td>
+<td><p>5.71</p></td>
+<td><p>2.77</p></td>
+<td><p>1.72</p></td>
+<td><p>1.43</p></td>
+<td><p>12.25</p></td>
+<td><p>11.15</p></td>
+</tr>
+<tr class="row-even"><td><p>15</p></td>
+<td><p>7.93</p></td>
+<td><p>3.87</p></td>
+<td><p>2.38</p></td>
+<td><p>1.99</p></td>
+<td><p>17.04</p></td>
+<td><p>15.51</p></td>
+</tr>
+<tr class="row-odd"><td><p>20</p></td>
+<td><p>9.87</p></td>
+<td><p>4.90</p></td>
+<td><p>3.02</p></td>
+<td><p>2.53</p></td>
+<td><p>21.08</p></td>
+<td><p>19.18</p></td>
+</tr>
+<tr class="row-even"><td><p>25</p></td>
+<td><p>11.55</p></td>
+<td><p>5.67</p></td>
+<td><p>3.51</p></td>
+<td><p>2.93</p></td>
+<td><p>24.88</p></td>
+<td><p>22.64</p></td>
+</tr>
+<tr class="row-odd"><td><p>30</p></td>
+<td><p>13.03</p></td>
+<td><p>6.44</p></td>
+<td><p>3.87</p></td>
+<td><p>3.23</p></td>
+<td><p>28.07</p></td>
+<td><p>25.55</p></td>
+</tr>
+<tr class="row-even"><td><p>35</p></td>
+<td><p>14.41</p></td>
+<td><p>7.10</p></td>
+<td><p>4.24</p></td>
+<td><p>3.55</p></td>
+<td><p>30.96</p></td>
+<td><p>28.18</p></td>
+</tr>
+<tr class="row-odd"><td><p>40</p></td>
+<td><p>15.61</p></td>
+<td><p>7.60</p></td>
+<td><p>4.61</p></td>
+<td><p>3.86</p></td>
+<td><p>33.41</p></td>
+<td><p>30.41</p></td>
+</tr>
+<tr class="row-even"><td><p>43</p></td>
+<td><p>16.18</p></td>
+<td><p>7.94</p></td>
+<td><p>4.77</p></td>
+<td><p>3.99</p></td>
+<td><p>34.70</p></td>
+<td><p>31.58</p></td>
+</tr>
+</tbody>
+</table>
+<p>The star indicates that the column data is conditioned. The 4X 0.25 intensity and 2X data was measured on a second
+day than the 4X 1.0 and 0.5 intensity data. The sensor gained an offset of about 3.12 mW
+on the second day as measured at full 1.0 intensity at 43A. The starred columns, are adjusted proportionally
+to compensate.</p>
+<p>Using the data, above <strong>3A</strong>, the best formula for the power at a particular current, intensity, and objective is:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">mW</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.0047</span><span class="o">*</span><span class="n">I</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="mf">0.5682</span><span class="o">*</span><span class="n">I</span> <span class="o">+</span> <span class="mf">0.3438</span><span class="p">)</span> <span class="o">*</span> <span class="n">intensity</span> <span class="o">*</span> <span class="n">K</span>
+</pre></div>
+</div>
+<p>where</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">I</span></code> is the current,</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">intensity</span></code> is the intensity value between <code class="docutils literal notranslate"><span class="pre">0-1</span></code> set in a Ceed function, and</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">K</span></code> is <code class="docutils literal notranslate"><span class="pre">1</span></code> for the 4X objective and <code class="docutils literal notranslate"><span class="pre">1.95</span></code> for the 2X objective.</p></li>
+</ul>
+<p>The power at low intensity (below 0.25) was not measured, but given the projector design it’s expected to hold.</p>
+<p>The power when the current is below about <strong>3A</strong> did not scale according to a clear function, so it is recommended to
+not set the current below <strong>3A</strong> (except to zero).</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../api/graphics/graphics.html" class="btn btn-neutral float-left" title="Graphics" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2019, Matthew Einhorn.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

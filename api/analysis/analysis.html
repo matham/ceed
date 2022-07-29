@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ceed data analysis &mdash; Ceed  documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Ceed-MCS data merging" href="merge_data.html" />
+    <link rel="prev" title="Analysis API" href="api.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> Ceed
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../blueprint.html">System Blueprint</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../guide/guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../config.html">CEED Config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../example_code/example_code.html">Example Code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../apps/apps.html">Ceed Apps</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">The Ceed API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../ceed.html">Ceed</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="api.html">Analysis API</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Ceed data analysis</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#loading-data">Loading data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#experiment-movie">Experiment movie</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="merge_data.html">Ceed-MCS data merging</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../function/api.html">Function API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../shape/api.html">Shape API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../stage/api.html">Stage API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../view/api.html">Experiment API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../storage/api.html">Storage API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../player.html">Video Player</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils.html">Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../graphics/api.html">Graphics API</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../optics/optics.html">Microscope optics V2</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Ceed</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../api.html">The Ceed API</a> &raquo;</li>
+          <li><a href="api.html">Analysis API</a> &raquo;</li>
+      <li>Ceed data analysis</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/api/analysis/analysis.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <span class="target" id="module-ceed.analysis"></span><section id="ceed-data-analysis">
+<span id="ceed-analysis"></span><h1>Ceed data analysis<a class="headerlink" href="#ceed-data-analysis" title="Permalink to this headline"></a></h1>
+<p>Reads a combined Ceed and MCS H5 data file that has been merged with
+<a class="reference internal" href="merge_data.html#module-ceed.analysis.merge_data" title="ceed.analysis.merge_data"><code class="xref py py-mod docutils literal notranslate"><span class="pre">merge_data</span></code></a>, using <a class="reference internal" href="#ceed.analysis.CeedDataReader" title="ceed.analysis.CeedDataReader"><code class="xref py py-class docutils literal notranslate"><span class="pre">CeedDataReader</span></code></a>.</p>
+<p>During an experiment Ceed saves its projector data to a NIX H5 file and MCS
+saves its electrode data to a proprietary file. After the experiment, one
+exports the MCS electrode data to an H5 file through the MCS software. Then,
+following <a class="reference internal" href="merge_data.html#module-ceed.analysis.merge_data" title="ceed.analysis.merge_data"><code class="xref py py-mod docutils literal notranslate"><span class="pre">merge_data</span></code></a>, one creates a new Ceed based file
+that also contains the electrode data as well as an alignment between the Ceed
+video frames and their temporal location in the MCS data.
+<a class="reference internal" href="#ceed.analysis.CeedDataReader" title="ceed.analysis.CeedDataReader"><code class="xref py py-class docutils literal notranslate"><span class="pre">CeedDataReader</span></code></a> can be used to load this combined file.</p>
+<p>See the examples directory in the Ceed Github repository and
+<a class="reference internal" href="../../example_code/example_code.html#example-analysis"><span class="std std-ref">Example Code</span></a> for complete worked out examples using the data.</p>
+<section id="loading-data">
+<h2>Loading data<a class="headerlink" href="#loading-data" title="Permalink to this headline"></a></h2>
+<p><a class="reference internal" href="#ceed.analysis.CeedDataReader" title="ceed.analysis.CeedDataReader"><code class="xref py py-class docutils literal notranslate"><span class="pre">CeedDataReader</span></code></a> is used to read the MCS electrode data and Ceed data.
+A typical example is:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># this internally opens the file and ensures it&#39;s closed when the with</span>
+<span class="c1"># block exits, even if there was an exception</span>
+<span class="k">with</span> <span class="n">CeedDataReader</span><span class="p">(</span><span class="s1">&#39;data.h5&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="c1"># load the electrode data</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">load_mcs_data</span><span class="p">()</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Found experiments: </span><span class="si">{}</span><span class="s1">. Number of saved images are: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">experiments_in_file</span><span class="p">,</span> <span class="n">f</span><span class="o">.</span><span class="n">num_images_in_file</span><span class="p">))</span>
+
+    <span class="c1"># load a specific experiment</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">load_experiment</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="c1"># do something with the experiment data. E.g. save the image</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">save_image</span><span class="p">(</span><span class="s1">&#39;image.bmp&#39;</span><span class="p">,</span> <span class="n">f</span><span class="o">.</span><span class="n">experiment_cam_image</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The overall steps are to create the <a class="reference internal" href="#ceed.analysis.CeedDataReader" title="ceed.analysis.CeedDataReader"><code class="xref py py-class docutils literal notranslate"><span class="pre">CeedDataReader</span></code></a> and enter its
+<code class="docutils literal notranslate"><span class="pre">with</span></code> block. This internally calls <a class="reference internal" href="#ceed.analysis.CeedDataReader.open_h5" title="ceed.analysis.CeedDataReader.open_h5"><code class="xref py py-meth docutils literal notranslate"><span class="pre">CeedDataReader.open_h5()</span></code></a>
+and <a class="reference internal" href="#ceed.analysis.CeedDataReader.close_h5" title="ceed.analysis.CeedDataReader.close_h5"><code class="xref py py-meth docutils literal notranslate"><span class="pre">CeedDataReader.close_h5()</span></code></a>.</p>
+<p>Next, you can load the MCS electrode
+data and metadata using <a class="reference internal" href="#ceed.analysis.CeedDataReader.load_mcs_data" title="ceed.analysis.CeedDataReader.load_mcs_data"><code class="xref py py-meth docutils literal notranslate"><span class="pre">CeedDataReader.load_mcs_data()</span></code></a>. This loads it
+into memory as sets the instance properties with the data (see
+<a class="reference internal" href="#ceed.analysis.CeedDataReader.electrodes_data" title="ceed.analysis.CeedDataReader.electrodes_data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">CeedDataReader.electrodes_data</span></code></a> and
+<a class="reference internal" href="#ceed.analysis.CeedDataReader.electrodes_metadata" title="ceed.analysis.CeedDataReader.electrodes_metadata"><code class="xref py py-attr docutils literal notranslate"><span class="pre">CeedDataReader.electrodes_metadata</span></code></a>).</p>
+<p>Finally, you can load the Ceed data as well as the Ceed-MCS alignment for a
+specific experiment using <a class="reference internal" href="#ceed.analysis.CeedDataReader.load_experiment" title="ceed.analysis.CeedDataReader.load_experiment"><code class="xref py py-meth docutils literal notranslate"><span class="pre">CeedDataReader.load_experiment()</span></code></a>. This
+sets further class properties and allows you to use instance methods that
+require the Ceed data. E.g. see <a class="reference internal" href="#ceed.analysis.CeedDataReader.shapes_intensity" title="ceed.analysis.CeedDataReader.shapes_intensity"><code class="xref py py-attr docutils literal notranslate"><span class="pre">CeedDataReader.shapes_intensity</span></code></a>,
+<a class="reference internal" href="#ceed.analysis.CeedDataReader.shapes_intensity_rendered_gpu_rate" title="ceed.analysis.CeedDataReader.shapes_intensity_rendered_gpu_rate"><code class="xref py py-attr docutils literal notranslate"><span class="pre">CeedDataReader.shapes_intensity_rendered_gpu_rate</span></code></a>,
+<a class="reference internal" href="#ceed.analysis.CeedDataReader.electrode_intensity_alignment" title="ceed.analysis.CeedDataReader.electrode_intensity_alignment"><code class="xref py py-attr docutils literal notranslate"><span class="pre">CeedDataReader.electrode_intensity_alignment</span></code></a>, and
+<a class="reference internal" href="#ceed.analysis.CeedDataReader.electrode_intensity_alignment_gpu_rate" title="ceed.analysis.CeedDataReader.electrode_intensity_alignment_gpu_rate"><code class="xref py py-attr docutils literal notranslate"><span class="pre">CeedDataReader.electrode_intensity_alignment_gpu_rate</span></code></a>.</p>
+<section id="loading-images">
+<h3>Loading images<a class="headerlink" href="#loading-images" title="Permalink to this headline"></a></h3>
+<p>If you have an image file that you would like to use during analysis, you can
+read it using <a class="reference external" href="https://matham.github.io/ffpyplayer/pic.html#ffpyplayer.pic.ImageLoader" title="(in FFPyPlayer)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ffpyplayer.pic.ImageLoader</span></code></a>. E.g.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">ffpyplayer.pic</span> <span class="kn">import</span> <span class="n">ImageLoader</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">images</span> <span class="o">=</span> <span class="p">[</span><span class="n">m</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">ImageLoader</span><span class="p">(</span><span class="s1">&#39;filename.bmp&#39;</span><span class="p">)]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">images</span>
+<span class="go">Out[4]: [(&lt;ffpyplayer.pic.Image at 0x232dceb8a68&gt;, 0.0)]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">images</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+<span class="go">Out[5]: &lt;ffpyplayer.pic.Image at 0x232dceb8a68&gt;</span>
+</pre></div>
+</div>
+<p>It returns a list of images and the timestamp of the images, e.g. in case
+it is a gif. If the file contains only one image, just access the first.</p>
+</section>
+</section>
+<section id="experiment-movie">
+<h2>Experiment movie<a class="headerlink" href="#experiment-movie" title="Permalink to this headline"></a></h2>
+<p><a class="reference internal" href="#ceed.analysis.CeedDataReader" title="ceed.analysis.CeedDataReader"><code class="xref py py-class docutils literal notranslate"><span class="pre">CeedDataReader</span></code></a> can create a movie that replays the experiment
+and the intensity of the shapes. It can also draw the tissue image,
+MEA electrode grid, and the electrode voltage.</p>
+<p>See <a class="reference internal" href="#ceed.analysis.CeedDataReader.generate_movie" title="ceed.analysis.CeedDataReader.generate_movie"><code class="xref py py-meth docutils literal notranslate"><span class="pre">CeedDataReader.generate_movie()</span></code></a> for details. E.g.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">CeedDataReader</span><span class="p">(</span><span class="s1">&#39;data.h5&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">load_mcs_data</span><span class="p">()</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">load_experiment</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">generate_movie</span><span class="p">(</span>
+        <span class="s1">&#39;video.mp4&#39;</span><span class="p">,</span> <span class="n">lum</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">canvas_size_hint</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+        <span class="n">speed</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">paint_funcs</span><span class="o">=</span><span class="p">[</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">paint_background_image</span><span class="p">(</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">experiment_cam_image</span><span class="p">,</span>
+                <span class="n">transform_matrix</span><span class="o">=</span><span class="n">f</span><span class="o">.</span><span class="n">view_controller</span><span class="o">.</span><span class="n">cam_transform</span><span class="p">),</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">show_mea_outline</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">view_controller</span><span class="o">.</span><span class="n">mea_transform</span><span class="p">),</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">paint_electrodes_data_callbacks</span><span class="p">(</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">get_electrode_names</span><span class="p">(),</span> <span class="n">draw_pos_hint</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                <span class="n">volt_axis</span><span class="o">=</span><span class="mi">50</span><span class="p">)]</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+<p>This creates a movie of the first second of the experiment at three times
+the intensity, containing the background image, the MEA grid and the electrode
+data as well as the shapes.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ceed.analysis.</span></span><span class="sig-name descname"><span class="pre">CeedDataReader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.analysis.CeedDataReader" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Loads the data from an experiment.</p>
+<p>See <a class="reference internal" href="#module-ceed.analysis" title="ceed.analysis"><code class="xref py py-mod docutils literal notranslate"><span class="pre">analysis</span></code></a> for details.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.experiments_in_file">
+<span class="sig-name descname"><span class="pre">experiments_in_file</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#ceed.analysis.CeedDataReader.experiments_in_file" title="Permalink to this definition"></a></dt>
+<dd><p>After <a class="reference internal" href="#ceed.analysis.CeedDataReader.open_h5" title="ceed.analysis.CeedDataReader.open_h5"><code class="xref py py-meth docutils literal notranslate"><span class="pre">open_h5()</span></code></a>, it is a list of the experiment names
+found in the file. The experiments listed can be opened with
+<a class="reference internal" href="#ceed.analysis.CeedDataReader.load_experiment" title="ceed.analysis.CeedDataReader.load_experiment"><code class="xref py py-meth docutils literal notranslate"><span class="pre">load_experiment()</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.num_images_in_file">
+<span class="sig-name descname"><span class="pre">num_images_in_file</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#ceed.analysis.CeedDataReader.num_images_in_file" title="Permalink to this definition"></a></dt>
+<dd><p>After <a class="reference internal" href="#ceed.analysis.CeedDataReader.open_h5" title="ceed.analysis.CeedDataReader.open_h5"><code class="xref py py-meth docutils literal notranslate"><span class="pre">open_h5()</span></code></a>, it is the number of camera images
+found in the file. Images can be opened by number with
+<a class="reference internal" href="#ceed.analysis.CeedDataReader.get_image_from_file" title="ceed.analysis.CeedDataReader.get_image_from_file"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_image_from_file()</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.electrodes_data">
+<span class="sig-name descname"><span class="pre">electrodes_data</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#ceed.analysis.CeedDataReader.electrodes_data" title="Permalink to this definition"></a></dt>
+<dd><p>After <a class="reference internal" href="#ceed.analysis.CeedDataReader.load_mcs_data" title="ceed.analysis.CeedDataReader.load_mcs_data"><code class="xref py py-meth docutils literal notranslate"><span class="pre">load_mcs_data()</span></code></a>, it is a mapping whose keys is an
+electrode name and whose values is a 1D array with the raw electrode data
+from MCS.</p>
+<p>Use <a class="reference internal" href="#ceed.analysis.CeedDataReader.get_electrode_offset_scale" title="ceed.analysis.CeedDataReader.get_electrode_offset_scale"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_electrode_offset_scale()</span></code></a> to convert the raw data to properly
+scaled volt.</p>
+<p>The electrode data is typically sampled at a high sampling rate and contains
+multiple Ceed experiments. See <a class="reference internal" href="#ceed.analysis.CeedDataReader.electrode_intensity_alignment" title="ceed.analysis.CeedDataReader.electrode_intensity_alignment"><code class="xref py py-attr docutils literal notranslate"><span class="pre">electrode_intensity_alignment</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.electrodes_metadata">
+<span class="sig-name descname"><span class="pre">electrodes_metadata</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#ceed.analysis.CeedDataReader.electrodes_metadata" title="Permalink to this definition"></a></dt>
+<dd><p>Similar to <a class="reference internal" href="#ceed.analysis.CeedDataReader.electrodes_data" title="ceed.analysis.CeedDataReader.electrodes_data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">electrodes_data</span></code></a>, but instead the values is a dict of
+the electrode metadata such as sampling rate etc.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.electrode_dig_data">
+<span class="sig-name descname"><span class="pre">electrode_dig_data</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#ceed.analysis.CeedDataReader.electrode_dig_data" title="Permalink to this definition"></a></dt>
+<dd><p>After <a class="reference internal" href="#ceed.analysis.CeedDataReader.load_mcs_data" title="ceed.analysis.CeedDataReader.load_mcs_data"><code class="xref py py-meth docutils literal notranslate"><span class="pre">load_mcs_data()</span></code></a>, if present in the file, it’s an 1D array
+containing the digital input data as sampled by the MCS system.</p>
+<p>This data was used when aligning the Ceed data to the MCS electrode data in
+<a class="reference internal" href="merge_data.html#module-ceed.analysis.merge_data" title="ceed.analysis.merge_data"><code class="xref py py-mod docutils literal notranslate"><span class="pre">merge_data</span></code></a> and it contains the alignment pattern sent
+by Ceed to MCS over the hardware link. There should be the same number of
+samples as in the <a class="reference internal" href="#ceed.analysis.CeedDataReader.electrodes_data" title="ceed.analysis.CeedDataReader.electrodes_data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">electrodes_data</span></code></a> for any electrode.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.analog_data">
+<span class="sig-name descname"><span class="pre">analog_data</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#ceed.analysis.CeedDataReader.analog_data" title="Permalink to this definition"></a></dt>
+<dd><p>After <a class="reference internal" href="#ceed.analysis.CeedDataReader.load_mcs_data" title="ceed.analysis.CeedDataReader.load_mcs_data"><code class="xref py py-meth docutils literal notranslate"><span class="pre">load_mcs_data()</span></code></a>, it is a mapping whose keys is an
+analog channel name and whose values is a 1D array with the raw analog data
+from MCS.</p>
+<p>Use <a class="reference internal" href="#ceed.analysis.CeedDataReader.get_analog_offset_scale" title="ceed.analysis.CeedDataReader.get_analog_offset_scale"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_analog_offset_scale()</span></code></a> to convert the raw data to properly
+scaled volt.</p>
+<p>The analog data is typically sampled at a high sampling rate and contains
+multiple Ceed experiments. See <a class="reference internal" href="#ceed.analysis.CeedDataReader.electrode_intensity_alignment" title="ceed.analysis.CeedDataReader.electrode_intensity_alignment"><code class="xref py py-attr docutils literal notranslate"><span class="pre">electrode_intensity_alignment</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.analog_metadata">
+<span class="sig-name descname"><span class="pre">analog_metadata</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#ceed.analysis.CeedDataReader.analog_metadata" title="Permalink to this definition"></a></dt>
+<dd><p>Similar to <a class="reference internal" href="#ceed.analysis.CeedDataReader.analog_data" title="ceed.analysis.CeedDataReader.analog_data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">analog_data</span></code></a>, but instead the values is a dict of
+the analog metadata such as sampling rate etc.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.electrode_intensity_alignment">
+<span class="sig-name descname"><span class="pre">electrode_intensity_alignment</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#ceed.analysis.CeedDataReader.electrode_intensity_alignment" title="Permalink to this definition"></a></dt>
+<dd><p>After <a class="reference internal" href="#ceed.analysis.CeedDataReader.load_experiment" title="ceed.analysis.CeedDataReader.load_experiment"><code class="xref py py-meth docutils literal notranslate"><span class="pre">load_experiment()</span></code></a> it is a 1D array, mapping the ceed
+frames (<a class="reference internal" href="#ceed.analysis.CeedDataReader.shapes_intensity_rendered" title="ceed.analysis.CeedDataReader.shapes_intensity_rendered"><code class="xref py py-attr docutils literal notranslate"><span class="pre">shapes_intensity_rendered</span></code></a>) to the MCS
+<a class="reference internal" href="#ceed.analysis.CeedDataReader.electrodes_data" title="ceed.analysis.CeedDataReader.electrodes_data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">electrodes_data</span></code></a> by index. See
+<a class="reference internal" href="#ceed.analysis.CeedDataReader.electrode_intensity_alignment_gpu_rate" title="ceed.analysis.CeedDataReader.electrode_intensity_alignment_gpu_rate"><code class="xref py py-attr docutils literal notranslate"><span class="pre">electrode_intensity_alignment_gpu_rate</span></code></a> for the indices, one per
+GPU frame.</p>
+<p>If no alignment was computed for this file (e.g. if it’s not a “merged”
+file), this is None.</p>
+<p>Ceed refreshes the projector at a low rate, e.g. 120Hz. MCS records data at
+a very high rate, e.g. 10kHz. Consequently, each Ceed frame is displayed
+during multiple electrode samples. So, starting from the first frame for an
+experiment, we can write the it starts at index <code class="docutils literal notranslate"><span class="pre">k</span></code> in
+<a class="reference internal" href="#ceed.analysis.CeedDataReader.electrodes_data" title="ceed.analysis.CeedDataReader.electrodes_data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">electrodes_data</span></code></a>, frame 2 at index <code class="docutils literal notranslate"><span class="pre">m</span></code>, frame 3 at index <code class="docutils literal notranslate"><span class="pre">n</span></code>,
+etc. Then e.g. frame one is displayed during samples <code class="docutils literal notranslate"><span class="pre">[k,</span> <span class="pre">m)</span></code>, frame two
+at <code class="docutils literal notranslate"><span class="pre">[m,</span> <span class="pre">n)</span></code>, etc.</p>
+<p><a class="reference internal" href="#ceed.analysis.CeedDataReader.electrode_intensity_alignment" title="ceed.analysis.CeedDataReader.electrode_intensity_alignment"><code class="xref py py-attr docutils literal notranslate"><span class="pre">electrode_intensity_alignment</span></code></a> are these start indices, one for each
+Ceed frame and therefore its length is the number of Ceed frames displayed
+during the experiment.</p>
+<p>Minor detail; if the experiment ran in QUAD4X or QUAD12X mode then each main
+frame is composed of sub-frames (e.g. 4 or 12 frames). The start index of
+each sub-frame was estimated by splitting the main frames into the given
+number of sub-frames. Because we only know the exact index of each main
+frame.</p>
+<p>As explained in <a class="reference internal" href="../view/controller.html#dropped-frames"><span class="std std-ref">Frame rate and dropped frames</span></a>, Ceed will sometimes drop a frame to
+compensate when a frame is displayed too long. Therefore,
+the length of <a class="reference internal" href="#ceed.analysis.CeedDataReader.electrode_intensity_alignment" title="ceed.analysis.CeedDataReader.electrode_intensity_alignment"><code class="xref py py-attr docutils literal notranslate"><span class="pre">electrode_intensity_alignment</span></code></a> may be shorter than the
+the length of the values in <a class="reference internal" href="#ceed.analysis.CeedDataReader.shapes_intensity" title="ceed.analysis.CeedDataReader.shapes_intensity"><code class="xref py py-attr docutils literal notranslate"><span class="pre">shapes_intensity</span></code></a>, because
+this contains only indices for frames that were rendered. So it should be
+the same length as the items in <a class="reference internal" href="#ceed.analysis.CeedDataReader.shapes_intensity_rendered" title="ceed.analysis.CeedDataReader.shapes_intensity_rendered"><code class="xref py py-attr docutils literal notranslate"><span class="pre">shapes_intensity_rendered</span></code></a>.</p>
+<p>If Ceed drops a frame, it means a previous frame was displayed for longer
+than one frame duration. Consequently, the distance between values in this
+array may not be regularly spaced. E.g. in the example above, <code class="docutils literal notranslate"><span class="pre">m</span> <span class="pre">-</span> <span class="pre">n</span></code>
+could be twice or three times as large as <code class="docutils literal notranslate"><span class="pre">k</span> <span class="pre">-</span> <span class="pre">m</span></code>.
+<a class="reference internal" href="#ceed.analysis.CeedDataReader.compute_long_and_skipped_frames" title="ceed.analysis.CeedDataReader.compute_long_and_skipped_frames"><code class="xref py py-meth docutils literal notranslate"><span class="pre">CeedDataReader.compute_long_and_skipped_frames()</span></code></a> helps analyze to find
+these dropped and long frames.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.electrode_intensity_alignment_gpu_rate">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">electrode_intensity_alignment_gpu_rate</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#ceed.analysis.CeedDataReader.electrode_intensity_alignment_gpu_rate" title="Permalink to this definition"></a></dt>
+<dd><p>Like <a class="reference internal" href="#ceed.analysis.CeedDataReader.electrode_intensity_alignment" title="ceed.analysis.CeedDataReader.electrode_intensity_alignment"><code class="xref py py-attr docutils literal notranslate"><span class="pre">electrode_intensity_alignment</span></code></a>, except that indices
+corresponding to long frames are split into individual frames, rather
+than one sample per long frame.</p>
+<p>This means that each frame index corresponds to a single GPU frame
+and is the same size as <a class="reference internal" href="#ceed.analysis.CeedDataReader.shapes_intensity_rendered_gpu_rate" title="ceed.analysis.CeedDataReader.shapes_intensity_rendered_gpu_rate"><code class="xref py py-attr docutils literal notranslate"><span class="pre">shapes_intensity_rendered_gpu_rate</span></code></a>.</p>
+<p>E.g. If Ceed projected 5 frames - 0, 1, 2, 3, and 4, but frame 1 was
+displayed for 2 frames, and Ceed dropped its frame 3 to compensate,
+then Ceed projected the following frames at the GPU rate: 0, 1, 1, 2, 4.</p>
+<p>In this example, <a class="reference internal" href="#ceed.analysis.CeedDataReader.electrode_intensity_alignment" title="ceed.analysis.CeedDataReader.electrode_intensity_alignment"><code class="xref py py-attr docutils literal notranslate"><span class="pre">electrode_intensity_alignment</span></code></a> would
+hold 4 values indicating the indices in MCS of frames 0, 1, 3, 4. That’s
+because from MCS’ pov, only 4 frames were emitted by Ceed because frames
+2 and 3 were the same because the GPU didn’t render frame 3.</p>
+<p><a class="reference internal" href="#ceed.analysis.CeedDataReader.electrode_intensity_alignment_gpu_rate" title="ceed.analysis.CeedDataReader.electrode_intensity_alignment_gpu_rate"><code class="xref py py-attr docutils literal notranslate"><span class="pre">electrode_intensity_alignment_gpu_rate</span></code></a> however will actually
+contain 5 values because we estimate where in the MCS data frame 2
+would have occurred and add that index.</p>
+<p><a class="reference internal" href="#ceed.analysis.CeedDataReader.electrode_intensity_alignment_gpu_rate" title="ceed.analysis.CeedDataReader.electrode_intensity_alignment_gpu_rate"><code class="xref py py-attr docutils literal notranslate"><span class="pre">electrode_intensity_alignment_gpu_rate</span></code></a> is None when
+<a class="reference internal" href="#ceed.analysis.CeedDataReader.electrode_intensity_alignment" title="ceed.analysis.CeedDataReader.electrode_intensity_alignment"><code class="xref py py-attr docutils literal notranslate"><span class="pre">electrode_intensity_alignment</span></code></a> is None.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>If there are overwhelmingly too many long frames (i.e. the
+approximate median frame was displayed longer compared to one
+expected GPU period) it is not accurate.</p>
+</div>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.shapes_intensity">
+<span class="sig-name descname"><span class="pre">shapes_intensity</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#ceed.analysis.CeedDataReader.shapes_intensity" title="Permalink to this definition"></a></dt>
+<dd><p>After <a class="reference internal" href="#ceed.analysis.CeedDataReader.load_experiment" title="ceed.analysis.CeedDataReader.load_experiment"><code class="xref py py-meth docutils literal notranslate"><span class="pre">load_experiment()</span></code></a>, it is a mapping whose keys are the
+names of the shapes drawn in ceed for this experiment and whose values
+is a 2D array containing the intensity value of the shape for each Ceed
+frame, <strong>including those dropped</strong>.</p>
+<p>This is sampled at the projector frame rate, not the MEA sampling rate and
+should have the same size or larger as the shape of
+<a class="reference internal" href="#ceed.analysis.CeedDataReader.electrode_intensity_alignment" title="ceed.analysis.CeedDataReader.electrode_intensity_alignment"><code class="xref py py-attr docutils literal notranslate"><span class="pre">electrode_intensity_alignment</span></code></a>.</p>
+<p>Each shape is a 2D array. Each row corresponds to a single frame and has 4
+columns indicating the red, green, blue, and alpha intensity of that shape
+for that frame. They are values between 0-1. Alpha is the transparency with
+1 being completely opaque.</p>
+<p>As explained in <a class="reference internal" href="#ceed.analysis.CeedDataReader.electrode_intensity_alignment" title="ceed.analysis.CeedDataReader.electrode_intensity_alignment"><code class="xref py py-attr docutils literal notranslate"><span class="pre">electrode_intensity_alignment</span></code></a>, Ceed will drop frames
+to compensate for long frames. However, Ceed will still compute and record
+the shapes’ intensity for dropped frames. <a class="reference internal" href="#ceed.analysis.CeedDataReader.shapes_intensity" title="ceed.analysis.CeedDataReader.shapes_intensity"><code class="xref py py-attr docutils literal notranslate"><span class="pre">shapes_intensity</span></code></a> contains
+the intensity for all frames, including the dropped ones and may therefore
+be larger than the length of <a class="reference internal" href="#ceed.analysis.CeedDataReader.electrode_intensity_alignment" title="ceed.analysis.CeedDataReader.electrode_intensity_alignment"><code class="xref py py-attr docutils literal notranslate"><span class="pre">electrode_intensity_alignment</span></code></a>.</p>
+<p><a class="reference internal" href="#ceed.analysis.CeedDataReader.shapes_intensity_rendered" title="ceed.analysis.CeedDataReader.shapes_intensity_rendered"><code class="xref py py-attr docutils literal notranslate"><span class="pre">shapes_intensity_rendered</span></code></a> contains only the frames that were
+rendered and is therefore the same size as
+<a class="reference internal" href="#ceed.analysis.CeedDataReader.electrode_intensity_alignment" title="ceed.analysis.CeedDataReader.electrode_intensity_alignment"><code class="xref py py-attr docutils literal notranslate"><span class="pre">electrode_intensity_alignment</span></code></a>. It is generated by indexing
+<a class="reference internal" href="#ceed.analysis.CeedDataReader.shapes_intensity" title="ceed.analysis.CeedDataReader.shapes_intensity"><code class="xref py py-attr docutils literal notranslate"><span class="pre">shapes_intensity</span></code></a> using <a class="reference internal" href="#ceed.analysis.CeedDataReader.rendered_frames" title="ceed.analysis.CeedDataReader.rendered_frames"><code class="xref py py-attr docutils literal notranslate"><span class="pre">rendered_frames</span></code></a>.
+<a class="reference internal" href="#ceed.analysis.CeedDataReader.shapes_intensity_rendered_gpu_rate" title="ceed.analysis.CeedDataReader.shapes_intensity_rendered_gpu_rate"><code class="xref py py-attr docutils literal notranslate"><span class="pre">shapes_intensity_rendered_gpu_rate</span></code></a> additionally, breaks the longer
+frames into individual frames so it’s generally the same size as
+<a class="reference internal" href="#ceed.analysis.CeedDataReader.shapes_intensity" title="ceed.analysis.CeedDataReader.shapes_intensity"><code class="xref py py-attr docutils literal notranslate"><span class="pre">shapes_intensity</span></code></a>.</p>
+<p><a class="reference internal" href="#ceed.analysis.CeedDataReader.rendered_frames_long" title="ceed.analysis.CeedDataReader.rendered_frames_long"><code class="xref py py-attr docutils literal notranslate"><span class="pre">rendered_frames_long</span></code></a> additionally indicates the displayed frames
+that were displayed for more than one frame duration, potentially causing
+Ceed to drop frames.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.shapes_intensity_rendered">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">shapes_intensity_rendered</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#ceed.analysis.CeedDataReader.shapes_intensity_rendered" title="Permalink to this definition"></a></dt>
+<dd><p>After <a class="reference internal" href="#ceed.analysis.CeedDataReader.load_experiment" title="ceed.analysis.CeedDataReader.load_experiment"><code class="xref py py-meth docutils literal notranslate"><span class="pre">load_experiment()</span></code></a>, it is a mapping whose keys are the
+names of the shapes drawn in ceed for this experiment and whose values
+is a 2D array containing the intensity value of the shape for each Ceed
+frame, <strong>not including the dropped frames</strong>. See also
+<a class="reference internal" href="#ceed.analysis.CeedDataReader.shapes_intensity_rendered_gpu_rate" title="ceed.analysis.CeedDataReader.shapes_intensity_rendered_gpu_rate"><code class="xref py py-attr docutils literal notranslate"><span class="pre">shapes_intensity_rendered_gpu_rate</span></code></a> for the data spaced exactly
+one per GPU frame.</p>
+<p>Unlike <a class="reference internal" href="#ceed.analysis.CeedDataReader.shapes_intensity" title="ceed.analysis.CeedDataReader.shapes_intensity"><code class="xref py py-attr docutils literal notranslate"><span class="pre">shapes_intensity</span></code></a>, it only contains the frames that were
+displayed and is the same size as <a class="reference internal" href="#ceed.analysis.CeedDataReader.electrode_intensity_alignment" title="ceed.analysis.CeedDataReader.electrode_intensity_alignment"><code class="xref py py-attr docutils literal notranslate"><span class="pre">electrode_intensity_alignment</span></code></a>.
+See those properties docs’ for details.</p>
+<p>Long frames, frames displayed for more than one GPU frame period
+duration resulting in a subsequent dropped frame,
+is listed only once for each long frame (i.e. the array is not
+evenly sampled at the GPU refresh rate if there are long frames
+because the duration of each item may be longer than the GPU period).</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.shapes_intensity_rendered_gpu_rate">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">shapes_intensity_rendered_gpu_rate</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#ceed.analysis.CeedDataReader.shapes_intensity_rendered_gpu_rate" title="Permalink to this definition"></a></dt>
+<dd><p>Like <a class="reference internal" href="#ceed.analysis.CeedDataReader.shapes_intensity_rendered" title="ceed.analysis.CeedDataReader.shapes_intensity_rendered"><code class="xref py py-attr docutils literal notranslate"><span class="pre">shapes_intensity_rendered</span></code></a>, except that samples
+corresponding to long frames are split into individual samples, rather
+than one sample per long frame.</p>
+<p>This means that each frame sample corresponds to a single GPU frame
+and is the same size as <a class="reference internal" href="#ceed.analysis.CeedDataReader.electrode_intensity_alignment_gpu_rate" title="ceed.analysis.CeedDataReader.electrode_intensity_alignment_gpu_rate"><code class="xref py py-attr docutils literal notranslate"><span class="pre">electrode_intensity_alignment_gpu_rate</span></code></a>.</p>
+<p>E.g. If Ceed projected 5 frames - 0, 1, 2, 3, and 4, but frame 1 was
+displayed for 2 frames, and Ceed dropped its frame 3 to compensate,
+then Ceed projected the following intensity frame values at the GPU
+rate: 0, 1, 1, 2, 4.</p>
+<p>In this example, <a class="reference internal" href="#ceed.analysis.CeedDataReader.shapes_intensity" title="ceed.analysis.CeedDataReader.shapes_intensity"><code class="xref py py-attr docutils literal notranslate"><span class="pre">shapes_intensity</span></code></a> shapes would hold 5 values
+corresponding to frames 0, 1, 2, 3, 4, <a class="reference internal" href="#ceed.analysis.CeedDataReader.shapes_intensity_rendered" title="ceed.analysis.CeedDataReader.shapes_intensity_rendered"><code class="xref py py-attr docutils literal notranslate"><span class="pre">shapes_intensity_rendered</span></code></a>
+shapes would hold 4 values corresponding to frames 0, 1, 2, 4, and
+<a class="reference internal" href="#ceed.analysis.CeedDataReader.shapes_intensity_rendered_gpu_rate" title="ceed.analysis.CeedDataReader.shapes_intensity_rendered_gpu_rate"><code class="xref py py-attr docutils literal notranslate"><span class="pre">shapes_intensity_rendered_gpu_rate</span></code></a> shapes would hold 5 values
+corresponding to frames 0, 1, 1, 2, 4. <a class="reference internal" href="#ceed.analysis.CeedDataReader.rendered_frames_long" title="ceed.analysis.CeedDataReader.rendered_frames_long"><code class="xref py py-attr docutils literal notranslate"><span class="pre">rendered_frames_long</span></code></a>
+would be an array with values 1, 2, 1, 1.</p>
+<p><a class="reference internal" href="#ceed.analysis.CeedDataReader.shapes_intensity_rendered_gpu_rate" title="ceed.analysis.CeedDataReader.shapes_intensity_rendered_gpu_rate"><code class="xref py py-attr docutils literal notranslate"><span class="pre">shapes_intensity_rendered_gpu_rate</span></code></a> is None when
+<a class="reference internal" href="#ceed.analysis.CeedDataReader.electrode_intensity_alignment" title="ceed.analysis.CeedDataReader.electrode_intensity_alignment"><code class="xref py py-attr docutils literal notranslate"><span class="pre">electrode_intensity_alignment</span></code></a> is None.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>If there are overwhelmingly too many long frames (i.e. the
+approximate median frame was displayed longer compared to one
+expected GPU period) it is not accurate.</p>
+</div>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.rendered_frames">
+<span class="sig-name descname"><span class="pre">rendered_frames</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#ceed.analysis.CeedDataReader.rendered_frames" title="Permalink to this definition"></a></dt>
+<dd><p>After <a class="reference internal" href="#ceed.analysis.CeedDataReader.load_experiment" title="ceed.analysis.CeedDataReader.load_experiment"><code class="xref py py-meth docutils literal notranslate"><span class="pre">load_experiment()</span></code></a>, it is a 1D logical array of the same size
+as the values in <a class="reference internal" href="#ceed.analysis.CeedDataReader.shapes_intensity" title="ceed.analysis.CeedDataReader.shapes_intensity"><code class="xref py py-attr docutils literal notranslate"><span class="pre">shapes_intensity</span></code></a> and it indicates
+which frames of those frames were rendered.</p>
+<p><a class="reference internal" href="#ceed.analysis.CeedDataReader.shapes_intensity_rendered" title="ceed.analysis.CeedDataReader.shapes_intensity_rendered"><code class="xref py py-attr docutils literal notranslate"><span class="pre">shapes_intensity_rendered</span></code></a> is internally generated by indexing
+<a class="reference internal" href="#ceed.analysis.CeedDataReader.shapes_intensity" title="ceed.analysis.CeedDataReader.shapes_intensity"><code class="xref py py-attr docutils literal notranslate"><span class="pre">shapes_intensity</span></code></a> with <a class="reference internal" href="#ceed.analysis.CeedDataReader.rendered_frames" title="ceed.analysis.CeedDataReader.rendered_frames"><code class="xref py py-attr docutils literal notranslate"><span class="pre">rendered_frames</span></code></a>.</p>
+<p>If MCS was stopped recording data while a Ceed experiment was ongoing,
+those remaining frames are marked as not rendered because they are not in
+the MCS data, even though they may actually have been projected.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.rendered_frames_long">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">rendered_frames_long</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#ceed.analysis.CeedDataReader.rendered_frames_long" title="Permalink to this definition"></a></dt>
+<dd><p>After <a class="reference internal" href="#ceed.analysis.CeedDataReader.load_experiment" title="ceed.analysis.CeedDataReader.load_experiment"><code class="xref py py-meth docutils literal notranslate"><span class="pre">load_experiment()</span></code></a> it is a 1D array of the same
+size as <a class="reference internal" href="#ceed.analysis.CeedDataReader.shapes_intensity_rendered" title="ceed.analysis.CeedDataReader.shapes_intensity_rendered"><code class="xref py py-attr docutils literal notranslate"><span class="pre">shapes_intensity_rendered</span></code></a> indicating the number of GPU
+periods for which the corresponding frame was rendered. If it’s larger
+than one it means the frame was long. See <a class="reference internal" href="#ceed.analysis.CeedDataReader.shapes_intensity" title="ceed.analysis.CeedDataReader.shapes_intensity"><code class="xref py py-attr docutils literal notranslate"><span class="pre">shapes_intensity</span></code></a>
+and <a class="reference internal" href="#ceed.analysis.CeedDataReader.shapes_intensity_rendered_gpu_rate" title="ceed.analysis.CeedDataReader.shapes_intensity_rendered_gpu_rate"><code class="xref py py-attr docutils literal notranslate"><span class="pre">shapes_intensity_rendered_gpu_rate</span></code></a>.</p>
+<p><a class="reference internal" href="#ceed.analysis.CeedDataReader.rendered_frames_long" title="ceed.analysis.CeedDataReader.rendered_frames_long"><code class="xref py py-attr docutils literal notranslate"><span class="pre">rendered_frames_long</span></code></a> is None when
+<a class="reference internal" href="#ceed.analysis.CeedDataReader.electrode_intensity_alignment" title="ceed.analysis.CeedDataReader.electrode_intensity_alignment"><code class="xref py py-attr docutils literal notranslate"><span class="pre">electrode_intensity_alignment</span></code></a> is None.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>If there are overwhelmingly too many long frames (i.e. the
+approximate median frame was displayed longer compared to one
+expected GPU period) it is not accurate.</p>
+</div>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.led_state">
+<span class="sig-name descname"><span class="pre">led_state</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#ceed.analysis.CeedDataReader.led_state" title="Permalink to this definition"></a></dt>
+<dd><p>After <a class="reference internal" href="#ceed.analysis.CeedDataReader.load_experiment" title="ceed.analysis.CeedDataReader.load_experiment"><code class="xref py py-meth docutils literal notranslate"><span class="pre">load_experiment()</span></code></a>, it is the state of each of the 3 RGB
+projector LEDs.</p>
+<p>The projector lets us set it them using
+<a class="reference internal" href="../view/controller.html#ceed.view.controller.ViewControllerBase.LED_mode" title="ceed.view.controller.ViewControllerBase.LED_mode"><code class="xref py py-attr docutils literal notranslate"><span class="pre">LED_mode</span></code></a> and this records
+it when set during the experiment.</p>
+<p>It is a 2D array of Tx4:</p>
+<ul class="simple">
+<li><p>where each row corresponds to each time the projector is set during the
+experiment,</p></li>
+<li><p>the first column is the frame number when it was set as indexed into
+the values in <a class="reference internal" href="#ceed.analysis.CeedDataReader.shapes_intensity" title="ceed.analysis.CeedDataReader.shapes_intensity"><code class="xref py py-attr docutils literal notranslate"><span class="pre">shapes_intensity</span></code></a>,</p></li>
+<li><p>the remaining 3 columns is the state of the R, G, and B LED as set by
+the projector.</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.event_data">
+<span class="sig-name descname"><span class="pre">event_data</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#ceed.analysis.CeedDataReader.event_data" title="Permalink to this definition"></a></dt>
+<dd><p>After <a class="reference internal" href="#ceed.analysis.CeedDataReader.load_experiment" title="ceed.analysis.CeedDataReader.load_experiment"><code class="xref py py-meth docutils literal notranslate"><span class="pre">load_experiment()</span></code></a>, it is a list of all the events logged
+during the experiment.</p>
+<p>During an experiment, functions and stages can log arbitrary events to the
+data file. Each event contains some identifying info as well an arbitrary
+data payload. The identifying info is a 3-tuple of
+<code class="docutils literal notranslate"><span class="pre">(frame,</span> <span class="pre">ceed_id,</span> <span class="pre">name)</span></code>:</p>
+<blockquote>
+<div><dl class="simple">
+<dt><cite>frame</cite>: int</dt><dd><p>This is the GPU frame number at which the event was logged. For
+events logged after the last displayed frame (e.g. when the
+experiment ends), it’ll be the one above the largest frame number.
+The values can be between zero and the length of
+<a class="reference internal" href="#ceed.analysis.CeedDataReader.shapes_intensity_rendered_gpu_rate" title="ceed.analysis.CeedDataReader.shapes_intensity_rendered_gpu_rate"><code class="xref py py-attr docutils literal notranslate"><span class="pre">shapes_intensity_rendered_gpu_rate</span></code></a>, inclusive.</p>
+</dd>
+<dt><cite>ceed_id</cite>: int</dt><dd><p>The <a class="reference internal" href="../utils.html#ceed.utils.CeedWithID.ceed_id" title="ceed.utils.CeedWithID.ceed_id"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ceed_id</span></code></a> of the object doing the
+logging. <a class="reference internal" href="../utils.html#ceed.utils.CeedWithID.set_ceed_id" title="ceed.utils.CeedWithID.set_ceed_id"><code class="xref py py-meth docutils literal notranslate"><span class="pre">set_ceed_id()</span></code></a> is automatically
+called on the root stage before an experiment is run. It sets all
+sub-stage’s and all their function’s
+<a class="reference internal" href="../utils.html#ceed.utils.CeedWithID.ceed_id" title="ceed.utils.CeedWithID.ceed_id"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ceed_id</span></code></a>, each to a number that is
+unique among all of them (it’s only unique per stages/functions used
+in that experiment, not globally or even between experiments). You
+can lookup the <a class="reference internal" href="../utils.html#ceed.utils.CeedWithID.ceed_id" title="ceed.utils.CeedWithID.ceed_id"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ceed_id</span></code></a> of a
+stage/function to locate it in the logs using
+<a class="reference internal" href="#ceed.analysis.CeedDataReader.experiment_stage" title="ceed.analysis.CeedDataReader.experiment_stage"><code class="xref py py-attr docutils literal notranslate"><span class="pre">experiment_stage</span></code></a>.</p>
+</dd>
+<dt><cite>name</cite>: str</dt><dd><p>The event type being logged. It is a unique string, specific to the
+event. See below for the list of currently built-in events.</p>
+</dd>
+</dl>
+</div></blockquote>
+<p>The payload is a list of any of the native python data types (e.g. int,
+list, str etc.) and simple numpy arrays. It shouldn’t be too big otherwise
+frames may be dropped if it takes too long to process.</p>
+<p><a class="reference internal" href="../function/function.html#ceed.function.FunctionFactoryBase" title="ceed.function.FunctionFactoryBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">FunctionFactoryBase</span></code></a> and
+<a class="reference internal" href="../stage/stage.html#ceed.stage.StageFactoryBase" title="ceed.stage.StageFactoryBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">StageFactoryBase</span></code></a> each define a <code class="docutils literal notranslate"><span class="pre">on_data_event</span></code>
+dispatchable event that when dispatched with arguments will be automatically
+logged during the experiment. Following is the list of built in events
+dispatched automatically.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Function/stage events</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><cite>start</cite>:</dt><dd><p>Dispatched by each stage and function when they are initially
+started. Its payload is a 3-item list of the current loop iteration
+(<a class="reference internal" href="../function/function.html#ceed.function.FuncBase.loop_count" title="ceed.function.FuncBase.loop_count"><code class="xref py py-attr docutils literal notranslate"><span class="pre">loop_count</span></code></a> and
+<a class="reference internal" href="../function/function.html#ceed.function.FuncBase.loop_tree_count" title="ceed.function.FuncBase.loop_tree_count"><code class="xref py py-attr docutils literal notranslate"><span class="pre">loop_tree_count</span></code></a>, nominally zero)
+and the global ceed time (with higher resolution
+than GPU frames, so any real number) when it started.</p>
+</dd>
+<dt><cite>end</cite>:</dt><dd><p>Dispatched by each stage and function when they are ended. Its
+payload is a 3-item list of the final loop iteration number
+(<a class="reference internal" href="../function/function.html#ceed.function.FuncBase.loop_count" title="ceed.function.FuncBase.loop_count"><code class="xref py py-attr docutils literal notranslate"><span class="pre">loop_count</span></code></a> and
+<a class="reference internal" href="../function/function.html#ceed.function.FuncBase.loop_tree_count" title="ceed.function.FuncBase.loop_tree_count"><code class="xref py py-attr docutils literal notranslate"><span class="pre">loop_tree_count</span></code></a>) and the
+global ceed time when it ended. This event may not be logged if
+e.g. the user suddenly ends the stage so it never reached its end.</p>
+</dd>
+<dt><cite>loop_start</cite>:</dt><dd><p>Dispatched by each stage and function when each loop iteration
+starts, including the first loop iteration. Its payload is a 3-item
+list of the current loop iteration number
+(<a class="reference internal" href="../function/function.html#ceed.function.FuncBase.loop_count" title="ceed.function.FuncBase.loop_count"><code class="xref py py-attr docutils literal notranslate"><span class="pre">loop_count</span></code></a> and
+<a class="reference internal" href="../function/function.html#ceed.function.FuncBase.loop_tree_count" title="ceed.function.FuncBase.loop_tree_count"><code class="xref py py-attr docutils literal notranslate"><span class="pre">loop_tree_count</span></code></a>) and the global
+ceed time when it started.</p>
+</dd>
+<dt><cite>loop_end</cite>:</dt><dd><p>Dispatched by each stage and function when each loop iteration
+ends, including the last loop iteration. Its payload is a 3-item
+list of the loop iteration number that just ended
+(<a class="reference internal" href="../function/function.html#ceed.function.FuncBase.loop_count" title="ceed.function.FuncBase.loop_count"><code class="xref py py-attr docutils literal notranslate"><span class="pre">loop_count</span></code></a> and
+<a class="reference internal" href="../function/function.html#ceed.function.FuncBase.loop_tree_count" title="ceed.function.FuncBase.loop_tree_count"><code class="xref py py-attr docutils literal notranslate"><span class="pre">loop_tree_count</span></code></a>) and the global
+ceed time when it ended. This event may not be logged if
+e.g. the user suddenly ends the stage so the loop never reached its
+end.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>Plugins can similarly log events by dispatching to the <code class="docutils literal notranslate"><span class="pre">on_data_event</span></code>.
+E.g. <code class="docutils literal notranslate"><span class="pre">stage_factory.dispatch('on_data_event',</span> <span class="pre">stage.ceed_id,</span> <span class="pre">'drug',</span> <span class="pre">.4,</span>
+<span class="pre">'h2o')</span></code> could be dispatched so that event <code class="docutils literal notranslate"><span class="pre">drug</span></code> is logged for the
+current Ceed frame labeled as the specific stage, including a payload of
+<code class="docutils literal notranslate"><span class="pre">[.4,</span> <span class="pre">'h2o']</span></code>. The could e.g. mean that .4 ml of the drug was injected
+at this frame.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.view_controller">
+<span class="sig-name descname"><span class="pre">view_controller</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../view/controller.html#ceed.view.controller.ViewControllerBase" title="ceed.view.controller.ViewControllerBase"><span class="pre">ceed.view.controller.ViewControllerBase</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#ceed.analysis.CeedDataReader.view_controller" title="Permalink to this definition"></a></dt>
+<dd><p>After <a class="reference internal" href="#ceed.analysis.CeedDataReader.load_experiment" title="ceed.analysis.CeedDataReader.load_experiment"><code class="xref py py-meth docutils literal notranslate"><span class="pre">load_experiment()</span></code></a>, it is the
+<a class="reference internal" href="../view/controller.html#ceed.view.controller.ViewControllerBase" title="ceed.view.controller.ViewControllerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ViewControllerBase</span></code></a> instance configured to
+the same settings as used during the <a class="reference internal" href="#ceed.analysis.CeedDataReader.loaded_experiment" title="ceed.analysis.CeedDataReader.loaded_experiment"><code class="xref py py-attr docutils literal notranslate"><span class="pre">loaded_experiment</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.data_serializer">
+<span class="sig-name descname"><span class="pre">data_serializer</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../storage/controller.html#ceed.storage.controller.DataSerializerBase" title="ceed.storage.controller.DataSerializerBase"><span class="pre">ceed.storage.controller.DataSerializerBase</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#ceed.analysis.CeedDataReader.data_serializer" title="Permalink to this definition"></a></dt>
+<dd><p>After <a class="reference internal" href="#ceed.analysis.CeedDataReader.load_experiment" title="ceed.analysis.CeedDataReader.load_experiment"><code class="xref py py-meth docutils literal notranslate"><span class="pre">load_experiment()</span></code></a>, it is the
+<a class="reference internal" href="../storage/controller.html#ceed.storage.controller.DataSerializerBase" title="ceed.storage.controller.DataSerializerBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataSerializerBase</span></code></a> instance configured to
+the same settings as used during the <a class="reference internal" href="#ceed.analysis.CeedDataReader.loaded_experiment" title="ceed.analysis.CeedDataReader.loaded_experiment"><code class="xref py py-attr docutils literal notranslate"><span class="pre">loaded_experiment</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.function_factory">
+<span class="sig-name descname"><span class="pre">function_factory</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../function/function.html#ceed.function.FunctionFactoryBase" title="ceed.function.FunctionFactoryBase"><span class="pre">ceed.function.FunctionFactoryBase</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#ceed.analysis.CeedDataReader.function_factory" title="Permalink to this definition"></a></dt>
+<dd><p>After <a class="reference internal" href="#ceed.analysis.CeedDataReader.load_experiment" title="ceed.analysis.CeedDataReader.load_experiment"><code class="xref py py-meth docutils literal notranslate"><span class="pre">load_experiment()</span></code></a>, it is the
+<a class="reference internal" href="../function/function.html#ceed.function.FunctionFactoryBase" title="ceed.function.FunctionFactoryBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">FunctionFactoryBase</span></code></a> instance configured to
+the same settings as used during the <a class="reference internal" href="#ceed.analysis.CeedDataReader.loaded_experiment" title="ceed.analysis.CeedDataReader.loaded_experiment"><code class="xref py py-attr docutils literal notranslate"><span class="pre">loaded_experiment</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.stage_factory">
+<span class="sig-name descname"><span class="pre">stage_factory</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../stage/stage.html#ceed.stage.StageFactoryBase" title="ceed.stage.StageFactoryBase"><span class="pre">ceed.stage.StageFactoryBase</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#ceed.analysis.CeedDataReader.stage_factory" title="Permalink to this definition"></a></dt>
+<dd><p>After <a class="reference internal" href="#ceed.analysis.CeedDataReader.load_experiment" title="ceed.analysis.CeedDataReader.load_experiment"><code class="xref py py-meth docutils literal notranslate"><span class="pre">load_experiment()</span></code></a>, it is the
+<a class="reference internal" href="../stage/stage.html#ceed.stage.StageFactoryBase" title="ceed.stage.StageFactoryBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">StageFactoryBase</span></code></a> instance configured to
+the same settings as used during the <a class="reference internal" href="#ceed.analysis.CeedDataReader.loaded_experiment" title="ceed.analysis.CeedDataReader.loaded_experiment"><code class="xref py py-attr docutils literal notranslate"><span class="pre">loaded_experiment</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.shape_factory">
+<span class="sig-name descname"><span class="pre">shape_factory</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../shape/shape.html#ceed.shape.CeedPaintCanvasBehavior" title="ceed.shape.CeedPaintCanvasBehavior"><span class="pre">ceed.shape.CeedPaintCanvasBehavior</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#ceed.analysis.CeedDataReader.shape_factory" title="Permalink to this definition"></a></dt>
+<dd><p>After <a class="reference internal" href="#ceed.analysis.CeedDataReader.load_experiment" title="ceed.analysis.CeedDataReader.load_experiment"><code class="xref py py-meth docutils literal notranslate"><span class="pre">load_experiment()</span></code></a>, it is the
+<a class="reference internal" href="../shape/shape.html#ceed.shape.CeedPaintCanvasBehavior" title="ceed.shape.CeedPaintCanvasBehavior"><code class="xref py py-class docutils literal notranslate"><span class="pre">CeedPaintCanvasBehavior</span></code></a> instance configured to
+the same settings as used during the <a class="reference internal" href="#ceed.analysis.CeedDataReader.loaded_experiment" title="ceed.analysis.CeedDataReader.loaded_experiment"><code class="xref py py-attr docutils literal notranslate"><span class="pre">loaded_experiment</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.experiment_stage_name">
+<span class="sig-name descname"><span class="pre">experiment_stage_name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">''</span></em><a class="headerlink" href="#ceed.analysis.CeedDataReader.experiment_stage_name" title="Permalink to this definition"></a></dt>
+<dd><p>After <a class="reference internal" href="#ceed.analysis.CeedDataReader.load_experiment" title="ceed.analysis.CeedDataReader.load_experiment"><code class="xref py py-meth docutils literal notranslate"><span class="pre">load_experiment()</span></code></a>, it is the name of the stage among
+the stages in <a class="reference internal" href="#ceed.analysis.CeedDataReader.stage_factory" title="ceed.analysis.CeedDataReader.stage_factory"><code class="xref py py-attr docutils literal notranslate"><span class="pre">stage_factory</span></code></a> that was used to run the currently
+<a class="reference internal" href="#ceed.analysis.CeedDataReader.loaded_experiment" title="ceed.analysis.CeedDataReader.loaded_experiment"><code class="xref py py-attr docutils literal notranslate"><span class="pre">loaded_experiment</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.experiment_stage">
+<span class="sig-name descname"><span class="pre">experiment_stage</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../stage/stage.html#ceed.stage.CeedStage" title="ceed.stage.CeedStage"><span class="pre">ceed.stage.CeedStage</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#ceed.analysis.CeedDataReader.experiment_stage" title="Permalink to this definition"></a></dt>
+<dd><p>After <a class="reference internal" href="#ceed.analysis.CeedDataReader.load_experiment" title="ceed.analysis.CeedDataReader.load_experiment"><code class="xref py py-meth docutils literal notranslate"><span class="pre">load_experiment()</span></code></a>, it is the <a class="reference internal" href="../stage/stage.html#ceed.stage.CeedStage" title="ceed.stage.CeedStage"><code class="xref py py-class docutils literal notranslate"><span class="pre">CeedStage</span></code></a>
+instance that is configured exactly like the stage used to run the
+experiment. All the properties, sub-stages, and functions match that
+original stage.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.experiment_notes">
+<span class="sig-name descname"><span class="pre">experiment_notes</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">''</span></em><a class="headerlink" href="#ceed.analysis.CeedDataReader.experiment_notes" title="Permalink to this definition"></a></dt>
+<dd><p>The experiment notes recorded for the currently
+<a class="reference internal" href="#ceed.analysis.CeedDataReader.loaded_experiment" title="ceed.analysis.CeedDataReader.loaded_experiment"><code class="xref py py-attr docutils literal notranslate"><span class="pre">loaded_experiment</span></code></a> in the GUI.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.experiment_start_time">
+<span class="sig-name descname"><span class="pre">experiment_start_time</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0</span></em><a class="headerlink" href="#ceed.analysis.CeedDataReader.experiment_start_time" title="Permalink to this definition"></a></dt>
+<dd><p>The <code class="docutils literal notranslate"><span class="pre">time.time</span></code> timestamp when the currently
+<a class="reference internal" href="#ceed.analysis.CeedDataReader.loaded_experiment" title="ceed.analysis.CeedDataReader.loaded_experiment"><code class="xref py py-attr docutils literal notranslate"><span class="pre">loaded_experiment</span></code></a> started.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.experiment_cam_image">
+<span class="sig-name descname"><span class="pre">experiment_cam_image</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://matham.github.io/ffpyplayer/pic.html#ffpyplayer.pic.Image" title="(in FFPyPlayer)"><span class="pre">ffpyplayer.pic.Image</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#ceed.analysis.CeedDataReader.experiment_cam_image" title="Permalink to this definition"></a></dt>
+<dd><p>The camera image stored for the currently <a class="reference internal" href="#ceed.analysis.CeedDataReader.loaded_experiment" title="ceed.analysis.CeedDataReader.loaded_experiment"><code class="xref py py-attr docutils literal notranslate"><span class="pre">loaded_experiment</span></code></a>,
+if there was a background image present in the GUI when it was started.</p>
+<p>See also <a class="reference internal" href="#ceed.analysis.CeedDataReader.save_image" title="ceed.analysis.CeedDataReader.save_image"><code class="xref py py-meth docutils literal notranslate"><span class="pre">save_image()</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.loaded_experiment">
+<span class="sig-name descname"><span class="pre">loaded_experiment</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#ceed.analysis.CeedDataReader.loaded_experiment" title="Permalink to this definition"></a></dt>
+<dd><p>After <a class="reference internal" href="#ceed.analysis.CeedDataReader.load_experiment" title="ceed.analysis.CeedDataReader.load_experiment"><code class="xref py py-meth docutils literal notranslate"><span class="pre">load_experiment()</span></code></a>, it is the experiment number of the
+currently loaded experiment.</p>
+<p>The ceed h5 file contains data for multiple experiments.
+<a class="reference internal" href="#ceed.analysis.CeedDataReader.load_experiment" title="ceed.analysis.CeedDataReader.load_experiment"><code class="xref py py-meth docutils literal notranslate"><span class="pre">load_experiment()</span></code></a> must be called to load a particular experiment;
+this stores the experiment number currently loaded.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.ceed_version">
+<span class="sig-name descname"><span class="pre">ceed_version</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">''</span></em><a class="headerlink" href="#ceed.analysis.CeedDataReader.ceed_version" title="Permalink to this definition"></a></dt>
+<dd><p>After <a class="reference internal" href="#ceed.analysis.CeedDataReader.open_h5" title="ceed.analysis.CeedDataReader.open_h5"><code class="xref py py-meth docutils literal notranslate"><span class="pre">open_h5()</span></code></a>, it is the version of ceed that created
+the file.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.external_function_plugin_package">
+<span class="sig-name descname"><span class="pre">external_function_plugin_package</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">''</span></em><a class="headerlink" href="#ceed.analysis.CeedDataReader.external_function_plugin_package" title="Permalink to this definition"></a></dt>
+<dd><p>After <a class="reference internal" href="#ceed.analysis.CeedDataReader.open_h5" title="ceed.analysis.CeedDataReader.open_h5"><code class="xref py py-meth docutils literal notranslate"><span class="pre">open_h5()</span></code></a>, it contains the external function plugin
+package containing any additional functions, if it was specified during the
+experiment.</p>
+<p>See <a class="reference internal" href="../../apps/main.html#ceed.main.CeedApp.external_function_plugin_package" title="ceed.main.CeedApp.external_function_plugin_package"><code class="xref py py-attr docutils literal notranslate"><span class="pre">external_function_plugin_package</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.external_stage_plugin_package">
+<span class="sig-name descname"><span class="pre">external_stage_plugin_package</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">''</span></em><a class="headerlink" href="#ceed.analysis.CeedDataReader.external_stage_plugin_package" title="Permalink to this definition"></a></dt>
+<dd><p>After <a class="reference internal" href="#ceed.analysis.CeedDataReader.open_h5" title="ceed.analysis.CeedDataReader.open_h5"><code class="xref py py-meth docutils literal notranslate"><span class="pre">open_h5()</span></code></a>, it contains the external stage plugin
+package containing any additional stages, if it was specified during the
+experiment.</p>
+<p>See <a class="reference internal" href="../../apps/main.html#ceed.main.CeedApp.external_stage_plugin_package" title="ceed.main.CeedApp.external_stage_plugin_package"><code class="xref py py-attr docutils literal notranslate"><span class="pre">external_stage_plugin_package</span></code></a></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.app_logs">
+<span class="sig-name descname"><span class="pre">app_logs</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">''</span></em><a class="headerlink" href="#ceed.analysis.CeedDataReader.app_logs" title="Permalink to this definition"></a></dt>
+<dd><p>After <a class="reference internal" href="#ceed.analysis.CeedDataReader.open_h5" title="ceed.analysis.CeedDataReader.open_h5"><code class="xref py py-meth docutils literal notranslate"><span class="pre">open_h5()</span></code></a>, it contains the overall app logs recorded during
+the experiments.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.app_notes">
+<span class="sig-name descname"><span class="pre">app_notes</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">''</span></em><a class="headerlink" href="#ceed.analysis.CeedDataReader.app_notes" title="Permalink to this definition"></a></dt>
+<dd><p>After <a class="reference internal" href="#ceed.analysis.CeedDataReader.open_h5" title="ceed.analysis.CeedDataReader.open_h5"><code class="xref py py-meth docutils literal notranslate"><span class="pre">open_h5()</span></code></a>, it contains the overall notes stored in the file,
+including those added during
+<a class="reference internal" href="merge_data.html#ceed.analysis.merge_data.CeedMCSDataMerger.merge_data" title="ceed.analysis.merge_data.CeedMCSDataMerger.merge_data"><code class="xref py py-meth docutils literal notranslate"><span class="pre">merge_data()</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.app_config">
+<span class="sig-name descname"><span class="pre">app_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#ceed.analysis.CeedDataReader.app_config" title="Permalink to this definition"></a></dt>
+<dd><p>After <a class="reference internal" href="#ceed.analysis.CeedDataReader.open_h5" title="ceed.analysis.CeedDataReader.open_h5"><code class="xref py py-meth docutils literal notranslate"><span class="pre">open_h5()</span></code></a>, it is the last ceed application
+configuration objects as saved in the file.</p>
+<p>These options are similarly stored in each experiment containing the
+configuration options used at the time the experiment was executed. These
+are stored in <a class="reference internal" href="#ceed.analysis.CeedDataReader.function_factory" title="ceed.analysis.CeedDataReader.function_factory"><code class="xref py py-attr docutils literal notranslate"><span class="pre">function_factory</span></code></a>, <a class="reference internal" href="#ceed.analysis.CeedDataReader.stage_factory" title="ceed.analysis.CeedDataReader.stage_factory"><code class="xref py py-attr docutils literal notranslate"><span class="pre">stage_factory</span></code></a> etc. and
+is specific to the experiment. <a class="reference internal" href="#ceed.analysis.CeedDataReader.app_config" title="ceed.analysis.CeedDataReader.app_config"><code class="xref py py-attr docutils literal notranslate"><span class="pre">app_config</span></code></a> are the Ceed options as
+they were when the file was last closed/saved.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.filename">
+<span class="sig-name descname"><span class="pre">filename</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">''</span></em><a class="headerlink" href="#ceed.analysis.CeedDataReader.filename" title="Permalink to this definition"></a></dt>
+<dd><p>The full filename path of the Ceed H5 file opened.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.close_h5">
+<span class="sig-name descname"><span class="pre">close_h5</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.analysis.CeedDataReader.close_h5" title="Permalink to this definition"></a></dt>
+<dd><p>Closes the data file if it has been opened.</p>
+<p>This is implicitly called when using the <code class="docutils literal notranslate"><span class="pre">with</span></code> syntax shown in
+<a class="reference internal" href="#ceed.analysis.CeedDataReader.open_h5" title="ceed.analysis.CeedDataReader.open_h5"><code class="xref py py-meth docutils literal notranslate"><span class="pre">open_h5()</span></code></a>, which is a safer way of closing the file because it
+is called even if there’s an exception.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.open_h5">
+<span class="sig-name descname"><span class="pre">open_h5</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.analysis.CeedDataReader.open_h5" title="Permalink to this definition"></a></dt>
+<dd><p>Opens the data file in read only mode and loads the application
+config.</p>
+<p>This is implicitly called when using the <code class="docutils literal notranslate"><span class="pre">with</span></code> syntax below, which is
+a safer way of opening the file because <a class="reference internal" href="#ceed.analysis.CeedDataReader.close_h5" title="ceed.analysis.CeedDataReader.close_h5"><code class="xref py py-meth docutils literal notranslate"><span class="pre">close_h5()</span></code></a> is called even
+if there’s an exception.</p>
+<p>To load a specific experiment data after the file is open, use
+<a class="reference internal" href="#ceed.analysis.CeedDataReader.load_experiment" title="ceed.analysis.CeedDataReader.load_experiment"><code class="xref py py-meth docutils literal notranslate"><span class="pre">load_experiment()</span></code></a>.</p>
+<p>E.g.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">reader</span> <span class="o">=</span> <span class="n">CeedDataReader</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s1">&#39;data.h5&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">reader</span><span class="o">.</span><span class="n">open_h5</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">reader</span><span class="o">.</span><span class="n">experiments_in_file</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">reader</span><span class="o">.</span><span class="n">load_experiment</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">reader</span><span class="o">.</span><span class="n">close_h5</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Or in a safer way:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">CeedDataReader</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s1">&#39;data.h5&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">reader</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="n">reader</span><span class="o">.</span><span class="n">experiments_in_file</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">reader</span><span class="o">.</span><span class="n">load_experiment</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This will call <a class="reference internal" href="#ceed.analysis.CeedDataReader.open_h5" title="ceed.analysis.CeedDataReader.open_h5"><code class="xref py py-meth docutils literal notranslate"><span class="pre">open_h5()</span></code></a> when entring the <code class="docutils literal notranslate"><span class="pre">with</span></code> block and
+<a class="reference internal" href="#ceed.analysis.CeedDataReader.close_h5" title="ceed.analysis.CeedDataReader.close_h5"><code class="xref py py-meth docutils literal notranslate"><span class="pre">close_h5()</span></code></a> when exiting, even if there’s an exception raised
+within the block.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.dump_plugin_sources">
+<span class="sig-name descname"><span class="pre">dump_plugin_sources</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">plugin_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_root</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">pathlib.Path</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.analysis.CeedDataReader.dump_plugin_sources" title="Permalink to this definition"></a></dt>
+<dd><p>Dumps the source code of all the registered function or stage
+plugins (depending on <code class="docutils literal notranslate"><span class="pre">plugin_type</span></code>) that was saved to the data file.</p>
+<p>See <a class="reference internal" href="../function/function.html#ceed.function.register_external_functions" title="ceed.function.register_external_functions"><code class="xref py py-func docutils literal notranslate"><span class="pre">ceed.function.register_external_functions()</span></code></a>,
+<a class="reference internal" href="../function/function.html#ceed.function.register_all_functions" title="ceed.function.register_all_functions"><code class="xref py py-func docutils literal notranslate"><span class="pre">ceed.function.register_all_functions()</span></code></a>,
+<a class="reference internal" href="../stage/stage.html#ceed.stage.register_external_stages" title="ceed.stage.register_external_stages"><code class="xref py py-func docutils literal notranslate"><span class="pre">ceed.stage.register_external_stages()</span></code></a>, and
+<a class="reference internal" href="../stage/stage.html#ceed.stage.register_all_stages" title="ceed.stage.register_all_stages"><code class="xref py py-func docutils literal notranslate"><span class="pre">ceed.stage.register_all_stages()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>plugin_type</strong> – either <code class="docutils literal notranslate"><span class="pre">'function'</span></code> or <code class="docutils literal notranslate"><span class="pre">'stage'</span></code> to indicate
+which plugin to dump.</p></li>
+<li><p><strong>target_root</strong> – the root directory where to dump the source code.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.get_electrode_names">
+<span class="sig-name descname"><span class="pre">get_electrode_names</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ceed.analysis.CeedDataReader.get_electrode_names" title="Permalink to this definition"></a></dt>
+<dd><p>After <a class="reference internal" href="#ceed.analysis.CeedDataReader.load_experiment" title="ceed.analysis.CeedDataReader.load_experiment"><code class="xref py py-meth docutils literal notranslate"><span class="pre">load_experiment()</span></code></a>, it returns a 2D list (list of lists)
+containing the 2D grid of electrode names used in the experiment
+as derived from the
+<a class="reference internal" href="../view/controller.html#ceed.view.controller.ViewControllerBase.mea_num_cols" title="ceed.view.controller.ViewControllerBase.mea_num_cols"><code class="xref py py-attr docutils literal notranslate"><span class="pre">mea_num_cols</span></code></a> and other
+mea options.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.load_application_data">
+<span class="sig-name descname"><span class="pre">load_application_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.analysis.CeedDataReader.load_application_data" title="Permalink to this definition"></a></dt>
+<dd><p>Loads all the application configuration from the data file and
+stores it in the instance properties.</p>
+<p>This is automatically called by <a class="reference internal" href="#ceed.analysis.CeedDataReader.open_h5" title="ceed.analysis.CeedDataReader.open_h5"><code class="xref py py-meth docutils literal notranslate"><span class="pre">open_h5()</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.load_experiment">
+<span class="sig-name descname"><span class="pre">load_experiment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">experiment</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.analysis.CeedDataReader.load_experiment" title="Permalink to this definition"></a></dt>
+<dd><p>Loads the data for a specific experiment and populates the instance
+properties with the data.</p>
+<p>If a previous experiment was loaded, it replaces the properties with
+the new data. E.g.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">CeedDataReader</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s1">&#39;data.h5&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">reader</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="n">reader</span><span class="o">.</span><span class="n">experiments_in_file</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">reader</span><span class="o">.</span><span class="n">load_experiment</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="n">reader</span><span class="o">.</span><span class="n">experiment_notes</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">reader</span><span class="o">.</span><span class="n">load_experiment</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.load_mcs_data">
+<span class="sig-name descname"><span class="pre">load_mcs_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.analysis.CeedDataReader.load_mcs_data" title="Permalink to this definition"></a></dt>
+<dd><p>Loads the MCS electrode data and stores them in the instance
+properties.</p>
+<p>See e.g. <a class="reference internal" href="#ceed.analysis.CeedDataReader.electrodes_data" title="ceed.analysis.CeedDataReader.electrodes_data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">electrodes_data</span></code></a>.</p>
+<p>It should be called only once after opening the file. E.g.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">CeedDataReader</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s1">&#39;data.h5&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">reader</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="n">reader</span><span class="o">.</span><span class="n">load_mcs_data</span><span class="p">()</span>
+<span class="gp">... </span>    <span class="n">reader</span><span class="o">.</span><span class="n">load_experiment</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="n">reader</span><span class="o">.</span><span class="n">electrodes_metadata</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="n">reader</span><span class="o">.</span><span class="n">experiment_notes</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.format_event_data">
+<span class="sig-name descname"><span class="pre">format_event_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ceed_obj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../utils.html#ceed.utils.CeedWithID" title="ceed.utils.CeedWithID"><span class="pre">ceed.utils.CeedWithID</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ceed_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ceed_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#ceed.analysis.CeedDataReader.format_event_data" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a flattened and optionally filtered version of the
+<a class="reference internal" href="#ceed.analysis.CeedDataReader.event_data" title="ceed.analysis.CeedDataReader.event_data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">event_data</span></code></a>.</p>
+<p>Unlike <a class="reference internal" href="#ceed.analysis.CeedDataReader.event_data" title="ceed.analysis.CeedDataReader.event_data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">event_data</span></code></a> where each event item is a 4-tuple of
+<code class="docutils literal notranslate"><span class="pre">(frame,</span> <span class="pre">ceed_id,</span> <span class="pre">name,</span> <span class="pre">payload)</span></code> and <code class="docutils literal notranslate"><span class="pre">payload</span></code> is a list of
+event data. Each item in the returned list is a list whose first three
+items are <code class="docutils literal notranslate"><span class="pre">[frame,</span> <span class="pre">obj,</span> <span class="pre">name,</span> <span class="pre">...]</span></code> and the remaining items is the
+payload. That is the payload items are appended to the list.</p>
+<p>Notice how we return <code class="docutils literal notranslate"><span class="pre">obj</span></code>, rather than <code class="docutils literal notranslate"><span class="pre">ceed_id</span></code>. The <code class="docutils literal notranslate"><span class="pre">obj</span></code> is
+the stage or function object that emitted the event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>event</strong> – If not None, the name of the event to such that only these
+events will be returned. E.g. <code class="docutils literal notranslate"><span class="pre">&quot;loop_start&quot;</span></code>.</p></li>
+<li><p><strong>ceed_obj</strong> – If not None, it’s an object such that only events
+generated by this object is returned. This could be e.g. a stage or
+function.</p></li>
+<li><p><strong>ceed_name</strong> – If not None, it’s a name such that only events
+generated by an object of this name is returned. This could be e.g.
+the name of a stage or function.</p></li>
+<li><p><strong>ceed_id</strong> – If not None, it’s the
+<a class="reference internal" href="../utils.html#ceed.utils.CeedWithID.ceed_id" title="ceed.utils.CeedWithID.ceed_id"><code class="xref py py-attr docutils literal notranslate"><span class="pre">ceed_id</span></code></a> such that only events
+generated by an object with this ceed id is returned.</p></li>
+</ul>
+</dd>
+</dl>
+<p>E.g. if <a class="reference internal" href="#ceed.analysis.CeedDataReader.event_data" title="ceed.analysis.CeedDataReader.event_data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">event_data</span></code></a> is e.g.
+<code class="docutils literal notranslate"><span class="pre">[(300,</span> <span class="pre">1,</span> <span class="pre">'start',</span> <span class="pre">[0,</span> <span class="pre">1,</span> <span class="pre">0.33])]</span></code>, then without any filtering this
+method returns <code class="docutils literal notranslate"><span class="pre">[[300,</span> <span class="pre">func_obj,</span> <span class="pre">'start',</span> <span class="pre">0,</span> <span class="pre">1,</span> <span class="pre">0.33]]</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.get_image_from_file">
+<span class="sig-name descname"><span class="pre">get_image_from_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image_num</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://matham.github.io/ffpyplayer/pic.html#ffpyplayer.pic.Image" title="(in FFPyPlayer)"><span class="pre">ffpyplayer.pic.Image</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ceed.analysis.CeedDataReader.get_image_from_file" title="Permalink to this definition"></a></dt>
+<dd><p>After opening the file <a class="reference internal" href="#ceed.analysis.CeedDataReader.num_images_in_file" title="ceed.analysis.CeedDataReader.num_images_in_file"><code class="xref py py-attr docutils literal notranslate"><span class="pre">num_images_in_file</span></code></a> contains the
+number of images the user manually saved to the file. This loads
+a specific image and its metadata.</p>
+<p>See also <a class="reference internal" href="#ceed.analysis.CeedDataReader.save_image" title="ceed.analysis.CeedDataReader.save_image"><code class="xref py py-meth docutils literal notranslate"><span class="pre">save_image()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>image_num</strong> – The image number to return. Should be less than
+<a class="reference internal" href="#ceed.analysis.CeedDataReader.num_images_in_file" title="ceed.analysis.CeedDataReader.num_images_in_file"><code class="xref py py-attr docutils literal notranslate"><span class="pre">num_images_in_file</span></code></a>.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A 3-tuple of <code class="docutils literal notranslate"><span class="pre">(image,</span> <span class="pre">notes,</span> <span class="pre">save_time)</span></code>, where <code class="docutils literal notranslate"><span class="pre">image</span></code> is
+the image, <code class="docutils literal notranslate"><span class="pre">notes</span></code> is any user notes saved with the image, and
+<code class="docutils literal notranslate"><span class="pre">save_time</span></code> is the <code class="docutils literal notranslate"><span class="pre">time.time</span></code> when the image was saved.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.save_image">
+<span class="sig-name descname"><span class="pre">save_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">img</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://matham.github.io/ffpyplayer/pic.html#ffpyplayer.pic.Image" title="(in FFPyPlayer)"><span class="pre">ffpyplayer.pic.Image</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">codec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'bmp'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.analysis.CeedDataReader.save_image" title="Permalink to this definition"></a></dt>
+<dd><p>Saves the given image to disk.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> – The full path where to save the image.</p></li>
+<li><p><strong>img</strong> – The image to save.</p></li>
+<li><p><strong>codec</strong> – The codec with which to save. The default is bmp and the
+extension should then also be <code class="docutils literal notranslate"><span class="pre">.bmp</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.get_electrode_offset_scale">
+<span class="sig-name descname"><span class="pre">get_electrode_offset_scale</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">electrode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ceed.analysis.CeedDataReader.get_electrode_offset_scale" title="Permalink to this definition"></a></dt>
+<dd><p>After <a class="reference internal" href="#ceed.analysis.CeedDataReader.load_mcs_data" title="ceed.analysis.CeedDataReader.load_mcs_data"><code class="xref py py-meth docutils literal notranslate"><span class="pre">load_mcs_data()</span></code></a>, returns the conversion factors used
+to convert the raw integer data in <a class="reference internal" href="#ceed.analysis.CeedDataReader.electrodes_data" title="ceed.analysis.CeedDataReader.electrodes_data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">electrodes_data</span></code></a> to properly
+scaled micro-volt.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>electrode</strong> – The electrode name as stored in
+<a class="reference internal" href="#ceed.analysis.CeedDataReader.electrodes_data" title="ceed.analysis.CeedDataReader.electrodes_data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">electrodes_data</span></code></a></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A 2-tuple of <cite>(offset, scale) `</cite> that can be used to convert.
+E.g. <code class="docutils literal notranslate"><span class="pre">micro-volt</span> <span class="pre">=</span> <span class="pre">(input</span> <span class="pre">-</span> <span class="pre">offset)</span> <span class="pre">*</span> <span class="pre">scale</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.get_analog_offset_scale">
+<span class="sig-name descname"><span class="pre">get_analog_offset_scale</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ceed.analysis.CeedDataReader.get_analog_offset_scale" title="Permalink to this definition"></a></dt>
+<dd><p>After <a class="reference internal" href="#ceed.analysis.CeedDataReader.load_mcs_data" title="ceed.analysis.CeedDataReader.load_mcs_data"><code class="xref py py-meth docutils literal notranslate"><span class="pre">load_mcs_data()</span></code></a>, returns the conversion factors used
+to convert the raw integer data in <a class="reference internal" href="#ceed.analysis.CeedDataReader.analog_data" title="ceed.analysis.CeedDataReader.analog_data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">analog_data</span></code></a> to properly
+scaled micro-volt.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>channel</strong> – The channel name as stored in <a class="reference internal" href="#ceed.analysis.CeedDataReader.analog_data" title="ceed.analysis.CeedDataReader.analog_data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">analog_data</span></code></a></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A 2-tuple of <cite>(offset, scale) `</cite> that can be used to convert.
+E.g. <code class="docutils literal notranslate"><span class="pre">micro-volt</span> <span class="pre">=</span> <span class="pre">(input</span> <span class="pre">-</span> <span class="pre">offset)</span> <span class="pre">*</span> <span class="pre">scale</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.estimate_skipped_frames">
+<span class="sig-name descname"><span class="pre">estimate_skipped_frames</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.analysis.CeedDataReader.estimate_skipped_frames" title="Permalink to this definition"></a></dt>
+<dd><p>After <a class="reference internal" href="#ceed.analysis.CeedDataReader.load_experiment" title="ceed.analysis.CeedDataReader.load_experiment"><code class="xref py py-meth docutils literal notranslate"><span class="pre">load_experiment()</span></code></a>, returns an estimate of the skipped
+and long frames.</p>
+<p>It returns the same value as <a class="reference internal" href="#ceed.analysis.CeedDataReader.compute_long_and_skipped_frames" title="ceed.analysis.CeedDataReader.compute_long_and_skipped_frames"><code class="xref py py-attr docutils literal notranslate"><span class="pre">compute_long_and_skipped_frames</span></code></a>,
+but specific to the current experiment.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.compute_long_and_skipped_frames">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">compute_long_and_skipped_frames</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_sub_frames</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rendered_frames</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ceed_mcs_alignment</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ceed.analysis.CeedDataReader.compute_long_and_skipped_frames" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a estimate of the Ceed frames that were displayed longer
+than one frame and the frames that were dropped.</p>
+<p><code class="docutils literal notranslate"><span class="pre">ceed_mcs_alignment</span></code> can be shorter than <code class="docutils literal notranslate"><span class="pre">rendered_frames</span></code> because
+the MCS data could have been stopped recording while Ceed was still
+projecting.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_sub_frames</strong> – The number of sub-frames for each Ceed frame (e.g.
+quad mode can be 4 or 12).</p></li>
+<li><p><strong>rendered_frames</strong> – The logical array indexing the rendered frames.
+It is the same as <a class="reference internal" href="#ceed.analysis.CeedDataReader.rendered_frames" title="ceed.analysis.CeedDataReader.rendered_frames"><code class="xref py py-attr docutils literal notranslate"><span class="pre">rendered_frames</span></code></a>.</p></li>
+<li><p><strong>ceed_mcs_alignment</strong> – The Ceed-MCS alignment array.
+It is the same as <a class="reference internal" href="#ceed.analysis.CeedDataReader.electrode_intensity_alignment" title="ceed.analysis.CeedDataReader.electrode_intensity_alignment"><code class="xref py py-attr docutils literal notranslate"><span class="pre">electrode_intensity_alignment</span></code></a>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A 5-tuple of <code class="docutils literal notranslate"><span class="pre">(mcs_long_frames,</span> <span class="pre">mcs_frame_len,</span> <span class="pre">ceed_skipped,</span>
+<span class="pre">ceed_skipped_main,</span> <span class="pre">largest_bad)</span></code>. <code class="docutils literal notranslate"><span class="pre">mcs_long_frames</span></code> is the
+frame indices that were longer than one. <code class="docutils literal notranslate"><span class="pre">mcs_frame_len</span></code> is the
+corresponding length of each long frame. <code class="docutils literal notranslate"><span class="pre">ceed_skipped</span></code> is the
+indices of the frames that were skipped. <code class="docutils literal notranslate"><span class="pre">ceed_skipped_main</span></code> is
+the indices of the <em>main</em> frames that were skipped. <code class="docutils literal notranslate"><span class="pre">largest_bad</span></code>
+is the maximum delay in terms of frames between Ceed repeating a
+frame because the CPU was too slow, until Ceed realized it needs to
+drop a frame to compensate. I.e. this is the largest number of bad
+frames Ceed ever displayed before correcting for each event.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.paint_background_image">
+<span class="sig-name descname"><span class="pre">paint_background_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://matham.github.io/ffpyplayer/pic.html#ffpyplayer.pic.Image" title="(in FFPyPlayer)"><span class="pre">ffpyplayer.pic.Image</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">translation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transform_matrix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.analysis.CeedDataReader.paint_background_image" title="Permalink to this definition"></a></dt>
+<dd><p>Uses <a class="reference internal" href="#ceed.analysis.partial_func" title="ceed.analysis.partial_func"><code class="xref py py-func docutils literal notranslate"><span class="pre">partial_func()</span></code></a> to return a function that can be passed to
+<code class="docutils literal notranslate"><span class="pre">paint_funcs</span></code> of <a class="reference internal" href="#ceed.analysis.CeedDataReader.generate_movie" title="ceed.analysis.CeedDataReader.generate_movie"><code class="xref py py-meth docutils literal notranslate"><span class="pre">generate_movie()</span></code></a> which will draw the image
+in the background.</p>
+<p>This can be used e.g. to display the tissue image and display the
+experiment shapes on it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>img</strong> – The image to show.</p></li>
+<li><p><strong>scale</strong> – Optionally a scaling factor by which to upscale the image.</p></li>
+<li><p><strong>translation</strong> – Optionally a 2-tuple of a x, y translation by which
+to translate the image.</p></li>
+<li><p><strong>rotation</strong> – Optionally a rotation angle in degrees by which to
+rotate the image.</p></li>
+<li><p><strong>transform_matrix</strong> – <p>Optionally a transformation matrix stored as
+an array by which to apply a affine transform to the image.</p>
+<p>You can get the transformation used for the current experiment
+from <a class="reference internal" href="../view/controller.html#ceed.view.controller.ViewControllerBase.cam_transform" title="ceed.view.controller.ViewControllerBase.cam_transform"><code class="xref py py-attr docutils literal notranslate"><span class="pre">cam_transform</span></code></a>,
+using <a class="reference internal" href="#ceed.analysis.CeedDataReader.view_controller" title="ceed.analysis.CeedDataReader.view_controller"><code class="xref py py-attr docutils literal notranslate"><span class="pre">view_controller</span></code></a>.</p>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The function to pass to <a class="reference internal" href="#ceed.analysis.CeedDataReader.generate_movie" title="ceed.analysis.CeedDataReader.generate_movie"><code class="xref py py-meth docutils literal notranslate"><span class="pre">generate_movie()</span></code></a>.</p>
+</dd>
+</dl>
+<p>E.g.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">CeedDataReader</span><span class="p">(</span><span class="s1">&#39;data.h5&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<span class="gp">... </span><span class="n">f</span><span class="o">.</span><span class="n">load_mcs_data</span><span class="p">()</span>
+<span class="gp">... </span><span class="n">f</span><span class="o">.</span><span class="n">load_experiment</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">... </span><span class="n">paint_funcs</span> <span class="o">=</span> <span class="p">[</span>
+<span class="gp">... </span>    <span class="n">f</span><span class="o">.</span><span class="n">paint_background_image</span><span class="p">(</span>
+<span class="gp">... </span>        <span class="n">f</span><span class="o">.</span><span class="n">experiment_cam_image</span><span class="p">,</span>
+<span class="gp">... </span>        <span class="n">transform_matrix</span><span class="o">=</span><span class="n">f</span><span class="o">.</span><span class="n">view_controller</span><span class="o">.</span><span class="n">cam_transform</span><span class="p">)</span>
+<span class="gp">... </span><span class="p">]</span>
+<span class="gp">... </span><span class="n">f</span><span class="o">.</span><span class="n">generate_movie</span><span class="p">(</span><span class="s1">&#39;video.mp4&#39;</span><span class="p">,</span> <span class="n">paint_funcs</span><span class="o">=</span><span class="n">paint_funcs</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.paint_electrodes_data_callbacks">
+<span class="sig-name descname"><span class="pre">paint_electrodes_data_callbacks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">electrode_names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spacing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">draw_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0,</span> <span class="pre">0)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">draw_size_hint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(1,</span> <span class="pre">1)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">draw_pos</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0,</span> <span class="pre">0)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">draw_pos_hint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(None,</span> <span class="pre">None)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">volt_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-06</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_axis_s</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">volt_axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.analysis.CeedDataReader.paint_electrodes_data_callbacks" title="Permalink to this definition"></a></dt>
+<dd><p>Uses <a class="reference internal" href="#ceed.analysis.partial_func" title="ceed.analysis.partial_func"><code class="xref py py-func docutils literal notranslate"><span class="pre">partial_func()</span></code></a> to return a function that can be passed to
+<code class="docutils literal notranslate"><span class="pre">paint_funcs</span></code> of <a class="reference internal" href="#ceed.analysis.CeedDataReader.generate_movie" title="ceed.analysis.CeedDataReader.generate_movie"><code class="xref py py-meth docutils literal notranslate"><span class="pre">generate_movie()</span></code></a> which will draw the
+<a class="reference internal" href="#ceed.analysis.CeedDataReader.electrodes_data" title="ceed.analysis.CeedDataReader.electrodes_data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">electrodes_data</span></code></a>.</p>
+<p>This can be used e.g. to display the electrode data for all electrodes
+while the movie is displaying the intensity of each of the shapes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>electrode_names</strong> – List of names of electrodes (as keys in
+<a class="reference internal" href="#ceed.analysis.CeedDataReader.electrodes_data" title="ceed.analysis.CeedDataReader.electrodes_data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">electrodes_data</span></code></a>) to draw.</p></li>
+<li><p><strong>spacing</strong> – The pixel spacing by which to space them to each other.</p></li>
+<li><p><strong>draw_size</strong> – A optional 2-tuple of the size of the overall grid
+in which to draw the electrodes.</p></li>
+<li><p><strong>draw_size_hint</strong> – Similar to <code class="docutils literal notranslate"><span class="pre">draw_size</span></code>, but instead of absolute
+size, it’s the scaling factor relative to the projector screen size
+on which the Ceed shapes are drawn. E.g. <code class="docutils literal notranslate"><span class="pre">(1,</span> <span class="pre">1)</span></code> means it’ll be
+the same size as the shapes region, and <code class="docutils literal notranslate"><span class="pre">(1,</span> <span class="pre">2)</span></code> means it’ll be
+the same horizontally, but twice as large vertically.</p></li>
+<li><p><strong>draw_pos</strong> – A optional 2-tuple of the bottom left corner pos of the
+overall grid in which to draw the electrodes.</p></li>
+<li><p><strong>draw_pos_hint</strong> – Similar to <code class="docutils literal notranslate"><span class="pre">draw_pos</span></code>, but instead of absolute
+pos, it’s the scaling factor relative to the projector screen size
+on which the Ceed shapes are drawn. E.g. <code class="docutils literal notranslate"><span class="pre">(1,</span> <span class="pre">0)</span></code> means it’ll be
+drawn to the right of the shapes region but at the same vertical
+height.</p></li>
+<li><p><strong>volt_scale</strong> – The scale in which the volts are given. E.g. 1e-6
+means that the data is given in micro-volts (which is what MCS
+defaults to).</p></li>
+<li><p><strong>time_axis_s</strong> – The sub-sampling rate of the x-axis in seconds.
+E.g. 1 means that we display 1 sample for every second.</p></li>
+<li><p><strong>volt_axis</strong> – The plus/minus range of the y-axis to display, in
+units of <code class="docutils literal notranslate"><span class="pre">volt_scale</span></code>. E.g. 100 means it’ll display <code class="docutils literal notranslate"><span class="pre">+/-</span> <span class="pre">100uv</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The function to pass to <a class="reference internal" href="#ceed.analysis.CeedDataReader.generate_movie" title="ceed.analysis.CeedDataReader.generate_movie"><code class="xref py py-meth docutils literal notranslate"><span class="pre">generate_movie()</span></code></a>.</p>
+</dd>
+</dl>
+<p>E.g.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">CeedDataReader</span><span class="p">(</span><span class="s1">&#39;data.h5&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<span class="gp">... </span><span class="n">f</span><span class="o">.</span><span class="n">load_mcs_data</span><span class="p">()</span>
+<span class="gp">... </span><span class="n">f</span><span class="o">.</span><span class="n">load_experiment</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">... </span><span class="n">paint_funcs</span> <span class="o">=</span> <span class="p">[</span>
+<span class="gp">... </span>    <span class="n">f</span><span class="o">.</span><span class="n">paint_electrodes_data_callbacks</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">f</span><span class="o">.</span><span class="n">get_electrode_names</span><span class="p">(),</span> <span class="n">draw_pos_hint</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+<span class="gp">... </span>    <span class="n">volt_axis</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+<span class="gp">... </span><span class="p">]</span>
+<span class="gp">... </span><span class="n">f</span><span class="o">.</span><span class="n">generate_movie</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="s1">&#39;video.mp4&#39;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">canvas_size_hint</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">paint_funcs</span><span class="o">=</span><span class="n">paint_funcs</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.show_mea_outline">
+<span class="sig-name descname"><span class="pre">show_mea_outline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transform_matrix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(1,</span> <span class="pre">0.8431372549019608,</span> <span class="pre">0,</span> <span class="pre">0.2)</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.analysis.CeedDataReader.show_mea_outline" title="Permalink to this definition"></a></dt>
+<dd><p>Uses <a class="reference internal" href="#ceed.analysis.partial_func" title="ceed.analysis.partial_func"><code class="xref py py-func docutils literal notranslate"><span class="pre">partial_func()</span></code></a> to return a function that can be passed to
+<code class="docutils literal notranslate"><span class="pre">paint_funcs</span></code> of <a class="reference internal" href="#ceed.analysis.CeedDataReader.generate_movie" title="ceed.analysis.CeedDataReader.generate_movie"><code class="xref py py-meth docutils literal notranslate"><span class="pre">generate_movie()</span></code></a> which will draw the MEA
+electrode grid in the movie.</p>
+<p>This can be used e.g. to display the position of the electrodes
+relative to the tissue and relative to the experiment shapes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>transform_matrix</strong> – <p>Optionally a transformation matrix stored as
+an array by which to apply a affine transform to the grid.</p>
+<p>You can get the transformation used for the current experiment
+from <a class="reference internal" href="../view/controller.html#ceed.view.controller.ViewControllerBase.mea_transform" title="ceed.view.controller.ViewControllerBase.mea_transform"><code class="xref py py-attr docutils literal notranslate"><span class="pre">mea_transform</span></code></a>,
+using <a class="reference internal" href="#ceed.analysis.CeedDataReader.view_controller" title="ceed.analysis.CeedDataReader.view_controller"><code class="xref py py-attr docutils literal notranslate"><span class="pre">view_controller</span></code></a>.</p>
+</p></li>
+<li><p><strong>color</strong> – A 4-tuple of the red, green, blue, and transparency
+value to use to draw the grid.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The function to pass to <a class="reference internal" href="#ceed.analysis.CeedDataReader.generate_movie" title="ceed.analysis.CeedDataReader.generate_movie"><code class="xref py py-meth docutils literal notranslate"><span class="pre">generate_movie()</span></code></a>.</p>
+</dd>
+</dl>
+<p>E.g.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">CeedDataReader</span><span class="p">(</span><span class="s1">&#39;data.h5&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<span class="gp">... </span><span class="n">f</span><span class="o">.</span><span class="n">load_mcs_data</span><span class="p">()</span>
+<span class="gp">... </span><span class="n">f</span><span class="o">.</span><span class="n">load_experiment</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">... </span><span class="n">paint_funcs</span> <span class="o">=</span> <span class="p">[</span>
+<span class="gp">... </span>    <span class="n">f</span><span class="o">.</span><span class="n">show_mea_outline</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">view_controller</span><span class="o">.</span><span class="n">mea_transform</span><span class="p">)</span>
+<span class="gp">... </span><span class="p">]</span>
+<span class="gp">... </span><span class="n">f</span><span class="o">.</span><span class="n">generate_movie</span><span class="p">(</span><span class="s1">&#39;video.mp4&#39;</span><span class="p">,</span> <span class="n">paint_funcs</span><span class="o">=</span><span class="n">paint_funcs</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.generate_movie">
+<span class="sig-name descname"><span class="pre">generate_movie</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_fmt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'yuv420p'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">codec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'libx264'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lib_opts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{'crf':</span> <span class="pre">'0'}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">video_fmt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mp4'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">canvas_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0,</span> <span class="pre">0)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">canvas_size_hint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(1,</span> <span class="pre">1)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">projector_pos</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0,</span> <span class="pre">0)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">projector_pos_hint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(None,</span> <span class="pre">None)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">paint_funcs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stimulation_transparency</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lum</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">speed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hidden_shapes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.analysis.CeedDataReader.generate_movie" title="Permalink to this definition"></a></dt>
+<dd><p>Generates a movie from the Ceed and MCS data.</p>
+<p>By default it just draws the Ceed shapes and their intensities for each
+frame. Additional things can be drawn in the movie using e.g.
+<a class="reference internal" href="#ceed.analysis.CeedDataReader.paint_background_image" title="ceed.analysis.CeedDataReader.paint_background_image"><code class="xref py py-meth docutils literal notranslate"><span class="pre">paint_background_image()</span></code></a>,
+<a class="reference internal" href="#ceed.analysis.CeedDataReader.paint_electrodes_data_callbacks" title="ceed.analysis.CeedDataReader.paint_electrodes_data_callbacks"><code class="xref py py-meth docutils literal notranslate"><span class="pre">paint_electrodes_data_callbacks()</span></code></a>, and <a class="reference internal" href="#ceed.analysis.CeedDataReader.show_mea_outline" title="ceed.analysis.CeedDataReader.show_mea_outline"><code class="xref py py-meth docutils literal notranslate"><span class="pre">show_mea_outline()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> – The video filename to create.</p></li>
+<li><p><strong>out_fmt</strong> – The pixel format to use for the movie. Defaults to
+<code class="docutils literal notranslate"><span class="pre">yuv420p</span></code></p></li>
+<li><p><strong>codec</strong> – The codec to use for the movie. Defaults to x264.</p></li>
+<li><p><strong>lib_opts</strong> – Any options to pass to video encoding library.</p></li>
+<li><p><strong>video_fmt</strong> – The video format into which to save the video.
+Defaults to mp4.</p></li>
+<li><p><strong>start</strong> – The optional start time, in seconds in terms of the
+experiment, from which to start drawing the movie.</p></li>
+<li><p><strong>end</strong> – The optional end time, in seconds in terms of the
+experiment, at which to end drawing the movie.</p></li>
+<li><p><strong>canvas_size</strong> – The optional movie size to create. If not provided
+defaults to the projector screen size used during the experiment.</p></li>
+<li><p><strong>canvas_size_hint</strong> – Similar to <code class="docutils literal notranslate"><span class="pre">canvas_size</span></code>, but is relative to
+the projector screen size used during the experiment. e.g.
+<code class="docutils literal notranslate"><span class="pre">(1,</span> <span class="pre">2)</span></code> means that it’ll be the same width the projector, but
+twice as tall (e.g. if we want to draw other stuff besides the
+shapes in the empty space).</p></li>
+<li><p><strong>projector_pos</strong> – The optional absolute bottom left position where
+to draw the shapes. Defaults to the bottom left corner.</p></li>
+<li><p><strong>projector_pos_hint</strong> – The optional relative bottom left position
+where to draw the shapes. E.g. <code class="docutils literal notranslate"><span class="pre">(1,</span> <span class="pre">0)</span></code> means to draw at a
+horizontal offset the size of the projector, but at the zero
+vertical offset.</p></li>
+<li><p><strong>paint_funcs</strong> – <p>Additional functions that the drawing engine will
+call for each Ceed frame so it will be given the opportunity to
+draw other things.</p>
+<p>The function is called once before anything so it can set up. Then
+if it returns a non-None object, it returns a generator that
+we call for each frame using <code class="docutils literal notranslate"><span class="pre">gen.send</span></code>, where we send it the
+current frame number and it draws the data for that frame. See
+the sample methods for an example.</p>
+<p>The order determines the z-depth of the canvas. E.g. the last
+function will be painted on top of the previous functions.</p>
+</p></li>
+<li><p><strong>stimulation_transparency</strong> – The transparency used for the shapes.
+1 means completely opaque, zero means completely transparent.
+It determines whether we can see through the drawn shapes to see
+the underlying image.</p></li>
+<li><p><strong>lum</strong> – The luminosity, as a percentage with which to draw the
+shape intensities. E.g. lum of 0.5 means all the shapes will be
+drawn at %50 of the real intensity.</p></li>
+<li><p><strong>speed</strong> – The speed of the movie relative to the rela experiment.
+E.g. 1 means real time. 0.5 means it’ll be hals as fast as
+real-time. And 2 means it’ll be twice as fast.</p></li>
+<li><p><strong>hidden_shapes</strong> – Optional list of Ceed shape names that will not be
+displayed in the movie.</p></li>
+</ul>
+</dd>
+</dl>
+<p>E.g.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">CeedDataReader</span><span class="p">(</span><span class="s1">&#39;data.h5&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<span class="gp">... </span><span class="n">f</span><span class="o">.</span><span class="n">load_mcs_data</span><span class="p">()</span>
+<span class="gp">... </span><span class="n">f</span><span class="o">.</span><span class="n">load_experiment</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">... </span><span class="n">paint_funcs</span> <span class="o">=</span> <span class="p">[</span>
+<span class="gp">... </span>    <span class="n">f</span><span class="o">.</span><span class="n">paint_background_image</span><span class="p">(</span>
+<span class="gp">... </span>        <span class="n">f</span><span class="o">.</span><span class="n">experiment_cam_image</span><span class="p">,</span>
+<span class="gp">... </span>        <span class="n">transform_matrix</span><span class="o">=</span><span class="n">f</span><span class="o">.</span><span class="n">view_controller</span><span class="o">.</span><span class="n">cam_transform</span><span class="p">),</span>
+<span class="gp">... </span>    <span class="n">f</span><span class="o">.</span><span class="n">show_mea_outline</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">view_controller</span><span class="o">.</span><span class="n">mea_transform</span><span class="p">),</span>
+<span class="gp">... </span>    <span class="n">f</span><span class="o">.</span><span class="n">paint_electrodes_data_callbacks</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">f</span><span class="o">.</span><span class="n">get_electrode_names</span><span class="p">(),</span> <span class="n">draw_pos_hint</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+<span class="gp">... </span>    <span class="n">volt_axis</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+<span class="gp">... </span><span class="p">]</span>
+<span class="gp">... </span><span class="n">f</span><span class="o">.</span><span class="n">generate_movie</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="s1">&#39;video.mp4&#39;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">canvas_size_hint</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">paint_funcs</span><span class="o">=</span><span class="n">paint_funcs</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The movie generation can be quite slow.</p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.populate_config">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">populate_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">settings</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shape_factory</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">function_factory</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stage_factory</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.analysis.CeedDataReader.populate_config" title="Permalink to this definition"></a></dt>
+<dd><p>Given the application settings recovered from e.g. a yaml file
+and the shape, function, and stage factories, it creates the
+shapes, functions, and stages from the settings and returns the
+root functions and stages.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.read_image_from_block">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">read_image_from_block</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">postfix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://matham.github.io/ffpyplayer/pic.html#ffpyplayer.pic.Image" title="(in FFPyPlayer)"><span class="pre">ffpyplayer.pic.Image</span></a></span></span><a class="headerlink" href="#ceed.analysis.CeedDataReader.read_image_from_block" title="Permalink to this definition"></a></dt>
+<dd><p>Given a nix block that contains an Image, it reads and returns the
+image.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.dump_electrode_data_matlab">
+<span class="sig-name descname"><span class="pre">dump_electrode_data_matlab</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prefix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000000000.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.analysis.CeedDataReader.dump_electrode_data_matlab" title="Permalink to this definition"></a></dt>
+<dd><p>Dumps all the electrode data in a format that can be loaded
+by matlab. Each electrode is stored in its own file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>prefix</strong> – A path to a directory and filename prefix that will be
+used for the output files. The output files, one for each electrode,
+will have the electrode name and a .mat suffix.</p></li>
+<li><p><strong>chunks</strong> – If not None, the data will be split into chucks of the
+given size in bytes and these chucks will be saved in the file.
+If the data is too big we may not be able to load it all at once
+in memory, so saving it as chucks will work if the chucks are small
+enough. Defaults to 1GB.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.CeedDataReader.dump_electrode_data_circus">
+<span class="sig-name descname"><span class="pre">dump_electrode_data_circus</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000000000.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.analysis.CeedDataReader.dump_electrode_data_circus" title="Permalink to this definition"></a></dt>
+<dd><p>Dumps all the electrode data in a format that can be loaded
+by spyking circus.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> – The filename where to dump the data.</p></li>
+<li><p><strong>chunks</strong> – If not None, the data will be copied in chucks of the
+given size in bytes. If the data is too big we may not be able to
+load it all at once in memory, so saving it with chucks will work
+if the chucks are small enough. Defaults to 1GB.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="ceed.analysis.EndOfDataException">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ceed.analysis.</span></span><span class="sig-name descname"><span class="pre">EndOfDataException</span></span><a class="headerlink" href="#ceed.analysis.EndOfDataException" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+<p>Exception raised when the data read is after the end of the file.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ceed.analysis.CallableGen">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ceed.analysis.</span></span><span class="sig-name descname"><span class="pre">CallableGen</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gen</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.analysis.CallableGen" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Converts a generator that accepts input into a callable.</p>
+<p>It calls <code class="docutils literal notranslate"><span class="pre">next</span></code> on the generator when created. Them with each call it
+“sends” the argument when called to the generator.</p>
+<p>E.g.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">echo</span><span class="p">():</span>
+<span class="gp">... </span>    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+<span class="gp">... </span>        <span class="n">value</span> <span class="o">=</span> <span class="k">yield</span>
+<span class="gp">... </span>        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Got &quot;</span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s1">&quot;&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># use it like a normal generator</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">generator</span> <span class="o">=</span> <span class="n">echo</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">next</span><span class="p">(</span><span class="n">generator</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">generator</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">Got &quot;1&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">generator</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="go">Got &quot;5&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># or more conveniently make it into a callable</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">callback_generator</span> <span class="o">=</span> <span class="n">CallableGen</span><span class="p">(</span><span class="n">echo</span><span class="p">())</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">callback_generator</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">Got &quot;1&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">callback_generator</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="go">Got &quot;5&quot;</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="ceed.analysis.CallableGen.close">
+<span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#ceed.analysis.CallableGen.close" title="Permalink to this definition"></a></dt>
+<dd><p>Closes the underlying generator.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ceed.analysis.callable_gen">
+<span class="sig-prename descclassname"><span class="pre">ceed.analysis.</span></span><span class="sig-name descname"><span class="pre">callable_gen</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gen</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.analysis.callable_gen" title="Permalink to this definition"></a></dt>
+<dd><p>Decorator that converts a generator into a <a class="reference internal" href="#ceed.analysis.CallableGen" title="ceed.analysis.CallableGen"><code class="xref py py-class docutils literal notranslate"><span class="pre">CallableGen</span></code></a>.</p>
+<p>It returns a function that when called will return a
+function that itself instantiates the original decorated generator and
+passes it to <a class="reference internal" href="#ceed.analysis.CallableGen" title="ceed.analysis.CallableGen"><code class="xref py py-class docutils literal notranslate"><span class="pre">CallableGen</span></code></a>, that is returned.</p>
+<p>Both of these functions accept positional and keyword arguments that are
+passed on to the generator when it’s created.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ceed.analysis.partial_func">
+<span class="sig-prename descclassname"><span class="pre">ceed.analysis.</span></span><span class="sig-name descname"><span class="pre">partial_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.analysis.partial_func" title="Permalink to this definition"></a></dt>
+<dd><p>Decorator that returns a function, which when called returns another
+function that calls the original function.</p>
+<p>Both of these functions accept positional and keyword arguments that are
+passed on to the original function when it’s called.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ceed.analysis.read_nix_prop">
+<span class="sig-prename descclassname"><span class="pre">ceed.analysis.</span></span><span class="sig-name descname"><span class="pre">read_nix_prop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prop</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#ceed.analysis.read_nix_prop" title="Permalink to this definition"></a></dt>
+<dd><p>Reads the value from a nix property.</p>
+<p>It is slightly different between versions, so this works across all nix
+versions.</p>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="api.html" class="btn btn-neutral float-left" title="Analysis API" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="merge_data.html" class="btn btn-neutral float-right" title="Ceed-MCS data merging" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2019, Matthew Einhorn.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
